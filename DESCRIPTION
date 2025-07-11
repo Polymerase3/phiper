@@ -1,13 +1,41 @@
 Package: phiper
-Title: What the Package Does (One Line, Title Case)
+Title: Automated PhIP-seq Analysis and Reporting
 Version: 0.0.0.9000
-Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+Authors@R: c(
+  person(
+    "Mateusz", "Kolek", 
+    email = "mati.kolek13@gmail.com", 
+    role = c("aut", "cre", "cph"), 
+    comment = c(ORCID = "0000-0001-6470-4830")
+  ),
+  person(
+    "Thomas", "Vogl",
+    email = "thomas.vogl@meduniwien.ac.at",
+    role = c("ctb", "cph", "fnd"),
+    comment = c(ORCID = "0000-0002-3892-1740")),
+  person(
+    "Gabriel", "Innocenti",
+    email = "gabriel.innocenti@meduniwien.ac.at",
+    role = c("ctb", "cph"),
+    comment = c(ORCID = "0000-0002-9380-4045")),
+  person(
+    "Carlos", "Reyna-Blanco",
+    email = "carlos.reynablanco@meduniwien.ac.at",
+    role = c("ctb", "cph"))
+  )
+Description: Provides an end-to-end toolkit for Phage ImmunoPrecipitation-
+    sequencing (PhIP-seq) data. Functions import raw peptide-sample count
+    matrices, apply quality control filters, normalise library sizes,
+    compute enrichment statistics and diversity metrics, and identify
+    differentially enriched peptides or motifs. Results can be explored
+    through tidy data frames, visualised with publication-ready ggplot2
+    graphics, or rendered into fully fledged HTML reports via R Markdown.
+License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 URL: https://github.com/Polymerase3/phiper
 BugReports: https://github.com/Polymerase3/phiper/issues
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
