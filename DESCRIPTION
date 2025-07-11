@@ -39,3 +39,7 @@ BugReports: https://github.com/Polymerase3/phiper/issues
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
+Imports: 
+    chk,
+    fs,
+    withr
