@@ -12,12 +12,7 @@ Authors@R: c(
     "Thomas", "Vogl",
     email = "thomas.vogl@meduniwien.ac.at",
     role = c("ctb", "cph", "fnd"),
-    comment = c(ORCID = "0000-0002-3892-1740")),
-  person(
-    "Gabriel", "Innocenti",
-    email = "gabriel.innocenti@meduniwien.ac.at",
-    role = c("ctb", "cph"),
-    comment = c(ORCID = "0000-0002-9380-4045")),
+    comment = c(ORCID = "0000-0002-3892-1740"))
   person(
     "Carlos", "Reyna-Blanco",
     email = "carlos.reynablanco@meduniwien.ac.at",
