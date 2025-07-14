@@ -52,9 +52,9 @@ print.phip_data <- function(x, ...) {
   prev <- tryCatch(
     {
       if (inherits(x$data_long, "tbl_dbi")) {
-        dplyr::collect(head(x$data_long, 5L))
+        dplyr::collect(utils::head(x$data_long, 5L))
       } else {
-        head(x$data_long, 5L)
+        utils::head(x$data_long, 5L)
       }
     },
     error = function(e) tibble::tibble(.error = "<preview failed>")
