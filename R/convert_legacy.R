@@ -59,7 +59,12 @@ phip_convert_legacy <- function(
   base_dir <- if (!is.null(config_yaml)) {
     fs::path_dir(fs::path_abs(config_yaml)) # dir that holds config.yaml
   } else {
-    getwd() # wherever caller is
+    ## check if exist_file and samples file provided (bare minimum)
+    .chk_cond(is.null(exist_file) || is.null(samples_file),
+              "The `exist_file` and `samples_file` arguments can not be null,
+              when no `config_yaml` provided.")
+
+    fs::path_dir(fs::path_abs(exist_file)) # dir that holds exist_file
   }
 
   # ---------------------------------------------------------------------------
@@ -73,8 +78,13 @@ phip_convert_legacy <- function(
       c("yml", "yaml")
     )
 
+    rlang::check_installed("yaml")
+
     # read yaml
     cfg <- yaml::read_yaml(config_yaml)
+  } else {
+    # safe placeholder
+    cfg <- NULL
   }
 
   # helper to fetch the paths and abort when path not found
@@ -189,7 +199,7 @@ phip_convert_legacy <- function(
       timepoints <- .auto_read_csv(timepoints_file)
 
       # reshape the timepoints to long
-      timepoints <- reshape(
+      timepoints <- stats::reshape(
         timepoints,
         direction = "long",
         varying   = names(timepoints)[-1], # all sample columns
@@ -235,8 +245,7 @@ phip_convert_legacy <- function(
       timepoints_file, extra_cols
     )
     counts_tbl <- dplyr::tbl(con, "counts_final")
-print(inherits(comparisons, "data.frame"))
-print(str(comparisons))
+
     # returning the phip_data object
     new_phip_data(
       data_long   = counts_tbl,
@@ -309,12 +318,13 @@ print(str(comparisons))
 
   # prefer data.table::fread() if available
   if (requireNamespace("data.table", quietly = TRUE)) {
+    rlang::check_installed("data.table")
     data.table::fread(path,
       sep = sep, data.table = FALSE,
       check.names = FALSE, showProgress = FALSE, ...
     )
   } else {
-    read.csv(path,
+   utils:: read.csv(path,
       header = TRUE, check.names = FALSE, sep = sep,
       stringsAsFactors = FALSE, ...
     )
@@ -334,7 +344,8 @@ print(str(comparisons))
                                  samples_file,
                                  timepoints_file = NULL,
                                  extra_cols = character()) {
-  rlang::check_installed(c("duckdb", "DBI"), reason = "duckdb backend")
+  rlang::check_installed(c("duckdb", "DBI", "dbplyr"),
+                         reason = "duckdb backend")
   con <- DBI::dbConnect(duckdb::duckdb(), dbdir = ":memory:")
 
   q <- function(x) DBI::dbQuoteString(con, x) # safe path quoting
