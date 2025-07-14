@@ -15,7 +15,6 @@
 
 #--check if filename has given extension ---------------------------------------
 .chk_extension <- function(name, x_name, ext_vec) {
-
   base <- basename(name)
 
   # split on dots, drop first part (filename), paste the rest
@@ -37,14 +36,14 @@
 
 .chk_null_default <- function(x, x_name, method, default) {
   .chk_cond(is.null(x),
-            error = FALSE,
-            sprintf(
-              "The `%s` argument for the method %s was not provided
+    error = FALSE,
+    sprintf(
+      "The `%s` argument for the method %s was not provided
                     and will default to `%s`.",
-              x_name,
-              add_quotes(method),
-              default
-            )
+      x_name,
+      add_quotes(method),
+      default
+    )
   )
 
   if (is.null(x)) x <- default
@@ -57,20 +56,30 @@
                       arg_name,
                       extension) {
   # validate if path is string of length 1
-  .chk_cond(!chk::vld_string(path),
-            sprintf("The argument `%s` has to be a valid R string of length 1",
-                    arg_name))
+  .chk_cond(
+    !chk::vld_string(path),
+    sprintf(
+      "The argument `%s` has to be a valid R string of length 1",
+      arg_name
+    )
+  )
 
   # validate if file exists
-  .chk_cond(!chk::vld_file(path),
-            sprintf("The filepath provided in the argument `%s`
+  .chk_cond(
+    !chk::vld_file(path),
+    sprintf(
+      "The filepath provided in the argument `%s`
                     does not exist: %s",
-                    arg_name, path))
+      arg_name, path
+    )
+  )
 
   # validate file extension if provided
-  .chk_extension(path,
-                 arg_name,
-                 extension)
+  .chk_extension(
+    path,
+    arg_name,
+    extension
+  )
 }
 
 ## --wordlists for error generation---------------------------------------------
