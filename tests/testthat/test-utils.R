@@ -4,18 +4,19 @@ skip_if_not_installed("chk")
 # .chk_cond ----------------------------------------------------------------
 # -------------------------------------------------------------------------
 test_that(".chk_cond emits errors and warnings correctly", {
-
   expect_error(
     .chk_cond(TRUE,
-              "boom",
-              error = TRUE),
+      "boom",
+      error = TRUE
+    ),
     label = "boom"
   )
 
   expect_warning(
     .chk_cond(TRUE,
-              "soft boom",
-              error = FALSE),
+      "soft boom",
+      error = FALSE
+    ),
     label = "soft_boom"
   )
 
@@ -27,7 +28,6 @@ test_that(".chk_cond emits errors and warnings correctly", {
 # .chk_extension -----------------------------------------------------------
 # -------------------------------------------------------------------------
 test_that(".chk_extension passes correct ext and fails otherwise", {
-
   # good
   expect_silent(
     .chk_extension("file.TSV", "file", c("tsv", "csv"))
@@ -44,7 +44,6 @@ test_that(".chk_extension passes correct ext and fails otherwise", {
 # .chk_null_default --------------------------------------------------------
 # -------------------------------------------------------------------------
 test_that(".chk_null_default returns original or default", {
-
   expect_equal(
     .chk_null_default(5, "x", "m", 10),
     5
@@ -63,7 +62,6 @@ test_that(".chk_null_default returns original or default", {
 # .chk_path ----------------------------------------------------------------
 # -------------------------------------------------------------------------
 test_that(".chk_path validates path + ext", {
-
   tmp <- withr::local_tempfile(fileext = ".csv")
   writeLines("test", tmp)
 
@@ -89,10 +87,9 @@ test_that(".chk_path validates path + ext", {
 # word_list / add_quotes ---------------------------------------------------
 # -------------------------------------------------------------------------
 test_that("word_list and add_quotes behave", {
-
   expect_equal(
     as.vector(word_list(c("a", "b", "c"), and_or = "and", quotes = TRUE)),
-  '"a", "b", and "c"'
+    '"a", "b", and "c"'
   )
 
   expect_equal(
@@ -103,6 +100,6 @@ test_that("word_list and add_quotes behave", {
   # quotes variations
   expect_equal(add_quotes("x", quotes = FALSE), "x")
   expect_equal(add_quotes("x", quotes = TRUE), '"x"')
-  expect_equal(add_quotes("x", quotes = 1),   "'x'")
-  expect_equal(add_quotes("x", quotes = 2),   '"x"')
+  expect_equal(add_quotes("x", quotes = 1), "'x'")
+  expect_equal(add_quotes("x", quotes = 2), '"x"')
 })

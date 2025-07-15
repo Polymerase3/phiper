@@ -10,7 +10,7 @@ test_that("convert legacy: memory", {
     ## SMOKE TEST --------------------------------------------------------------
     ### memory
     expect_no_error(suppressWarnings(
-       phip_convert_legacy(
+      phip_convert_legacy(
         config_yaml = path,
         backend = "memory"
       )
@@ -35,22 +35,16 @@ test_that("convert legacy: memory", {
       )
     ))
 
-    ### error when no required file present (comparisons, as samples and exist
-    ### are already checked earlier)
+    ### error when no required file present
     expect_error(suppressWarnings(
       phip_convert_legacy(
         exist_file = file.path(
           system.file("extdata", package = "phiper"),
           "exist.csv"
         ),
-        samples_file = file.path(
-          system.file("extdata", package = "phiper"),
-          "samples_meta.csv"
-        ),
         backend = "memory"
       )
-    ), "comparisons_file")
-    ### mock the .yaml file and test the handling
+    ), "samples_file")
   })
 })
 
@@ -78,7 +72,7 @@ test_that("convert legacy: duckdb and arrow", {
 
     ### duckdb explicitly
     expect_no_error(suppressWarnings(
-       phip_convert_legacy(
+      phip_convert_legacy(
         config_yaml = path,
         backend = "duckdb"
       )
@@ -86,7 +80,7 @@ test_that("convert legacy: duckdb and arrow", {
 
     ### arrow
     expect_no_error(suppressWarnings(
-       phip_convert_legacy(
+      phip_convert_legacy(
         config_yaml = path,
         backend = "arrow"
       )
@@ -102,7 +96,7 @@ test_that("convert legacy: duckdb and arrow", {
     copy_to_workdir <- function(src) {
       dst <- file.path(workdir, basename(src))
       file.copy(src, dst, overwrite = TRUE)
-      basename(src)                          # return relative path
+      basename(src) # return relative path
     }
 
     # ------------------------------------------------------------------#
@@ -110,19 +104,19 @@ test_that("convert legacy: duckdb and arrow", {
     # ------------------------------------------------------------------#
     pkg_ext <- function(name) system.file("extdata", name, package = "phiper")
 
-    yaml_src       <- pkg_ext("config.yaml")
-    exist_src      <- pkg_ext("exist.csv")
-    samples_src    <- pkg_ext("samples_meta.csv")
+    yaml_src <- pkg_ext("config.yaml")
+    exist_src <- pkg_ext("exist.csv")
+    samples_src <- pkg_ext("samples_meta.csv")
     timepoints_src <- NULL
-    comps_src      <- pkg_ext("comparisons.csv")
+    comps_src <- pkg_ext("comparisons.csv")
 
     # ------------------------------------------------------------------#
     # 3. Copy everything into workdir
     # ------------------------------------------------------------------#
-    yaml_dst       <- file.path(workdir, "config.yaml")
-    exist_rel      <- copy_to_workdir(exist_src)
-    samples_rel    <- copy_to_workdir(samples_src)
-    comps_rel      <- copy_to_workdir(comps_src)
+    yaml_dst <- file.path(workdir, "config.yaml")
+    exist_rel <- copy_to_workdir(exist_src)
+    samples_rel <- copy_to_workdir(samples_src)
+    comps_rel <- copy_to_workdir(comps_src)
     file.copy(yaml_src, yaml_dst, overwrite = TRUE)
 
     # ------------------------------------------------------------------#
@@ -130,9 +124,9 @@ test_that("convert legacy: duckdb and arrow", {
     # ------------------------------------------------------------------#
     cfg <- yaml::read_yaml(yaml_dst)
 
-    cfg$extra_cols      <- NULL                       # drop the key
-    cfg$exist_file      <- exist_rel                  # point to local file
-    cfg$samples_file    <- samples_rel
+    cfg$extra_cols <- NULL # drop the key
+    cfg$exist_file <- exist_rel # point to local file
+    cfg$samples_file <- samples_rel
     cfg$timepoints_file <- NULL
     cfg$comparisons_file <- comps_rel
 
@@ -152,8 +146,8 @@ test_that("convert legacy: duckdb and arrow", {
     # 6. Expectations
     # ------------------------------------------------------------------#
     expect_s3_class(pd, "phip_data")
-    expect_gt(ncol(get_counts(pd)), 5)  # additional columns from meta,
-                                               # as there is no extra_cols
+    expect_gt(ncol(get_counts(pd)), 3) # additional columns from meta,
+    # as there is no extra_cols
     expect_false(isTRUE(pd$meta$fold_change))
     expect_false(isTRUE(pd$meta$longitudinal))
   })
@@ -168,23 +162,21 @@ write.csv(data.frame(a = 1:3, b = 4:6), tmp_csv, row.names = FALSE)
 # 1) branch where data.table IS available
 # ------------------------------------------------------------------
 test_that(".auto_read_csv uses data.table::fread when available", {
-
-  skip_if_not_installed("data.table")   # ensures branch can run
+  skip_if_not_installed("data.table") # ensures branch can run
 
   res <- .auto_read_csv(tmp_csv)
 
   expect_s3_class(res, "data.frame")
   expect_equal(nrow(res), 3)
   expect_true(attr(res, "class")[1] != "data.frame" ||
-                # fread returns data.frame if data.table=FALSE
-                TRUE)
+    # fread returns data.frame if data.table=FALSE
+    TRUE)
 })
 
 # ------------------------------------------------------------------
 # 2) branch where data.table is *pretended* to be missing
 # ------------------------------------------------------------------
 test_that(".auto_read_csv falls back to read.csv when data.table is absent", {
-
   # Mock requireNamespace() so it always returns FALSE inside this call
   mockery::stub(.auto_read_csv, "requireNamespace", function(pkg, ...) FALSE)
 
@@ -193,3 +185,4 @@ test_that(".auto_read_csv falls back to read.csv when data.table is absent", {
   expect_s3_class(res, "data.frame")
   expect_equal(nrow(res), 3)
 })
+

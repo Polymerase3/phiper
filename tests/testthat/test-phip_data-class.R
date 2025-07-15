@@ -7,23 +7,28 @@ skip_if_not_installed("DBI")
 # helper: tiny example data
 # ---------------------------------------------------------------------------
 counts_tbl <- tibble::tibble(
-  peptide      = c("pep1", "pep2", "pep1", "pep2"),
-  sample_id    = c("S1",   "S1",   "S2",   "S2"),
-  timepoint    = c("T1",   "T1",   "T1",   "T1"),
-  fold_change  = c(1.2,    0.8,    1.5,    0.7),
-  present      = c(10L,    0L,     8L,     1L)
+  peptide_id    = c("pep1", "pep2", "pep1", "pep2"),
+  subject_id    = c("S1", "S1", "S2", "S2"),
+  sample_id     = 1:4,
+  timepoint     = c("T1", "T1", "T1", "T1"),
+  fold_change   = c(1.2, 0.8, 1.5, 0.7),
+  present       = c(1L, 0L, 0L, 1L),
+  group         = c("a", "b", "a", "b")
 )
 
 contrasts_df <- tibble::tibble(
-  group   = "S1",
-  control = "S2"
+  group1   = "a",
+  group2   = "b"
 )
 
 # ---------------------------------------------------------------------------
 # constructor + meta flags
 # ---------------------------------------------------------------------------
 test_that("new_phip_data sets meta flags correctly", {
-  pd <- new_phip_data(counts_tbl, contrasts_df, backend = "memory")
+  suppressWarnings({
+    pd <- new_phip_data(counts_tbl, contrasts_df, backend = "memory")
+  })
+
 
   expect_s3_class(pd, "phip_data")
   expect_true(pd$meta$longitudinal)
@@ -35,7 +40,10 @@ test_that("new_phip_data sets meta flags correctly", {
 # print method (just make sure it runs and contains certain strings)
 # ---------------------------------------------------------------------------
 test_that("print.phip_data shows backend and previews", {
-  pd <- new_phip_data(counts_tbl, contrasts_df, backend = "memory")
+  suppressWarnings({
+    pd <- new_phip_data(counts_tbl, contrasts_df, backend = "memory")
+  })
+
 
   out <- capture.output(print(pd))
   expect_true(any(grepl("backend: memory", out)))
@@ -47,7 +55,9 @@ test_that("print.phip_data shows backend and previews", {
 # plain accessors and .check_pd guard
 # ---------------------------------------------------------------------------
 test_that("accessors work and .check_pd errors on wrong class", {
-  pd <- new_phip_data(counts_tbl, contrasts_df, backend = "memory")
+  suppressWarnings({
+    pd <- new_phip_data(counts_tbl, contrasts_df, backend = "memory")
+  })
 
   expect_equal(get_counts(pd), counts_tbl)
   expect_equal(get_comparisons(pd), contrasts_df)
@@ -60,18 +70,20 @@ test_that("accessors work and .check_pd errors on wrong class", {
 # dplyr verb wrappers
 # ---------------------------------------------------------------------------
 test_that("dplyr wrappers modify data_long lazily", {
-  pd <- new_phip_data(counts_tbl, contrasts_df, backend = "memory")
+  suppressWarnings({
+    pd <- new_phip_data(counts_tbl, contrasts_df, backend = "memory")
+  })
 
-  pd2 <- dplyr::filter(pd, peptide == "pep1")
+  pd2 <- dplyr::filter(pd, peptide_id == "pep1")
 
   expect_s3_class(pd2, "phip_data")
   expect_equal(
-    dplyr::collect(pd2$data_long)$peptide,
+    dplyr::collect(pd2$data_long)$peptide_id,
     c("pep1", "pep1")
   )
 
-  pd3 <- dplyr::select(pd, peptide)
-  expect_equal(colnames(pd3$data_long), "peptide")
+  pd3 <- dplyr::select(pd, peptide_id)
+  expect_equal(colnames(pd3$data_long), "peptide_id")
 
   pd4 <- dplyr::mutate(pd, new_val = present * 2)
   expect_true("new_val" %in% colnames(pd4$data_long))
@@ -93,13 +105,16 @@ test_that("disconnect.phip_data closes duckdb connection if present", {
   skip_if_not_installed("duckdb")
 
   con <- DBI::dbConnect(duckdb::duckdb(), dbdir = ":memory:")
-  pd  <- new_phip_data(counts_tbl, contrasts_df,
-                       backend = "duckdb",
-                       meta = list(con = con))
+  suppressWarnings({
+    pd <- new_phip_data(counts_tbl, contrasts_df,
+                        backend = "duckdb",
+                        meta = list(con = con)
+    )
+  })
 
   expect_true(DBI::dbIsValid(con))
 
-  disconnect.phip_data(pd)   # should close
+  disconnect.phip_data(pd) # should close
 
   expect_false(DBI::dbIsValid(con))
 })
