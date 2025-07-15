@@ -168,3 +168,7 @@ add_quotes <- function(x, quotes = 2L) {
 
   x
 }
+
+`%nin%` <- function(x, inx) {
+  !(x %in% inx)
+}

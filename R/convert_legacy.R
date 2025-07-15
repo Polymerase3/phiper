@@ -60,9 +60,11 @@ phip_convert_legacy <- function(
     fs::path_dir(fs::path_abs(config_yaml)) # dir that holds config.yaml
   } else {
     ## check if exist_file and samples file provided (bare minimum)
-    .chk_cond(is.null(exist_file) || is.null(samples_file),
-              "The `exist_file` and `samples_file` arguments can not be null,
-              when no `config_yaml` provided.")
+    .chk_cond(
+      is.null(exist_file) || is.null(samples_file),
+      "The `exist_file` and `samples_file` arguments can not be null,
+              when no `config_yaml` provided."
+    )
 
     fs::path_dir(fs::path_abs(exist_file)) # dir that holds exist_file
   }
@@ -78,6 +80,7 @@ phip_convert_legacy <- function(
       c("yml", "yaml")
     )
 
+    # check dependencies
     rlang::check_installed("yaml")
 
     # read yaml
@@ -88,7 +91,6 @@ phip_convert_legacy <- function(
   }
 
   # helper to fetch the paths and abort when path not found
-
   fetch <- function(arg,
                     key,
                     validator = NULL,
@@ -98,6 +100,8 @@ phip_convert_legacy <- function(
     val <- cfg[[key]] %||% arg # YAML first, then explicit arg
 
     # abort if val is NULL (required arg not found)
+    # actually a fallback, works only for comparisons file, the other two
+    # (samples and exist) are checked earlier
     if (is.null(val) && !optional) {
       chk::abort_chk(sprintf("Missing required argument `%s`: not defined in
                                the YAML config or as an explicit path. Aborting
@@ -121,7 +125,7 @@ phip_convert_legacy <- function(
 
   # ---------------------------------------------------------------------------
   # load the arguments from .yaml or use direct path definitions and
-  # validate required inputs
+  # quick validate required inputs
   # ---------------------------------------------------------------------------
   exist_file <- fetch(exist_file, "exist_file", .chk_path, extension = "csv")
   samples_file <- fetch(samples_file, "samples_file",
@@ -133,10 +137,27 @@ phip_convert_legacy <- function(
   )
   extra_cols <- fetch(extra_cols, "extra_cols", optional = TRUE)
   comparisons_file <- fetch(comparisons_file, "comparisons_file", .chk_path,
-    extension = "csv"
+    extension = "csv", optional = TRUE
   )
   output_dir <- fetch(output_dir, "output_dir", optional = TRUE)
+
   backend <- fetch(backend, "backend", chk::chk_string)
+
+  # validate the tables itself --> the helper functions are defined at the
+  # bottom of the script
+
+  # the legacy workflow has an important limitation: the comparisons specified
+  # in the comparisons_file are suitable only for the longitudinal data -->
+  # this means that both timepoints_file and comparisons_file have to be
+  # provided at the same time --> log error if only one provided
+
+  ## ==> this is actually wrong, solution: see long comment around line 180 with
+  ## XXX at the beginning
+  # .chk_cond(
+  #   xor(!is.null(timepoints_file), !is.null(comparisons_file)),
+  #   "You must provide both `timepoints_file` and `comparisons_file`
+  #   together for the legacy workflow."
+  # )
 
   # Warn about deprecation
   .chk_cond(!is.null(output_dir),
@@ -148,13 +169,59 @@ phip_convert_legacy <- function(
   #  L E G A C Y   B R I D G E
   ##############################################################################
   ## ---- 1.  samples & contrasts (both small) ---------------------------------
-  samples <- .auto_read_csv(samples_file)
-  comparisons <- .auto_read_csv(comparisons_file)
+  samples     <- .auto_read_csv(samples_file)
+
+  if(!is.null(comparisons_file)) {
+    # XXX
+    # soooo, if i get it right, the groups in Carlos's script have to be defined
+    # in the comparisons file and in the metadata as columns; so my idea to
+    # solve this and allow comparisons for both long and cross-sectional data is
+    # to first pull all unique values from the group1 and group2 cols in the
+    # comparisons file, then select respective column from the metadata table.
+    # They are dummy-coded so we can merge them into one single column: group
+
+    comparisons <- .auto_read_csv(comparisons_file)
+
+    ## unique levels
+    unique_comp_levels <- unique(c(comparisons$group1, comparisons$group2))
+
+    ## select the columns from samples, which match the unique_comp_levels
+    extra_cols <- c(extra_cols, unique_comp_levels)
+
+    ## default name
+    comparisons$variable <- "group"
+
+  } else {
+    comparisons <- NULL
+  }
 
   # rename and keep only requested extra cols (if present)
   names(samples)[1] <- "sample_id"
   keep_cols <- c("sample_id", intersect(extra_cols, names(samples)))
   samples <- samples[keep_cols]
+
+  # handle the grouping variables
+  if(!is.null(comparisons_file)) {
+    # run the check ------------------------------------------------------------
+    .chk_cond(
+      any(rowSums(samples[, unique_comp_levels]) != 1),
+      sprintf(
+        "The grouping columns in the samples_file have to be mutually
+        exclusive; %d row%s violate this (%s).",
+        sum(rowSums(df[dmy_cols]) != 1),
+        ifelse(sum(rowSums(df[dmy_cols]) != 1) == 1, "", "s"),
+        paste(which(rowSums(df[dmy_cols]) != 1), collapse = ", ")
+      ),
+      error = TRUE
+    )
+
+    ## recode the dummy vars
+    which_max <- max.col(samples[, unique_comp_levels], ties.method = "first")
+    samples$group <- names(samples[, unique_comp_levels])[which_max]
+
+    ## delete the dummy cols
+    samples <- samples[ , !(names(samples) %in% unique_comp_levels)]
+  }
 
   ## ---- 2.  counts  ----------------------------------------------------------
   # The steps needed to curate the old-style data into the new, long format are:
@@ -172,6 +239,7 @@ phip_convert_legacy <- function(
   if (backend == "memory") {
     # Step 1.) =================================================================
     counts <- .auto_read_csv(exist_file)
+    .validate_exist(counts)
 
     # the result of this is a full crossover of peptide x sample_ID --> it
     # contains all possible combinations of the both variables and additionally
@@ -187,7 +255,7 @@ phip_convert_legacy <- function(
     )
 
     counts <- counts[, -ncol(counts)] # remove the last col
-    names(counts)[names(counts) == "V1"] <- "peptide" # rename
+    names(counts)[1] <- "peptide_id" # rename
     row.names(counts) <- NULL # tidy row-names
 
     # Step 2.) =================================================================
@@ -217,11 +285,45 @@ phip_convert_legacy <- function(
       # filter the NAs out
       timepoints <- timepoints[!is.na(timepoints$sample_id), ]
 
-      # now merge the timepoints with the counts table
-      counts <- merge(timepoints,
-        counts,
-        by = "sample_id"
+      # ---------- 1. reference sets -------------------------------------------
+      valid_tp  <- unique(timepoints$timepoint) # all time-points
+      has_group <- "group" %in% names(counts) # did we already make a group col?
+      valid_grp <- if (has_group) unique(counts$group) else character()
+
+      valid_vals <- union(valid_tp, valid_grp)
+      # what comparisons may legally refer to?
+
+      # ---------- 2. sanity-check comparisons ---------------------------------
+      bad <- setdiff(
+        unique(c(comparisons$group1, comparisons$group2)),
+        valid_vals
       )
+
+      .chk_cond(
+        length(bad) > 0L,
+        sprintf(
+          "Found comparison(s) referring to unknown group / timepoint: %s.\n
+          Valid values are: %s",
+          paste(bad, collapse = ", "),
+          paste(valid_vals, collapse = ", ")
+        )
+      )
+
+      # ---------- 3. merge or drop redundant column ---------------------------
+      # add the time-point info
+      counts <- merge(timepoints,
+                      counts,
+                      by = "sample_id")
+
+      # if 'group' duplicates 'timepoint' row-by-row, drop it to keep the table
+      # tidy
+      if ("group" %in% names(counts) &&
+          identical(counts$group, counts$timepoint)) {
+        counts$group <- NULL
+        if(!is.null(comparisons_file)) {
+          comparisons$variable <- "timepoint"
+        }
+      }
     } else {
       # rename the sample_id to subject_id if data not longitudinal
       colnames(counts)[1] <- "subject_id"
@@ -241,10 +343,11 @@ phip_convert_legacy <- function(
     # using the helper (a lot of code is repeated in duckdb and arrow, so i
     # decided to export it into a separate internale helper to reuse it)
     con <- .build_counts_duckdb(
-      exist_file, samples_file,
-      timepoints_file, extra_cols
+      exist_file, samples,
+      timepoints_file, comparisons, extra_cols
     )
-    counts_tbl <- dplyr::tbl(con, "counts_final")
+    counts_tbl  <- dplyr::tbl(con, "counts_final")
+    comparisons <- dplyr::tbl(con, "comparisons") %>% collect()
 
     # returning the phip_data object
     new_phip_data(
@@ -263,8 +366,8 @@ phip_convert_legacy <- function(
 
     # same as up - use helper to create the data
     con <- .build_counts_duckdb(
-      exist_file, samples_file,
-      timepoints_file, extra_cols
+      exist_file, samples,
+      timepoints_file, comparisons, extra_cols
     )
 
     # arrow-specific code, create tempdir to store the data
@@ -290,6 +393,7 @@ phip_convert_legacy <- function(
     )
 
     counts_ds <- arrow::open_dataset(arrow_dir)
+    comparisons <- dplyr::tbl(con, "comparisons") %>% collect()
 
     # returning the phip_data object
     new_phip_data(
@@ -324,7 +428,7 @@ phip_convert_legacy <- function(
       check.names = FALSE, showProgress = FALSE, ...
     )
   } else {
-   utils:: read.csv(path,
+    utils::read.csv(path,
       header = TRUE, check.names = FALSE, sep = sep,
       stringsAsFactors = FALSE, ...
     )
@@ -341,11 +445,13 @@ phip_convert_legacy <- function(
 #  * Caller is responsible for DBI::dbDisconnect().
 # ---------------------------------------------------------------------------
 .build_counts_duckdb <- function(exist_file,
-                                 samples_file,
+                                 samples,
                                  timepoints_file = NULL,
+                                 comparisons = NULL,
                                  extra_cols = character()) {
   rlang::check_installed(c("duckdb", "DBI", "dbplyr"),
-                         reason = "duckdb backend")
+    reason = "duckdb backend"
+  )
   con <- DBI::dbConnect(duckdb::duckdb(), dbdir = ":memory:")
 
   q <- function(x) DBI::dbQuoteString(con, x) # safe path quoting
@@ -359,6 +465,10 @@ phip_convert_legacy <- function(
       q(exist_file)
     )
   )
+
+  # ---- validate the original wide table ----
+  counts_wide_tbl <- dplyr::tbl(con, "counts_wide")
+  .validate_exist(counts_wide_tbl)
 
   first_col_counts <- DBI::dbGetQuery(
     con,
@@ -385,7 +495,7 @@ phip_convert_legacy <- function(
     con,
     sprintf(
       "CREATE TEMP TABLE counts AS
-         SELECT %s AS peptide, sample_id, present
+         SELECT %s AS peptide_id, sample_id, present
            FROM counts_wide
            UNPIVOT (present FOR sample_id IN (%s));",
       DBI::dbQuoteIdentifier(con, first_col_counts),
@@ -394,14 +504,7 @@ phip_convert_legacy <- function(
   )
 
   # ---- 2. samples metadata  ----
-  DBI::dbExecute(
-    con,
-    sprintf(
-      "CREATE TEMP TABLE samples_raw AS
-         SELECT * FROM read_csv_auto(%s, HEADER=TRUE);",
-      q(samples_file)
-    )
-  )
+  duckdb::duckdb_register(con, "samples_raw", samples)
 
   first_col_samples <- DBI::dbGetQuery(
     con,
@@ -424,24 +527,6 @@ phip_convert_legacy <- function(
     )
   )
 
-  if (length(extra_cols) > 0) {
-    keep_sql <- paste(DBI::dbQuoteIdentifier(
-      con,
-      c("sample_id", extra_cols)
-    ), collapse = ", ")
-    DBI::dbExecute(
-      con,
-      sprintf(
-        "CREATE TEMP TABLE samples3 AS
-           SELECT %s FROM samples2;",
-        keep_sql
-      )
-    )
-    samples_tbl <- "samples3"
-  } else {
-    samples_tbl <- "samples2"
-  }
-
   DBI::dbExecute(
     con,
     sprintf(
@@ -449,7 +534,7 @@ phip_convert_legacy <- function(
          SELECT c.*, s.* EXCLUDE sample_id
            FROM counts c
            LEFT JOIN %s s USING (sample_id);",
-      samples_tbl
+      "samples2"
     )
   )
 
@@ -484,13 +569,60 @@ phip_convert_legacy <- function(
       )
     )
 
+    ## sanity check on comparisons
+    # make a dplyr tbl so we can use distinct()/pull()
+    timepoints_tbl <- dplyr::tbl(con, "timepoints")
+
+    ##     a) unique time-points
+    valid_tp <- timepoints_tbl %>%
+      dplyr::distinct(timepoint) %>%
+      dplyr::pull(timepoint)
+
+    ##     b) unique groups (only if the column exists in counts2)
+    has_group <- DBI::dbGetQuery(
+      con,
+      "SELECT EXISTS (
+         SELECT 1
+           FROM duckdb_columns()
+          WHERE table_name = 'counts2' AND column_name = 'group'
+       ) AS has_group;"
+    )$has_group
+
+    valid_grp <- if (has_group) {
+      dplyr::tbl(con, "counts2") %>%
+        dplyr::distinct(group) %>%
+        dplyr::pull()
+    } else character()
+
+    valid_vals <- union(valid_tp, valid_grp)
+
+    ## -----------------------------------------------------------------------
+    ## 5.  merge time-points into counts and keep tidy (= R’s merge())
+    ## -----------------------------------------------------------------------
     DBI::dbExecute(
       con,
-      "CREATE TEMP TABLE counts_final AS
-         SELECT tp.*, c2.* EXCLUDE sample_id
-           FROM timepoints tp
-           JOIN counts2    c2 USING (sample_id);"
+      "CREATE OR REPLACE TEMP TABLE counts_final AS
+       SELECT tp.*, c2.* EXCLUDE sample_id
+         FROM timepoints tp
+         JOIN counts2   c2 USING (sample_id);"
     )
+
+    ## -----------------------------------------------------------------------
+    ## 6.  drop `group` when it is *exactly* the same as `timepoint`
+    ## -----------------------------------------------------------------------
+    if (has_group) {
+      identical_cols <- DBI::dbGetQuery(
+        con,
+        "SELECT COUNT(*) AS n_diff
+         FROM counts_final
+        WHERE \"group\" IS DISTINCT FROM timepoint;"
+      )$n_diff == 0L
+
+      if (identical_cols) {
+        DBI::dbExecute(con, "ALTER TABLE counts_final DROP COLUMN \"group\";")
+        comparisons$variable <- "timepoint"
+      }
+    }
   } else {
     DBI::dbExecute(
       con,
@@ -501,6 +633,82 @@ phip_convert_legacy <- function(
     )
   }
 
+  duckdb::duckdb_register(con, "comparisons", comparisons)
+
   # ---- return the live connection ------------------------------------------
   invisible(con)
+}
+
+## ---- valdiate  exist_file ---------------------------------------------------
+### actually the only two requirements for the exist_file are, that the first
+### column consists ONLY of unique IDs, and the values in the rest of the
+### columns are only 0's and 1's
+#' @keywords internal
+.validate_exist <- function(table) {
+  cols       <- colnames(table)
+  id_col     <- cols[1]
+  other_cols <- cols[-1]
+  id_sym     <- rlang::sym(id_col)
+
+  # quick validate if at least two rows in the data
+  n_rows <- table %>%
+    dplyr::summarise(n = dplyr::n()) %>%
+    dplyr::pull(n)
+
+  .chk_cond(n_rows < 1,
+            "The `exist_file` has no rows! No peptides are specified.")
+
+  # quick validate if at least two cols in the data
+  .chk_cond(length(cols) < 2,
+            "The `exist_file` has only one column! No subjects are specified.")
+  # 1) missing IDs
+  na_ids <- table %>%
+    dplyr::summarise(missing = sum(is.na(!!id_sym))) %>%
+    dplyr::pull(missing)
+  .chk_cond(
+    na_ids > 0L,
+    sprintf("Column '%s' must not contain NA values.", id_col)
+  )
+
+  # 2) duplicate IDs
+  dup_cnt <- table %>%
+    dplyr::count(!!id_sym, name = "n") %>%
+    dplyr::filter(n > 1L) %>%
+    dplyr::summarise(total = sum(n, na.rm = TRUE)) %>%
+    dplyr::pull(total)
+
+  if(is.na(dup_cnt)) dup_cnt <- 0
+
+  .chk_cond(
+    dup_cnt > 0L,
+    sprintf("Found %d duplicate IDs in column '%s'.", dup_cnt, id_col)
+  )
+
+  # 3) rest only 0/1 or NA
+  if (length(other_cols) > 0) {
+    bad_row <- table %>%
+      dplyr::filter(
+        dplyr::if_any(
+          dplyr::all_of(other_cols),
+          ~ !(.x %in% c(0, 1) | is.na(.x))
+        )
+      ) %>%
+      dplyr::collect()
+    if (nrow(bad_row) > 0) {
+      bad_info <- purrr::imap_chr(
+        bad_row[other_cols],
+        ~ if (!is.na(.x) && !(.x %in% c(0,1))) {
+          sprintf("'%s'=%s", .y, .x)
+        } else {
+          NULL
+        }
+      )
+      .chk_cond(
+        TRUE,
+        sprintf("Invalid value in exist table: %s", na.omit(bad_info)[1])
+      )
+    }
+  }
+
+  invisible(TRUE)
 }
