@@ -8,6 +8,7 @@ new_phip_data(
   data_long,
   comparisons,
   backend = c("memory", "duckdb", "arrow"),
+  peptide_library = NULL,
   meta = list()
 )
 }
