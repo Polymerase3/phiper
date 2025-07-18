@@ -1,19 +1,21 @@
+# .github/workflows/test-coverage.yaml
 # Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
-# Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
-on:
-  paths:
-        - "R/**"              # any R source file
-        - "tests/**"          # testthat files
-        - "DESCRIPTION"       # bumping version, deps, etc.
-        - "NAMESPACE"         # roxygenise output
-    pull_request:
-      paths:
-        - "R/**"
-        - "tests/**"
-        - "DESCRIPTION"
-        - "NAMESPACE"
 
-name: test-coverage.yaml
+name: test-coverage
+
+on:
+  push:
+    paths:
+      - "R/**"              # any R source file
+      - "tests/**"          # testthat files
+      - "DESCRIPTION"       # bumping version, deps, etc.
+      - "NAMESPACE"         # roxygenise output
+  pull_request:
+    paths:
+      - "R/**"
+      - "tests/**"
+      - "DESCRIPTION"
+      - "NAMESPACE"
 
 permissions: read-all
 
@@ -33,14 +35,16 @@ jobs:
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::covr, any::xml2, any::duckdb, any::DBI, any::arrow, any::data.table
-          needs: coverage
 
       - name: Test coverage
         run: |
           cov <- covr::package_coverage(
             quiet = FALSE,
             clean = FALSE,
-            install_path = file.path(normalizePath(Sys.getenv("RUNNER_TEMP"), winslash = "/"), "package")
+            install_path = file.path(
+              normalizePath(Sys.getenv("RUNNER_TEMP"), winslash = "/"),
+              "package"
+            )
           )
           print(cov)
           covr::to_cobertura(cov)
@@ -48,7 +52,6 @@ jobs:
 
       - uses: codecov/codecov-action@v5
         with:
-          # Fail if error if not on PR, or if on PR and token is given
           fail_ci_if_error: ${{ github.event_name != 'pull_request' || secrets.CODECOV_TOKEN }}
           files: ./cobertura.xml
           plugins: noop
@@ -58,8 +61,7 @@ jobs:
       - name: Show testthat output
         if: always()
         run: |
-          ## --------------------------------------------------------------------
-          find '${{ runner.temp }}/package' -name 'testthat.Rout*' -exec cat '{}' \; || true
+          find "${{ runner.temp }}/package" -name 'testthat.Rout*' -exec cat '{}' \; || true
         shell: bash
 
       - name: Upload test results
