@@ -564,7 +564,7 @@ validate_phip_data <- function(x,
     prop_zero <- tbl |>
       dplyr::summarise(
         p = sum(dplyr::if_else(.data$counts_control == 0 &
-                                 .data$counts_hit == 0, 1, 0)) /
+          .data$counts_hit == 0, 1, 0)) /
           dplyr::n()
       ) |>
       dplyr::pull(.data$p)
