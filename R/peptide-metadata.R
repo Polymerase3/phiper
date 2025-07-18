@@ -17,12 +17,6 @@ get_peptide_meta <- function(force_refresh = FALSE) {
   duckdb_file <- file.path(cache_dir, "phip_cache.duckdb")
   con <- DBI::dbConnect(duckdb::duckdb(), dbdir = duckdb_file)
 
-  # ## needed to suppress the messages on this as the defer function always
-  # ## prints out a message to the console
-  # suppressMessages(
-  #   withr::defer(DBI::dbDisconnect(con, shutdown = TRUE), parent.frame())
-  # )
-
   # 2. fast path: already cached? --> return
   ## the user can also force the evaluation by force_refresh arg
   if (!force_refresh && DBI::dbExistsTable(con, "peptide_meta")) {
@@ -34,12 +28,13 @@ get_peptide_meta <- function(force_refresh = FALSE) {
   # 3. download raw RDS from the github repo
   url <- paste0(
     "https://raw.githubusercontent.com/Polymerase3/phiper/",
-    "master/library-metadata/all_libraries_with_important_info.rds"
+    "master/library-metadata/",
+    "combined_libraries_with_lineages_important_info_nonAAseq.rds"
   )
   tmp <- tempfile(fileext = ".rds")
-  sha <- "cbfe17929c953a730375075335a0a58643650b8dcd62ebb00b562b1a9a36285c"
+  sha <- "f3282d90f81f2821a395285c7ef3dfb6fa114aa7043ee777f83c5958cf8ba3b1"
 
-  message("Downloading peptide metadata…")
+  message("Downloading peptide metadata...")
 
   ## safe download (fallbacks if file changed, or if download does not succeed)
   .safe_download(url, tmp, sha)
@@ -74,7 +69,7 @@ get_peptide_meta <- function(force_refresh = FALSE) {
       return(as.logical(col))
     }
 
-    # 2) character "TRUE"/"FALSE" → logical
+    # 2) character "TRUE"/"FALSE" --> logical
     if (is.character(col) &&
       all(tolower(col[!is.na(col)]) %in% c("true", "false", NA))) {
       return(as.logical(col))
@@ -117,7 +112,7 @@ get_peptide_meta <- function(force_refresh = FALSE) {
   if (DBI::dbExistsTable(con, "peptide_meta")) {
     DBI::dbRemoveTable(con, "peptide_meta")
   }
-  message("Importing sanitized metadata into DuckDB cache…")
+  message("Importing sanitized metadata into DuckDB cache...")
   DBI::dbWriteTable(con, "peptide_meta", meta_df, overwrite = TRUE)
 
   # 8. return lazy handle --> the whole dataframe in the memory takes ~ 1GB
@@ -170,8 +165,10 @@ get_peptide_meta <- function(force_refresh = FALSE) {
     if (is.na(sha_actual) ||
       !identical(tolower(sha_actual), tolower(sha_expected))) {
       cli::cli_warn(
-        c("!" = paste0("Checksum mismatch: expected {.val {sha_expected}},",
-                       "got {.val {sha_actual %||% 'NA'}}"))
+        c("!" = paste0(
+          "Checksum mismatch: expected {.val {sha_expected}},",
+          "got {.val {sha_actual %||% 'NA'}}"
+        ))
       )
     }
   }

@@ -1,37 +1,88 @@
-#' @title Convert the Carlos's legacy 3-file PhIP-seq input into a new phiper
-#' phip_dataset S3 object
+#' @title Convert legacy Carlos-style input to a modern **phip_data** object
 #'
-#' @description This version of `phip_convert_legacy()` is backward‑compatible
-#'   with the old interface but can also take a single **YAML** configuration
-#'   file instead of a long list of arguments.  Explicit function arguments
-#'   always win over values supplied through the YAML file.
+#' @description
+#' `phip_convert_legacy()` ingests the original three-file PhIP-Seq input
+#' (binary *exist* matrix, *samples* metadata, optional *timepoints* map) plus
+#' an optional *comparisons* file.
+#' Paths can be supplied directly or via a single YAML config; explicit
+#' arguments always override the YAML.  The function normalises the chosen
+#' storage `backend`, validates every file, and returns a ready-to-use
+#' `phip_data` object.
 #'
-#' @param exist_csv       Path to the existing‑peptides CSV created by the old
-#'                        pipeline.
-#' @param samples_csv     Path to the sample‑annotation CSV.
-#' @param timepoint_csv   Path to the sample‑timepoint CSV.
-#' @param extra_cols      A character vector of additional column names to keep
-#'                        when converting.
-#' @param comparisons_csv Path to the comparisons CSV.
-#' @param output_dir      (Deprecated) directory in which to place converted
-#'                        output files. Use the working directory instead.
-#' @param backend         One of "arrow", "duckdb", or "memory".
-#' @param config_yaml     **Optional.** Path to a YAML file that specifies any
-#'                        or all of the above parameters (see example below).
+#' @details
+#' **Validation rules**
+#' *1 – exist CSV*
+#' * First column **must** be `peptide_id` and unique.
+#' * Remaining columns are `sample_id`s found in the samples file.
+#' * Values allowed: `0`, `1`, or `NA` – anything else aborts.
 #'
-#' ```yaml
-#' # Example config.yaml
-#' # it follows the naming convention of previous Carlos's workflow
-#' exist_file: data/existing.csv
-#' samples_file: meta/samples.csv
-#' timepoints_file: meta/timepoints.csv
-#' extra_cols: [sex, age]
-#' comparisons_file: meta/comparisons.csv
-#' output_dir: out          # optional / deprecated
-#' ```
+#' *2 – samples CSV*
+#' * First column **must** be `sample_id`, unique.
+#' * Extra columns kept only if listed in `extra_cols`.
+#' * If dummy group columns are referenced by `comparisons_file`, each row’s
+#'   dummy sum must equal **1**.
 #'
-#' @return fff
+#' *3 – timepoints CSV* (optional, longitudinal)
+#' * First column **must** be `ind_id` (subject).
+#' * Other columns are time-point names; cells are `sample_id` or `NA`.
+#' * Column names must match `timepoint` values in the data; every `sample_id`
+#'   appears at most once.
+#'
+#' *4 – comparisons CSV* (optional)
+#' * Columns required: `comparison`, `group1`, `group2`, `variable`.
+#' * Labels in `group1`/`group2` must exist in the derived `group` column or the
+#'   `timepoint` column (for longitudinal data).
+#'
+#' Files failing any rule trigger an informative `.chk_cond()` error.
+#'
+#' @param exist_file       Path to the **exist** CSV (peptide × sample binary
+#'   matrix). *Required unless given in `config_yaml`.*
+#' @param samples_file     Path to the **samples** CSV (sample metadata).
+#'   *Required unless given in `config_yaml`.*
+#' @param timepoints_file  Path to the **timepoints** CSV (subject <-> sample
+#'   mapping). Optional for cross-sectional data.
+#' @param extra_cols       Character vector of extra metadata columns to retain.
+#' @param comparisons_file Path to a **comparisons** CSV. Optional.
+#' @param output_dir       *Deprecated.* Ignored with a warning.
+#' @param backend          Storage backend: `"arrow"`, `"duckdb"`, or
+#'   `"memory"`. Defaults to `"duckdb"`.
+#' @param config_yaml      Optional YAML file containing any of the
+#'   above parameters (see example).
+#'
+#' @return A validated `phip_data` object whose `data_long` slot is backed by
+#'   a tibble (memory), a DuckDB connection, or an Arrow dataset, depending on
+#'   `backend`.
+#'
+#' @examples
+#' \dontrun{
+#' ## 1. Direct-path usage
+#' pd <- phip_convert_legacy(
+#'   exist_file = "legacy/exist.csv",
+#'   samples_file = "legacy/samples.csv",
+#'   timepoints_file = "legacy/timepoints.csv",
+#'   comparisons_file = "legacy/comparisons.csv",
+#'   backend = "duckdb"
+#' )
+#'
+#' ## 2. YAML-driven usage (explicit args override YAML)
+#' # --- config/legacy_config.yaml ---
+#' # exist_file:       data/exist.csv
+#' # samples_file:     meta/samples.csv
+#' # timepoints_file:  meta/timepoints.csv
+#' # comparisons_file: meta/comparisons.csv
+#' # extra_cols: [sex, age]
+#' # backend: duckdb
+#' # -------------------------------
+#'
+#' pd <- phip_convert_legacy(
+#'   config_yaml = "config/legacy_config.yaml",
+#'   backend     = "arrow" # overrides YAML backend
+#' )
+#' }
+#'
 #' @export
+
+
 
 phip_convert_legacy <- function(
     exist_file = NULL,
@@ -42,6 +93,8 @@ phip_convert_legacy <- function(
     output_dir = NULL, # hard deprecation
     backend = NULL,
     config_yaml = NULL) {
+  #' @importFrom rlang .data
+
   # ------------------------------------------------------------------
   # db-backend: default to "duckdb" if user supplies nothing
   # ------------------------------------------------------------------
@@ -153,11 +206,6 @@ phip_convert_legacy <- function(
 
   ## ==> this is actually wrong, solution: see long comment around line 180 with
   ## XXX at the beginning
-  # .chk_cond(
-  #   xor(!is.null(timepoints_file), !is.null(comparisons_file)),
-  #   "You must provide both `timepoints_file` and `comparisons_file`
-  #   together for the legacy workflow."
-  # )
 
   # Warn about deprecation
   .chk_cond(!is.null(output_dir),
@@ -169,9 +217,9 @@ phip_convert_legacy <- function(
   #  L E G A C Y   B R I D G E
   ##############################################################################
   ## ---- 1.  samples & contrasts (both small) ---------------------------------
-  samples     <- .auto_read_csv(samples_file)
+  samples <- .auto_read_csv(samples_file)
 
-  if(!is.null(comparisons_file)) {
+  if (!is.null(comparisons_file)) {
     # XXX
     # soooo, if i get it right, the groups in Carlos's script have to be defined
     # in the comparisons file and in the metadata as columns; so my idea to
@@ -190,7 +238,6 @@ phip_convert_legacy <- function(
 
     ## default name
     comparisons$variable <- "group"
-
   } else {
     comparisons <- NULL
   }
@@ -201,16 +248,18 @@ phip_convert_legacy <- function(
   samples <- samples[keep_cols]
 
   # handle the grouping variables
-  if(!is.null(comparisons_file)) {
+  if (!is.null(comparisons_file)) {
     # run the check ------------------------------------------------------------
     .chk_cond(
       any(rowSums(samples[, unique_comp_levels]) != 1),
       sprintf(
         "The grouping columns in the samples_file have to be mutually
         exclusive; %d row%s violate this (%s).",
-        sum(rowSums(df[dmy_cols]) != 1),
-        ifelse(sum(rowSums(df[dmy_cols]) != 1) == 1, "", "s"),
-        paste(which(rowSums(df[dmy_cols]) != 1), collapse = ", ")
+        sum(rowSums(samples[, unique_comp_levels]) != 1),
+        ifelse(sum(rowSums(samples[, unique_comp_levels]) != 1) == 1, "", "s"),
+        paste(which(rowSums(samples[, unique_comp_levels]) != 1),
+          collapse = ", "
+        )
       ),
       error = TRUE
     )
@@ -220,7 +269,7 @@ phip_convert_legacy <- function(
     samples$group <- names(samples[, unique_comp_levels])[which_max]
 
     ## delete the dummy cols
-    samples <- samples[ , !(names(samples) %in% unique_comp_levels)]
+    samples <- samples[, !(names(samples) %in% unique_comp_levels)]
   }
 
   ## ---- 2.  counts  ----------------------------------------------------------
@@ -231,10 +280,6 @@ phip_convert_legacy <- function(
   #      the mock files right now is a mixture of subject x timepoint - because
   #      of that we currently need the samples2ind table to encode th IDs)
   #   4.) Construct the phip_data S3 object with comparisons
-
-  # choose fast reader if it exists, else base
-  header <- .auto_read_csv(exist_file, nrows = 0)
-  samp_id <- names(header)[-1] # all sample columns
 
   if (backend == "memory") {
     # Step 1.) =================================================================
@@ -286,7 +331,7 @@ phip_convert_legacy <- function(
       timepoints <- timepoints[!is.na(timepoints$sample_id), ]
 
       # ---------- 1. reference sets -------------------------------------------
-      valid_tp  <- unique(timepoints$timepoint) # all time-points
+      valid_tp <- unique(timepoints$timepoint) # all time-points
       has_group <- "group" %in% names(counts) # did we already make a group col?
       valid_grp <- if (has_group) unique(counts$group) else character()
 
@@ -312,15 +357,16 @@ phip_convert_legacy <- function(
       # ---------- 3. merge or drop redundant column ---------------------------
       # add the time-point info
       counts <- merge(timepoints,
-                      counts,
-                      by = "sample_id")
+        counts,
+        by = "sample_id"
+      )
 
       # if 'group' duplicates 'timepoint' row-by-row, drop it to keep the table
       # tidy
       if ("group" %in% names(counts) &&
-          identical(counts$group, counts$timepoint)) {
+        identical(counts$group, counts$timepoint)) {
         counts$group <- NULL
-        if(!is.null(comparisons_file)) {
+        if (!is.null(comparisons_file)) {
           comparisons$variable <- "timepoint"
         }
       }
@@ -346,8 +392,8 @@ phip_convert_legacy <- function(
       exist_file, samples,
       timepoints_file, comparisons, extra_cols
     )
-    counts_tbl  <- dplyr::tbl(con, "counts_final")
-    comparisons <- dplyr::tbl(con, "comparisons") %>% collect()
+    counts_tbl <- dplyr::tbl(con, "counts_final")
+    comparisons <- dplyr::tbl(con, "comparisons") |> collect()
 
     # returning the phip_data object
     new_phip_data(
@@ -393,7 +439,7 @@ phip_convert_legacy <- function(
     )
 
     counts_ds <- arrow::open_dataset(arrow_dir)
-    comparisons <- dplyr::tbl(con, "comparisons") %>% collect()
+    comparisons <- dplyr::tbl(con, "comparisons") |> collect()
 
     # returning the phip_data object
     new_phip_data(
@@ -574,9 +620,12 @@ phip_convert_legacy <- function(
     timepoints_tbl <- dplyr::tbl(con, "timepoints")
 
     ##     a) unique time-points
-    valid_tp <- timepoints_tbl %>%
-      dplyr::distinct(timepoint) %>%
-      dplyr::pull(timepoint)
+    .data <- rlang::.data ## to silence the lintr note: no visible binding
+    ## for the variable timepoint or .data
+
+    valid_tp <- timepoints_tbl |>
+      dplyr::distinct(.data$timepoint) |>
+      dplyr::pull(.data$timepoint)
 
     ##     b) unique groups (only if the column exists in counts2)
     has_group <- DBI::dbGetQuery(
@@ -589,10 +638,12 @@ phip_convert_legacy <- function(
     )$has_group
 
     valid_grp <- if (has_group) {
-      dplyr::tbl(con, "counts2") %>%
-        dplyr::distinct(group) %>%
+      dplyr::tbl(con, "counts2") |>
+        dplyr::distinct(.data$group) |>
         dplyr::pull()
-    } else character()
+    } else {
+      character()
+    }
 
     valid_vals <- union(valid_tp, valid_grp)
 
@@ -645,25 +696,30 @@ phip_convert_legacy <- function(
 ### columns are only 0's and 1's
 #' @keywords internal
 .validate_exist <- function(table) {
-  cols       <- colnames(table)
-  id_col     <- cols[1]
+  cols <- colnames(table)
+  id_col <- cols[1]
   other_cols <- cols[-1]
-  id_sym     <- rlang::sym(id_col)
+  id_sym <- rlang::sym(id_col)
 
   # quick validate if at least two rows in the data
-  n_rows <- table %>%
-    dplyr::summarise(n = dplyr::n()) %>%
-    dplyr::pull(n)
+  .data <- rlang::.data ## to silence the linting and check errors
+  n_rows <- table |>
+    dplyr::summarise(n = dplyr::n()) |>
+    dplyr::pull(.data$n)
 
-  .chk_cond(n_rows < 1,
-            "The `exist_file` has no rows! No peptides are specified.")
+  .chk_cond(
+    n_rows < 1,
+    "The `exist_file` has no rows! No peptides are specified."
+  )
 
   # quick validate if at least two cols in the data
-  .chk_cond(length(cols) < 2,
-            "The `exist_file` has only one column! No subjects are specified.")
+  .chk_cond(
+    length(cols) < 2,
+    "The `exist_file` has only one column! No subjects are specified."
+  )
   # 1) missing IDs
-  na_ids <- table %>%
-    dplyr::summarise(missing = sum(is.na(!!id_sym))) %>%
+  na_ids <- table |>
+    dplyr::summarise(missing = sum(is.na(!!id_sym))) |>
     dplyr::pull(missing)
   .chk_cond(
     na_ids > 0L,
@@ -671,13 +727,13 @@ phip_convert_legacy <- function(
   )
 
   # 2) duplicate IDs
-  dup_cnt <- table %>%
-    dplyr::count(!!id_sym, name = "n") %>%
-    dplyr::filter(n > 1L) %>%
-    dplyr::summarise(total = sum(n, na.rm = TRUE)) %>%
-    dplyr::pull(total)
+  dup_cnt <- table |>
+    dplyr::count(!!id_sym, name = "n") |>
+    dplyr::filter(.data$n > 1L) |>
+    dplyr::summarise(total = sum(.data$n, na.rm = TRUE)) |>
+    dplyr::pull(.data$total)
 
-  if(is.na(dup_cnt)) dup_cnt <- 0
+  if (is.na(dup_cnt)) dup_cnt <- 0
 
   .chk_cond(
     dup_cnt > 0L,
@@ -686,26 +742,33 @@ phip_convert_legacy <- function(
 
   # 3) rest only 0/1 or NA
   if (length(other_cols) > 0) {
-    bad_row <- table %>%
+    bad_row <- table |>
       dplyr::filter(
         dplyr::if_any(
           dplyr::all_of(other_cols),
           ~ !(.x %in% c(0, 1) | is.na(.x))
         )
-      ) %>%
+      ) |>
       dplyr::collect()
     if (nrow(bad_row) > 0) {
-      bad_info <- purrr::imap_chr(
-        bad_row[other_cols],
-        ~ if (!is.na(.x) && !(.x %in% c(0,1))) {
-          sprintf("'%s'=%s", .y, .x)
-        } else {
-          NULL
-        }
+      bad_vals <- bad_row[other_cols]
+
+      bad_info <- mapply(
+        FUN = function(value, col_name) {
+          if (!is.na(value) && !(value %in% c(0, 1))) {
+            sprintf("'%s'=%s", col_name, value)
+          } else {
+            NA_character_
+          }
+        },
+        value = bad_vals,
+        col_name = names(bad_vals),
+        USE.NAMES = FALSE
       )
+
       .chk_cond(
         TRUE,
-        sprintf("Invalid value in exist table: %s", na.omit(bad_info)[1])
+        sprintf("Invalid value in exist table: %s", stats::na.omit(bad_info)[1])
       )
     }
   }
