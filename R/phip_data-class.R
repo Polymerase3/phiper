@@ -400,6 +400,7 @@ collect.phip_data <- function(x, ...) {
 #'   connections closed.
 #'
 #' @export
+
 disconnect <- function(x) {
   # close data_long backend, if any
   if (!is.null(x$meta$con) && DBI::dbIsValid(x$meta$con)) {
