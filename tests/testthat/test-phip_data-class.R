@@ -107,14 +107,14 @@ test_that("disconnect.phip_data closes duckdb connection if present", {
   con <- DBI::dbConnect(duckdb::duckdb(), dbdir = ":memory:")
   suppressWarnings({
     pd <- new_phip_data(counts_tbl, contrasts_df,
-                        backend = "duckdb",
-                        meta = list(con = con)
+      backend = "duckdb",
+      meta = list(con = con)
     )
   })
 
   expect_true(DBI::dbIsValid(con))
 
-  disconnect.phip_data(pd) # should close
+  disconnect(pd) # should close
 
   expect_false(DBI::dbIsValid(con))
 })

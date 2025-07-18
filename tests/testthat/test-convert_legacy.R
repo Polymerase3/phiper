@@ -185,4 +185,3 @@ test_that(".auto_read_csv falls back to read.csv when data.table is absent", {
   expect_s3_class(res, "data.frame")
   expect_equal(nrow(res), 3)
 })
-
