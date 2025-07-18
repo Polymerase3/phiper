@@ -1,17 +1,17 @@
 # Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
 # Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
 on:
-paths:
-      - "R/**"              # any R source file
-      - "tests/**"          # testthat files
-      - "DESCRIPTION"       # bumping version, deps, etc.
-      - "NAMESPACE"         # roxygenise output
-  pull_request:
-    paths:
-      - "R/**"
-      - "tests/**"
-      - "DESCRIPTION"
-      - "NAMESPACE"
+  paths:
+        - "R/**"              # any R source file
+        - "tests/**"          # testthat files
+        - "DESCRIPTION"       # bumping version, deps, etc.
+        - "NAMESPACE"         # roxygenise output
+    pull_request:
+      paths:
+        - "R/**"
+        - "tests/**"
+        - "DESCRIPTION"
+        - "NAMESPACE"
 
 name: R-CMD-check
 
