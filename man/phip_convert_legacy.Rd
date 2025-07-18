@@ -2,8 +2,7 @@
 % Please edit documentation in R/convert_legacy.R
 \name{phip_convert_legacy}
 \alias{phip_convert_legacy}
-\title{Convert the Carlos's legacy 3-file PhIP-seq input into a new phiper
-phip_dataset S3 object}
+\title{Convert legacy Carlos-style input to a modern \strong{phip_data} object}
 \usage{
 phip_convert_legacy(
   exist_file = NULL,
@@ -17,42 +16,100 @@ phip_convert_legacy(
 )
 }
 \arguments{
-\item{extra_cols}{A character vector of additional column names to keep
-when converting.}
+\item{exist_file}{Path to the \strong{exist} CSV (peptide × sample binary
+matrix). \emph{Required unless given in \code{config_yaml}.}}
 
-\item{output_dir}{(Deprecated) directory in which to place converted
-output files. Use the working directory instead.}
+\item{samples_file}{Path to the \strong{samples} CSV (sample metadata).
+\emph{Required unless given in \code{config_yaml}.}}
 
-\item{backend}{One of "arrow", "duckdb", or "memory".}
+\item{timepoints_file}{Path to the \strong{timepoints} CSV (subject <-> sample
+mapping). Optional for cross-sectional data.}
 
-\item{config_yaml}{\strong{Optional.} Path to a YAML file that specifies any
-or all of the above parameters (see example below).
+\item{extra_cols}{Character vector of extra metadata columns to retain.}
 
-\if{html}{\out{<div class="sourceCode yaml">}}\preformatted{# Example config.yaml
-# it follows the naming convention of previous Carlos's workflow
-exist_file: data/existing.csv
-samples_file: meta/samples.csv
-timepoints_file: meta/timepoints.csv
-extra_cols: [sex, age]
-comparisons_file: meta/comparisons.csv
-output_dir: out          # optional / deprecated
-}\if{html}{\out{</div>}}}
+\item{comparisons_file}{Path to a \strong{comparisons} CSV. Optional.}
 
-\item{exist_csv}{Path to the existing‑peptides CSV created by the old
-pipeline.}
+\item{output_dir}{\emph{Deprecated.} Ignored with a warning.}
 
-\item{samples_csv}{Path to the sample‑annotation CSV.}
+\item{backend}{Storage backend: \code{"arrow"}, \code{"duckdb"}, or
+\code{"memory"}. Defaults to \code{"duckdb"}.}
 
-\item{timepoint_csv}{Path to the sample‑timepoint CSV.}
-
-\item{comparisons_csv}{Path to the comparisons CSV.}
+\item{config_yaml}{Optional YAML file containing any of the
+above parameters (see example).}
 }
 \value{
-fff
+A validated \code{phip_data} object whose \code{data_long} slot is backed by
+a tibble (memory), a DuckDB connection, or an Arrow dataset, depending on
+\code{backend}.
 }
 \description{
-This version of \code{phip_convert_legacy()} is backward‑compatible
-with the old interface but can also take a single \strong{YAML} configuration
-file instead of a long list of arguments.  Explicit function arguments
-always win over values supplied through the YAML file.
+\code{phip_convert_legacy()} ingests the original three-file PhIP-Seq input
+(binary \emph{exist} matrix, \emph{samples} metadata, optional \emph{timepoints} map) plus
+an optional \emph{comparisons} file.
+Paths can be supplied directly or via a single YAML config; explicit
+arguments always override the YAML.  The function normalises the chosen
+storage \code{backend}, validates every file, and returns a ready-to-use
+\code{phip_data} object.
+}
+\details{
+\strong{Validation rules}
+\emph{1 – exist CSV}
+\itemize{
+\item First column \strong{must} be \code{peptide_id} and unique.
+\item Remaining columns are \code{sample_id}s found in the samples file.
+\item Values allowed: \code{0}, \code{1}, or \code{NA} – anything else aborts.
+}
+
+\emph{2 – samples CSV}
+\itemize{
+\item First column \strong{must} be \code{sample_id}, unique.
+\item Extra columns kept only if listed in \code{extra_cols}.
+\item If dummy group columns are referenced by \code{comparisons_file}, each row’s
+dummy sum must equal \strong{1}.
+}
+
+\emph{3 – timepoints CSV} (optional, longitudinal)
+\itemize{
+\item First column \strong{must} be \code{ind_id} (subject).
+\item Other columns are time-point names; cells are \code{sample_id} or \code{NA}.
+\item Column names must match \code{timepoint} values in the data; every \code{sample_id}
+appears at most once.
+}
+
+\emph{4 – comparisons CSV} (optional)
+\itemize{
+\item Columns required: \code{comparison}, \code{group1}, \code{group2}, \code{variable}.
+\item Labels in \code{group1}/\code{group2} must exist in the derived \code{group} column or the
+\code{timepoint} column (for longitudinal data).
+}
+
+Files failing any rule trigger an informative \code{.chk_cond()} error.
+}
+\examples{
+\dontrun{
+## 1. Direct-path usage
+pd <- phip_convert_legacy(
+  exist_file = "legacy/exist.csv",
+  samples_file = "legacy/samples.csv",
+  timepoints_file = "legacy/timepoints.csv",
+  comparisons_file = "legacy/comparisons.csv",
+  backend = "duckdb"
+)
+
+## 2. YAML-driven usage (explicit args override YAML)
+# --- config/legacy_config.yaml ---
+# exist_file:       data/exist.csv
+# samples_file:     meta/samples.csv
+# timepoints_file:  meta/timepoints.csv
+# comparisons_file: meta/comparisons.csv
+# extra_cols: [sex, age]
+# backend: duckdb
+# -------------------------------
+
+pd <- phip_convert_legacy(
+  config_yaml = "config/legacy_config.yaml",
+  backend     = "arrow" # overrides YAML backend
+)
+}
+
 }
