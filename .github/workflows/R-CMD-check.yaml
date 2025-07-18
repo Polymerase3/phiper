@@ -1,36 +1,36 @@
+# .github/workflows/R-CMD-check.yaml
 # Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
-# Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
-on:
-  paths:
-        - "R/**"              # any R source file
-        - "tests/**"          # testthat files
-        - "DESCRIPTION"       # bumping version, deps, etc.
-        - "NAMESPACE"         # roxygenise output
-    pull_request:
-      paths:
-        - "R/**"
-        - "tests/**"
-        - "DESCRIPTION"
-        - "NAMESPACE"
 
 name: R-CMD-check
-
 permissions: read-all
+
+on:
+  push:
+    paths:
+      - "R/**"              # any R source file
+      - "tests/**"          # testthat files
+      - "DESCRIPTION"       # bumping version, deps, etc.
+      - "NAMESPACE"         # roxygenise output
+  pull_request:
+    paths:
+      - "R/**"
+      - "tests/**"
+      - "DESCRIPTION"
+      - "NAMESPACE"
 
 jobs:
   R-CMD-check:
+    name: ${{ matrix.config.os }} (R ${{ matrix.config.r }})
     runs-on: ${{ matrix.config.os }}
-
-    name: ${{ matrix.config.os }} (${{ matrix.config.r }})
 
     strategy:
       fail-fast: false
       matrix:
         config:
-          - {os: macos-latest,   r: 'release'}
-          - {os: windows-latest, r: 'release'}
-          - {os: ubuntu-latest,   r: 'release'}
-          - {os: ubuntu-latest,   r: 'oldrel-1'}
+          - { os: macos-latest,   r: "release" }
+          - { os: windows-latest, r: "release" }
+          - { os: ubuntu-latest,  r: "release" }
+          - { os: ubuntu-latest,  r: "oldrel-1" }
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
@@ -44,15 +44,14 @@ jobs:
       - uses: r-lib/actions/setup-r@v2
         with:
           r-version: ${{ matrix.config.r }}
-          http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::rcmdcheck
-          needs: check
 
       - uses: r-lib/actions/check-r-package@v2
         with:
           upload-snapshots: true
-          build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'
+          build_args: |
+            c("--no-manual", "--compact-vignettes=gs+qpdf")

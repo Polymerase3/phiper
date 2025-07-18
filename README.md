@@ -6,7 +6,6 @@
 [![R-CMD-check](https://github.com/Polymerase3/phiper/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Polymerase3/phiper/actions/workflows/R-CMD-check.yaml)
 [![style](https://github.com/Polymerase3/phiper/actions/workflows/style.yaml/badge.svg)](https://github.com/Polymerase3/phiper/actions/workflows/style.yaml)
 [![document](https://github.com/Polymerase3/phiper/actions/workflows/document.yaml/badge.svg)](https://github.com/Polymerase3/phiper/actions/workflows/document.yaml)
-[![lint](https://github.com/Polymerase3/phiper/actions/workflows/lint.yaml/badge.svg)](https://github.com/Polymerase3/phiper/actions/workflows/lint.yaml)
 
 <!-- badges: end -->
 
