@@ -48,7 +48,7 @@
 
   if (is.null(x)) x <- default
 
-  return(x)
+  x
 }
 
 ## --validate path to file -----------------------------------------------------
