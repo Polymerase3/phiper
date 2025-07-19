@@ -154,7 +154,7 @@ test_that("convert legacy: duckdb and arrow", {
 })
 
 
-## .auto_read_csv
+## .auto_read
 tmp_csv <- withr::local_tempfile(fileext = ".csv")
 write.csv(data.frame(a = 1:3, b = 4:6), tmp_csv, row.names = FALSE)
 
@@ -164,7 +164,7 @@ write.csv(data.frame(a = 1:3, b = 4:6), tmp_csv, row.names = FALSE)
 test_that(".auto_read_csv uses data.table::fread when available", {
   skip_if_not_installed("data.table") # ensures branch can run
 
-  res <- .auto_read_csv(tmp_csv)
+  res <- .auto_read(tmp_csv)
 
   expect_s3_class(res, "data.frame")
   expect_equal(nrow(res), 3)
@@ -178,9 +178,9 @@ test_that(".auto_read_csv uses data.table::fread when available", {
 # ------------------------------------------------------------------
 test_that(".auto_read_csv falls back to read.csv when data.table is absent", {
   # Mock requireNamespace() so it always returns FALSE inside this call
-  mockery::stub(.auto_read_csv, "requireNamespace", function(pkg, ...) FALSE)
+  mockery::stub(.auto_read, "requireNamespace", function(pkg, ...) FALSE)
 
-  res <- .auto_read_csv(tmp_csv)
+  res <- .auto_read(tmp_csv)
 
   expect_s3_class(res, "data.frame")
   expect_equal(nrow(res), 3)

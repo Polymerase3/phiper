@@ -82,17 +82,16 @@
 #'
 #' @export
 
-
-
 phip_convert_legacy <- function(
-    exist_file = NULL,
-    samples_file = NULL,
-    timepoints_file = NULL,
-    extra_cols = NULL,
-    comparisons_file = NULL,
-    output_dir = NULL, # hard deprecation
-    backend = NULL,
-    config_yaml = NULL) {
+    exist_file         = NULL,
+    fold_change_file   = NULL,
+    samples_file       = NULL,
+    timepoints_file    = NULL,
+    extra_cols         = NULL,
+    comparisons_file   = NULL,
+    output_dir         = NULL, # hard deprecation
+    backend            = NULL,
+    config_yaml        = NULL) {
   #' @importFrom rlang .data
 
   # ------------------------------------------------------------------
@@ -180,17 +179,28 @@ phip_convert_legacy <- function(
   # load the arguments from .yaml or use direct path definitions and
   # quick validate required inputs
   # ---------------------------------------------------------------------------
-  exist_file <- fetch(exist_file, "exist_file", .chk_path, extension = c("csv", "parquet"))
+  exist_file <- fetch(exist_file, "exist_file",
+                      .chk_path, optional = TRUE,
+                      extension = c("csv", "parquet", "parq", "pq"))
+  fold_change_file <- fetch(fold_change_file, "fold_change_file",
+                            .chk_path, optional = TRUE,
+                            extension = c("csv", "parquet", "parq", "pq"))
+
+  ## quick validation if at least one from the upper files was provided
+  .chk_cond(is.null(exist_file) && is.null(fold_change_file),
+            "At least one argument from the following has to be provided: ")
+
+  ## ...
   samples_file <- fetch(samples_file, "samples_file",
     .chk_path,
-    extension = "csv"
+    extension = c("csv", "parquet", "parq", "pq")
   )
   timepoints_file <- fetch(timepoints_file, "timepoints_file", .chk_path,
-    optional = TRUE, extension = "csv"
+    optional = TRUE, extension = c("csv", "parquet", "parq", "pq")
   )
   extra_cols <- fetch(extra_cols, "extra_cols", optional = TRUE)
   comparisons_file <- fetch(comparisons_file, "comparisons_file", .chk_path,
-    extension = "csv", optional = TRUE
+    extension = c("csv", "parquet", "parq", "pq"), optional = TRUE
   )
   output_dir <- fetch(output_dir, "output_dir", optional = TRUE)
 
@@ -217,7 +227,7 @@ phip_convert_legacy <- function(
   #  L E G A C Y   B R I D G E
   ##############################################################################
   ## ---- 1.  samples & contrasts (both small) ---------------------------------
-  samples <- .auto_read_csv(samples_file)
+  samples <- .auto_read(samples_file)
 
   if (!is.null(comparisons_file)) {
     # XXX
@@ -228,7 +238,7 @@ phip_convert_legacy <- function(
     # comparisons file, then select respective column from the metadata table.
     # They are dummy-coded so we can merge them into one single column: group
 
-    comparisons <- .auto_read_csv(comparisons_file)
+    comparisons <- .auto_read(comparisons_file)
 
     ## unique levels
     unique_comp_levels <- unique(c(comparisons$group1, comparisons$group2))
@@ -283,7 +293,7 @@ phip_convert_legacy <- function(
 
   if (backend == "memory") {
     # Step 1.) =================================================================
-    counts <- .auto_read_csv(exist_file)
+    counts <- .auto_read(exist_file)
     .validate_exist(counts)
 
     # the result of this is a full crossover of peptide x sample_ID --> it
@@ -309,7 +319,7 @@ phip_convert_legacy <- function(
     # Step 3.) - is actually optional ==========================================
     if (!is.null(timepoints_file)) {
       # load the timepoints
-      timepoints <- .auto_read_csv(timepoints_file)
+      timepoints <- .auto_read(timepoints_file)
 
       # reshape the timepoints to long
       timepoints <- stats::reshape(
@@ -393,7 +403,7 @@ phip_convert_legacy <- function(
       timepoints_file, comparisons, extra_cols
     )
     counts_tbl <- dplyr::tbl(con, "counts_final")
-# print(head(counts_tbl, 5))
+
     if (DBI::dbExistsTable(con, "comparisons")) {
       comparisons <- dplyr::tbl(con, "comparisons") |> dplyr::collect()
     } else {
@@ -465,29 +475,50 @@ phip_convert_legacy <- function(
 #  helper: fastest possible CSV reader with delimiter sniffing -
 #   variation on the Carlos's function
 # ------------------------------------------------------------------------------
-.auto_read_csv <- function(path,
-                           ...) {
-  # read header line only
+.auto_read <- function(path, ...) {
+
+  base <- basename(path)
+
+  ext <- strsplit(base, "\\.", fixed = FALSE)[[1]][-1]
+  ext <- paste0(tolower(ext), collapse = ".")
+
+  ## ------------------------------------------------------------------ ##
+  ##                1.  PARQUET branch                                  ##
+  ## ------------------------------------------------------------------ ##
+  if (ext %in% c("parquet", "parq", "pq")) {
+    ## to avoid additional dependencies load the data using arrow, which
+    ## which is already listed in the dependencies
+    rlang::check_installed("arrow")
+
+    arrow::read_parquet(path,
+                        as_data_frame = TRUE,
+                        ...)
+  }
+
+  ## ------------------------------------------------------------------ ##
+  ##                2.  CSV / TSV branch (original)                     ##
+  ## ------------------------------------------------------------------ ##
   hdr <- readLines(path, n = 1L, warn = FALSE)
 
-  # count delimiters without stringr (base R only)
   n_comma <- lengths(regmatches(hdr, gregexpr(",", hdr, fixed = TRUE)))
-  n_semi <- lengths(regmatches(hdr, gregexpr(";", hdr, fixed = TRUE)))
+  n_semi  <- lengths(regmatches(hdr, gregexpr(";", hdr, fixed = TRUE)))
+  sep     <- if (n_semi > n_comma) ";" else ","
 
-  sep <- if (n_semi > n_comma) ";" else ","
-
-  # prefer data.table::fread() if available
   if (requireNamespace("data.table", quietly = TRUE)) {
     rlang::check_installed("data.table")
     data.table::fread(path,
-      sep = sep, data.table = FALSE,
-      check.names = FALSE, showProgress = FALSE, ...
-    )
+                      sep          = sep,
+                      data.table   = FALSE,
+                      check.names  = FALSE,
+                      showProgress = FALSE,
+                      ...)
   } else {
     utils::read.csv(path,
-      header = TRUE, check.names = FALSE, sep = sep,
-      stringsAsFactors = FALSE, ...
-    )
+                    header          = TRUE,
+                    sep             = sep,
+                    check.names     = FALSE,
+                    stringsAsFactors = FALSE,
+                    ...)
   }
 }
 
@@ -512,17 +543,49 @@ phip_convert_legacy <- function(
 
   q <- function(x) DBI::dbQuoteString(con, x) # safe path quoting
 
-  # ---- 1. counts_wide  ----
-  DBI::dbExecute(
-    con,
-    sprintf(
-      "CREATE TEMP TABLE counts_wide AS
-      SELECT * FROM parquet_scan(%s);",
-    # SELECT * FROM read_csv_auto(%s, HEADER=TRUE);",
-    #
-      q(exist_file)
+  # i had to define a custom helper function to autodetect the file extension
+  # and return correct SQL query for this file and table name
+
+  duckdb_load_sql <- function(path, table_name, header = TRUE) {
+
+    # collapse multi-part extensions: "foo.csv.gz" --> "csv.gz"
+    ext <- paste0(
+      tolower(strsplit(basename(path), "\\.", fixed = FALSE)[[1]][-1]),
+      collapse = "."
     )
-  )
+
+    # pick the reader ---------------------------------------------------------
+    is_parquet <- grepl("^parq(uet)?(\\.|$)|^pq(\\.|$)", ext)
+    reader_fun <- if (is_parquet) "parquet_scan" else "read_csv_auto"
+
+    # quote the path for SQL (single quotes, doubled inside)
+    qpath <- sprintf("'%s'", gsub("'", "''", path))
+
+    # build the SQL -----------------------------------------------------------
+    if (reader_fun == "parquet_scan") {
+      sprintf(
+        "CREATE TEMP TABLE %s AS
+         SELECT * FROM parquet_scan(%s);",
+        table_name, qpath
+      )
+    } else {
+      hdr_flag <- if (isTRUE(header)) "HEADER=TRUE" else "HEADER=FALSE"
+      sprintf(
+        "CREATE TEMP TABLE %s AS
+         SELECT * FROM read_csv_auto(%s, %s);",
+        table_name, qpath, hdr_flag
+      )
+    }
+  }
+  # ---------------------------------------------------------------------------
+
+  # ---------------------------------------------------------------------------
+  #  LOADING WORKFLOW
+  #  --------------------------------------------------------------------------
+
+  # ---- 1. counts_wide  ----
+  sql <- duckdb_load_sql(exist_file, "counts_wide")
+  DBI::dbExecute(con, sql)
 
   # ---- validate the original wide table ----
   counts_wide_tbl <- dplyr::tbl(con, "counts_wide")
@@ -622,14 +685,8 @@ phip_convert_legacy <- function(
 
   # ---- 3. optional timepoints  ----
   if (!is.null(timepoints_file)) {
-    DBI::dbExecute(
-      con,
-      sprintf(
-        "CREATE TEMP TABLE tp_wide AS
-           SELECT * FROM read_csv_auto(%s, HEADER=TRUE);",
-        q(timepoints_file)
-      )
-    )
+    sql <- duckdb_load_sql(timepoints_file, "tp_wide")
+    DBI::dbExecute(con, sql)
 
     tp_cols <- DBI::dbGetQuery(
       con,
