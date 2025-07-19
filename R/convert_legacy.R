@@ -180,7 +180,7 @@ phip_convert_legacy <- function(
   # load the arguments from .yaml or use direct path definitions and
   # quick validate required inputs
   # ---------------------------------------------------------------------------
-  exist_file <- fetch(exist_file, "exist_file", .chk_path, extension = "csv")
+  exist_file <- fetch(exist_file, "exist_file", .chk_path, extension = c("csv", "parquet"))
   samples_file <- fetch(samples_file, "samples_file",
     .chk_path,
     extension = "csv"
@@ -393,7 +393,12 @@ phip_convert_legacy <- function(
       timepoints_file, comparisons, extra_cols
     )
     counts_tbl <- dplyr::tbl(con, "counts_final")
-    comparisons <- dplyr::tbl(con, "comparisons") |> collect()
+# print(head(counts_tbl, 5))
+    if (DBI::dbExistsTable(con, "comparisons")) {
+      comparisons <- dplyr::tbl(con, "comparisons") |> dplyr::collect()
+    } else {
+      comparisons <- NULL
+    }
 
     # returning the phip_data object
     new_phip_data(
@@ -439,7 +444,12 @@ phip_convert_legacy <- function(
     )
 
     counts_ds <- arrow::open_dataset(arrow_dir)
-    comparisons <- dplyr::tbl(con, "comparisons") |> collect()
+
+    if (DBI::dbExistsTable(con, "comparisons")) {
+      comparisons <- dplyr::tbl(con, "comparisons") |> dplyr::collect()
+    } else {
+      comparisons <- NULL
+    }
 
     # returning the phip_data object
     new_phip_data(
@@ -507,7 +517,9 @@ phip_convert_legacy <- function(
     con,
     sprintf(
       "CREATE TEMP TABLE counts_wide AS
-       SELECT * FROM read_csv_auto(%s, HEADER=TRUE);",
+      SELECT * FROM parquet_scan(%s);",
+    # SELECT * FROM read_csv_auto(%s, HEADER=TRUE);",
+    #
       q(exist_file)
     )
   )
@@ -537,6 +549,30 @@ phip_convert_legacy <- function(
     )
   )$column_name
 
+  ## cast the exists binary to integer
+
+  # 1. Get all the column names
+  all_cols <- DBI::dbGetQuery(con, "PRAGMA table_info('counts_wide');")$name
+
+  # 2. Identify the first (character) column
+  char_col  <- all_cols[1]
+
+  # 3. The rest should become integer
+  int_cols  <- setdiff(all_cols, char_col)
+
+  # 4. Loop and alter each one in place
+  for (col in int_cols) {
+    sql <- sprintf(
+      "ALTER TABLE counts_wide
+       ALTER COLUMN %s TYPE INTEGER
+       USING CAST(%s AS INTEGER);",
+      DBI::dbQuoteIdentifier(con, col),
+      DBI::dbQuoteIdentifier(con, col)
+    )
+    DBI::dbExecute(con, sql)
+  }
+
+  # pivot
   DBI::dbExecute(
     con,
     sprintf(
@@ -683,8 +719,10 @@ phip_convert_legacy <- function(
            FROM counts2;"
     )
   }
+  if(!is.null(comparisons)) {
+    duckdb::duckdb_register(con, "comparisons", comparisons)
+  }
 
-  duckdb::duckdb_register(con, "comparisons", comparisons)
 
   # ---- return the live connection ------------------------------------------
   invisible(con)
@@ -713,6 +751,7 @@ phip_convert_legacy <- function(
   )
 
   # quick validate if at least two cols in the data
+  #print(head(table, 5))
   .chk_cond(
     length(cols) < 2,
     "The `exist_file` has only one column! No subjects are specified."
