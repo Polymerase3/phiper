@@ -17,8 +17,11 @@ phip_convert_legacy(
 )
 }
 \arguments{
-\item{exist_file}{Path to the \strong{exist} CSV (peptide × sample binary
+\item{exist_file}{Path to the \strong{exist} CSV (peptide x sample binary
 matrix). \emph{Required unless given in \code{config_yaml}.}}
+
+\item{fold_change_file}{Path to the \strong{fold_change} CSV (peptide x
+sample numeric matrix). \emph{Required unless given in \code{config_yaml}.}}
 
 \item{samples_file}{Path to the \strong{samples} CSV (sample metadata).
 \emph{Required unless given in \code{config_yaml}.}}
@@ -35,12 +38,12 @@ mapping). Optional for cross-sectional data.}
 \item{backend}{Storage backend: \code{"arrow"}, \code{"duckdb"}, or
 \code{"memory"}. Defaults to \code{"duckdb"}.}
 
-\item{config_yaml}{Optional YAML file containing any of the
-above parameters (see example).}
+\item{config_yaml}{Optional YAML file containing any of the above
+parameters (see example).}
 }
 \value{
-A validated \code{phip_data} object whose \code{data_long} slot is backed by
-a tibble (memory), a DuckDB connection, or an Arrow dataset, depending on
+A validated \code{phip_data} object whose \code{data_long} slot is backed by a
+tibble (memory), a DuckDB connection, or an Arrow dataset, depending on
 \code{backend}.
 }
 \description{

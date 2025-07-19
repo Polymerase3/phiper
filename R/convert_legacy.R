@@ -35,8 +35,10 @@
 #'
 #' Files failing any rule trigger an informative `.chk_cond()` error.
 #'
-#' @param exist_file       Path to the **exist** CSV (peptide × sample binary
+#' @param exist_file       Path to the **exist** CSV (peptide x sample binary
 #'   matrix). *Required unless given in `config_yaml`.*
+#' @param fold_change_file       Path to the **fold_change** CSV (peptide x
+#'   sample numeric matrix). *Required unless given in `config_yaml`.*
 #' @param samples_file     Path to the **samples** CSV (sample metadata).
 #'   *Required unless given in `config_yaml`.*
 #' @param timepoints_file  Path to the **timepoints** CSV (subject <-> sample
@@ -46,11 +48,11 @@
 #' @param output_dir       *Deprecated.* Ignored with a warning.
 #' @param backend          Storage backend: `"arrow"`, `"duckdb"`, or
 #'   `"memory"`. Defaults to `"duckdb"`.
-#' @param config_yaml      Optional YAML file containing any of the
-#'   above parameters (see example).
+#' @param config_yaml      Optional YAML file containing any of the above
+#'   parameters (see example).
 #'
-#' @return A validated `phip_data` object whose `data_long` slot is backed by
-#'   a tibble (memory), a DuckDB connection, or an Arrow dataset, depending on
+#' @return A validated `phip_data` object whose `data_long` slot is backed by a
+#'   tibble (memory), a DuckDB connection, or an Arrow dataset, depending on
 #'   `backend`.
 #'
 #' @examples
