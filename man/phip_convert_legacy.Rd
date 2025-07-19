@@ -6,6 +6,7 @@
 \usage{
 phip_convert_legacy(
   exist_file = NULL,
+  fold_change_file = NULL,
   samples_file = NULL,
   timepoints_file = NULL,
   extra_cols = NULL,
