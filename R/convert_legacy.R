@@ -85,15 +85,15 @@
 #' @export
 
 phip_convert_legacy <- function(
-    exist_file         = NULL,
-    fold_change_file   = NULL,
-    samples_file       = NULL,
-    timepoints_file    = NULL,
-    extra_cols         = NULL,
-    comparisons_file   = NULL,
-    output_dir         = NULL, # hard deprecation
-    backend            = NULL,
-    config_yaml        = NULL) {
+    exist_file = NULL,
+    fold_change_file = NULL,
+    samples_file = NULL,
+    timepoints_file = NULL,
+    extra_cols = NULL,
+    comparisons_file = NULL,
+    output_dir = NULL, # hard deprecation
+    backend = NULL,
+    config_yaml = NULL) {
   #' @importFrom rlang .data
 
   # ------------------------------------------------------------------
@@ -182,15 +182,21 @@ phip_convert_legacy <- function(
   # quick validate required inputs
   # ---------------------------------------------------------------------------
   exist_file <- fetch(exist_file, "exist_file",
-                      .chk_path, optional = TRUE,
-                      extension = c("csv", "parquet", "parq", "pq"))
+    .chk_path,
+    optional = TRUE,
+    extension = c("csv", "parquet", "parq", "pq")
+  )
   fold_change_file <- fetch(fold_change_file, "fold_change_file",
-                            .chk_path, optional = TRUE,
-                            extension = c("csv", "parquet", "parq", "pq"))
+    .chk_path,
+    optional = TRUE,
+    extension = c("csv", "parquet", "parq", "pq")
+  )
 
   ## quick validation if at least one from the upper files was provided
-  .chk_cond(is.null(exist_file) && is.null(fold_change_file),
-            "At least one argument from the following has to be provided: ")
+  .chk_cond(
+    is.null(exist_file) && is.null(fold_change_file),
+    "At least one argument from the following has to be provided: "
+  )
 
   ## ...
   samples_file <- fetch(samples_file, "samples_file",
@@ -478,7 +484,6 @@ phip_convert_legacy <- function(
 #   variation on the Carlos's function
 # ------------------------------------------------------------------------------
 .auto_read <- function(path, ...) {
-
   base <- basename(path)
 
   ext <- strsplit(base, "\\.", fixed = FALSE)[[1]][-1]
@@ -493,8 +498,9 @@ phip_convert_legacy <- function(
     rlang::check_installed("arrow")
 
     arrow::read_parquet(path,
-                        as_data_frame = TRUE,
-                        ...)
+      as_data_frame = TRUE,
+      ...
+    )
   }
 
   ## ------------------------------------------------------------------ ##
@@ -503,24 +509,26 @@ phip_convert_legacy <- function(
   hdr <- readLines(path, n = 1L, warn = FALSE)
 
   n_comma <- lengths(regmatches(hdr, gregexpr(",", hdr, fixed = TRUE)))
-  n_semi  <- lengths(regmatches(hdr, gregexpr(";", hdr, fixed = TRUE)))
-  sep     <- if (n_semi > n_comma) ";" else ","
+  n_semi <- lengths(regmatches(hdr, gregexpr(";", hdr, fixed = TRUE)))
+  sep <- if (n_semi > n_comma) ";" else ","
 
   if (requireNamespace("data.table", quietly = TRUE)) {
     rlang::check_installed("data.table")
     data.table::fread(path,
-                      sep          = sep,
-                      data.table   = FALSE,
-                      check.names  = FALSE,
-                      showProgress = FALSE,
-                      ...)
+      sep          = sep,
+      data.table   = FALSE,
+      check.names  = FALSE,
+      showProgress = FALSE,
+      ...
+    )
   } else {
     utils::read.csv(path,
-                    header          = TRUE,
-                    sep             = sep,
-                    check.names     = FALSE,
-                    stringsAsFactors = FALSE,
-                    ...)
+      header = TRUE,
+      sep = sep,
+      check.names = FALSE,
+      stringsAsFactors = FALSE,
+      ...
+    )
   }
 }
 
@@ -549,7 +557,6 @@ phip_convert_legacy <- function(
   # and return correct SQL query for this file and table name
 
   duckdb_load_sql <- function(path, table_name, header = TRUE) {
-
     # collapse multi-part extensions: "foo.csv.gz" --> "csv.gz"
     ext <- paste0(
       tolower(strsplit(basename(path), "\\.", fixed = FALSE)[[1]][-1]),
@@ -620,10 +627,10 @@ phip_convert_legacy <- function(
   all_cols <- DBI::dbGetQuery(con, "PRAGMA table_info('counts_wide');")$name
 
   # 2. Identify the first (character) column
-  char_col  <- all_cols[1]
+  char_col <- all_cols[1]
 
   # 3. The rest should become integer
-  int_cols  <- setdiff(all_cols, char_col)
+  int_cols <- setdiff(all_cols, char_col)
 
   # 4. Loop and alter each one in place
   for (col in int_cols) {
@@ -778,7 +785,7 @@ phip_convert_legacy <- function(
            FROM counts2;"
     )
   }
-  if(!is.null(comparisons)) {
+  if (!is.null(comparisons)) {
     duckdb::duckdb_register(con, "comparisons", comparisons)
   }
 
@@ -810,7 +817,7 @@ phip_convert_legacy <- function(
   )
 
   # quick validate if at least two cols in the data
-  #print(head(table, 5))
+  # print(head(table, 5))
   .chk_cond(
     length(cols) < 2,
     "The `exist_file` has only one column! No subjects are specified."
