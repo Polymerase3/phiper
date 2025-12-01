@@ -19,6 +19,7 @@ Authors@R: c(
     role = c("cph", "fnd"),
     comment = c(ORCID = "0000-0002-3892-1740")
   )
+  )
 Description: Provides an end-to-end toolkit for Phage ImmunoPrecipitation-
     sequencing (PhIP-seq) data. Functions import raw peptide-sample count
     matrices, apply quality control filters, normalise library sizes,
