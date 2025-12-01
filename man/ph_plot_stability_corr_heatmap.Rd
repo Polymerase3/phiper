@@ -51,7 +51,7 @@ A ggplot object; invisibly a list(list(plot=..., corr_matrix=...,
 subjects=..., order_info=...)).
 }
 \description{
-Given a tibble produced by \code{\link[=compute_repertoire_stability]{compute_repertoire_stability()}}, compute
+Given a tibble produced by \code{\link[=compute_repertoire_similarity]{compute_repertoire_similarity()}}, compute
 pairwise correlations between \strong{subjects' stability time series} (0..1)
 within an optional group and plot a heatmap.
 

@@ -71,21 +71,20 @@ requires \code{group_interaction = TRUE} and at least two \code{group_cols}).
 }
 }
 \examples{
-\dontrun{
 # per-group plots
-p <- plot_enrichment_counts(pd, group_cols = c("Cohort","timepoint"))
+pd <- phip_load_example_data()
+p <- plot_enrichment_counts(pd, group_cols = c("group","timepoint"))
 
 # add interaction plot
 p2 <- plot_enrichment_counts(pd,
-  group_cols = c("Cohort","timepoint"),
+  group_cols = c("group","timepoint"),
   group_interaction = TRUE
 )
 
 # interaction only
 p3 <- plot_enrichment_counts(pd,
-  group_cols = c("Cohort","timepoint"),
+  group_cols = c("group","timepoint"),
   group_interaction = TRUE,
   interaction_only = TRUE
 )
-}
 }

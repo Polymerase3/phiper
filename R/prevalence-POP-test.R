@@ -60,8 +60,10 @@ print.ph_prev_result <- function(x, ...) {
 #' The object has a custom `print()` for nice console output.
 #'
 #' @examples
-#' # s <- summary(res)   # where res is a ph_prev_result
-#' # s
+#' \dontrun{
+#' s <- summary(res)   # where res is a ph_prev_result
+#' s
+#' }
 #'
 #' @export
 #' @method summary ph_prev_result
@@ -192,6 +194,7 @@ print.summary.ph_prev_result <- function(x, ...) {
 #'   `ph_prev_result`, output keeps the class and augmented metadata.
 #'
 #' @examples
+#' \dontrun{
 #' # single pair, regex on features:
 #' # prev_filter_pairs(res, "B", "M12", ranks = "species",
 #' #                   features = "flagellin|fliC", features_regex = TRUE,
@@ -200,6 +203,7 @@ print.summary.ph_prev_result <- function(x, ...) {
 #' # multiple pairs:
 #' # pairs <- list(c("B","M12"), c("T0","T2"))
 #' # prev_filter_pairs(res, pairs[[1]][1], pairs[[1]][2], ranks="peptide_id")
+#' }
 #'
 #' @export
 #' Filter pairwise results by groups/ranks/features with optional q-value gates
@@ -454,8 +458,10 @@ prev_filter_pairs <- function(
 #' `passed_rank_wbh`, `category_rank_wbh`.
 #'
 #' @examples
-#' # res <- ph_prevalence_compare(pd, rank_cols=c("species"), group_cols=c("big_group"))
-#' # print(res)
+#' \dontrun{
+#' res <- ph_prevalence_compare(pd, rank_cols=c("species"), group_cols=c("big_group"))
+#' print(res)
+#' }
 #'
 #' @export
 # ==============================================================================

@@ -93,15 +93,15 @@ When \code{backend = "memory"} the parameters \code{n_cores} and
 \code{materialise_table} are ignored and safely reset to \code{NULL}.
 }
 \examples{
-\dontrun{
 # Basic DuckDB import, auto-detecting default column names
 phip_obj <- phip_convert(
-  data_long_path = "data/phip_long.parquet",
+  data_long_path = phip_example_path("phip_mixture"),
   backend = "duckdb",
   n_cores = 4,
   materialise_table = TRUE
 )
 
+\dontrun{
 # Import a CSV, rename columns, keep everything in memory
 phip_mem <- phip_convert(
   data_long_path = "data/phip_long.csv",

@@ -89,7 +89,7 @@ group×time for categorical designs (dyads/triads supported).
 \item \code{"jaccard"}      : |A∩B| / |A∪B|
 \item \code{"sorensen"}     : 2|A∩B| / (|A|+|B|)
 \item \code{"bray_curtis"}  : identical to Sørensen in the binary case
-\item \code{"kulczynski"}   : 0.5 * \link{ a/(a+b) + a/(a+c) } with a=|A∩B|
+\item \code{"kulczynski"}   : 0.5 * \code{a/(a+b) + a/(a+c)} with a=|A∩B|
 \item \code{"phi"} (≡ Pearson for binary)
 }
 }

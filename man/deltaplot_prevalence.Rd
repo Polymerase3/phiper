@@ -66,8 +66,9 @@ Intended for inputs like \code{make_prev_tbl()} (long format with columns
 \code{peptide_id}, \code{Group}, \code{Prevalence}).
 }
 \examples{
-# prev_tbl <- make_prev_tbl(x_kid1, rank="is_flagellum", g1="T2", g2="T8", feature_value=TRUE)
-# p <- deltaplot_prevalence(prev_tbl, group_order = c("B","M12"))
-# p
+\dontrun{
+prev_tbl <- make_prev_tbl(x_kid1, rank="is_flagellum", g1="T2", g2="T8", feature_value=TRUE)
+p <- deltaplot_prevalence(prev_tbl, group_order = c("B","M12"))
+}
 
 }

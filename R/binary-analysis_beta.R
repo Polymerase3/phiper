@@ -85,10 +85,17 @@
 #'   (alias `"group_vs_rest"`), `"baseline"`. Default `"none"`.
 #' @param mtp Multiple-testing correction method passed to `p.adjust`
 #'   (default `.ph_opt("beta.mtp","BH")`).
+#' @param group_interaction Whether to also compute beta diversity on the interaction of all given groups (one extra view).
+#'   (default FALSE)
+#' @param interaction_sep Interaction separator to use for the group interaction. Only used when `group_interaction` is TRUE.
+#'   (default `"*"``)
 #' @param n_threads Integer; threads for parallelDist (default: all cores - 1).
 #' @param method_pcoa One of `"joint"`, `"separate_group"`, `"separate_time"`,
 #'   `"separate_all"`, `"cap"`. Controls ordination splitting / CAP.
 #' @param neg_correction One of `"none"`, `"lingoes"`, `"cailliez"`.
+#' @param time_force_continuous Wether to force time to being continuous (even if can be categorical).
+#'   Currently only relevant in the case when `method_pcoa` is `"cap"`.
+#' @inheritDotParams
 #'
 #' @return A **named list** (one element per view or subview) with class
 #'   `"phip_beta_diversity"`. Each element contains:
@@ -2735,7 +2742,8 @@ compute_beta_diversity.phip_data <- function(x,
                                              n_threads = max(1L, (if (rlang::is_installed("parallel")) parallel::detectCores() else 1L) - 1L),
                                              method_pcoa = c("joint", "separate_group", "separate_time", "separate_all", "cap"),
                                              neg_correction = c("none", "lingoes", "cailliez"),
-                                             time_force_continuous = FALSE) {
+                                             time_force_continuous = FALSE,
+                                             ...) {
   stopifnot(inherits(x, "phip_data"))
   .data <- rlang::.data
   method_pcoa <- match.arg(method_pcoa)
@@ -2885,7 +2893,8 @@ compute_beta_diversity.data.frame <- function(x,
                                               n_threads = max(1L, (if (rlang::is_installed("parallel")) parallel::detectCores() else 1L) - 1L),
                                               method_pcoa = c("joint", "separate_group", "separate_time", "separate_all", "cap"),
                                               neg_correction = c("none", "lingoes", "cailliez"),
-                                              time_force_continuous = FALSE) {
+                                              time_force_continuous = FALSE,
+                                              ...) {
   tbl <- x
   .data <- rlang::.data
   method_pcoa <- match.arg(method_pcoa)

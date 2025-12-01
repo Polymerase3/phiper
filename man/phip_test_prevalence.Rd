@@ -33,7 +33,7 @@ phip_test_prevalence(
 \item{alternative}{fisher.test alternative ("two.sided", "greater", "less")}
 }
 \value{
-nested list: results[\link{group_col}][\link{"G1_vs_G2"}] = list(comparison_df=..., N=c(N1,N2), groups=c(group1,g2), group_col=gcol)
+nested list: \code{results[[group_col]][["G1_vs_G2"]]} = list(comparison_df=..., N=c(N1,N2), groups=c(group1,g2), group_col=gcol)
 }
 \description{
 Pairwise prevalence tests (Fisher + ratios) for each grouping variable

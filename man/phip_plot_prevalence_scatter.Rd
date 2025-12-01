@@ -15,7 +15,7 @@ phip_plot_prevalence_scatter(
 )
 }
 \arguments{
-\item{comparison}{One element from phip_test_prevalence()[\link{gcol}][\link{pair}]}
+\item{comparison}{One element from \code{phip_test_prevalence()[[gcol]][[pair]]}}
 
 \item{highlight_cols}{Optional character vector of boolean columns in comparison_df to highlight}
 

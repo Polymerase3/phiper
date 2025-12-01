@@ -119,7 +119,7 @@ phip_calc_prevalence <- function(x,
 #' @param epsilon_delta numeric; pseudocount for delta-ratio (applied only to zeros), default 1
 #' @param alternative  fisher.test alternative ("two.sided", "greater", "less")
 #'
-#' @return nested list: results[[group_col]][["G1_vs_G2"]] = list(comparison_df=..., N=c(N1,N2), groups=c(group1,g2), group_col=gcol)
+#' @return nested list: \code{results[[group_col]][["G1_vs_G2"]]} = list(comparison_df=..., N=c(N1,N2), groups=c(group1,g2), group_col=gcol)
 #' @export
 phip_test_prevalence <- function(
   x,
@@ -276,7 +276,7 @@ phip_test_prevalence <- function(
 
 #' Plot prevalence comparison scatter (standalone)
 #'
-#' @param comparison One element from phip_test_prevalence()[[gcol]][[pair]]
+#' @param comparison One element from \code{phip_test_prevalence()[[gcol]][[pair]]}
 #' @param highlight_cols   Optional character vector of boolean columns in comparison_df to highlight
 #' @param highlight_colors Optional named vector (names=highlight_cols)
 #' @param default_color    Color for non-highlighted points

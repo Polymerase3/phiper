@@ -486,8 +486,10 @@ plot_beta_pcoa <- function(x,
 #' @param free_y      Use free y-scales across facets (default TRUE).
 #' @return A ggplot object (facetted small multiples).
 #' @examples
+#' \dontrun{
 #' p <- ph_plot_cap_axes_vs_time(beta_cap)
 #' print(p)
+#' }
 ph_plot_cap_axes_vs_time <- function(beta,
                                      axes = c("CAP1", "CAP2"),
                                      point_alpha = 0.25,
@@ -573,8 +575,10 @@ ph_plot_cap_axes_vs_time <- function(beta,
 #' @param linewidth   Smooth line width (default 1).
 #' @return A ggplot object.
 #' @examples
+#' \dontrun{
 #' p <- ph_plot_dispersion_vs_time(beta_cap)
 #' print(p)
+#' }
 ph_plot_dispersion_vs_time <- function(beta,
                                        point_alpha = 0.25,
                                        point_size = 1.2,
@@ -666,8 +670,10 @@ ph_plot_dispersion_vs_time <- function(beta,
 #' @param rotate_x        Rotate x labels by 45° (default TRUE).
 #' @return A ggplot object.
 #' @examples
+#' \dontrun{
 #' p <- ph_plot_dispersion_box(beta_cap)
 #' print(p)
+#' }
 ph_plot_dispersion_box <- function(beta,
                                    view = attr(beta, "group_cols") %||% "big_group",
                                    scope_filter = "group",

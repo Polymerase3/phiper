@@ -21,7 +21,7 @@ plot_repertoire_stability(
 )
 }
 \arguments{
-\item{stab_df}{A tibble returned by \code{\link[=compute_repertoire_stability]{compute_repertoire_stability()}}.
+\item{stab_df}{A tibble returned by \code{\link[=compute_repertoire_similarity]{compute_repertoire_similarity()}}.
 Must contain columns \code{group}, \code{time}, \code{similarity}.}
 
 \item{custom_colors}{Optional named vector of colors for groups.
@@ -52,7 +52,7 @@ Defaults to PHIP palette.}
 A \code{ggplot} object.
 }
 \description{
-Plot the output of \code{\link[=compute_repertoire_stability]{compute_repertoire_stability()}} as group-wise curves
+Plot the output of \code{\link[=compute_repertoire_similarity]{compute_repertoire_similarity()}} as group-wise curves
 over time with confidence bands. If \code{drop_self = TRUE} was used at compute
 time, the plot adds \strong{one baseline marker per group}: a larger point at the
 group baseline time (x), with y positioned at the \strong{mean similarity of the

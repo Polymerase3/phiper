@@ -39,5 +39,7 @@ interactive prompt).
 }
 
 \examples{
-pd2 <- transform_fold_change_boxcox(pd, by = "big_group")
+library(tidyr)
+pd <- phip_load_example_data()
+pd2 <- transform_fold_boxcox(pd, by = "group", confirm=FALSE)
 }

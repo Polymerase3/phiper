@@ -78,5 +78,7 @@ native plotly version of \code{plot_alpha_diversity()}. mirrors the ggplot look:
 per-group boxplots with jittered points and optional faceting by rank.
 }
 \examples{
-# plot_alpha_diversity_interactive(df, metric = "richness", group_col = "group")
+\dontrun{
+plot_alpha_diversity_interactive(df, metric = "richness", group_col = "group")
+}
 }

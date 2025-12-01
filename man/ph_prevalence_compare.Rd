@@ -153,7 +153,9 @@ These values are also returned in the object metadata (see Value).
 }
 }
 \examples{
-# res <- ph_prevalence_compare(pd, rank_cols=c("species"), group_cols=c("big_group"))
-# print(res)
+\dontrun{
+res <- ph_prevalence_compare(pd, rank_cols=c("species"), group_cols=c("big_group"))
+print(res)
+}
 
 }

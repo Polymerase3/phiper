@@ -55,39 +55,41 @@
 #'   metrics: `richness`, `shannon_diversity`, `simpson_diversity`.
 #'
 #' @examples
-#' \dontrun{
-#' # phip_data input — peptide-level diversity by cohort
+#' pd <- phip_load_example_data()
+#' # phip_data input — peptide-level diversity by group
 #' out <- compute_alpha_diversity(
-#'   pd, group_cols = "Cohort", ranks = "peptide_id"
+#'   pd, group_cols = "group", ranks = "peptide_id"
 #' )
 #'
 #' # include interaction of multiple grouping variables
 #' out2 <- compute_alpha_diversity(
 #'   pd,
-#'   group_cols = c("Cohort", "timepoint"),
+#'   group_cols = c("group", "timepoint"),
 #'   ranks = c("peptide_id", "family", "genus"),
 #'   group_interaction = TRUE
 #' )
 #'
-#' # interaction only (returns a single element named "Cohort * timepoint")
+#' # interaction only (returns a single element named "group * timepoint")
 #' out3 <- compute_alpha_diversity(
 #'   pd,
-#'   group_cols = c("Cohort", "timepoint"),
+#'   group_cols = c("group", "timepoint"),
 #'   ranks = "peptide_id",
 #'   group_interaction = TRUE,
 #'   interaction_only = TRUE
 #' )
 #'
+#' \dontrun{
 #' # data.frame input — ranks must be columns in the data
 #' out_df <- compute_alpha_diversity(
 #'   df_long, group_cols = NULL, ranks = "peptide_id"
 #' )
+#' }
 #'
 #' # presence via fold-change
 #' out_fc <- compute_alpha_diversity(
-#'   pd, group_cols = "Cohort", ranks = "peptide_id", fc_threshold = 1.5
+#'   pd, group_cols = "group", ranks = "peptide_id", fc_threshold = 1.5
 #' )
-#' }
+#'
 #' @export
 compute_alpha_diversity <- function(x,
                                     group_cols = NULL,

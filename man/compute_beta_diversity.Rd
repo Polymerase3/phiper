@@ -28,7 +28,8 @@ compute_beta_diversity(x, ...)
     1L) - 1L),
   method_pcoa = c("joint", "separate_group", "separate_time", "separate_all", "cap"),
   neg_correction = c("none", "lingoes", "cailliez"),
-  time_force_continuous = FALSE
+  time_force_continuous = FALSE,
+  ...
 )
 
 \method{compute_beta_diversity}{data.frame}(
@@ -51,7 +52,8 @@ compute_beta_diversity(x, ...)
     1L) - 1L),
   method_pcoa = c("joint", "separate_group", "separate_time", "separate_all", "cap"),
   neg_correction = c("none", "lingoes", "cailliez"),
-  time_force_continuous = FALSE
+  time_force_continuous = FALSE,
+  ...
 )
 }
 \arguments{
@@ -89,12 +91,21 @@ For time, if \code{NULL}, the earliest level is used.}
 \item{mtp}{Multiple-testing correction method passed to \code{p.adjust}
 (default \code{.ph_opt("beta.mtp","BH")}).}
 
+\item{group_interaction}{Whether to also compute beta diversity on the interaction of all given groups (one extra view).
+(default FALSE)}
+
+\item{interaction_sep}{Interaction separator to use for the group interaction. Only used when \code{group_interaction} is TRUE.
+(default `"*"``)}
+
 \item{n_threads}{Integer; threads for parallelDist (default: all cores - 1).}
 
 \item{method_pcoa}{One of \code{"joint"}, \code{"separate_group"}, \code{"separate_time"},
 \code{"separate_all"}, \code{"cap"}. Controls ordination splitting / CAP.}
 
 \item{neg_correction}{One of \code{"none"}, \code{"lingoes"}, \code{"cailliez"}.}
+
+\item{time_force_continuous}{Wether to force time to being continuous (even if can be categorical).
+Currently only relevant in the case when \code{method_pcoa} is \code{"cap"}.}
 }
 \value{
 A \strong{named list} (one element per view or subview) with class

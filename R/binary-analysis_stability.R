@@ -19,7 +19,7 @@
 #' - `"jaccard"`      : |A∩B| / |A∪B|
 #' - `"sorensen"`     : 2|A∩B| / (|A|+|B|)
 #' - `"bray_curtis"`  : identical to Sørensen in the binary case
-#' - `"kulczynski"`   : 0.5 * [ a/(a+b) + a/(a+c) ] with a=|A∩B|
+#' - `"kulczynski"`   : 0.5 * `a/(a+b) + a/(a+c)` with a=|A∩B|
 #' - `"phi"` (≡ Pearson for binary)
 #'
 #' @param x             A `<phip_data>` object; **must be longitudinal**.
@@ -904,14 +904,14 @@ compute_repertoire_similarity <- function(
 #' Plot repertoire stability over time (Jaccard or Sørensen)
 #'
 #' @description
-#' Plot the output of [compute_repertoire_stability()] as group-wise curves
+#' Plot the output of [compute_repertoire_similarity()] as group-wise curves
 #' over time with confidence bands. If `drop_self = TRUE` was used at compute
 #' time, the plot adds **one baseline marker per group**: a larger point at the
 #' group baseline time (x), with y positioned at the **mean similarity of the
 #' earliest non-baseline time** in that group, filled by group colour and with a
 #' black border.
 #'
-#' @param stab_df A tibble returned by [compute_repertoire_stability()].
+#' @param stab_df A tibble returned by [compute_repertoire_similarity()].
 #'   Must contain columns `group`, `time`, `similarity`.
 #' @param custom_colors Optional named vector of colors for groups.
 #'   Defaults to PHIP palette.
@@ -1088,7 +1088,7 @@ plot_repertoire_stability <- function(
 
 #' @title Correlation heatmap of repertoire *stability* trajectories (subjects × subjects)
 #' @description
-#' Given a tibble produced by [compute_repertoire_stability()], compute
+#' Given a tibble produced by [compute_repertoire_similarity()], compute
 #' pairwise correlations between **subjects' stability time series** (0..1)
 #' within an optional group and plot a heatmap.
 #'
@@ -1135,7 +1135,7 @@ ph_plot_stability_corr_heatmap <- function(
   if (!inherits(stab, "phip_repertoire_stability")) {
     .ph_abort("Input must be a <phip_repertoire_stability> tibble.",
       step = "class check",
-      bullets = "Call compute_repertoire_stability() first."
+      bullets = "Call compute_repertoire_similarity() first."
     )
   }
 

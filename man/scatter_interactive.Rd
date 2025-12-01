@@ -84,13 +84,15 @@ if \code{rank == "peptide_id"}), and color by that variable.
 }
 }
 \examples{
+\dontrun{
 # typical usage with ph_prev_result:
-# p <- scatter_interactive(scatters,
-#   pair     = c("kid_serum::T2","kid_serum::T8"),
-#   rank     = "peptide_id",
-#   color_by = "is_flagellum",
-#   color_title = "Flagellum"
-# )
-# p
+p <- scatter_interactive(scatters,
+  pair     = c("kid_serum::T2","kid_serum::T8"),
+  rank     = "peptide_id",
+  color_by = "is_flagellum",
+  color_title = "Flagellum"
+)
+p
+}
 
 }

@@ -32,7 +32,9 @@ Provides a compact overview of the testing design and FDR accounting:
 }
 }
 \examples{
-# s <- summary(res)   # where res is a ph_prev_result
-# s
+\dontrun{
+s <- summary(res)   # where res is a ph_prev_result
+s
+}
 
 }

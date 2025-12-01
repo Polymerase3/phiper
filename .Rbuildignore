@@ -9,3 +9,4 @@
 ^local-cache$
 ^codemeta\.json$
 ^README\.Rmd$
+^dev$

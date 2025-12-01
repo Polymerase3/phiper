@@ -17,8 +17,11 @@
 #'
 #' @return A `ggplot` object ready for further layers / faceting.
 #' @examples
-#' fold_qq_plot(pd, by = c("big_group", "timepoint"), prop = 0.1) +
-#'   facet_wrap(~big_group, nrow = 2) +
+#' library(ggplot2)
+#' library(ggpubr)
+#' pd <- phip_load_example_data()
+#' p = fold_qq_plot(pd, by = c("group", "timepoint"), prop = 0.1) +
+#'   facet_wrap(~group, nrow = 2) +
 #'   ggpubr::theme_pubr()
 #' @export
 fold_qq_plot <- function(pd,
@@ -145,7 +148,9 @@ fold_qq_plot <- function(pd,
 #'         lambdas (tibble).
 #'
 #' @examples
-#' pd2 <- transform_fold_change_boxcox(pd, by = "big_group")
+#' library(tidyr)
+#' pd <- phip_load_example_data()
+#' pd2 <- transform_fold_boxcox(pd, by = "group", confirm=FALSE)
 #' @export
 #' @importFrom MASS boxcox
 transform_fold_boxcox <- function(pd, by = NULL, confirm = interactive()) {
@@ -228,8 +233,11 @@ transform_fold_boxcox <- function(pd, by = NULL, confirm = interactive()) {
 #' @return A `ggplot` object.
 #' @export
 #' @examples
-#' fold_hist_plot(pd, by = "big_group", prop = 0.1, bins = 100) +
-#'   facet_wrap(~big_group, nrow = 2)
+#' library(ggplot2)
+#' pd <- phip_load_example_data()
+#' p = fold_hist_plot(pd, by = "group", prop = 0.1, bins = 100) +
+#'   facet_wrap(~group, nrow = 2)
+#' }
 fold_hist_plot <- function(pd,
                            by = NULL,
                            prop = 1,

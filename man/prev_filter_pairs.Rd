@@ -83,6 +83,7 @@ są łączone logicznym OR (dopasowanie nieczułe na wielkość liter).
 atrybut \code{prev_meta} (dodaje \code{subsetted = TRUE}, oraz ewentualną notkę o filtrze).
 }
 \examples{
+\dontrun{
 # single pair, regex on features:
 # prev_filter_pairs(res, "B", "M12", ranks = "species",
 #                   features = "flagellin|fliC", features_regex = TRUE,
@@ -91,5 +92,6 @@ atrybut \code{prev_meta} (dodaje \code{subsetted = TRUE}, oraz ewentualną notk�
 # multiple pairs:
 # pairs <- list(c("B","M12"), c("T0","T2"))
 # prev_filter_pairs(res, pairs[[1]][1], pairs[[1]][2], ranks="peptide_id")
+}
 
 }

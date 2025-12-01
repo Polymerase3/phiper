@@ -33,6 +33,8 @@ A ggplot object (facetted small multiples).
 Plot CAP axes vs time (capscale; continuous time)
 }
 \examples{
+\dontrun{
 p <- ph_plot_cap_axes_vs_time(beta_cap)
 print(p)
+}
 }

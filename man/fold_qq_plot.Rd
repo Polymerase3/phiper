@@ -37,7 +37,10 @@ that produces a ready‑to‑modify Q–Q plot of the \emph{fold_change} column 
 \code{phip_data} object.
 }
 \examples{
-fold_qq_plot(pd, by = c("big_group", "timepoint"), prop = 0.1) +
-  facet_wrap(~big_group, nrow = 2) +
+library(ggplot2)
+library(ggpubr)
+pd <- phip_load_example_data()
+p = fold_qq_plot(pd, by = c("group", "timepoint"), prop = 0.1) +
+  facet_wrap(~group, nrow = 2) +
   ggpubr::theme_pubr()
 }

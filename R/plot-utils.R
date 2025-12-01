@@ -137,13 +137,15 @@ phip_use_montserrat <- function(family = "Montserrat",
 #' @return A ggplot2 `theme` object.
 #' @family phip-ggplot
 #' @examples
+#' \dontrun{
 #' # Register Montserrat once per session
-#' # phip_use_montserrat()
+#' phip_use_montserrat()
 #'
 #' ggplot2::ggplot(iris, ggplot2::aes(Sepal.Length, Sepal.Width, colour = Species)) +
 #'   ggplot2::geom_point() +
 #'   scale_colour_phip() +
 #'   theme_phip()
+#' }
 #' @export
 theme_phip <- function(base_size = 14,
                        base_family = "Montserrat") {

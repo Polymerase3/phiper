@@ -48,6 +48,8 @@ A ggplot object.
 Plot dispersion (distance to centroid) by group
 }
 \examples{
+\dontrun{
 p <- ph_plot_dispersion_box(beta_cap)
 print(p)
+}
 }

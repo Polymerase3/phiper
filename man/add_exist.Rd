@@ -4,7 +4,7 @@
 \alias{add_exist}
 \title{Ensure an existence flag (all ones) on \code{data_long}}
 \usage{
-add_exist(phip_data, exist_col = "exist", overwrite = FALSE, ...)
+add_exist(phip_data, exist_col = "exist", overwrite = FALSE)
 }
 \arguments{
 \item{phip_data}{A <phip_data> object.}
@@ -21,8 +21,6 @@ Appends/overwrites a column (default: "exist") filled with 1L on
 the lazy \code{data_long} backend. Preserves laziness; no collection is forced.
 }
 \examples{
-\dontrun{
-pd <- add_exist(pd) # adds "exist" := 1L
+pd <- phip_load_example_data()
 pd <- add_exist(pd, overwrite = TRUE) # overwrites if present
-}
 }

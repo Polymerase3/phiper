@@ -22,13 +22,15 @@ consistent use of the \strong{Montserrat} font (register it with
 \code{\link[=phip_use_montserrat]{phip_use_montserrat()}}).
 }
 \examples{
+\dontrun{
 # Register Montserrat once per session
-# phip_use_montserrat()
+phip_use_montserrat()
 
 ggplot2::ggplot(iris, ggplot2::aes(Sepal.Length, Sepal.Width, colour = Species)) +
   ggplot2::geom_point() +
   scale_colour_phip() +
   theme_phip()
+}
 }
 \seealso{
 Other phip-ggplot: 

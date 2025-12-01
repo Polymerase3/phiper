@@ -27,6 +27,8 @@ A ggplot object.
 Plot dispersion (distance to centroid) vs time (capscale; continuous time)
 }
 \examples{
+\dontrun{
 p <- ph_plot_dispersion_vs_time(beta_cap)
 print(p)
+}
 }
