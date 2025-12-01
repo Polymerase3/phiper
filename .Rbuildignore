@@ -7,3 +7,4 @@
 ^local-etl$
 ^local-data$
 ^local-cache$
+^codemeta\.json$
