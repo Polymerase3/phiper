@@ -1,0 +1,157 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+<!-- badges: start -->
+
+[![Codecov test coverage](https://codecov.io/gh/Polymerase3/phiper/graph/badge.svg)](https://app.codecov.io/gh/Polymerase3/phiper)
+[![R-CMD-check](https://github.com/Polymerase3/phiper/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Polymerase3/phiper/actions/workflows/R-CMD-check.yaml)
+[![pkgcheck](https://github.com/Polymerase3/phiper/workflows/pkgcheck/badge.svg)](https://github.com/Polymerase3/phiper/actions?query=workflow%3Apkgcheck)
+[![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+
+<!-- badges: end -->
+
+# phiper
+
+The `phiper` package provides a scalable, reproducible toolkit for validating and analyzing PhIP-Seq data in cross-sectional and longitudinal studies.
+
+## Installation
+
+You can install the development version of `phiper` from GitHub with either `pak` or `devtools`:
+
+```{r, eval = FALSE}
+# install.packages("pak")
+pak::pak("Polymerase3/phiper")
+
+# or, using devtools:
+# install.packages("devtools")
+devtools::install_github("Polymerase3/phiper")
+```
+
+## Minimal example
+
+For testing, exploration, and minimal examples we provide the `phip_mixture` dataset. It is a simulated PhIP-Seq–like antibody repertoire for two groups (A, B) and two time points (T1, T2), with per-subject, per-peptide presence/absence (`exist`) plus corresponding read counts and fold changes. The dataset is generated from a simple mixture of rare and common peptide prevalences with Poisson-distributed counts and is intended solely for testing and illustrative examples, without any biological interpretation.
+
+### Importing the data
+
+Because the data are relatively large, they are stored in a `.parquet` file. You can obtain the file path with:
+
+```{r, results = "hide", message = FALSE, warning = FALSE}
+library(phiper)
+library(dplyr)
+library(ggplot2)
+
+phip_path <- phip_example_path()
+```
+
+You can then import the data with:
+
+```{r, results = "hide", message = FALSE, warning = FALSE}
+ps <- phip_convert(
+  data_long_path    = phip_path,
+  backend           = "duckdb",
+  peptide_library   = TRUE,
+  subject_id        = "subject_id",
+  peptide_id        = "peptide_id",
+  sample_id         = "sample_id",
+  exist             = "exist",
+  timepoint         = "timepoint_factor",
+  fold_change       = "fold_change",
+  materialise_table = TRUE,
+  auto_expand       = FALSE,
+  n_cores           = 5
+)
+```
+
+You can inspect the data:
+
+```{r}
+ps$data_long %>%
+  head(5) %>%
+  collect()
+```
+
+You can also inspect the current version of the peptide library maintained by the Vogl lab:
+
+```{r}
+get_peptide_library(ps) %>%
+  head(5) %>%
+  collect()
+```
+
+### Plotting peptide counts
+
+You can easily plot peptide counts using the `plot_enrichment_counts()` function:
+
+```{r, message = FALSE, warning = FALSE}
+plot_enrichment_counts(
+  ps,
+  group_cols        = c("group", "time"),
+  group_interaction = TRUE,
+  interaction_only  = TRUE,
+  annotation_size   = 3
+)
+```
+
+### Alpha diversity
+
+You can also compute and visualize alpha diversity for different groups or subgroups of interest. `phiper` is organized into analysis modules: for each module you typically get a computation function (for example, `compute_alpha_diversity()`) and one or more plotting functions (for example, `plot_alpha_diversity()`). This pattern repeats across the analysis modules.
+
+For alpha diversity specifically:
+
+```{r, message = FALSE, warning = FALSE}
+alpha <- compute_alpha_diversity(
+  ps,
+  group_cols        = c("group", "time"),
+  carry_cols        = "subject_id",
+  group_interaction = TRUE,
+  interaction_only  = TRUE
+)
+
+head(alpha)
+```
+
+You can then plot the results:
+
+```{r, message = FALSE, warning = FALSE}
+plot_alpha_diversity(
+  alpha,
+  metric    = "richness",
+  group_col = "phip_interaction"
+) +
+  ylim(100, 400) +
+  theme(
+    axis.text.x = element_text(
+      angle = 45,
+      vjust = 1,
+      hjust = 1
+    )
+  )
+```
+
+## Contributing
+
+Bug reports, feature requests, and questions are welcome. Please open an issue on the GitHub tracker:
+
+- <https://github.com/Polymerase3/phiper/issues>
+
+If you would like to contribute code:
+
+1. Fork the repository and create a feature branch.
+2. Make your changes, including tests and documentation where appropriate.
+3. Ensure that `R CMD check` passes locally (or via GitHub Actions).
+4. Open a pull request describing the changes and their motivation.
+
+We are happy to review contributions and discuss design choices in the issue tracker or pull requests.

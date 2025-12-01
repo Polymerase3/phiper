@@ -8,3 +8,4 @@
 ^local-data$
 ^local-cache$
 ^codemeta\.json$
+^README\.Rmd$
