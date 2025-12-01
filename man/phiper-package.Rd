@@ -21,8 +21,8 @@ Useful links:
 
 Other contributors:
 \itemize{
-  \item Thomas Vogl \email{thomas.vogl@meduniwien.ac.at} (\href{https://orcid.org/0000-0002-3892-1740}{ORCID}) [contributor, copyright holder, funder]
-  \item Carlos Reyna-Blanco \email{carlos.reynablanco@meduniwien.ac.at} [contributor, copyright holder]
+  \item Alon Alexander \email{a.alexander@umcg.nl} [contributor, copyright holder]
+  \item Thomas Vogl \email{thomas.vogl@meduniwien.ac.at} (\href{https://orcid.org/0000-0002-3892-1740}{ORCID}) [copyright holder, funder]
 }
 
 }
