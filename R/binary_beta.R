@@ -1,117 +1,3 @@
-# ==============================================================================
-# Beta diversity - generic + methods  (global tests + optional contrasts only)
-# ==============================================================================
-
-#' @title Compute beta diversity (PCoA / CAP, PERMANOVA, dispersion)
-#'
-#' @description Computes between-sample diversity for one or more **ranks**
-#' via a dissimilarity matrix, **PCoA** scores, optional **CAP/dbRDA**,
-#' **PERMANOVA** (adonis2; always global maximal model) and **dispersion**
-#' (betadisper + permutest). Optional post-hoc contrasts can be requested.
-#'
-#' @details
-#' ## Ranks
-#' *The peptide identities or characteristics you aggregate by*. Must be **exact
-#' column names**:
-#' - For `<phip_data>`: columns from the Vogl Lab peptide library (e.g.,
-#'   `peptide_id`, lineage/taxa fields).
-#' - For `data.frame`: columns present in your long table.
-#'
-#' ## Presence rule
-#' - Default (`fc_threshold = NULL`): presence is `exist > 0`.
-#' - If `fc_threshold` is numeric, presence is `fold_change > fc_threshold`.
-#'
-#' ## Full-cross / auto-expanded zeros
-#' For `<phip_data>` created with a full cross (synthetic zero rows), those are
-#' pruned **upfront** (keep only present rows) to reduce compute, matching the
-#' alpha-diversity behavior.
-#'
-#' ## Normalization
-#' `method_normalization` controls how the wide abundance matrix is transformed
-#' *before* distances:
-#' - `"auto"`: if presence-by-`exist`, keep counts (binary) as-is; else use
-#'   `"relative"`.
-#' - `"relative"`: divide each row by its row sum.
-#' - `"hellinger"`: sqrt of relative.
-#' - `"log"`: `log1p`.
-#' - `"none"`: leave counts as-is.
-#'
-#' ## Distance engine
-#' Uses **parallelDist** when supported by the requested `distance` method.
-#' For methods not implemented in parallelDist (e.g., `"bray"`), it uses a
-#' **threaded Bray** via the identity `BC(x,y) = L1(x,y) / (sum(x)+sum(y))`.
-#' Otherwise falls back to `vegan::vegdist`.
-#'
-#' ## Ordination mode
-#' `method_pcoa` controls *how* ordinations are computed:
-#' `"joint"`, `"separate_group"`, `"separate_time"`, `"separate_all"`, `"cap"`.
-#' - `"cap"` uses `vegan::capscale` with constrained axes determined by
-#'   available predictors; others use (w)cmdscale on the distance.
-#'
-#' ## Negative eigenvalues
-#' `neg_correction`: `"none"`, `"lingoes"`, or `"cailliez"`. Applied via
-#' `vegan::wcmdscale(add=)` (PCoA) or `capscale(add=)` (CAP).
-#'
-#' ## Testing (ALWAYS global, with optional contrasts)
-#' - PERMANOVA always runs a **global maximal model**:
-#'   `dist ~ group + time + group:time` (dropping terms not available).
-#'   If `time_col` is present and `subject_id` exists, permutations are
-#'   **stratified by subject_id**.
-#' - Dispersion (betadisper + permutest) is run **globally** for each available
-#'   factor (`group`, `time`, `group:time`) and can also run **contrasts**.
-#' - `contrasts`: `"none"`, `"pairwise"`, `"each_vs_rest"` (alias `"group_vs_rest"`),
-#'   or `"baseline"` (provide `baseline_level`).
-#' - Multiple-testing correction is applied **within each (view × rank)** using
-#'   `mtp` (default `.ph_opt("beta.mtp","BH")`). Use `"none"` to skip.
-#'
-#' @param x A `<phip_data>` object or a long `data.frame`.
-#' @param group_cols Character vector of grouping columns, or `NULL` for a
-#'   single **non-facetted** view called `"all_samples"`. Columns must exist.
-#' @param ranks Character vector of **exact column names** to aggregate by.
-#' @param fc_threshold Numeric or `NULL`. Presence rule (see Details).
-#' @param method_normalization One of `"auto"`, `"relative"`, `"hellinger"`,
-#'   `"log"`, `"none"`.
-#' @param distance Distance method (e.g., `"bray"`, `"jaccard"`, `"euclidean"`,
-#'   `"manhattan"`, `"canberra"`, `"cosine"`). (Backward-compat: `method`.)
-#' @param permutations Number of permutations for adonis2 / permutest
-#'   (default `999`). Use `0` to skip permutation tests.
-#' @param time_col Optional **categorical** time column (e.g., `"timepoint"`).
-#' @param carry_cols Optional character vector of extra columns to carry into
-#'   outputs (joined by `sample_id`).
-#' @param filter_rank Optional vector or function to limit levels of each `rank`.
-#' @param baseline_level Optional baseline level name for `"baseline"` contrasts.
-#'   For time, if `NULL`, the earliest level is used.
-#' @param contrasts One or more of `"none"`, `"pairwise"`, `"each_vs_rest"`
-#'   (alias `"group_vs_rest"`), `"baseline"`. Default `"none"`.
-#' @param mtp Multiple-testing correction method passed to `p.adjust`
-#'   (default `.ph_opt("beta.mtp","BH")`).
-#' @param group_interaction Whether to also compute beta diversity on the interaction of all given groups (one extra view).
-#'   (default FALSE)
-#' @param interaction_sep Interaction separator to use for the group interaction. Only used when `group_interaction` is TRUE.
-#'   (default `"*"``)
-#' @param n_threads Integer; threads for parallelDist (default: all cores - 1).
-#' @param method_pcoa One of `"joint"`, `"separate_group"`, `"separate_time"`,
-#'   `"separate_all"`, `"cap"`. Controls ordination splitting / CAP.
-#' @param neg_correction One of `"none"`, `"lingoes"`, `"cailliez"`.
-#' @param time_force_continuous Wether to force time to being continuous (even if can be categorical).
-#'   Currently only relevant in the case when `method_pcoa` is `"cap"`.
-#' @inheritDotParams
-#'
-#' @return A **named list** (one element per view or subview) with class
-#'   `"phip_beta_diversity"`. Each element contains:
-#'   - `pcoa`: tibble with first k axes (see option `phiper.beta.eig_axes`).
-#'   - `pcoa_full`: **all** axes (diagnostics).
-#'   - `var_explained`: `%PCoA1…%PCoAk` plus `%Other` (normalized by sum of
-#'     **positive** eigenvalues from the **full** spectrum).
-#'   - `eigen_summary`: first k rows + **Other**; includes `n_pos`, `n_neg`.
-#'   - `eig_full`: all raw eigenvalues.
-#'   - `feature_loadings`: weighted-average loadings (wide, axis-block order).
-#'   - `tests`: global PERMANOVA + requested contrasts (tidy).
-#'   - `dispersion`: per-sample centroid distances (+ contrast tests).
-#'
-#' @export
-compute_beta_diversity <- function(x, ...) UseMethod("compute_beta_diversity")
-
 # ------------------------------------------------------------------------------
 # internals (shared)
 # ------------------------------------------------------------------------------
@@ -2722,9 +2608,119 @@ compute_beta_diversity <- function(x, ...) UseMethod("compute_beta_diversity")
   outs
 }
 
-#' @rdname compute_beta_diversity
+# ==============================================================================
+# Beta diversity - generic + methods  (global tests + optional contrasts only)
+# ==============================================================================
+
+#' @title Compute beta diversity (PCoA / CAP, PERMANOVA, dispersion)
+#'
+#' @description Computes between-sample diversity for one or more **ranks**
+#' via a dissimilarity matrix, **PCoA** scores, optional **CAP/dbRDA**,
+#' **PERMANOVA** (adonis2; always global maximal model) and **dispersion**
+#' (betadisper + permutest). Optional post-hoc contrasts can be requested.
+#'
+#' @details
+#' ## Ranks
+#' *The peptide identities or characteristics you aggregate by*. Must be **exact
+#' column names**:
+#' - For `<phip_data>`: columns from the Vogl Lab peptide library (e.g.,
+#'   `peptide_id`, lineage/taxa fields).
+#' - For `data.frame`: columns present in your long table.
+#'
+#' ## Presence rule
+#' - Default (`fc_threshold = NULL`): presence is `exist > 0`.
+#' - If `fc_threshold` is numeric, presence is `fold_change > fc_threshold`.
+#'
+#' ## Full-cross / auto-expanded zeros
+#' For `<phip_data>` created with a full cross (synthetic zero rows), those are
+#' pruned **upfront** (keep only present rows) to reduce compute, matching the
+#' alpha-diversity behavior.
+#'
+#' ## Normalization
+#' `method_normalization` controls how the wide abundance matrix is transformed
+#' *before* distances:
+#' - `"auto"`: if presence-by-`exist`, keep counts (binary) as-is; else use
+#'   `"relative"`.
+#' - `"relative"`: divide each row by its row sum.
+#' - `"hellinger"`: sqrt of relative.
+#' - `"log"`: `log1p`.
+#' - `"none"`: leave counts as-is.
+#'
+#' ## Distance engine
+#' Uses **parallelDist** when supported by the requested `distance` method.
+#' For methods not implemented in parallelDist (e.g., `"bray"`), it uses a
+#' **threaded Bray** via the identity `BC(x,y) = L1(x,y) / (sum(x)+sum(y))`.
+#' Otherwise falls back to `vegan::vegdist`.
+#'
+#' ## Ordination mode
+#' `method_pcoa` controls *how* ordinations are computed:
+#' `"joint"`, `"separate_group"`, `"separate_time"`, `"separate_all"`, `"cap"`.
+#' - `"cap"` uses `vegan::capscale` with constrained axes determined by
+#'   available predictors; others use (w)cmdscale on the distance.
+#'
+#' ## Negative eigenvalues
+#' `neg_correction`: `"none"`, `"lingoes"`, or `"cailliez"`. Applied via
+#' `vegan::wcmdscale(add=)` (PCoA) or `capscale(add=)` (CAP).
+#'
+#' ## Testing (ALWAYS global, with optional contrasts)
+#' - PERMANOVA always runs a **global maximal model**:
+#'   `dist ~ group + time + group:time` (dropping terms not available).
+#'   If `time_col` is present and `subject_id` exists, permutations are
+#'   **stratified by subject_id**.
+#' - Dispersion (betadisper + permutest) is run **globally** for each available
+#'   factor (`group`, `time`, `group:time`) and can also run **contrasts**.
+#' - `contrasts`: `"none"`, `"pairwise"`, `"each_vs_rest"` (alias `"group_vs_rest"`),
+#'   or `"baseline"` (provide `baseline_level`).
+#' - Multiple-testing correction is applied **within each (view × rank)** using
+#'   `mtp` (default `.ph_opt("beta.mtp","BH")`). Use `"none"` to skip.
+#'
+#' @param x A `<phip_data>` object or a long `data.frame`.
+#' @param group_cols Character vector of grouping columns, or `NULL` for a
+#'   single **non-facetted** view called `"all_samples"`. Columns must exist.
+#' @param ranks Character vector of **exact column names** to aggregate by.
+#' @param fc_threshold Numeric or `NULL`. Presence rule (see Details).
+#' @param method_normalization One of `"auto"`, `"relative"`, `"hellinger"`,
+#'   `"log"`, `"none"`.
+#' @param distance Distance method (e.g., `"bray"`, `"jaccard"`, `"euclidean"`,
+#'   `"manhattan"`, `"canberra"`, `"cosine"`). (Backward-compat: `method`.)
+#' @param permutations Number of permutations for adonis2 / permutest
+#'   (default `999`). Use `0` to skip permutation tests.
+#' @param time_col Optional **categorical** time column (e.g., `"timepoint"`).
+#' @param carry_cols Optional character vector of extra columns to carry into
+#'   outputs (joined by `sample_id`).
+#' @param filter_rank Optional vector or function to limit levels of each `rank`.
+#' @param baseline_level Optional baseline level name for `"baseline"` contrasts.
+#'   For time, if `NULL`, the earliest level is used.
+#' @param contrasts One or more of `"none"`, `"pairwise"`, `"each_vs_rest"`
+#'   (alias `"group_vs_rest"`), `"baseline"`. Default `"none"`.
+#' @param mtp Multiple-testing correction method passed to `p.adjust`
+#'   (default `.ph_opt("beta.mtp","BH")`).
+#' @param group_interaction Whether to also compute beta diversity on the interaction of all given groups (one extra view).
+#'   (default FALSE)
+#' @param interaction_sep Interaction separator to use for the group interaction. Only used when `group_interaction` is TRUE.
+#'   (default `"*"``)
+#' @param n_threads Integer; threads for parallelDist (default: all cores - 1).
+#' @param method_pcoa One of `"joint"`, `"separate_group"`, `"separate_time"`,
+#'   `"separate_all"`, `"cap"`. Controls ordination splitting / CAP.
+#' @param neg_correction One of `"none"`, `"lingoes"`, `"cailliez"`.
+#' @param time_force_continuous Wether to force time to being continuous (even if can be categorical).
+#'   Currently only relevant in the case when `method_pcoa` is `"cap"`.
+#' @inheritDotParams
+#'
+#' @return A **named list** (one element per view or subview) with class
+#'   `"phip_beta_diversity"`. Each element contains:
+#'   - `pcoa`: tibble with first k axes (see option `phiper.beta.eig_axes`).
+#'   - `pcoa_full`: **all** axes (diagnostics).
+#'   - `var_explained`: `%PCoA1…%PCoAk` plus `%Other` (normalized by sum of
+#'     **positive** eigenvalues from the **full** spectrum).
+#'   - `eigen_summary`: first k rows + **Other**; includes `n_pos`, `n_neg`.
+#'   - `eig_full`: all raw eigenvalues.
+#'   - `feature_loadings`: weighted-average loadings (wide, axis-block order).
+#'   - `tests`: global PERMANOVA + requested contrasts (tidy).
+#'   - `dispersion`: per-sample centroid distances (+ contrast tests).
+#'
 #' @export
-compute_beta_diversity.phip_data <- function(x,
+compute_beta_diversity <- function(x,
                                              group_cols = NULL,
                                              ranks = "peptide_id",
                                              fc_threshold = NULL,
@@ -2811,132 +2807,6 @@ compute_beta_diversity.phip_data <- function(x,
       }
 
       # dispatcher across views
-      views <- list()
-      if (is.null(group_cols) || !length(group_cols)) {
-        views[["all_samples"]] <- .compute_beta_block(
-          tbl,
-          view_name = "all_samples", group_col = NULL, ranks = ranks,
-          fc_threshold = fc_threshold, method_normalization = method_normalization, distance = distance,
-          permutations = permutations, time_col = time_col, carry_cols = carry_cols,
-          filter_rank = filter_rank, baseline_level = baseline_level, contrasts = contrasts,
-          mtp = mtp, map_provider = map_provider, n_threads = n_threads,
-          method_pcoa = method_pcoa, neg_correction = neg_correction,
-          time_force_continuous = time_force_continuous
-        )
-      } else {
-        for (gc in group_cols) {
-          views[[gc]] <- .compute_beta_block(
-            tbl,
-            view_name = gc, group_col = gc, ranks = ranks,
-            fc_threshold = fc_threshold, method_normalization = method_normalization, distance = distance,
-            permutations = permutations, time_col = time_col, carry_cols = carry_cols,
-            filter_rank = filter_rank, baseline_level = baseline_level, contrasts = contrasts,
-            mtp = mtp, map_provider = map_provider, n_threads = n_threads,
-            method_pcoa = method_pcoa, neg_correction = neg_correction,
-            time_force_continuous = time_force_continuous
-          )
-        }
-        if (isTRUE(group_interaction) && length(group_cols) >= 2L) {
-          inter_col <- "..phip_interaction.."
-          combo_nm <- paste(group_cols, collapse = interaction_sep)
-          tbl_inter <- dplyr::mutate(tbl, !!rlang::sym(inter_col) := paste(!!!rlang::syms(group_cols), sep = interaction_sep))
-          views[[combo_nm]] <- .compute_beta_block(
-            tbl_inter,
-            view_name = combo_nm, group_col = inter_col, ranks = ranks,
-            fc_threshold = fc_threshold, method_normalization = method_normalization, distance = distance,
-            permutations = permutations, time_col = time_col, carry_cols = carry_cols,
-            filter_rank = filter_rank, baseline_level = baseline_level, contrasts = contrasts,
-            mtp = mtp, map_provider = map_provider, n_threads = n_threads,
-            method_pcoa = method_pcoa, neg_correction = neg_correction,
-            time_force_continuous = time_force_continuous
-          )
-        }
-      }
-
-      class(views) <- c("phip_beta_diversity", class(views))
-      attr(views, "group_cols") <- group_cols
-      attr(views, "ranks") <- ranks
-      attr(views, "fc_threshold") <- fc_threshold
-      attr(views, "method_normalization") <- method_normalization
-      attr(views, "distance") <- distance
-      attr(views, "permutations") <- permutations
-      attr(views, "time_col") <- time_col
-      attr(views, "contrasts") <- contrasts
-      attr(views, "mtp") <- mtp %||% .ph_opt("beta.mtp", "BH")
-      attr(views, "method_pcoa") <- method_pcoa
-      attr(views, "neg_correction") <- neg_correction
-
-      views
-    },
-    verbose = .ph_opt("verbose", TRUE)
-  )
-}
-
-
-#' @rdname compute_beta_diversity
-#' @export
-compute_beta_diversity.data.frame <- function(x,
-                                              group_cols = NULL,
-                                              ranks = "peptide_id",
-                                              fc_threshold = NULL,
-                                              method_normalization = c("auto", "relative", "hellinger", "log", "none"),
-                                              distance = "bray",
-                                              permutations = 999,
-                                              time_col = NULL,
-                                              carry_cols = NULL,
-                                              filter_rank = NULL,
-                                              baseline_level = NULL,
-                                              contrasts = "none",
-                                              mtp = NULL,
-                                              group_interaction = FALSE,
-                                              interaction_sep = " * ",
-                                              n_threads = max(1L, (if (rlang::is_installed("parallel")) parallel::detectCores() else 1L) - 1L),
-                                              method_pcoa = c("joint", "separate_group", "separate_time", "separate_all", "cap"),
-                                              neg_correction = c("none", "lingoes", "cailliez"),
-                                              time_force_continuous = FALSE,
-                                              ...) {
-  tbl <- x
-  .data <- rlang::.data
-  method_pcoa <- match.arg(method_pcoa)
-  neg_correction <- match.arg(neg_correction)
-  method_normalization <- match.arg(method_normalization)
-
-  .ph_with_timing(
-    headline = "Computing beta diversity (data.frame)",
-    step = paste0(
-      "group_cols: ", if (is.null(group_cols)) "<none>" else paste(add_quotes(group_cols, 1L), collapse = ", "),
-      "; ranks: ", paste(add_quotes(ranks, 1L), collapse = ", "),
-      "; distance: ", distance,
-      "; method_normalization: ", method_normalization,
-      "; permutations: ", permutations,
-      "; contrasts: ", if (length(contrasts)) paste(contrasts, collapse = ",") else "<none>",
-      "; method_pcoa: ", method_pcoa,
-      "; neg_correction: ", neg_correction
-    ),
-    expr = {
-      if (!is.null(group_cols) && length(group_cols)) {
-        miss_gc <- setdiff(group_cols, colnames(tbl))
-        if (length(miss_gc)) {
-          .ph_abort(
-            headline = "Grouping columns not found in data.frame.",
-            step = "input validation",
-            bullets = sprintf("missing: %s", paste(add_quotes(miss_gc, 1L), collapse = ", "))
-          )
-        }
-      }
-
-      map_provider <- function(rank_name) {
-        if (!(rank_name %in% colnames(tbl))) {
-          .ph_warn(
-            headline = "Rank not found in data.frame (skipping).",
-            step = "rank mapping",
-            bullets = sprintf("rank: %s", add_quotes(rank_name, 1L))
-          )
-          return(NULL)
-        }
-        tibble::tibble(peptide_id = tbl$peptide_id, rank_val = tbl[[rank_name]]) |> dplyr::distinct()
-      }
-
       views <- list()
       if (is.null(group_cols) || !length(group_cols)) {
         views[["all_samples"]] <- .compute_beta_block(
