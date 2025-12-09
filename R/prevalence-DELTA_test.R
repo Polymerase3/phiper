@@ -1,109 +1,230 @@
-# ==============================================================================
-#' Global shift in peptide-level prevalence via subject-level permutation
-#'
-#' @importFrom foreach %dopar% foreach registerDoSEQ
-#' @importFrom doParallel registerDoParallel
+#' @title Global Shift in Peptide-level Prevalence via Subject-level Permutation
 #'
 #' @description
-#' Tests for a **global** (genome/antigen-wide) shift in peptide-level prevalence
-#' between two groups within each `(rank, feature, group_col)` stratum by
-#' aggregating per-peptide effects into a single Stouffer-type statistic and
-#' assessing significance via **label permutation** (paired or unpaired, chosen
-#' automatically from the data).
+#' Test for a **global** (antigen-wide) shift in peptide-level
+#' prevalence between two groups within each `(rank, feature, group_col)`
+#' stratum by aggregating per-peptide effects into a single Stouffer-type
+#' statistic and assessing significance via **label permutation**.
 #'
 #' @details
-#' **Overview.** For each stratum `(rank, feature, group_col)` that yields a
-#' unique ordered pair of groups `(g1, g2)`, the method:
+#' For each stratum `(rank, feature, group_col)` that defines an ordered pair of
+#' groups `(g1, g2)`, the procedure is:
 #'
-#' 1) **Peptide-level prevalence with smoothing.**
-#'    For each peptide, compute smoothed prevalences in `g1` and `g2`:
-#'    \deqn{ \hat p_k = \frac{x_k + \varepsilon}{n_k + \lambda \varepsilon}, \; k \in \{g1,g2\} , }
+#' 1. **Smoothed peptide-level prevalences.**
+#'    For each peptide, smoothed prevalences in `g1` and `g2` are
+#'    \deqn{
+#'      \hat p_k = \frac{x_k + \varepsilon}{n_k + \lambda \varepsilon},\quad k \in \{g1, g2\},
+#'    }
 #'    where `x_k` is the number of samples with presence (`exist > 0`), `n_k`
-#'    is the number of (distinct) samples (or paired subjects), `\varepsilon`
-#'    is `smooth_eps_num`, and `\lambda` is `smooth_eps_den_mult`. Peptides with
-#'    `max( \hat p_{g1}, \hat p_{g2} ) < min_max_prev` are discarded.
+#'    is the number of distinct samples (or paired subjects), `\varepsilon` is
+#'    `smooth_eps_num`, and `\lambda` is `smooth_eps_den_mult`. Peptides with
+#'    \eqn{\max(\hat p_{g1}, \hat p_{g2}) <} `min_max_prev` are discarded.
 #'
-#' 2) **Per-peptide effect and z-score (`stat_mode`).**
+#' 2. **Per-peptide effect and z-score (`stat_mode`).**
+#'
 #'    - `"diff"`: effect \eqn{\Delta = \hat p_{g2} - \hat p_{g1}} with
-#'      \eqn{ SE = \sqrt{\hat p_{g1}(1-\hat p_{g1})/n_{g1} + \hat p_{g2}(1-\hat p_{g2})/n_{g2}} } and
-#'      \eqn{ z = \Delta / SE } (guarded by a tiny floor).
-#'    - `"asin"`: variance-stabilized difference of angles:
-#'      \eqn{ z = \frac{\arcsin\sqrt{\hat p_{g2}} - \arcsin\sqrt{\hat p_{g1}}}{ \sqrt{ 1/(4n_{g1}) + 1/(4n_{g2}) } } .}
-#'    Each \eqn{z} is **winsorized** to \eqn{\pm} `winsor_z`.
+#'      \deqn{
+#'        SE = \sqrt{\hat p_{g1}(1 - \hat p_{g1}) / n_{g1} +
+#'                   \hat p_{g2}(1 - \hat p_{g2}) / n_{g2}} ,
+#'      }
+#'      and z-score \eqn{z = \Delta / SE} (with a small floor on `SE`).
 #'
-#' 3) **Weights (`weight_mode`).**
-#'    - `"equal"`: all peptides weight 1.
-#'    - `"se_invvar"`: inverse standard error (or the analogous denominator for
-#'      `"asin"`).
-#'    - `"n_eff_sqrt"`: \eqn{ \sqrt{ n_{g1}\hat p_{g1} + n_{g2}\hat p_{g2} } } (proxy for expected positives).
+#'    - `"asin"`: variance-stabilized difference of angles,
+#'      \deqn{
+#'        z = \frac{\arcsin \sqrt{\hat p_{g2}} - \arcsin \sqrt{\hat p_{g1}}}
+#'                 {\sqrt{1 / (4 n_{g1}) + 1 / (4 n_{g2})}} .
+#'      }
 #'
-#' 4) **Combine into one test statistic (Stouffer).**
-#'    Let \eqn{w_i} be weights and \eqn{z_i} peptide z-scores.
+#'    Each \eqn{z_i} is then **winsorized** to \eqn{\pm} `winsor_z`.
+#'
+#' 3. **Weights (`weight_mode`).**
+#'
+#'    - `"equal"`: all peptides get weight 1.
+#'    - `"se_invvar"`: weights proportional to the inverse standard error
+#'      (or the analogous denominator for `"asin"`).
+#'    - `"n_eff_sqrt"`:
+#'      \deqn{
+#'        w_i = \sqrt{ n_{g1} \hat p_{g1} + n_{g2} \hat p_{g2} },
+#'      }
+#'      i.e. the square root of the expected number of positives across both groups.
+#'
+#' 4. **Combine into a single test statistic (Stouffer).**
+#'    Let \eqn{w_i} be the weights and \eqn{z_i} the peptide-level z-scores.
+#'
 #'    - If `prev_strat = "none"`:
-#'      \deqn{ T_{\mathrm{obs}} = \frac{ \sum_i w_i z_i }{ \sqrt{ \sum_i w_i^2 } } . }
-#'    - If `prev_strat = "decile"`: bin peptides by deciles of pooled prevalence
-#'      \eqn{ (\;n_{g1}\hat p_{g1} + n_{g2}\hat p_{g2}\;)/(\;n_{g1}+n_{g2}\;) } and combine a
-#'      Stouffer \eqn{T_b} within each bin; report the **mean** of bin-level z’s
-#'      as \eqn{T_{\mathrm{obs}}} (stabilizes across prevalence regimes).
+#'      \deqn{
+#'        T_{\mathrm{obs}} =
+#'          \frac{\sum_i w_i z_i}{\sqrt{\sum_i w_i^2}} .
+#'      }
 #'
-#' 5) **Permutation scheme and p-value.**
-#'    We compute a **two-sided** permutation p-value for the global shift:
+#'    - If `prev_strat = "decile"`: peptides are binned into deciles of pooled
+#'      prevalence
+#'      \deqn{
+#'        \frac{n_{g1}\hat p_{g1} + n_{g2}\hat p_{g2}}{n_{g1} + n_{g2}},
+#'      }
+#'      a Stouffer statistic \eqn{T_b} is computed within each bin, and the
+#'      **mean** of the bin-level z-scores is reported as \eqn{T_{\mathrm{obs}}}.
 #'
-#'    - **Paired design:** when both groups have measurements for the same
-#'      `subject_id`, we independently flip each subject’s labels (`g1`↔`g2`)
-#'      with 50/50 probability, recompute all steps (1–4) to get \eqn{T_b}.
-#'    - **Unpaired design:** we shuffle sample labels while **preserving group
-#'      sizes** (draw a random split of samples into `n1`/`n2`), recompute (1–4)
-#'      to get \eqn{T_b}.
+#' 5. **Permutation scheme and p-value.**
+#'    A **two-sided** permutation p-value for the global shift is computed:
+#'
+#'    - **Paired design**: if both groups have measurements for the same
+#'      `subject_id`, each subject’s labels (`g1` ↔ `g2`) are independently
+#'      flipped with probability 1/2 and steps (1–4) are recomputed to obtain
+#'      \eqn{T_b}.
+#'
+#'    - **Unpaired design**: sample labels are shuffled while preserving group
+#'      sizes (random split into `n1` / `n2`), and steps (1–4) are recomputed
+#'      to obtain \eqn{T_b}.
 #'
 #'    With \eqn{B} permutations, the p-value is
-#'    \deqn{ p = \frac{1 + \sum_{b=1}^{B} \mathbf{1}\{ |T_b| \ge |T_{\mathrm{obs}}| \} }{1 + B} , }
-#'    which is the standard *add-one* estimate ensuring non-zero p under the
-#'    global null.
+#'    \deqn{
+#'      p =
+#'      \frac{1 + \sum_{b=1}^{B} \mathbf{1}\{|T_b| \ge |T_{\mathrm{obs}}|\}}
+#'           {1 + B},
+#'    }
+#'    the standard add-one estimator that remains non-zero under the global null.
 #'
-#' 6) **Multiplicity.** For each `rank`, apply BH to `p_perm` → `p_adj_rank`.
+#' 6. **Multiplicity.**
+#'    For each `rank`, permutation p-values `p_perm` are adjusted with BH
+#'    (per-rank) to obtain `p_adj_rank`. A simple categorical summary is
+#'    returned in `category_rank_bh`.
 #'
-#' **Notes.**
-#' - If a stratum doesn’t contain exactly two group levels, it’s skipped.
-#' - Progress can be printed every `progress_perm_every` permutations.
+#' 7. **Optional summaries.**
 #'
-#' @param x A `phip_data` (recommended; must carry `peptide_library` when
-#'   `rank_cols` include non-`peptide_id`) or a data.frame with the necessary
-#'   columns.
+#'    - If `fold_change != "none"` and a column `fold_change` is present in
+#'      `x`, an aggregate of that column over the peptides and subjects in the
+#'      contrast is returned as `fold_change_<mode>` (`mode` = `"sum"`,
+#'      `"mean"`, `"max"`, `"median"`).
+#'
+#'    - If `cross_prev != "none"`, pooled peptide-level prevalences across
+#'      `g1 ∪ g2` are summarized with the same set of reducers (`"sum"`,
+#'      `"mean"`, `"max"`, `"median"`) and returned as `cross_prev_<mode>`.
+#'
+#' **Input requirements.**
+#'
+#' - `exist_col` is treated as 0/1 presence.
+#' - There must be **at most one positive** per
+#'   (`subject_id`, `peptide_id`, `group_col`, `group_value`); paired designs
+#'   can have up to two positives across the two group levels. Violations
+#'   trigger an error.
+#' - Non-peptide ranks specified in `rank_cols` must be resolvable from a
+#'   peptide library (see `peptide_library` below).
+#'
+#' **Peptide library resolution.**
+#'
+#' When `rank_cols` includes non-`"peptide_id"` ranks, a peptide library is
+#' required. It is resolved in the following order:
+#'
+#' 1. `x$peptide_library` if `x` is a `phip_data` with an attached library.
+#' 2. The explicit `peptide_library` argument.
+#' 3. `phiper::get_peptide_meta()` if available (i.e. `phiper` is installed and
+#'    exports this function).
+#'
+#' If none of these are available, the function aborts with an informative error.
+#'
+#' @section Parallelization:
+#' The permutation contrasts are evaluated either sequentially or in parallel
+#' using the **current** `future` backend:
+#'
+#' - The function does **not** change the global `future::plan()`.
+#' - If `future` is installed, the number of workers is inferred from
+#'   `future::nbrOfWorkers()`. To run in parallel, set up a `future` plan
+#'   (e.g. `future::plan(multisession, workers = 8)`) **outside** the function.
+#' - Internal C++ code is constrained to a single thread per R worker
+#'   (`RcppParallel::setThreadOptions(numThreads = 1)` and BLAS/OpenMP limits),
+#'   to avoid oversubscription when using multiple workers.
+#'
+#' Reproducibility of permutations is controlled via the global RNG:
+#' call `set.seed()` before `ph_prevalence_shift2()` to obtain reproducible
+#' results; each contrast draws its own seed from the global RNG state.
+#'
+#' @param x A `phip_data` object (recommended; must carry a `peptide_library`
+#'   when `rank_cols` includes non-`"peptide_id"`) or a data frame with the
+#'   necessary columns.
 #' @param rank_cols Character vector of rank columns (e.g. `"peptide_id"`,
-#'   `"species"`, ...). Non-peptide ranks are joined from `x$peptide_library`.
-#' @param group_cols Character vector of grouping columns that define universes;
-#'   pairwise contrasts are constructed within each universe.
+#'   `"species"`, ...). For non-peptide ranks, annotations are joined from a
+#'   peptide library (see Details).
+#' @param group_cols Character vector of grouping columns that define
+#'   universes; pairwise group contrasts are constructed within each
+#'   `(rank, feature, group_col)` stratum.
 #' @param exist_col Name of the 0/1 presence column. Default `"exist"`.
-#' @param interaction Logical; if `TRUE`, also create the interaction of the
-#'   first two `group_cols`. Ignored if `combine_cols` is set.
-#' @param combine_cols Optional length-2 vector; if provided, only that
-#'   interaction is used as `group_col`.
+#' @param interaction Logical; reserved for future use (currently ignored). If
+#'   `TRUE`, an interaction of the first two `group_cols` may be used as an
+#'   additional `group_col` in future versions.
+#' @param combine_cols Optional length-2 character vector; reserved for future
+#'   use. If non-`NULL`, only this interaction would be used as `group_col`
+#'   in future versions.
 #' @param interaction_sep Separator for interaction values. Default `"::"`.
-#' @param B_permutations Number of permutations `B`. Default `2000L`.
-#' @param smooth_eps_num Laplace numerator epsilon. Default `0.5`.
-#' @param smooth_eps_den_mult Multiplier for denominator epsilon. Default `2.0`.
-#' @param min_max_prev Keep peptides with `max(p1, p2) >=` this. Default `0.0`.
-#' @param weight_mode One of `c("equal","se_invvar","n_eff_sqrt")`.
-#' @param stat_mode One of `c("diff","asin")`.
-#' @param prev_strat One of `c("none","decile")` for prevalence-stratified
-#'   combining.
-#' @param winsor_z Winsorization threshold for per-peptide z. Default `4.0`.
-#' @param collect Keep `TRUE`; materialization is not required here.
-#' @param register_name Reserved; no-op here.
-#' @param progress_perm_every Print a small log every k permutations. Default `1L`.
-#' @param rank_feature_keep Optional **named list** `rank -> values to keep`;
-#'   filters `(rank, feature)` after pivot.
+#' @param B_permutations Number of permutations `B` used for the permutation
+#'   p-value. Default `2000L`. Must be at least 100.
+#' @param smooth_eps_num Laplace numerator epsilon \eqn{\varepsilon} used to
+#'   smooth prevalence estimates. Default `0.5`.
+#' @param smooth_eps_den_mult Multiplicative factor \eqn{\lambda} applied to
+#'   the denominator epsilon in the smoothing formula. Default `2.0`.
+#' @param min_max_prev Minimum required value of `max(p1, p2)` for a peptide to
+#'   be retained in the analysis. Default `0.0` (no prevalence filter).
+#' @param weight_mode One of `c("equal", "se_invvar", "n_eff_sqrt")`,
+#'   controlling how peptide-level z-scores are weighted in the Stouffer
+#'   combination (see Details).
+#' @param stat_mode One of `c("diff", "asin")`, determining whether z-scores
+#'   are based on prevalence differences or the arcsin–sqrt transform.
+#' @param prev_strat One of `c("none", "decile")`. If `"decile"`, the Stouffer
+#'   statistic is computed within prevalence deciles and the mean of decile-level
+#'   z-scores is used as the global test statistic.
+#' @param winsor_z Winsorization threshold applied to peptide-level z-scores.
+#'   Values beyond `±winsor_z` are truncated. Default `4.0`.
+#' @param rank_feature_keep Optional **named list** mapping `rank` to a vector
+#'   of `feature` values to keep. Only rank–feature strata in this list are
+#'   tested; others are dropped after the peptide-level pivot.
+#' @param peptide_library Optional data frame providing peptide annotations for
+#'   non-peptide ranks. Must at least contain `peptide_id` and all requested
+#'   `rank_cols` besides `"peptide_id"`. If `NULL`, the function falls back to
+#'   `x$peptide_library` or `phiper::get_peptide_meta()` if available.
+#' @param log Logical; if `TRUE`, write progress messages (per contrast and
+#'   overall) using the package's logging helpers.
+#' @param log_file Path to a log file used by the logging helpers if `log` is
+#'   `TRUE`. Default `"ph_prevalence_shift.log"`.
+#' @param fold_change Character scalar specifying whether and how to summarize
+#'   a `fold_change` column (if present) over peptides and subjects in each
+#'   contrast. One of `c("none", "sum", "mean", "max", "median")`. If `"none"`,
+#'   no fold-change summary is returned.
+#' @param cross_prev Character scalar specifying whether and how to summarize
+#'   pooled peptide-level prevalences across `g1 ∪ g2` in each contrast. One
+#'   of `c("none", "sum", "mean", "max", "median")`. If `"none"`, no
+#'   prevalence summary is returned.
 #'
-#' @return A tibble with one row per tested stratum:
-#'   `rank, feature, group_col, group1, group2, design, n_subjects_paired,
-#'   n_peptides_used, T_obs, p_perm, p_adj_rank, mean_delta, frac_delta_pos,
-#'   mean_delta_w, frac_delta_pos_w, category_rank_bh`.
+#' @return
+#' A tibble with one row per tested stratum:
+#'
+#' - `rank`, `feature`: rank and feature identifiers.
+#' - `group_col`, `group1`, `group2`: grouping column and the ordered pair of
+#'   groups compared.
+#' - `design`: `"paired"` or `"unpaired"`.
+#' - `n_subjects_paired`: number of paired subjects used in a paired design
+#'   (or `NA` for unpaired).
+#' - `n_peptides_used`: number of peptides contributing to the test.
+#' - `m_eff`: effective number of peptides after prevalence filtering and
+#'   weighting (as returned by the C++ helper).
+#' - `T_obs`: observed Stouffer-type test statistic.
+#' - `p_perm`: two-sided permutation p-value.
+#' - `b`: number of permutations actually used (may be `< B_permutations` if
+#'   early stopping is implemented in the C++ helper).
+#' - `p_adj_rank`: BH-adjusted p-value within each `rank`.
+#' - `mean_delta`, `frac_delta_pos`, `mean_delta_w`, `frac_delta_pos_w`:
+#'   unweighted/weighted summaries of peptide-level prevalence differences.
+#' - `fold_change_<mode>`: optional fold-change summary if `fold_change != "none"`.
+#' - `cross_prev_<mode>`: optional pooled prevalence summary if
+#'   `cross_prev != "none"`.
+#' - `category_rank_bh`: simple categorical label summarizing BH significance
+#'   per rank (`"significant (BH, per rank)"`, `"nominal only"`, or
+#'   `"not significant"`).
 #'
 #' @export
 ph_prevalence_shift2 <- function(
     x, rank_cols, group_cols,
     exist_col            = "exist",
+    paired_by            = NULL,
     interaction          = FALSE,
     combine_cols         = NULL,
     interaction_sep      = "::",
@@ -128,6 +249,7 @@ ph_prevalence_shift2 <- function(
   chk::chk_character(group_cols)
   chk::chk_true(length(group_cols) >= 1)
   chk::chk_string(exist_col)
+  if (!is.null(paired_by)) chk::chk_string(paired_by)
   chk::chk_number(B_permutations)
   chk::chk_true(B_permutations >= 100)
   fold_change <- match.arg(fold_change)
@@ -135,7 +257,12 @@ ph_prevalence_shift2 <- function(
 
   # --- 1) Prepare data once ------------------------------------------------------
   # Required columns from `x`
-  need_cols <- c("sample_id","subject_id","peptide_id", exist_col, group_cols)
+  need_cols <- c("sample_id", "subject_id", "peptide_id", exist_col, group_cols)
+  if (!is.null(paired_by)) {
+    need_cols <- c(need_cols, paired_by)
+  }
+  need_cols <- unique(need_cols)
+
   if (!identical(fold_change, "none")) need_cols <- c(need_cols, "fold_change")
   if (inherits(x, "phip_data")) {
     df_long <- x$data_long |>
@@ -356,25 +483,45 @@ ph_prevalence_shift2 <- function(
     })
 
   # (e) paired/unpaired by subject overlap
-  subj_groups <- df_long |>
-    tidyr::pivot_longer(tidyselect::all_of(group_cols),
-      names_to = "group_col", values_to = "group_value"
-    ) |>
-    dplyr::distinct(subject_id, group_col, group_value) |>
-    dplyr::collect()
+  if (!is.null(paired_by)) {
+    pair_sym <- rlang::sym(paired_by)
 
-  pairs_shared <- subj_groups |>
-    dplyr::rename(group1 = group_value) |>
-    dplyr::inner_join(subj_groups |> dplyr::rename(group2 = group_value),
-      by = c("subject_id", "group_col")
-    ) |>
-    dplyr::filter(.data$group1 < .data$group2) |>
-    dplyr::count(group_col, group1, group2, name = "n_shared")
+    subj_groups <- df_long |>
+      tidyr::pivot_longer(
+        tidyselect::all_of(group_cols),
+        names_to  = "group_col",
+        values_to = "group_value"
+      ) |>
+      dplyr::distinct(!!pair_sym, group_col, group_value) |>
+      dplyr::collect() |>
+      dplyr::rename(pair_id = !!pair_sym)
 
-  contrasts_base <- all_pairs |>
-    dplyr::left_join(pairs_shared, by = c("group_col", "group1", "group2")) |>
-    dplyr::mutate(design = dplyr::if_else(!is.na(.data$n_shared) & .data$n_shared > 0L, "paired", "unpaired")) |>
-    dplyr::select(group_col, group1, group2, design)
+    pairs_shared <- subj_groups |>
+      dplyr::rename(group1 = group_value) |>
+      dplyr::inner_join(
+        subj_groups |> dplyr::rename(group2 = group_value),
+        by = c("pair_id", "group_col")
+      ) |>
+      dplyr::filter(.data$group1 < .data$group2) |>
+      dplyr::count(group_col, group1, group2, name = "n_shared")
+
+    contrasts_base <- all_pairs |>
+      dplyr::left_join(pairs_shared, by = c("group_col", "group1", "group2")) |>
+      dplyr::mutate(
+        design = dplyr::if_else(
+          !is.na(.data$n_shared) & .data$n_shared > 0L,
+          "paired",
+          "unpaired"
+        )
+      ) |>
+      dplyr::select(group_col, group1, group2, design)
+
+  } else {
+    contrasts_base <- all_pairs |>
+      dplyr::mutate(design = "unpaired") |>
+      dplyr::select(group_col, group1, group2, design)
+  }
+
 
   # (f) master plan = rank-feature strata × contrasts (only strata with peptides)
   master_plan <- tidyr::crossing(
@@ -421,10 +568,6 @@ ph_prevalence_shift2 <- function(
     }
   }
 
-
-  # Prepare result container only if not streaming
-  result_rows <- if (is.null(stream_path)) list() else NULL
-
   # --- Prep indices for CPP ------------------------------------------------------
   # subject row index map (1..N)
   subj_row_map <- tibble::tibble(subject_id = subjects_order, row = seq_along(subjects_order))
@@ -457,38 +600,52 @@ ph_prevalence_shift2 <- function(
   }
 
   get_paired_hits <- function(gc, g1, g2) {
-    s1 <- subj_groups_idx |>
-      dplyr::filter(group_col == gc, group_value == g1) |>
-      dplyr::pull(subject_id)
-    s2 <- subj_groups_idx |>
-      dplyr::filter(group_col == gc, group_value == g2) |>
-      dplyr::pull(subject_id)
-    subj_pair <- sort(intersect(s1, s2))
-    if (!length(subj_pair)) {
+    pair_sym <- rlang::sym(paired_by)
+
+    s1 <- df_long |>
+      dplyr::filter(.data[[gc]] == g1) |>
+      dplyr::pull(!!pair_sym)
+    s2 <- df_long |>
+      dplyr::filter(.data[[gc]] == g2) |>
+      dplyr::pull(!!pair_sym)
+
+    pair_ids <- sort(intersect(unique(s1), unique(s2)))
+    if (!length(pair_ids)) {
       return(NULL)
     }
-    id_map <- setNames(seq_along(subj_pair), subj_pair)
 
-    # build per-peptide integer indices (1..P) for g1 and g2 in the SAME subject order
+    id_map <- setNames(seq_along(pair_ids), pair_ids)
+
+    # G1: blok-level presence
     g1_hits <- df_long |>
-      dplyr::filter(!!rlang::sym(exist_col) > 0L, .data$subject_id %in% subj_pair) |>
-      dplyr::select(subject_id, peptide_id, dplyr::all_of(gc)) |>
-      dplyr::filter(.data[[gc]] == g1) |>
-      dplyr::mutate(idx = id_map[.data$subject_id]) |>
+      dplyr::filter(
+        !!rlang::sym(exist_col) > 0L,
+        .data[[gc]] == g1,
+        .data[[paired_by]] %in% pair_ids
+      ) |>
+      dplyr::transmute(
+        peptide_id,
+        idx = id_map[.data[[paired_by]]]
+      ) |>
       dplyr::distinct(peptide_id, idx) |>
       dplyr::group_by(peptide_id) |>
       dplyr::summarise(idx_hits = list(as.integer(sort(idx))), .groups = "drop")
 
+    # G2:
     g2_hits <- df_long |>
-      dplyr::filter(!!rlang::sym(exist_col) > 0L, .data$subject_id %in% subj_pair) |>
-      dplyr::select(subject_id, peptide_id, dplyr::all_of(gc)) |>
-      dplyr::filter(.data[[gc]] == g2) |>
-      dplyr::mutate(idx = id_map[.data$subject_id]) |>
+      dplyr::filter(
+        !!rlang::sym(exist_col) > 0L,
+        .data[[gc]] == g2,
+        .data[[paired_by]] %in% pair_ids
+      ) |>
+      dplyr::transmute(
+        peptide_id,
+        idx = id_map[.data[[paired_by]]]
+      ) |>
       dplyr::distinct(peptide_id, idx) |>
       dplyr::group_by(peptide_id) |>
       dplyr::summarise(idx_hits = list(as.integer(sort(idx))), .groups = "drop")
 
-    # align peptide sets and keep only peptides present in either group
     hh <- dplyr::full_join(g1_hits, g2_hits, by = "peptide_id", suffix = c("_g1", "_g2")) |>
       dplyr::mutate(
         idx_hits_g1 = purrr::map(idx_hits_g1, ~ .x %||% integer(0)),
@@ -497,10 +654,10 @@ ph_prevalence_shift2 <- function(
       dplyr::arrange(peptide_id)
 
     list(
-      subj_pair = subj_pair,
-      hits_g1 = hh$idx_hits_g1,
-      hits_g2 = hh$idx_hits_g2,
-      pep_ids = hh$peptide_id
+      pair_ids = pair_ids,
+      hits_g1  = hh$idx_hits_g1,
+      hits_g2  = hh$idx_hits_g2,
+      pep_ids  = hh$peptide_id
     )
   }
 
@@ -543,10 +700,10 @@ ph_prevalence_shift2 <- function(
 
       hits_g1 <- paired$hits_g1[keep_mask]
       hits_g2 <- paired$hits_g2[keep_mask]
-      P <- length(paired$subj_pair)
+      P <- length(paired$pair_ids)
     }
 
-    res <- cpp_shift_contrast( # <-- use exported symbol name
+    res <- cpp_shift_contrast(
       bitset_raw       = bitset_raw,
       n_words          = bitset_words,
       pep_cols         = pep_cols,
@@ -643,6 +800,21 @@ ph_prevalence_shift2 <- function(
         n_peptides_used   = as.integer(res$n_peptides_used),
         m_eff             = as.numeric(res$m_eff),
         T_obs             = as.numeric(res$T_obs),
+        T_obs_stand       = {
+          sd_null <- as.numeric(res$T_null_sd)
+          ifelse(!is.na(sd_null) & sd_null > 0,
+                 as.numeric(res$T_obs) / sd_null,
+                 NA_real_)
+        },
+        Z_from_p          = {
+          pval  <- as.numeric(res$p_perm)
+          T_val <- as.numeric(res$T_obs)
+          ifelse(
+            is.na(pval),
+            NA_real_,
+            sign(T_val) * stats::qnorm(pval / 2, lower.tail = FALSE)
+          )
+        },
         b                 = as.integer(res$b),
         p_perm            = as.numeric(res$p_perm),
         mean_delta        = as.numeric(res$mean_delta),
@@ -756,7 +928,8 @@ ph_prevalence_shift2 <- function(
       rank = character(), feature = character(), group_col = character(),
       group1 = character(), group2 = character(), design = character(),
       n_subjects_paired = integer(), n_peptides_used = integer(), m_eff = numeric(),
-      T_obs = numeric(), p_perm = numeric(), b = integer(),
+      T_obs = numeric(), T_obs_stand = numeric(), Z_from_p = numeric(),
+      p_perm = numeric(), b = integer(),
       p_adj_rank = numeric(),
       mean_delta = numeric(), frac_delta_pos = numeric(),
       mean_delta_w = numeric(), frac_delta_pos_w = numeric(),
@@ -788,7 +961,7 @@ ph_prevalence_shift2 <- function(
     dplyr::select(
       rank, feature, group_col, group1, group2, design,
       n_subjects_paired, n_peptides_used, m_eff,
-      T_obs, p_perm, b,
+      T_obs, T_obs_stand, Z_from_p, p_perm, b,
       p_adj_rank,
       mean_delta, frac_delta_pos, mean_delta_w, frac_delta_pos_w,
       dplyr::any_of(paste0("fold_change_", fold_change)),
