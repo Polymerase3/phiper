@@ -81,7 +81,6 @@
 #'   interaction is used as `group_col`.
 #' @param interaction_sep Separator for interaction values. Default `"::"`.
 #' @param B_permutations Number of permutations `B`. Default `2000L`.
-#' @param seed RNG seed. Default `1L`.
 #' @param smooth_eps_num Laplace numerator epsilon. Default `0.5`.
 #' @param smooth_eps_den_mult Multiplier for denominator epsilon. Default `2.0`.
 #' @param min_max_prev Keep peptides with `max(p1, p2) >=` this. Default `0.0`.
@@ -90,7 +89,6 @@
 #' @param prev_strat One of `c("none","decile")` for prevalence-stratified
 #'   combining.
 #' @param winsor_z Winsorization threshold for per-peptide z. Default `4.0`.
-#' @param parallel Reserved (not used internally). Default `NULL`.
 #' @param collect Keep `TRUE`; materialization is not required here.
 #' @param register_name Reserved; no-op here.
 #' @param progress_perm_every Print a small log every k permutations. Default `1L`.
@@ -111,7 +109,6 @@ ph_prevalence_shift2 <- function(
     interaction_sep      = "::",
     # permutation options
     B_permutations       = 2000L,
-    seed                 = 1L,
     smooth_eps_num       = 0.5,
     smooth_eps_den_mult  = 2.0,
     min_max_prev         = 0.0,
@@ -119,8 +116,6 @@ ph_prevalence_shift2 <- function(
     stat_mode            = c("diff","asin"),
     prev_strat           = c("none","decile"),
     winsor_z             = 4.0,
-    # parallel
-    parallel             = NULL,   # integer cores; NULL => auto (1 by default)
     rank_feature_keep    = NULL,
     peptide_library      = NULL,
     auto_fetch_library   = FALSE,
@@ -436,7 +431,16 @@ ph_prevalence_shift2 <- function(
       sprintf("B per contrast: %d", B_permutations),
       sprintf("peptides after filtering: %d", peps_total),
       sprintf("weighted work total (sum B*peptides): %.0f", work_total), # <- %.0f
-      sprintf("mode: %s", if (!is.null(parallel) && parallel > 1L) "parallel (requested)" else "auto/sequential"),
+      sprintf(
+        "mode: %s",
+        if (rlang::is_installed("future") &&
+            isTRUE(tryCatch(future::nbrOfWorkers() > 1L,
+                            error = function(...) FALSE))) {
+          "parallel (future backend)"
+        } else {
+          "sequential"
+        }
+      ),
       sprintf("engine: %s", hdr_fast)
     )
     if (log_to_file) {
@@ -543,7 +547,8 @@ ph_prevalence_shift2 <- function(
       return(NULL)
     }
 
-    seed_i <- as.integer(seed + i - 1L)
+    # draw per-contrast seed from global RNG; reproducible via set.seed() outside
+    seed_i <- as.integer(sample.int(.Machine$integer.max, 1L))
 
     # Defaults for UNPAIRED call
     hits_g1 <- list()
@@ -717,12 +722,12 @@ ph_prevalence_shift2 <- function(
   result_rows <- if (is.null(stream_path)) list() else NULL
 
   # decide workers
+  # decide workers based on current future backend
   n_workers <- 1L
-  if (!is.null(parallel) && !is.na(parallel) && parallel > 1L) {
-    n_workers <- min(as.integer(parallel), nrow(master_plan))
-  } else if (rlang::is_installed("future") && isTRUE(tryCatch(future::nbrOfWorkers() > 1L, error = function(...) FALSE))) {
-    n_workers <- min(future::nbrOfWorkers(), nrow(master_plan))
+  if (rlang::is_installed("future")) {
+    n_workers <- tryCatch(future::nbrOfWorkers(), error = function(...) 1L)
   }
+  n_workers <- max(1L, min(as.integer(n_workers), nrow(master_plan)))
 
   # ---- dynamic scheduling for future.apply ----
   op_old <- options(
@@ -744,31 +749,17 @@ ph_prevalence_shift2 <- function(
       row <- .run_one(i)
       if (is.null(stream_path) && !is.null(row)) result_rows[[length(result_rows) + 1L]] <- row
     }
-  } else {
-    # --- parallel via future.apply
-    original_plan <- NULL
-    plan_changed <- FALSE
-    if (rlang::is_installed("future")) {
-      original_plan <- future::plan()
-      if (future::nbrOfWorkers() != n_workers) {
-        if (.Platform$OS.type == "windows") {
-          future::plan(future::multisession, workers = n_workers)
-        } else {
-          future::plan(future::multicore, workers = n_workers)
-        }
-        plan_changed <- TRUE
-      }
-    }
+  } else else {
+    # --- parallel via future.apply (respect existing future plan)
     idx <- order(master_plan$work_weight, decreasing = TRUE)
     res_list <- future.apply::future_lapply(
       X = idx, FUN = .run_one,
-      future.seed = TRUE,
+      future.seed       = TRUE,
       future.scheduling = Inf,
       future.chunk.size = 1,
-      future.packages = c("dplyr", "tibble", "tidyr")
+      future.packages   = c("dplyr", "tibble", "tidyr")
     )
-    if (is.null(stream_path)) result_rows <- res_list
-    if (plan_changed && !is.null(original_plan)) future::plan(original_plan)
+    result_rows <- res_list
   }
 
   # ---- Final log --------------------------------------------------------------
@@ -785,11 +776,6 @@ ph_prevalence_shift2 <- function(
       sprintf("workers: %d", ifelse(n_workers > 1L, n_workers, 1L))
     )
     if (log_to_file) .ph_log_ok_file(log_file, headline, bullets = bullets) else .ph_log_ok(headline, bullets = bullets)
-  }
-
-  # ---- Restore original future plan -------------------------------------------
-  if (exists("original_plan", inherits = FALSE) && isTRUE(plan_changed) && !is.null(original_plan)) {
-    try(future::plan(original_plan), silent = TRUE)
   }
 
   # ---- Collect results ---------------------------------------------------------
