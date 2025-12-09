@@ -972,3 +972,59 @@ ph_prevalence_shift2 <- function(
 
   return(res)
 }
+
+# ====== LOG-TO-FILE HELPERS (phiper-style, same layout) =======================
+.progress_file <- function(log_file = NULL, stream_path = NULL) {
+  base <- if (!is.null(log_file) && nzchar(log_file)) log_file else stream_path %||% "ph_prev_shift"
+  paste0(base, ".progress.bin")
+}
+
+.progress_init <- function(path) {
+  if (!requireNamespace("filelock", quietly = TRUE)) {
+    .ph_abort("`filelock` package required for progress logging. Install it or disable logging.")
+  }
+  if (file.exists(path)) unlink(path)
+  con <- file(path, open = "wb")
+  on.exit(try(close(con), silent = TRUE), add = TRUE)
+  serialize(0, con, xdr = FALSE) # start at 0
+  invisible(TRUE)
+}
+
+.progress_lock_path <- function(p) paste0(p, ".lock")
+
+.progress_add <- function(path, delta) {
+  lk <- filelock::lock(.progress_lock_path(path), timeout = 60000)
+  on.exit(try(filelock::unlock(lk), silent = TRUE), add = TRUE)
+
+  cur <- 0
+  if (file.exists(path)) {
+    conr <- file(path, open = "rb")
+    on.exit(try(close(conr), silent = TRUE), add = TRUE)
+    cur <- tryCatch(unserialize(conr), error = function(e) 0)
+  }
+  newv <- cur + as.numeric(delta)
+  conw <- file(path, open = "wb")
+  on.exit(try(close(conw), silent = TRUE), add = TRUE)
+  serialize(newv, conw, xdr = FALSE)
+  newv
+}
+
+.ph_log_to_file <- function(path, level = "INFO", headline,
+                            step = NULL, bullets = NULL) {
+  lines <- .ph_compose_lines(level, headline, step, bullets)
+  cat(paste0(lines, collapse = "\n"), "\n", sep = "", file = path, append = TRUE)
+  invisible(lines)
+}
+
+.ph_log_ok_file <- function(path, headline, step = NULL, bullets = NULL) {
+  .ph_log_to_file(path, "OK", headline, step, bullets)
+}
+
+.ph_log_info_file <- function(path, headline, step = NULL, bullets = NULL) {
+  .ph_log_to_file(path, "INFO", headline, step, bullets)
+}
+
+.ph_log_warn_file <- function(path, headline, step = NULL, bullets = NULL) {
+  .ph_log_to_file(path, "WARN", headline, step, bullets)
+}
+
