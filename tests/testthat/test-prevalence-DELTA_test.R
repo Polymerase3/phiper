@@ -958,3 +958,76 @@ test_that("ph_prevalence_shift aborts on bitset/peptide dimension mismatch", {
     regexp = "Bitset/peptide dimension mismatch"
   )
 })
+
+test_that("ph_prevalence_shift uses global RNG reproducibly and advances .Random.seed deterministically", {
+  toy_rng <- tibble::tibble(
+    sample_id  = paste0("s", 1:10),
+    subject_id = paste0("id", 1:10),
+    peptide_id = rep("pep1", 10),
+    group      = rep(c("A", "B"), each = 5),
+    exist      = c(rep(1L, 5), rep(0L, 5))
+  )
+
+  # --- First run with a fixed seed ---------------------------------------------
+  set.seed(1234)
+  seed_before1 <- .Random.seed
+
+  res1 <- ph_prevalence_shift(
+    x                  = toy_rng,
+    exist_col          = "exist",
+    rank_cols          = "peptide_id",
+    group_cols         = "group",
+    B_permutations     = 150L,  # >= 100 for the function, still fast for tests
+    smooth_eps_num     = 0.5,
+    smooth_eps_den_mult= 2.0,
+    min_max_prev       = 0.0,
+    weight_mode        = "equal",
+    stat_mode          = "diff",
+    prev_strat         = "none",
+    winsor_z           = 4,
+    rank_feature_keep  = NULL,
+    peptide_library    = NULL,
+    log                = FALSE,
+    fold_change        = "none",
+    cross_prev         = "none"
+  )
+
+  seed_after1 <- .Random.seed
+
+  # --- Second run with the same seed -------------------------------------------
+  set.seed(1234)
+  seed_before2 <- .Random.seed
+
+  res2 <- ph_prevalence_shift(
+    x                  = toy_rng,
+    exist_col          = "exist",
+    rank_cols          = "peptide_id",
+    group_cols         = "group",
+    B_permutations     = 150L,
+    smooth_eps_num     = 0.5,
+    smooth_eps_den_mult= 2.0,
+    min_max_prev       = 0.0,
+    weight_mode        = "equal",
+    stat_mode          = "diff",
+    prev_strat         = "none",
+    winsor_z           = 4,
+    rank_feature_keep  = NULL,
+    peptide_library    = NULL,
+    log                = FALSE,
+    fold_change        = "none",
+    cross_prev         = "none"
+  )
+
+  seed_after2 <- .Random.seed
+
+  # 1) The function actually consumes RNG (seed changes between before/after)
+  expect_false(identical(seed_before1, seed_after1))
+
+  # 2) RNG consumption path is deterministic for the same seed and input
+  expect_identical(seed_before1, seed_before2)
+  expect_identical(seed_after1,  seed_after2)
+
+  # 3) Results are identical when started from the same seed
+  expect_equal(res1, res2)
+})
+
