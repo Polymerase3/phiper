@@ -433,102 +433,185 @@ forest_delta <- function(
     arrow_color   = "red",
     arrow_lwd     = 0.6,
     arrow_head_cm = 0.30,
-    # NEW: global typography & aesthetics
-    base_text_pt  = 12,           # działa na WSZYSTKIE teksty
-    font_family   = "Montserrat", # lub "Arial"/"Calibri"/"System default"
+    # global typography & aesthetics
+    base_text_pt  = 12,
+    font_family   = "Montserrat",
     seg_width     = 1.2,
     point_size    = 3.6,
-    show_grid     = FALSE
+    show_grid     = FALSE,
+    stat          = c("T", "Z")
 ) {
   if (!is.data.frame(x)) stop("`x` must be a data.frame/tibble.")
-  need_cols <- c("rank","feature","group1","group2","design","T_obs","p_perm","p_adj_rank","category_rank_bh")
+  stat <- match.arg(stat)
+
+  need_cols <- c("rank","feature","group1","group2","design",
+                 "T_obs","p_perm","p_adj_rank","category_rank_bh")
   miss <- setdiff(need_cols, colnames(x))
   if (length(miss)) stop(paste("`x` is missing required columns:", paste(miss, collapse = ", ")))
   if (!is.null(n_each)) { n_neg_each <- n_pos_each <- as.integer(n_each) }
 
   # helper: pt -> ggplot size units
-  .pt_to_gg <- function(pt) pt / 2.845 # ~ ggplot2::.pt
+  .pt_to_gg <- function(pt) pt / 2.845
 
-  if (isTRUE(add_signed_z_from_p)) {
-    x$Z_signed_from_p_2s <- sign(x$T_obs) * stats::qnorm(1 - x$p_perm/2)
+  # compute signed Z from p if requested or needed for plotting
+  if (isTRUE(add_signed_z_from_p) || identical(stat, "Z")) {
+    if (!"p_perm" %in% names(x)) {
+      stop("Column `p_perm` is required to compute signed Z from p-values.")
+    }
+    p_two <- x$p_perm
+    p_two[!is.na(p_two)] <- pmin(
+      pmax(p_two[!is.na(p_two)], .Machine$double.eps),
+      1 - .Machine$double.eps
+    )
+    x$Z_signed_from_p_2s <- sign(x$T_obs) * stats::qnorm(1 - p_two / 2)
   }
 
   df_rk <- dplyr::filter(x, .data$rank == rank_of_interest)
+
   if (!identical(filter_significant, "none")) {
-    if (!filter_significant %in% colnames(df_rk)) stop(paste0("column '", filter_significant, "' not found"))
+    if (!filter_significant %in% colnames(df_rk)) {
+      stop(paste0("column '", filter_significant, "' not found"))
+    }
     col_vals <- df_rk[[filter_significant]]
     if (is.numeric(col_vals)) {
       df_rk <- dplyr::filter(df_rk, .data[[filter_significant]] <= sig_level)
     } else {
-      df_rk <- dplyr::filter(df_rk, .data[[filter_significant]] == "significant (BH, per rank)")
+      df_rk <- dplyr::filter(
+        df_rk,
+        .data[[filter_significant]] == "significant (BH, per rank)"
+      )
     }
   }
+
   if (nrow(df_rk) == 0L) {
-    return(list(data = df_rk, plot = .empty_placeholder_plot(sprintf("No rows to plot (rank='%s')", rank_of_interest))))
+    return(list(
+      data = df_rk,
+      plot = .empty_placeholder_plot(
+        sprintf("No rows to plot (rank='%s')", rank_of_interest)
+      )
+    ))
   }
 
-  n_pos <- sum(df_rk$T_obs > 0, na.rm = TRUE)
-  n_neg <- sum(df_rk$T_obs < 0, na.rm = TRUE)
-  top_pos <- df_rk |> dplyr::arrange(dplyr::desc(.data$T_obs)) |> dplyr::slice_head(n = min(n_pos_each, n_pos))
-  top_neg <- df_rk |> dplyr::arrange(.data$T_obs)                 |> dplyr::slice_head(n = min(n_neg_each, n_neg))
+  # choose statistic used for ranking and selection
+  if (identical(stat, "Z")) {
+    if (!"Z_signed_from_p_2s" %in% names(df_rk)) {
+      stop("`Z_signed_from_p_2s` not found. Set `add_signed_z_from_p = TRUE` or pre-compute it.")
+    }
+    df_rk$stat_for_sort <- df_rk$Z_signed_from_p_2s
+    stat_title        <- "signed Z from p-values (2-sided)"
+    stat_title_short  <- "signed Z"
+  } else {
+    df_rk$stat_for_sort <- df_rk$T_obs
+    stat_title        <- "Stouffer T (raw)"
+    stat_title_short  <- "Stouffer T"
+  }
+
+  # selection based on chosen statistic
+  n_pos <- sum(df_rk$stat_for_sort > 0, na.rm = TRUE)
+  n_neg <- sum(df_rk$stat_for_sort < 0, na.rm = TRUE)
+
+  top_pos <- df_rk |>
+    dplyr::arrange(dplyr::desc(.data$stat_for_sort)) |>
+    dplyr::slice_head(n = min(n_pos_each, n_pos))
+
+  top_neg <- df_rk |>
+    dplyr::arrange(.data$stat_for_sort) |>
+    dplyr::slice_head(n = min(n_neg_each, n_neg))
 
   df_plot <- dplyr::bind_rows(top_neg, top_pos) |>
     dplyr::mutate(
       species_label = .data$feature,
-      species_label = forcats::fct_reorder(.data$species_label, .data$T_obs)
+      species_label = forcats::fct_reorder(.data$species_label, .data$stat_for_sort)
     )
+
+  # this is what goes on the x-axis
+  if (identical(stat, "Z")) {
+    df_plot$stat_val <- df_plot$Z_signed_from_p_2s
+  } else {
+    df_plot$stat_val <- df_plot$T_obs
+  }
 
   g1  <- if (nrow(df_plot)) df_plot$group1[1] else ""
   g2  <- if (nrow(df_plot)) df_plot$group2[1] else ""
   des <- if (nrow(df_plot)) df_plot$design[1] else ""
 
-  max_neg <- max(abs(df_plot$T_obs[df_plot$T_obs < 0]), na.rm = TRUE)
-  max_pos <- max(df_plot$T_obs[df_plot$T_obs > 0], na.rm = TRUE)
-  if (!is.finite(max_neg) || max_neg == 0) max_neg <- max(abs(df_plot$T_obs), 1, na.rm = TRUE)
-  if (!is.finite(max_pos) || max_pos == 0) max_pos <- max(abs(df_plot$T_obs), 1, na.rm = TRUE)
+  # color scaling based on plotted statistic
+  vals    <- df_plot$stat_val
+  max_neg <- max(abs(vals[vals < 0]), na.rm = TRUE)
+  max_pos <- max(abs(vals[vals > 0]), na.rm = TRUE)
+  if (!is.finite(max_neg) || max_neg == 0) max_neg <- max(abs(vals), 1, na.rm = TRUE)
+  if (!is.finite(max_pos) || max_pos == 0) max_pos <- max(abs(vals), 1, na.rm = TRUE)
+
   df_plot$T_col <- dplyr::case_when(
-    df_plot$T_obs < 0 ~ -abs(df_plot$T_obs) / max_neg,
-    df_plot$T_obs > 0 ~  df_plot$T_obs / max_pos,
-    TRUE ~ 0
+    vals < 0 ~ -abs(vals) / max_neg,
+    vals > 0 ~  vals      / max_pos,
+    TRUE     ~  0
   )
   gamma <- 0.85
   df_plot$T_col <- sign(df_plot$T_col) * (abs(df_plot$T_col))^gamma
 
   # ---- base ggplot with global typography ----
-  p <- ggplot2::ggplot(df_plot, ggplot2::aes(x = .data$T_obs, y = .data$species_label)) +
-    ggplot2::geom_vline(xintercept = 0, linetype = "dashed", linewidth = 0.4, alpha = 0.6) +
+  p <- ggplot2::ggplot(
+    df_plot,
+    ggplot2::aes(x = .data$stat_val, y = .data$species_label)
+  ) +
+    ggplot2::geom_vline(
+      xintercept = 0,
+      linetype   = "dashed",
+      linewidth  = 0.4,
+      alpha      = 0.6
+    ) +
     {
       if (isTRUE(color)) {
         ggplot2::geom_segment(
-          ggplot2::aes(x = 0, xend = .data$T_obs, y = .data$species_label, yend = .data$species_label,
-                       color = .data$T_col),
-          linewidth = seg_width, alpha = 0.9, show.legend = FALSE
+          ggplot2::aes(
+            x = 0, xend = .data$stat_val,
+            y = .data$species_label, yend = .data$species_label,
+            color = .data$T_col
+          ),
+          linewidth   = seg_width,
+          alpha       = 0.9,
+          show.legend = FALSE
         )
       } else {
         ggplot2::geom_segment(
-          ggplot2::aes(x = 0, xend = .data$T_obs, y = .data$species_label, yend = .data$species_label),
-          linewidth = seg_width, alpha = 0.85
+          ggplot2::aes(
+            x = 0, xend = .data$stat_val,
+            y = .data$species_label, yend = .data$species_label
+          ),
+          linewidth = seg_width,
+          alpha     = 0.85
         )
       }
     } +
     {
-      if (isTRUE(color)) ggplot2::geom_point(ggplot2::aes(color = .data$T_col), size = point_size, show.legend = FALSE)
-      else               ggplot2::geom_point(size = point_size)
+      if (isTRUE(color)) {
+        ggplot2::geom_point(
+          ggplot2::aes(color = .data$T_col),
+          size        = point_size,
+          show.legend = FALSE
+        )
+      } else {
+        ggplot2::geom_point(size = point_size)
+      }
     } +
     ggplot2::labs(
-      title = sprintf("Top/Bottom raw Stouffer T - rank: %s", rank_of_interest),
-      subtitle = sprintf("Contrast: %s vs %s (%s); shown: %d neg + %d pos",
-                         g1, g2, des, nrow(top_neg), nrow(top_pos)),
-      x = "Stouffer T (raw)", y = NULL
+      title = sprintf("Top/Bottom %s - rank: %s", stat_title_short, rank_of_interest),
+      subtitle = sprintf(
+        "Contrast: %s vs %s (%s); shown: %d neg + %d pos",
+        g1, g2, des, nrow(top_neg), nrow(top_pos)
+      ),
+      x = stat_title,
+      y = NULL
     ) +
     theme_phip() +
     ggplot2::theme(
-      text = ggplot2::element_text(size = base_text_pt, family = font_family),
-      plot.title    = ggplot2::element_text(size = base_text_pt*1.15, face = "bold"),
-      plot.subtitle = ggplot2::element_text(size = base_text_pt*0.95),
+      text          = ggplot2::element_text(size = base_text_pt, family = font_family),
+      plot.title    = ggplot2::element_text(size = base_text_pt * 1.15, face = "bold"),
+      plot.subtitle = ggplot2::element_text(size = base_text_pt * 0.95),
       axis.title    = ggplot2::element_text(size = base_text_pt),
-      axis.text     = ggplot2::element_text(size = base_text_pt*0.90),
-      legend.text   = ggplot2::element_text(size = base_text_pt*0.90),
+      axis.text     = ggplot2::element_text(size = base_text_pt * 0.90),
+      legend.text   = ggplot2::element_text(size = base_text_pt * 0.90),
       panel.grid.major = if (isTRUE(show_grid)) ggplot2::element_line() else ggplot2::element_blank(),
       panel.grid.minor = if (isTRUE(show_grid)) ggplot2::element_line() else ggplot2::element_blank()
     )
@@ -542,43 +625,81 @@ forest_delta <- function(
   }
 
   # ---- red arrows + labels (sizes tied to base_text_pt) ----
-  lvl_n  <- length(levels(df_plot$species_label)); if (lvl_n == 0L) lvl_n <- length(unique(df_plot$species_label))
+  lvl_n  <- length(levels(df_plot$species_label))
+  if (lvl_n == 0L) lvl_n <- length(unique(df_plot$species_label))
   y_top  <- lvl_n + y_pad
-  maxabs <- max(abs(df_plot$T_obs), na.rm = TRUE); if (!is.finite(maxabs) || maxabs == 0) maxabs <- 1
+
+  maxabs <- max(abs(df_plot$stat_val), na.rm = TRUE)
+  if (!is.finite(maxabs) || maxabs == 0) maxabs <- 1
   x_off  <- arrow_frac * maxabs
   x_left_text  <- -x_off - text_gap_frac * maxabs
   x_right_text <-  x_off + text_gap_frac * maxabs
 
-  # dopasuj podtytuł do left/right
+  # update subtitle with left/right labels
   if (!is.null(p$labels$subtitle)) {
     s <- p$labels$subtitle
-    s <- sub("^Contrast:\\s*.*?;", paste0("Contrast: ", left_label, " vs ", right_label, ";"), s)
+    s <- sub(
+      "^Contrast:\\s*.*?;",
+      paste0("Contrast: ", left_label, " vs ", right_label, ";"),
+      s
+    )
     p$labels$subtitle <- s
   }
 
   arrow_text_size <- .pt_to_gg(base_text_pt * 1.05)
 
   p <- p +
-    ggplot2::scale_y_discrete(expand = ggplot2::expansion(mult = c(0.05, 0.10))) +
+    ggplot2::scale_y_discrete(
+      expand = ggplot2::expansion(mult = c(0.05, 0.10))
+    ) +
     ggplot2::coord_cartesian(clip = "off") +
-    ggplot2::annotate("segment", x = 0, xend = -x_off, y = y_top, yend = y_top,
-                      colour = arrow_color, linewidth = arrow_lwd,
-                      arrow = ggplot2::arrow(length = grid::unit(arrow_head_cm, "cm"),
-                                             type = "closed", ends = "last")) +
-    ggplot2::annotate("text", x = x_left_text, y = y_top + text_y_offset, label = left_label,
-                      size = arrow_text_size, colour = arrow_color, fontface = "bold",
-                      family = font_family, hjust = 1, vjust = text_vjust) +
-    ggplot2::annotate("segment", x = 0, xend =  x_off, y = y_top, yend = y_top,
-                      colour = arrow_color, linewidth = arrow_lwd,
-                      arrow = ggplot2::arrow(length = grid::unit(arrow_head_cm, "cm"),
-                                             type = "closed", ends = "last")) +
-    ggplot2::annotate("text", x = x_right_text, y = y_top + text_y_offset, label = right_label,
-                      size = arrow_text_size, colour = arrow_color, fontface = "bold",
-                      family = font_family, hjust = 0, vjust = text_vjust)
+    ggplot2::annotate(
+      "segment",
+      x = 0, xend = -x_off, y = y_top, yend = y_top,
+      colour   = arrow_color,
+      linewidth = arrow_lwd,
+      arrow = ggplot2::arrow(
+        length = grid::unit(arrow_head_cm, "cm"),
+        type   = "closed",
+        ends   = "last"
+      )
+    ) +
+    ggplot2::annotate(
+      "text",
+      x = x_left_text, y = y_top + text_y_offset, label = left_label,
+      size     = arrow_text_size,
+      colour   = arrow_color,
+      fontface = "bold",
+      family   = font_family,
+      hjust    = 1,
+      vjust    = text_vjust
+    ) +
+    ggplot2::annotate(
+      "segment",
+      x = 0, xend =  x_off, y = y_top, yend = y_top,
+      colour   = arrow_color,
+      linewidth = arrow_lwd,
+      arrow = ggplot2::arrow(
+        length = grid::unit(arrow_head_cm, "cm"),
+        type   = "closed",
+        ends   = "last"
+      )
+    ) +
+    ggplot2::annotate(
+      "text",
+      x = x_right_text, y = y_top + text_y_offset, label = right_label,
+      size     = arrow_text_size,
+      colour   = arrow_color,
+      fontface = "bold",
+      family   = font_family,
+      hjust    = 0,
+      vjust    = text_vjust
+    )
 
   list(data = df_plot, plot = p)
 }
 
+#' @export
 #' @export
 forest_delta_plotly <- function(
     x,
@@ -601,42 +722,72 @@ forest_delta_plotly <- function(
     arrow_lwd     = 0.6,
     arrow_head_cm = 0.30,
     show_grid     = FALSE,
-    # NEW:
     base_text_pt  = 12,
     font_family   = "Montserrat",
     seg_width     = 1.6,
-    point_size    = 11
+    point_size    = 11,
+    stat          = c("T", "Z")
 ) {
   if (!is.data.frame(x)) stop("`x` must be a data.frame/tibble.")
-  need_cols <- c("rank","feature","group1","group2","design","T_obs","p_perm","p_adj_rank","category_rank_bh")
+  stat <- match.arg(stat)
+
+  need_cols <- c("rank","feature","group1","group2","design",
+                 "T_obs","p_perm","p_adj_rank","category_rank_bh")
   miss <- setdiff(need_cols, colnames(x))
   if (length(miss)) stop(paste("`x` is missing required columns:", paste(miss, collapse = ", ")))
   if (!is.null(n_each)) { n_neg_each <- n_pos_each <- as.integer(n_each) }
 
-  if (isTRUE(add_signed_z_from_p)) {
-    x$Z_signed_from_p_2s <- sign(x$T_obs) * stats::qnorm(1 - x$p_perm/2)
+  # compute signed Z from p if requested or needed for plotting
+  if (isTRUE(add_signed_z_from_p) || identical(stat, "Z")) {
+    if (!"p_perm" %in% names(x)) {
+      stop("Column `p_perm` is required to compute signed Z from p-values.")
+    }
+    p_two <- x$p_perm
+    p_two[!is.na(p_two)] <- pmin(
+      pmax(p_two[!is.na(p_two)], .Machine$double.eps),
+      1 - .Machine$double.eps
+    )
+    x$Z_signed_from_p_2s <- sign(x$T_obs) * stats::qnorm(1 - p_two / 2)
   }
 
   df_rk <- dplyr::filter(x, .data$rank == rank_of_interest)
+
   if (!identical(filter_significant, "none")) {
-    if (!filter_significant %in% colnames(df_rk)) stop(paste0("column '", filter_significant, "' not found"))
+    if (!filter_significant %in% colnames(df_rk)) {
+      stop(paste0("column '", filter_significant, "' not found"))
+    }
     if (is.numeric(df_rk[[filter_significant]])) {
       df_rk <- dplyr::filter(df_rk, .data[[filter_significant]] <= sig_level)
     } else {
-      df_rk <- dplyr::filter(df_rk, .data[[filter_significant]] == "significant (BH, per rank)")
+      df_rk <- dplyr::filter(
+        df_rk,
+        .data[[filter_significant]] == "significant (BH, per rank)"
+      )
     }
   }
+
+  stat_title <- if (identical(stat, "Z")) {
+    "signed Z from p-values (2-sided)"
+  } else {
+    "Stouffer T (raw)"
+  }
+  stat_title_short <- if (identical(stat, "Z")) "signed Z" else "Stouffer T"
 
   if (nrow(df_rk) == 0L) {
     plt <- plotly::plot_ly(type = "scatter", mode = "text") |>
       plotly::layout(
-        title = list(text = paste0("Top/Bottom raw Stouffer T - rank: ", rank_of_interest)),
+        title = list(
+          text = paste0("Top/Bottom ", stat_title_short, " - rank: ", rank_of_interest)
+        ),
         xaxis = list(visible = FALSE, showgrid = FALSE),
         yaxis = list(visible = FALSE, showgrid = FALSE),
         annotations = list(
-          list(text = sprintf("No rows to plot (rank='%s')", rank_of_interest),
-               xref = "paper", yref = "paper", x = 0.5, y = 0.5,
-               showarrow = FALSE, font = list(size = base_text_pt, family = font_family))
+          list(
+            text = sprintf("No rows to plot (rank='%s')", rank_of_interest),
+            xref = "paper", yref = "paper", x = 0.5, y = 0.5,
+            showarrow = FALSE,
+            font = list(size = base_text_pt, family = font_family)
+          )
         ),
         font = list(family = font_family, size = base_text_pt),
         margin = list(l = 20, r = 20, t = 60, b = 20)
@@ -644,30 +795,56 @@ forest_delta_plotly <- function(
     return(list(data = df_rk, plot = plt))
   }
 
-  n_pos <- sum(df_rk$T_obs > 0, na.rm = TRUE)
-  n_neg <- sum(df_rk$T_obs < 0, na.rm = TRUE)
-  top_pos <- df_rk |> dplyr::arrange(dplyr::desc(.data$T_obs)) |> dplyr::slice_head(n = min(n_pos_each, n_pos))
-  top_neg <- df_rk |> dplyr::arrange(.data$T_obs)                 |> dplyr::slice_head(n = min(n_neg_each, n_neg))
+  # choose statistic used for ranking and selection
+  if (identical(stat, "Z")) {
+    if (!"Z_signed_from_p_2s" %in% names(df_rk)) {
+      stop("`Z_signed_from_p_2s` not found. Set `add_signed_z_from_p = TRUE` or pre-compute it.")
+    }
+    df_rk$stat_for_sort <- df_rk$Z_signed_from_p_2s
+  } else {
+    df_rk$stat_for_sort <- df_rk$T_obs
+  }
+
+  # selection based on chosen statistic
+  n_pos <- sum(df_rk$stat_for_sort > 0, na.rm = TRUE)
+  n_neg <- sum(df_rk$stat_for_sort < 0, na.rm = TRUE)
+
+  top_pos <- df_rk |>
+    dplyr::arrange(dplyr::desc(.data$stat_for_sort)) |>
+    dplyr::slice_head(n = min(n_pos_each, n_pos))
+
+  top_neg <- df_rk |>
+    dplyr::arrange(.data$stat_for_sort) |>
+    dplyr::slice_head(n = min(n_neg_each, n_neg))
 
   df_plot <- dplyr::bind_rows(top_neg, top_pos) |>
     dplyr::mutate(
       species_label = .data$feature,
-      species_label = forcats::fct_reorder(.data$species_label, .data$T_obs)
+      species_label = forcats::fct_reorder(.data$species_label, .data$stat_for_sort)
     )
+
+  # statistic on x-axis
+  if (identical(stat, "Z")) {
+    df_plot$stat_val <- df_plot$Z_signed_from_p_2s
+  } else {
+    df_plot$stat_val <- df_plot$T_obs
+  }
 
   g1  <- if (nrow(df_plot)) df_plot$group1[1] else ""
   g2  <- if (nrow(df_plot)) df_plot$group2[1] else ""
   des <- if (nrow(df_plot)) df_plot$design[1] else ""
 
-  max_neg <- max(abs(df_plot$T_obs[df_plot$T_obs < 0]), na.rm = TRUE)
-  max_pos <- max(df_plot$T_obs[df_plot$T_obs > 0], na.rm = TRUE)
-  if (!is.finite(max_neg) || max_neg == 0) max_neg <- max(abs(df_plot$T_obs), 1, na.rm = TRUE)
-  if (!is.finite(max_pos) || max_pos == 0) max_pos <- max(abs(df_plot$T_obs), 1, na.rm = TRUE)
+  # color scaling based on plotted statistic
+  vals    <- df_plot$stat_val
+  max_neg <- max(abs(vals[vals < 0]), na.rm = TRUE)
+  max_pos <- max(abs(vals[vals > 0]), na.rm = TRUE)
+  if (!is.finite(max_neg) || max_neg == 0) max_neg <- max(abs(vals), 1, na.rm = TRUE)
+  if (!is.finite(max_pos) || max_pos == 0) max_pos <- max(abs(vals), 1, na.rm = TRUE)
 
   df_plot$T_col <- dplyr::case_when(
-    df_plot$T_obs < 0 ~ -abs(df_plot$T_obs) / max_neg,
-    df_plot$T_obs > 0 ~ df_plot$T_obs / max_pos,
-    TRUE ~ 0
+    vals < 0 ~ -abs(vals) / max_neg,
+    vals > 0 ~  vals      / max_pos,
+    TRUE     ~  0
   )
   gamma <- 0.85
   df_plot$T_col <- sign(df_plot$T_col) * (abs(df_plot$T_col))^gamma
@@ -677,16 +854,18 @@ forest_delta_plotly <- function(
     if ("p_adj_rank" %in% names(df_plot)) df_plot$p_adj_rank else NA_real_
   }
   df_plot$interpretation <- ifelse(
-    df_plot$T_obs < 0, paste("More in", df_plot$group1),
-    ifelse(df_plot$T_obs > 0, paste("More in", df_plot$group2), "No difference")
+    df_plot$stat_val < 0, paste("More in", df_plot$group1),
+    ifelse(df_plot$stat_val > 0, paste("More in", df_plot$group2), "No difference")
   )
+
   hover_text <- sprintf(
-    "Feature: %s<br>n_peptides_used: %s<br>T_obs: %s<br>Interpretation: %s<br>padj_wbh: %s",
+    "Feature: %s<br>n_peptides_used: %s<br>%s: %s<br>Interpretation: %s<br>padj_wbh: %s",
     df_plot$feature,
-    ifelse(is.na(df_plot$n_peptides_used), "NA", format(df_plot$n_peptides_used, big.mark=",")),
-    format(round(df_plot$T_obs, 4), nsmall = 4),
+    ifelse(is.na(df_plot$n_peptides_used), "NA", format(df_plot$n_peptides_used, big.mark = ",")),
+    stat_title_short,
+    format(round(df_plot$stat_val, 4), nsmall = 4),
     df_plot$interpretation,
-    ifelse(is.na(df_plot$padj_hover), "NA", formatC(df_plot$padj_hover, format="e", digits=2))
+    ifelse(is.na(df_plot$padj_hover), "NA", formatC(df_plot$padj_hover, format = "e", digits = 2))
   )
 
   map_hex <- local({
@@ -709,9 +888,11 @@ forest_delta_plotly <- function(
   plt <- plotly::layout(
     plt,
     shapes = list(
-      list(type = "line", x0 = 0, x1 = 0, xref = "x",
-           y0 = 0, y1 = 1, yref = "paper",
-           line = list(dash = "dash", width = 1, color = "rgba(0,0,0,0.5)"))
+      list(
+        type = "line", x0 = 0, x1 = 0, xref = "x",
+        y0 = 0, y1 = 1, yref = "paper",
+        line = list(dash = "dash", width = 1, color = "rgba(0,0,0,0.5)")
+      )
     )
   )
 
@@ -719,74 +900,98 @@ forest_delta_plotly <- function(
     for (i in seq_len(nrow(df_plot))) {
       plt <- plotly::add_segments(
         plt,
-        x = 0, xend = df_plot$T_obs[i],
+        x = 0, xend = df_plot$stat_val[i],
         y = df_plot$species_chr[i], yend = df_plot$species_chr[i],
         showlegend = FALSE,
-        hoverinfo = "text",
-        text = hover_text[i],
-        line = list(color = seg_hex[i], width = seg_width),
-        opacity = if (isTRUE(color)) 0.95 else 0.90
+        hoverinfo  = "text",
+        text       = hover_text[i],
+        line       = list(color = seg_hex[i], width = seg_width),
+        opacity    = if (isTRUE(color)) 0.95 else 0.90
       )
     }
   }
 
   plt <- plotly::add_markers(
     plt,
-    x = df_plot$T_obs,
+    x = df_plot$stat_val,
     y = df_plot$species_chr,
     showlegend = FALSE,
-    hoverinfo = "text",
-    text = hover_text,
-    marker = list(size = point_size, color = pt_hex, opacity = 1)
+    hoverinfo  = "text",
+    text       = hover_text,
+    marker     = list(size = point_size, color = pt_hex, opacity = 1)
   )
 
-  maxabs <- max(abs(df_plot$T_obs), na.rm = TRUE); if (!is.finite(maxabs) || maxabs == 0) maxabs <- 1
+  maxabs <- max(abs(df_plot$stat_val), na.rm = TRUE)
+  if (!is.finite(maxabs) || maxabs == 0) maxabs <- 1
   x_off  <- arrow_frac * maxabs
   x_left_text  <- -x_off - text_gap_frac * maxabs
   x_right_text <-  x_off + text_gap_frac * maxabs
 
   ann_list <- list(
-    list(x = -x_off, y = 1.02, ax = 0, ay = 1.02, xref = "x", yref = "paper",
-         axref = "x", ayref = "paper", showarrow = TRUE, arrowhead = 3,
-         arrowsize = 1.6, arrowwidth = 2.8, arrowcolor = arrow_color),
-    list(x =  x_off, y = 1.02, ax = 0, ay = 1.02, xref = "x", yref = "paper",
-         axref = "x", ayref = "paper", showarrow = TRUE, arrowhead = 3,
-         arrowsize = 1.6, arrowwidth = 2.8, arrowcolor = arrow_color),
-    list(x = x_left_text, y = 1.04, xref = "x", yref = "paper",
-         text = left_label, showarrow = FALSE,
-         font = list(size = round(base_text_pt*1.05), color = arrow_color, family = font_family),
-         xanchor = "right", yanchor = "bottom"),
-    list(x = x_right_text, y = 1.04, xref = "x", yref = "paper",
-         text = right_label, showarrow = FALSE,
-         font = list(size = round(base_text_pt*1.05), color = arrow_color, family = font_family),
-         xanchor = "left", yanchor = "bottom")
+    list(
+      x = -x_off, y = 1.02, ax = 0, ay = 1.02, xref = "x", yref = "paper",
+      axref = "x", ayref = "paper", showarrow = TRUE, arrowhead = 3,
+      arrowsize = 1.6, arrowwidth = 2.8, arrowcolor = arrow_color
+    ),
+    list(
+      x =  x_off, y = 1.02, ax = 0, ay = 1.02, xref = "x", yref = "paper",
+      axref = "x", ayref = "paper", showarrow = TRUE, arrowhead = 3,
+      arrowsize = 1.6, arrowwidth = 2.8, arrowcolor = arrow_color
+    ),
+    list(
+      x = x_left_text, y = 1.04, xref = "x", yref = "paper",
+      text = left_label, showarrow = FALSE,
+      font = list(size = round(base_text_pt * 1.05), color = arrow_color, family = font_family),
+      xanchor = "right", yanchor = "bottom"
+    ),
+    list(
+      x = x_right_text, y = 1.04, xref = "x", yref = "paper",
+      text = right_label, showarrow = FALSE,
+      font = list(size = round(base_text_pt * 1.05), color = arrow_color, family = font_family),
+      xanchor = "left", yanchor = "bottom"
+    )
   )
 
-  subtitle_txt <- sprintf("Contrast: %s vs %s (%s); shown: %d neg + %d pos",
-                          g1, g2, des,
-                          sum(df_plot$T_obs < 0, na.rm = TRUE),
-                          sum(df_plot$T_obs > 0, na.rm = TRUE))
-  subtitle_txt <- sub("^Contrast:\\s*.*?;", paste0("Contrast: ", left_label, " vs ", right_label, ";"), subtitle_txt)
+  subtitle_txt <- sprintf(
+    "Contrast: %s vs %s (%s); shown: %d neg + %d pos",
+    g1, g2, des,
+    sum(df_plot$stat_val < 0, na.rm = TRUE),
+    sum(df_plot$stat_val > 0, na.rm = TRUE)
+  )
+  subtitle_txt <- sub(
+    "^Contrast:\\s*.*?;",
+    paste0("Contrast: ", left_label, " vs ", right_label, ";"),
+    subtitle_txt
+  )
 
   plt <- plotly::layout(
     plt,
     title = list(
-      text = paste0("Top/Bottom raw Stouffer T - rank: ", rank_of_interest,
-                    "<br><sub>", subtitle_txt, "</sub>"),
-      font = list(size = round(base_text_pt*1.15), family = font_family)
+      text = paste0(
+        "Top/Bottom ", stat_title_short, " - rank: ", rank_of_interest,
+        "<br><sub>", subtitle_txt, "</sub>"
+      ),
+      font = list(size = round(base_text_pt * 1.15), family = font_family)
     ),
     xaxis = list(
-      title = "Stouffer T (raw)", zeroline = FALSE, showgrid = isTRUE(show_grid),
+      title    = stat_title,
+      zeroline = FALSE,
+      showgrid = isTRUE(show_grid),
       titlefont = list(size = base_text_pt, family = font_family),
-      tickfont  = list(size = round(base_text_pt*0.9), family = font_family)
+      tickfont  = list(size = round(base_text_pt * 0.9), family = font_family)
     ),
     yaxis = list(
-      title = NULL, categoryorder = "array", categoryarray = y_levels,
+      title = NULL,
+      categoryorder = "array",
+      categoryarray = y_levels,
       showgrid = isTRUE(show_grid),
-      tickfont = list(size = round(base_text_pt*0.9), family = font_family)
+      tickfont = list(size = round(base_text_pt * 0.9), family = font_family)
     ),
     font = list(family = font_family, size = base_text_pt),
-    margin = list(l = 10 + max(nchar(df_plot$species_chr))*5, r = 10, t = 90, b = 40),
+    margin = list(
+      l = 10 + max(nchar(df_plot$species_chr)) * 5,
+      r = 10, t = 90, b = 40
+    ),
     annotations = ann_list
   )
 
