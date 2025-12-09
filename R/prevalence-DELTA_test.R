@@ -46,7 +46,8 @@
 #'      \deqn{
 #'        w_i = \sqrt{ n_{g1} \hat p_{g1} + n_{g2} \hat p_{g2} },
 #'      }
-#'      i.e. the square root of the expected number of positives across both groups.
+#'      i.e. the square root of the expected number of positives across both
+#'      groups.
 #'
 #' 4. **Combine into a single test statistic (Stouffer).**
 #'    Let \eqn{w_i} be the weights and \eqn{z_i} the peptide-level z-scores.
@@ -63,7 +64,8 @@
 #'        \frac{n_{g1}\hat p_{g1} + n_{g2}\hat p_{g2}}{n_{g1} + n_{g2}},
 #'      }
 #'      a Stouffer statistic \eqn{T_b} is computed within each bin, and the
-#'      **mean** of the bin-level z-scores is reported as \eqn{T_{\mathrm{obs}}}.
+#'      **mean** of the bin-level z-scores is reported as
+#'      \eqn{T_{\mathrm{obs}}}.
 #'
 #' 5. **Permutation scheme and p-value.**
 #'    A **two-sided** permutation p-value for the global shift is computed:
@@ -83,7 +85,8 @@
 #'      \frac{1 + \sum_{b=1}^{B} \mathbf{1}\{|T_b| \ge |T_{\mathrm{obs}}|\}}
 #'           {1 + B},
 #'    }
-#'    the standard add-one estimator that remains non-zero under the global null.
+#'    the standard add-one estimator that remains non-zero under the global
+#'    null.
 #'
 #' 6. **Multiplicity.**
 #'    For each `rank`, permutation p-values `p_perm` are adjusted with BH
@@ -121,7 +124,8 @@
 #' 3. `phiper::get_peptide_meta()` if available (i.e. `phiper` is installed and
 #'    exports this function).
 #'
-#' If none of these are available, the function aborts with an informative error.
+#' If none of these are available, the function aborts with an informative
+#' error.
 #'
 #' @section Parallelization:
 #' The permutation contrasts are evaluated either sequentially or in parallel
@@ -170,8 +174,8 @@
 #' @param stat_mode One of `c("diff", "asin")`, determining whether z-scores
 #'   are based on prevalence differences or the arcsin–sqrt transform.
 #' @param prev_strat One of `c("none", "decile")`. If `"decile"`, the Stouffer
-#'   statistic is computed within prevalence deciles and the mean of decile-level
-#'   z-scores is used as the global test statistic.
+#'   statistic is computed within prevalence deciles and the mean of
+#'   decile-level z-scores is used as the global test statistic.
 #' @param winsor_z Winsorization threshold applied to peptide-level z-scores.
 #'   Values beyond `±winsor_z` are truncated. Default `4.0`.
 #' @param rank_feature_keep Optional **named list** mapping `rank` to a vector
@@ -221,29 +225,29 @@
 #'   `"not significant"`).
 #'
 #' @export
-ph_prevalence_shift2 <- function(
-    x, rank_cols, group_cols,
-    exist_col            = "exist",
-    paired_by            = NULL,
-    interaction          = FALSE,
-    combine_cols         = NULL,
-    interaction_sep      = "::",
-    B_permutations       = 2000L,
-    smooth_eps_num       = 0.5,
-    smooth_eps_den_mult  = 2.0,
-    min_max_prev         = 0.0,
-    weight_mode          = c("equal","se_invvar","n_eff_sqrt"),
-    stat_mode            = c("diff","asin"),
-    prev_strat           = c("none","decile"),
-    winsor_z             = 4.0,
-    rank_feature_keep    = NULL,
-    peptide_library      = NULL,
-    log                  = FALSE,
-    log_file             = "ph_prevalence_shift.log",
-    fold_change          = c("none","sum","mean","max","median"),
-    cross_prev           = c("none","sum","mean","max","median")
+ph_prevalence_shift <- function(
+  x, rank_cols, group_cols,
+  exist_col = "exist",
+  paired_by = NULL,
+  interaction = FALSE,
+  combine_cols = NULL,
+  interaction_sep = "::",
+  B_permutations = 2000L,
+  smooth_eps_num = 0.5,
+  smooth_eps_den_mult = 2.0,
+  min_max_prev = 0.0,
+  weight_mode = c("equal", "se_invvar", "n_eff_sqrt"),
+  stat_mode = c("diff", "asin"),
+  prev_strat = c("none", "decile"),
+  winsor_z = 4.0,
+  rank_feature_keep = NULL,
+  peptide_library = NULL,
+  log = FALSE,
+  log_file = "ph_prevalence_shift.log",
+  fold_change = c("none", "sum", "mean", "max", "median"),
+  cross_prev = c("none", "sum", "mean", "max", "median")
 ) {
-  # --- 0) Argument validation ----------------------------------------------------
+  # --- 0) Argument validation -------------------------------------------------
   chk::chk_character(rank_cols)
   chk::chk_true(length(rank_cols) >= 1)
   chk::chk_character(group_cols)
@@ -253,9 +257,9 @@ ph_prevalence_shift2 <- function(
   chk::chk_number(B_permutations)
   chk::chk_true(B_permutations >= 100)
   fold_change <- match.arg(fold_change)
-  cross_prev  <- match.arg(cross_prev)
+  cross_prev <- match.arg(cross_prev)
 
-  # --- 1) Prepare data once ------------------------------------------------------
+  # --- 1) Prepare data once ---------------------------------------------------
   # Required columns from `x`
   need_cols <- c("sample_id", "subject_id", "peptide_id", exist_col, group_cols)
   if (!is.null(paired_by)) {
@@ -270,18 +274,25 @@ ph_prevalence_shift2 <- function(
   } else {
     chk::chk_data(x)
     miss <- setdiff(need_cols, colnames(x))
-    if (length(miss)) .ph_abort("Missing required columns", bullets = paste("-", miss))
+    if (length(miss)) {
+      .ph_abort("Missing required columns",
+        bullets = paste("-", miss)
+      )
+    }
     df_long <- tibble::as_tibble(x) |>
       dplyr::select(tidyselect::any_of(need_cols))
   }
 
-  # --- STRICT HITS GUARD: at most one positive per (subject_id, peptide_id, group value) ---
+  # --- STRICT HITS GUARD: at most one positive per (subject_id, peptide_id,
+  # group value) ---
   dup_pos <- df_long |>
     dplyr::filter(!!rlang::sym(exist_col) > 0L) |>
     tidyr::pivot_longer(tidyselect::all_of(group_cols),
       names_to = "group_col", values_to = "group_value"
     ) |>
-    dplyr::count(subject_id, peptide_id, group_col, group_value, name = "n_pos") |>
+    dplyr::count(subject_id, peptide_id, group_col, group_value,
+      name = "n_pos"
+    ) |>
     dplyr::filter(n_pos > 1L) |>
     dplyr::collect()
 
@@ -297,22 +308,33 @@ ph_prevalence_shift2 <- function(
       )) |>
       dplyr::pull(example)
     .ph_abort(
-      "Invalid input: duplicate positives within the SAME group for some (subject_id, peptide_id). One positive per group is allowed (paired designs can have up to 2 across groups).",
-      bullets = c(eg, if (nrow(dup_pos) > 10) sprintf("... and %d more.", nrow(dup_pos) - 10))
+      "Invalid input: duplicate positives within the SAME group for some
+      (subject_id, peptide_id). One positive per group is allowed (paired
+      designs can have up to 2 across groups).",
+      bullets = c(eg, if (nrow(dup_pos) > 10) {
+        sprintf(
+          "... and %d more.",
+          nrow(dup_pos) - 10
+        )
+      })
     )
   }
 
 
-  # --- SUBJECT METADATA (1 row per subject; lazy-safe) --------------------------
+  # --- SUBJECT METADATA (1 row per subject; lazy-safe) ------------------------
   subjects_meta <- df_long |>
     dplyr::group_by(subject_id) |>
-    dplyr::summarise(dplyr::across(tidyselect::all_of(group_cols), dplyr::first),
+    dplyr::summarise(
+      dplyr::across(
+        tidyselect::all_of(group_cols),
+        dplyr::first
+      ),
       .groups = "drop"
     ) |>
     dplyr::arrange(subject_id) |>
     dplyr::collect()
 
-  # --- FREEZE ORDERS (lazy-safe) ------------------------------------------------
+  # --- FREEZE ORDERS (lazy-safe) ----------------------------------------------
   subjects_order <- df_long |>
     dplyr::distinct(subject_id) |>
     dplyr::arrange(subject_id) |>
@@ -325,7 +347,7 @@ ph_prevalence_shift2 <- function(
     dplyr::collect() |>
     dplyr::pull(peptide_id)
 
-  # --- BUILD HITS DIRECTLY FROM DISTINCT POSITIVES ------------------------------
+  # --- BUILD HITS DIRECTLY FROM DISTINCT POSITIVES ----------------------------
   pos_pairs <- df_long |>
     dplyr::filter(!!rlang::sym(exist_col) > 0L) |>
     dplyr::distinct(subject_id, peptide_id) |>
@@ -338,24 +360,29 @@ ph_prevalence_shift2 <- function(
   hits_split <- split(hits_dt$subj, hits_dt$pep)
 
   nonempty_pep_ids <- as.integer(names(hits_split))
-  if (length(nonempty_pep_ids) == 0L) .ph_abort("All peptides are zero after hits guard (no positives).")
+  if (length(nonempty_pep_ids) == 0L) {
+    .ph_abort("All peptides are zero after hits guard (no positives).")
+  }
   peptides_order <- peptides_order[nonempty_pep_ids]
 
   m <- length(peptides_order)
   hits_by_peptide <- vector("list", m)
   hits_by_peptide[seq_along(nonempty_pep_ids)] <- lapply(hits_split, as.integer)
 
-  # --- BUILD 64-bit BITSET ONCE --------------------------------------------------
+  # --- BUILD 64-bit BITSET ONCE -----------------------------------------------
   N_subjects <- length(subjects_order)
   bs <- build_bitset_unpaired(hits_by_peptide, N_subjects)
 
   bitset_raw <- bs$data
   bitset_m <- bs$m
   bitset_words <- bs$n_words
-  if (bitset_m != length(peptides_order)) .ph_abort("Bitset/peptide dimension mismatch.")
+  if (bitset_m != length(peptides_order)) {
+    .ph_abort("Bitset/peptide dimension mismatch.")
+  }
 
   # Ready for downstream steps:
-  # subjects_order, peptides_order, subjects_meta, bitset_raw, bitset_m, bitset_words
+  # subjects_order, peptides_order, subjects_meta, bitset_raw, bitset_m,
+  # bitset_words
 
 
   # Objects ready for downstream use:
@@ -364,14 +391,17 @@ ph_prevalence_shift2 <- function(
   # - subjects_meta : per-subject metadata (for contrasts)
   # - bitset_raw, bitset_m, bitset_words : packed 64-bit bitset (col-major)
 
-  # --- 2) Peptide library attach (simple, in R) ---------------------------------
+  # --- 2) Peptide library attach (simple, in R) -------------------------------
   ranks_need <- setdiff(rank_cols, "peptide_id")
 
   get_lib_tbl <- function() {
     if (length(ranks_need) == 0L) {
-      # Only peptide_id requested → trivial long map
+      # Only peptide_id requested --> trivial long map
       return(
-        tibble::tibble(peptide_id = peptides_order, rank = "peptide_id", feature = peptides_order)
+        tibble::tibble(
+          peptide_id = peptides_order, rank = "peptide_id",
+          feature = peptides_order
+        )
       )
     }
 
@@ -381,7 +411,7 @@ ph_prevalence_shift2 <- function(
     } else if (!is.null(peptide_library)) {
       lib_src <- peptide_library
     } else if (rlang::is_installed("phiper") &&
-               "get_peptide_meta" %in% getNamespaceExports("phiper")) {
+      "get_peptide_meta" %in% getNamespaceExports("phiper")) {
       # auto-fetch from phiper if available
       lib_src <- phiper::get_peptide_meta()
     } else {
@@ -398,7 +428,11 @@ ph_prevalence_shift2 <- function(
     # Select needed columns and collect to R (handles DuckDB/lazy)
     lib_needed <- c("peptide_id", ranks_need)
     miss_tax <- setdiff(ranks_need, colnames(lib_src))
-    if (length(miss_tax)) .ph_abort("Peptide library missing required columns:", bullets = paste("-", miss_tax))
+    if (length(miss_tax)) {
+      .ph_abort("Peptide library missing required columns:",
+        bullets = paste("-", miss_tax)
+      )
+    }
 
     lib_small <- lib_src |>
       dplyr::select(tidyselect::any_of(lib_needed)) |>
@@ -408,7 +442,8 @@ ph_prevalence_shift2 <- function(
       lib_small <- lib_small |> dplyr::collect()
     }
 
-    # Keep only peptides we actually retained (peptides_order), then pivot to long
+    # Keep only peptides we actually retained (peptides_order), then pivot to
+    # long
     lib_small <- lib_small |>
       dplyr::filter(.data$peptide_id %in% peptides_order)
 
@@ -427,7 +462,10 @@ ph_prevalence_shift2 <- function(
     if ("peptide_id" %in% rank_cols) {
       rank_map_long <- dplyr::bind_rows(
         rank_map_long,
-        tibble::tibble(peptide_id = peptides_order, rank = "peptide_id", feature = peptides_order)
+        tibble::tibble(
+          peptide_id = peptides_order, rank = "peptide_id",
+          feature = peptides_order
+        )
       )
     }
 
@@ -437,18 +475,17 @@ ph_prevalence_shift2 <- function(
   rank_map_long <- get_lib_tbl()
   # rank_map_long columns: peptide_id, rank, feature  (in R memory)
 
-  # --- 3) Initialize progress logging -------------------------------------------
+  # --- 3) Initialize progress logging -----------------------------------------
   progress_path <- .progress_file(log_file)
   if (isTRUE(log)) .progress_init(progress_path)
 
-  # --- 4) Construct grouping universes (contrasts) -------------------------------
+  # --- 4) Construct grouping universes (contrasts) ----------------------------
 
   # (a) Filter rank_map_long by rank_feature_keep (if provided)
   if (!is.null(rank_feature_keep) && length(rank_feature_keep)) {
     for (rk in names(rank_feature_keep)) {
       vals <- rank_feature_keep[[rk]]
       if (is.null(vals)) {
-        # NULL => brak filtrowania dla tej rangi
         next
       } else {
         keep_vals <- as.character(vals)
@@ -515,30 +552,29 @@ ph_prevalence_shift2 <- function(
         )
       ) |>
       dplyr::select(group_col, group1, group2, design)
-
   } else {
     contrasts_base <- all_pairs |>
       dplyr::mutate(design = "unpaired") |>
       dplyr::select(group_col, group1, group2, design)
   }
 
-
-  # (f) master plan = rank-feature strata × contrasts (only strata with peptides)
+  # (f) master plan = rank-feature strata × contrasts (only strata with
+  # peptides)
   master_plan <- tidyr::crossing(
     rf_counts |> dplyr::select(rank, feature, n_peptides),
     contrasts_base
   ) |>
     dplyr::filter(.data$n_peptides > 0L)
 
-  # --- 5) Work weighting (by usable peptides) -----------------------------------
+  # --- 5) Work weighting (by usable peptides) ---------------------------------
   master_plan <- master_plan |>
     dplyr::mutate(work_weight = .data$n_peptides)
 
-  # --- 7) Header line (CPP-only) -------------------------------------------------
+  # --- 7) Header line (CPP-only) ----------------------------------------------
   n_contrasts <- nrow(master_plan)
-  B_num <- as.numeric(B_permutations) # <- double
-  pep_sum <- sum(as.numeric(master_plan$n_peptides), na.rm = TRUE) # <- double
-  work_total <- pep_sum * B_num # <- double (no as.integer!)
+  B_num <- as.numeric(B_permutations)
+  pep_sum <- sum(as.numeric(master_plan$n_peptides), na.rm = TRUE)
+  work_total <- pep_sum * B_num
   peps_total <- length(peptides_order)
   hdr_fast <- "CPP"
   log_to_file <- isTRUE(log) && (!is.null(log_file) && nzchar(log_file))
@@ -548,12 +584,13 @@ ph_prevalence_shift2 <- function(
       sprintf("total contrasts: %d", n_contrasts),
       sprintf("B per contrast: %d", B_permutations),
       sprintf("peptides after filtering: %d", peps_total),
-      sprintf("weighted work total (sum B*peptides): %.0f", work_total), # <- %.0f
+      sprintf("weighted work total (sum B*peptides): %.0f", work_total),
       sprintf(
         "mode: %s",
         if (rlang::is_installed("future") &&
-            isTRUE(tryCatch(future::nbrOfWorkers() > 1L,
-                            error = function(...) FALSE))) {
+          isTRUE(tryCatch(future::nbrOfWorkers() > 1L,
+            error = function(...) FALSE
+          ))) {
           "parallel (future backend)"
         } else {
           "sequential"
@@ -562,17 +599,23 @@ ph_prevalence_shift2 <- function(
       sprintf("engine: %s", hdr_fast)
     )
     if (log_to_file) {
-      .ph_log_info_file(log_file, "Starting permutation computations", bullets = hdr_bullets)
+      .ph_log_info_file(log_file, "Starting permutation computations",
+        bullets = hdr_bullets
+      )
     } else {
       .ph_log_info("Starting permutation computations", bullets = hdr_bullets)
     }
   }
 
-  # --- Prep indices for CPP ------------------------------------------------------
+  # --- Prep indices for CPP ---------------------------------------------------
   # subject row index map (1..N)
-  subj_row_map <- tibble::tibble(subject_id = subjects_order, row = seq_along(subjects_order))
+  subj_row_map <- tibble::tibble(
+    subject_id = subjects_order,
+    row = seq_along(subjects_order)
+  )
 
-  # group membership with subject row indices (lazy-safe collect already done earlier)
+  # group membership with subject row indices (lazy-safe collect already done
+  # earlier)
   subj_groups_idx <- df_long |>
     tidyr::pivot_longer(
       cols = tidyselect::all_of(group_cols),
@@ -616,7 +659,7 @@ ph_prevalence_shift2 <- function(
 
     id_map <- setNames(seq_along(pair_ids), pair_ids)
 
-    # G1: blok-level presence
+    # G1: block-level presence
     g1_hits <- df_long |>
       dplyr::filter(
         !!rlang::sym(exist_col) > 0L,
@@ -646,7 +689,10 @@ ph_prevalence_shift2 <- function(
       dplyr::group_by(peptide_id) |>
       dplyr::summarise(idx_hits = list(as.integer(sort(idx))), .groups = "drop")
 
-    hh <- dplyr::full_join(g1_hits, g2_hits, by = "peptide_id", suffix = c("_g1", "_g2")) |>
+    hh <- dplyr::full_join(g1_hits, g2_hits,
+      by = "peptide_id",
+      suffix = c("_g1", "_g2")
+    ) |>
       dplyr::mutate(
         idx_hits_g1 = purrr::map(idx_hits_g1, ~ .x %||% integer(0)),
         idx_hits_g2 = purrr::map(idx_hits_g2, ~ .x %||% integer(0))
@@ -661,7 +707,7 @@ ph_prevalence_shift2 <- function(
     )
   }
 
-  # --- core runner for one contrast (calls CPP helper; streams + logs) ----------
+  # --- core runner for one contrast (calls CPP helper + logs) ----------
   .run_one <- function(i) {
     st <- master_plan[i, , drop = FALSE]
     pep_cols <- get_pep_cols(st$rank, st$feature)
@@ -675,7 +721,8 @@ ph_prevalence_shift2 <- function(
       return(NULL)
     }
 
-    # draw per-contrast seed from global RNG; reproducible via set.seed() outside
+    # draw per-contrast seed from global RNG; reproducible via set.seed()
+    # outside
     seed_i <- as.integer(sample.int(.Machine$integer.max, 1L))
 
     # Defaults for UNPAIRED call
@@ -709,9 +756,9 @@ ph_prevalence_shift2 <- function(
       pep_cols         = pep_cols,
       g1_rows          = g1_rows,
       g2_rows          = g2_rows,
-      hits_g1_paired   = hits_g1, # empty list for unpaired
-      hits_g2_paired   = hits_g2, # empty list for unpaired
-      P                = as.integer(P), # 0 for unpaired
+      hits_g1_paired   = hits_g1,
+      hits_g2_paired   = hits_g2,
+      P                = as.integer(P),
       B                = as.integer(B_permutations),
       seed             = seed_i,
       smooth_eps_num   = smooth_eps_num,
@@ -737,7 +784,8 @@ ph_prevalence_shift2 <- function(
       subj_rows_both <- c(g1_rows, g2_rows)
       subj_ids_here <- subjects_order[unique(subj_rows_both)]
 
-      # lazy filter; if fold_change column is absent, this select will drop it silently
+      # lazy filter; if fold_change column is absent, this select will drop it
+      # silently
       fc_tbl <- df_long |>
         dplyr::filter(
           .data$peptide_id %in% pep_ids_here,
@@ -747,15 +795,37 @@ ph_prevalence_shift2 <- function(
 
       # summarize only if fold_change actually flowed through
       if ("fold_change" %in% names(fc_tbl)) {
-        # Prefer DB-side summarize; for 'median' fall back to R if backend lacks it
-        if (fold_change == "sum") fc_tbl <- dplyr::summarise(fc_tbl, v = sum(.data$fold_change, na.rm = TRUE))
-        if (fold_change == "mean") fc_tbl <- dplyr::summarise(fc_tbl, v = mean(.data$fold_change, na.rm = TRUE))
-        if (fold_change == "max") fc_tbl <- dplyr::summarise(fc_tbl, v = max(.data$fold_change, na.rm = TRUE))
+        # Prefer DB-side summarize; for 'median' fall back to R if backend lacks
+        # it
+        if (fold_change == "sum") {
+          fc_tbl <- dplyr::summarise(fc_tbl, v = sum(.data$fold_change,
+            na.rm = TRUE
+          ))
+        }
+        if (fold_change == "mean") {
+          fc_tbl <- dplyr::summarise(fc_tbl, v = mean(.data$fold_change,
+            na.rm = TRUE
+          ))
+        }
+        if (fold_change == "max") {
+          fc_tbl <- dplyr::summarise(fc_tbl, v = max(.data$fold_change,
+            na.rm = TRUE
+          ))
+        }
         if (fold_change == "median") {
           # dbplyr->DuckDB supports median; if not, collect minimal vector
-          fc_try <- try(dplyr::summarise(fc_tbl, v = median(.data$fold_change, na.rm = TRUE)), silent = TRUE)
+          fc_try <- try(
+            dplyr::summarise(fc_tbl,
+              v = median(.data$fold_change,
+                na.rm = TRUE
+              )
+            ),
+            silent = TRUE
+          )
           fc_tbl <- if (inherits(fc_try, "try-error")) {
-            tibble::tibble(v = stats::median(dplyr::collect(fc_tbl)$fold_change, na.rm = TRUE))
+            tibble::tibble(v = stats::median(dplyr::collect(fc_tbl)$fold_change,
+              na.rm = TRUE
+            ))
           } else {
             fc_try
           }
@@ -770,25 +840,42 @@ ph_prevalence_shift2 <- function(
       # peptides in this stratum and subjects in the contrast (both groups)
       pep_ids_here <- names(pep_col_map)[pep_cols]
       subj_rows_both <- c(g1_rows, g2_rows)
-      subj_ids_here  <- subjects_order[unique(subj_rows_both)]
+      subj_ids_here <- subjects_order[unique(subj_rows_both)]
 
       # build per-peptide prevalence pooled over g1 ∪ g2
       cp_tbl <- df_long |>
-        dplyr::filter(.data$peptide_id %in% pep_ids_here,
-                      .data$subject_id %in% subj_ids_here) |>
+        dplyr::filter(
+          .data$peptide_id %in% pep_ids_here,
+          .data$subject_id %in% subj_ids_here
+        ) |>
         dplyr::mutate(.exist = !!rlang::sym(exist_col) > 0L) |>
         dplyr::group_by(.data$peptide_id) |>
         dplyr::summarise(prev = mean(.exist, na.rm = TRUE), .groups = "drop")
 
       # summarize prevalence vector by requested reducer
-      if (cross_prev == "sum")   cp_tbl <- dplyr::summarise(cp_tbl, v = sum(.data$prev, na.rm = TRUE))
-      if (cross_prev == "mean")  cp_tbl <- dplyr::summarise(cp_tbl, v = mean(.data$prev, na.rm = TRUE))
-      if (cross_prev == "max")   cp_tbl <- dplyr::summarise(cp_tbl, v = max(.data$prev, na.rm = TRUE))
+      if (cross_prev == "sum") {
+        cp_tbl <- dplyr::summarise(cp_tbl, v = sum(.data$prev, na.rm = TRUE))
+      }
+      if (cross_prev == "mean") {
+        cp_tbl <- dplyr::summarise(cp_tbl, v = mean(.data$prev, na.rm = TRUE))
+      }
+      if (cross_prev == "max") {
+        cp_tbl <- dplyr::summarise(cp_tbl, v = max(.data$prev, na.rm = TRUE))
+      }
       if (cross_prev == "median") {
-        cp_try <- try(dplyr::summarise(cp_tbl, v = median(.data$prev, na.rm = TRUE)), silent = TRUE)
+        cp_try <- try(
+          dplyr::summarise(cp_tbl,
+            v = median(.data$prev, na.rm = TRUE)
+          ),
+          silent = TRUE
+        )
         cp_tbl <- if (inherits(cp_try, "try-error")) {
-          tibble::tibble(v = stats::median(dplyr::collect(cp_tbl)$prev, na.rm = TRUE))
-        } else cp_try
+          tibble::tibble(v = stats::median(dplyr::collect(cp_tbl)$prev,
+            na.rm = TRUE
+          ))
+        } else {
+          cp_try
+        }
       }
       cp_val <- dplyr::pull(dplyr::collect(cp_tbl), v)[1] %||% NA_real_
     }
@@ -796,18 +883,23 @@ ph_prevalence_shift2 <- function(
     row <- dplyr::bind_cols(
       st[, c("rank", "feature", "group_col", "group1", "group2", "design")],
       tibble::tibble(
-        n_subjects_paired = if (identical(st$design, "paired")) as.integer(P) else NA_integer_,
-        n_peptides_used   = as.integer(res$n_peptides_used),
-        m_eff             = as.numeric(res$m_eff),
-        T_obs             = as.numeric(res$T_obs),
-        T_obs_stand       = {
+        n_subjects_paired = if (identical(st$design, "paired")) {
+          as.integer(P)
+        } else {
+          NA_integer_
+        },
+        n_peptides_used = as.integer(res$n_peptides_used),
+        m_eff = as.numeric(res$m_eff),
+        T_obs = as.numeric(res$T_obs),
+        T_obs_stand = {
           sd_null <- as.numeric(res$T_null_sd)
           ifelse(!is.na(sd_null) & sd_null > 0,
-                 as.numeric(res$T_obs) / sd_null,
-                 NA_real_)
+            as.numeric(res$T_obs) / sd_null,
+            NA_real_
+          )
         },
-        Z_from_p          = {
-          pval  <- as.numeric(res$p_perm)
+        Z_from_p = {
+          pval <- as.numeric(res$p_perm)
           T_val <- as.numeric(res$T_obs)
           ifelse(
             is.na(pval),
@@ -815,14 +907,14 @@ ph_prevalence_shift2 <- function(
             sign(T_val) * stats::qnorm(pval / 2, lower.tail = FALSE)
           )
         },
-        b                 = as.integer(res$b),
-        p_perm            = as.numeric(res$p_perm),
-        mean_delta        = as.numeric(res$mean_delta),
-        frac_delta_pos    = as.numeric(res$frac_delta_pos),
-        mean_delta_w      = as.numeric(res$mean_delta_w),
-        frac_delta_pos_w  = as.numeric(res$frac_delta_pos_w),
+        b = as.integer(res$b),
+        p_perm = as.numeric(res$p_perm),
+        mean_delta = as.numeric(res$mean_delta),
+        frac_delta_pos = as.numeric(res$frac_delta_pos),
+        mean_delta_w = as.numeric(res$mean_delta_w),
+        frac_delta_pos_w = as.numeric(res$frac_delta_pos_w),
         !!paste0("fold_change_", fold_change) := fc_val,
-        !!paste0("cross_prev_",  cross_prev)  := cp_val
+        !!paste0("cross_prev_", cross_prev) := cp_val
       )
     )
 
@@ -836,7 +928,8 @@ ph_prevalence_shift2 <- function(
       inc <- as.numeric(row$n_peptides_used) * B_num
       done_w <- .progress_add(progress_path, inc)
 
-      prog <- if (is.finite(done_w) && is.finite(work_total) && work_total > 0) {
+      prog <- if (is.finite(done_w) && is.finite(work_total) &&
+        work_total > 0) {
         pmin(100, 100 * (done_w / work_total))
       } else {
         NA_real_
@@ -855,11 +948,10 @@ ph_prevalence_shift2 <- function(
       }
     }
 
-
     row
   }
 
-  # --- 7/8) Computation path: sequential vs parallel ----------------------------
+  # --- 7/8) Computation path: sequential vs parallel --------------------------
   result_rows <- list()
 
   # decide workers
@@ -872,16 +964,19 @@ ph_prevalence_shift2 <- function(
 
   # ---- dynamic scheduling for future.apply ----
   op_old <- options(
-    future.scheduling   = Inf, # każdy element osobno, dynamicznie
-    future.chunk.size   = 1 # bez bundlowania kilku kontrastów na raz
+    future.scheduling   = Inf,
+    future.chunk.size   = 1
   )
   on.exit(options(op_old), add = TRUE)
 
   # ---- avoid inner oversubscription (TBB inside RcppParallel) ----
   if (rlang::is_installed("RcppParallel")) {
-    RcppParallel::setThreadOptions(numThreads = 1) # fairness > peak single-task speed
-  }
-  Sys.setenv(OMP_NUM_THREADS = "1", MKL_NUM_THREADS = "1", OPENBLAS_NUM_THREADS = "1")
+    RcppParallel::setThreadOptions(numThreads = 1) # fairness > peak single-task
+  } #            speed
+  Sys.setenv(
+    OMP_NUM_THREADS = "1", MKL_NUM_THREADS = "1",
+    OPENBLAS_NUM_THREADS = "1"
+  )
 
   if (n_workers == 1L) {
     # --- sequential
@@ -894,15 +989,15 @@ ph_prevalence_shift2 <- function(
     idx <- order(master_plan$work_weight, decreasing = TRUE)
     res_list <- future.apply::future_lapply(
       X = idx, FUN = .run_one,
-      future.seed       = TRUE,
+      future.seed = TRUE,
       future.scheduling = Inf,
       future.chunk.size = 1,
-      future.packages   = c("dplyr", "tibble", "tidyr")
+      future.packages = c("dplyr", "tibble", "tidyr")
     )
     result_rows <- res_list
   }
 
-  # ---- Final log --------------------------------------------------------------
+  # ---- Final log -------------------------------------------------------------
   if (isTRUE(log)) {
     # figure out ranks for footer without failing on empty res
     ranks_footer <- tryCatch(
@@ -915,10 +1010,14 @@ ph_prevalence_shift2 <- function(
       sprintf("B: %d", B_permutations),
       sprintf("workers: %d", ifelse(n_workers > 1L, n_workers, 1L))
     )
-    if (log_to_file) .ph_log_ok_file(log_file, headline, bullets = bullets) else .ph_log_ok(headline, bullets = bullets)
+    if (log_to_file) {
+      .ph_log_ok_file(log_file, headline, bullets = bullets)
+    } else {
+      .ph_log_ok(headline, bullets = bullets)
+    }
   }
 
-  # ---- Collect results ---------------------------------------------------------
+  # ---- Collect results -------------------------------------------------------
   rr <- purrr::compact(result_rows)
   res <- if (length(rr)) dplyr::bind_rows(rr) else tibble::tibble()
 
@@ -927,7 +1026,8 @@ ph_prevalence_shift2 <- function(
     return(tibble::tibble(
       rank = character(), feature = character(), group_col = character(),
       group1 = character(), group2 = character(), design = character(),
-      n_subjects_paired = integer(), n_peptides_used = integer(), m_eff = numeric(),
+      n_subjects_paired = integer(), n_peptides_used = integer(),
+      m_eff = numeric(),
       T_obs = numeric(), T_obs_stand = numeric(), Z_from_p = numeric(),
       p_perm = numeric(), b = integer(),
       p_adj_rank = numeric(),
@@ -944,7 +1044,7 @@ ph_prevalence_shift2 <- function(
       m_eff  = as.numeric(m_eff)
     )
 
-  # ---- p.adjust + final select/arrange -----------------------------------------
+  # ---- p.adjust + final select/arrange ---------------------------------------
   res <- res %>%
     dplyr::group_by(rank) %>%
     dplyr::mutate(p_adj_rank = p.adjust(p_perm, method = "BH")) %>%
@@ -955,7 +1055,6 @@ ph_prevalence_shift2 <- function(
         !is.na(p_perm) & p_perm < 0.05 ~ "nominal only",
         TRUE ~ "not significant"
       ),
-      # if you didn't populate it in .run_one(), keep NA for unpaired
       n_subjects_paired = dplyr::coalesce(.data$n_subjects_paired, NA_integer_)
     ) %>%
     dplyr::select(
@@ -965,7 +1064,7 @@ ph_prevalence_shift2 <- function(
       p_adj_rank,
       mean_delta, frac_delta_pos, mean_delta_w, frac_delta_pos_w,
       dplyr::any_of(paste0("fold_change_", fold_change)),
-      dplyr::any_of(paste0("cross_prev_",  cross_prev)),
+      dplyr::any_of(paste0("cross_prev_", cross_prev)),
       category_rank_bh
     ) %>%
     dplyr::arrange(rank, feature, group_col, group1, group2)
@@ -975,13 +1074,18 @@ ph_prevalence_shift2 <- function(
 
 # ====== LOG-TO-FILE HELPERS (phiper-style, same layout) =======================
 .progress_file <- function(log_file = NULL, stream_path = NULL) {
-  base <- if (!is.null(log_file) && nzchar(log_file)) log_file else stream_path %||% "ph_prev_shift"
+  base <- if (!is.null(log_file) && nzchar(log_file)) {
+    log_file
+  } else {
+    stream_path %||% "ph_prev_shift"
+  }
   paste0(base, ".progress.bin")
 }
 
 .progress_init <- function(path) {
   if (!requireNamespace("filelock", quietly = TRUE)) {
-    .ph_abort("`filelock` package required for progress logging. Install it or disable logging.")
+    .ph_abort("`filelock` package required for progress logging.
+              Install it or disable logging.")
   }
   if (file.exists(path)) unlink(path)
   con <- file(path, open = "wb")
@@ -1012,7 +1116,10 @@ ph_prevalence_shift2 <- function(
 .ph_log_to_file <- function(path, level = "INFO", headline,
                             step = NULL, bullets = NULL) {
   lines <- .ph_compose_lines(level, headline, step, bullets)
-  cat(paste0(lines, collapse = "\n"), "\n", sep = "", file = path, append = TRUE)
+  cat(paste0(lines, collapse = "\n"), "\n",
+    sep = "", file = path,
+    append = TRUE
+  )
   invisible(lines)
 }
 
@@ -1027,4 +1134,3 @@ ph_prevalence_shift2 <- function(
 .ph_log_warn_file <- function(path, headline, step = NULL, bullets = NULL) {
   .ph_log_to_file(path, "WARN", headline, step, bullets)
 }
-
