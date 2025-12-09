@@ -201,6 +201,51 @@ get_peptide_library <- function(x) {
   x$peptide_library
 }
 
+#' @title Export a phip_data Table to Parquet
+#'
+#' @description
+#' Exports the `data_long` table from a **phip_data** object to disk in Apache Parquet format.
+#' Only implemented for DuckDB backend.
+#' 
+#' @note The export is performed directly and efficiently from the
+#' database/lazy table without reading all data into memory.
+#'
+#' @param x   A <phip_data> object.
+#' @param path File path (character) to save the output `.parquet` file.
+#'
+#' @return NULL (invisibly).
+#'
+#' @details
+#' - For the "memory" backend, you may use `arrow::write_parquet(as.data.frame(x$data_long), path)` directly.
+#'
+#' @examples 
+#' \donttest{
+#' pd <- phip_load_example_data()
+#' export_parquet(pd, "output_data.parquet")
+#' }
+#'
+#' @export
+export_parquet <- function(x, path) {
+  .check_pd(x)
+
+  .chk_cond(
+    get_backend(x) != "duckdb",
+    "Action is only supported for duckdb backend"
+  )
+
+  con <- dbplyr::remote_con(x$data_long)
+
+  whole_file_qry <- dbplyr::sql_render(x$data_long)
+  copy_sql <- sqlInterpolate(
+    con,
+    paste0("COPY ( ", whole_file_qry, " ) TO ?path (FORMAT 'parquet');"),
+    path = dbQuoteString(con, path)
+  )
+
+  dbExecute(con, copy_sql)
+  invisible(NULL)
+}
+
 ################################################################################
 ## dplyr verb wrappers  --------------------------------------------------------
 ## (dplyr already provides the generics, we only add methods)
