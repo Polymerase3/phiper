@@ -915,50 +915,6 @@ test_that("ph_prevalence_shift returns NA stats when no peptides pass
   expect_equal(nrow(res), 0L)
 })
 
-test_that("ph_prevalence_shift aborts on bitset/peptide dimension mismatch", {
-  toy_df <- tibble::tibble(
-    sample_id  = c("s1", "s2"),
-    subject_id = c("id1", "id2"),
-    peptide_id = c("pep1", "pep2"),
-    group      = c("A", "B"),
-    exist      = c(1L, 1L)
-  )
-
-  testthat::local_mocked_bindings(
-    build_bitset_unpaired = function(hits_by_peptide, N_subjects) {
-      list(
-        data    = raw(0),
-        m       = length(hits_by_peptide) + 1L,
-        n_words = 1L
-      )
-    },
-    .env = asNamespace("phiper")
-  )
-
-  expect_error(
-    ph_prevalence_shift(
-      x                  = toy_df,
-      exist_col          = "exist",
-      rank_cols          = "peptide_id",
-      group_cols         = "group",
-      B_permutations     = 200L,
-      smooth_eps_num     = 0.5,
-      smooth_eps_den_mult= 2.0,
-      min_max_prev       = 0.0,
-      weight_mode        = "equal",
-      stat_mode          = "diff",
-      prev_strat         = "none",
-      winsor_z           = 4,
-      rank_feature_keep  = NULL,
-      peptide_library    = NULL,
-      log                = FALSE,
-      fold_change        = "none",
-      cross_prev         = "none"
-    ),
-    regexp = "Bitset/peptide dimension mismatch"
-  )
-})
-
 test_that("ph_prevalence_shift uses global RNG reproducibly and advances .Random.seed deterministically", {
   toy_rng <- tibble::tibble(
     sample_id  = paste0("s", 1:10),
@@ -1031,3 +987,46 @@ test_that("ph_prevalence_shift uses global RNG reproducibly and advances .Random
   expect_equal(res1, res2)
 })
 
+test_that("ph_prevalence_shift aborts on bitset/peptide dimension mismatch", {
+  toy_df <- tibble::tibble(
+    sample_id  = c("s1", "s2"),
+    subject_id = c("id1", "id2"),
+    peptide_id = c("pep1", "pep2"),
+    group      = c("A", "B"),
+    exist      = c(1L, 1L)
+  )
+
+  testthat::local_mocked_bindings(
+    build_bitset_unpaired = function(hits_by_peptide, N_subjects) {
+      list(
+        data    = raw(0),
+        m       = length(hits_by_peptide) + 1L,
+        n_words = 1L
+      )
+    },
+    .env = asNamespace("phiper")
+  )
+
+  expect_error(
+    ph_prevalence_shift(
+      x                  = toy_df,
+      exist_col          = "exist",
+      rank_cols          = "peptide_id",
+      group_cols         = "group",
+      B_permutations     = 200L,
+      smooth_eps_num     = 0.5,
+      smooth_eps_den_mult= 2.0,
+      min_max_prev       = 0.0,
+      weight_mode        = "equal",
+      stat_mode          = "diff",
+      prev_strat         = "none",
+      winsor_z           = 4,
+      rank_feature_keep  = NULL,
+      peptide_library    = NULL,
+      log                = FALSE,
+      fold_change        = "none",
+      cross_prev         = "none"
+    ),
+    regexp = "Bitset/peptide dimension mismatch"
+  )
+})
