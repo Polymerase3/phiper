@@ -107,7 +107,6 @@ ph_prevalence_shift2 <- function(
     interaction          = FALSE,
     combine_cols         = NULL,
     interaction_sep      = "::",
-    # permutation options
     B_permutations       = 2000L,
     smooth_eps_num       = 0.5,
     smooth_eps_den_mult  = 2.0,
@@ -118,14 +117,8 @@ ph_prevalence_shift2 <- function(
     winsor_z             = 4.0,
     rank_feature_keep    = NULL,
     peptide_library      = NULL,
-    auto_fetch_library   = FALSE,
-    # logging
     log                  = FALSE,
     log_file             = "ph_prevalence_shift.log",
-    # STREAM/LOG — new arguments
-    stream_path          = NULL,          # path to RDS multi-object stream (serialize() appends)
-    return_results       = TRUE,          # read back the stream and return tibble
-    append_stream        = FALSE,          # if TRUE, don't re-init header in stream
     fold_change          = c("none","sum","mean","max","median"),
     cross_prev           = c("none","sum","mean","max","median")
 ) {
@@ -260,18 +253,17 @@ ph_prevalence_shift2 <- function(
       lib_src <- x$peptide_library
     } else if (!is.null(peptide_library)) {
       lib_src <- peptide_library
-    } else if (isTRUE(auto_fetch_library)) {
-      if (!rlang::is_installed("phiper") || !("get_peptide_meta" %in% getNamespaceExports("phiper"))) {
-        .ph_abort("auto_fetch_library=TRUE but phiper::get_peptide_meta() is not available.")
-      }
+    } else if (rlang::is_installed("phiper") &&
+               "get_peptide_meta" %in% getNamespaceExports("phiper")) {
+      # auto-fetch from phiper if available
       lib_src <- phiper::get_peptide_meta()
     } else {
       .ph_abort(
         "Peptide library required for non-peptide ranks.",
         bullets = c(
           "- Provide `peptide_library` with the needed columns,",
-          "- Or set `auto_fetch_library = TRUE`,",
-          "- Or include those rank columns in `x`."
+          "- Or attach a peptide_library to `x` (phip_data),",
+          "- Or ensure phiper::get_peptide_meta() is available."
         )
       )
     }
@@ -318,29 +310,8 @@ ph_prevalence_shift2 <- function(
   rank_map_long <- get_lib_tbl()
   # rank_map_long columns: peptide_id, rank, feature  (in R memory)
 
-  # --- 3) Initialize streamer ----------------------------------------------------
-  if (!is.null(stream_path) && !isTRUE(append_stream)) {
-    header <- list(
-      type = "ph_prevalence_shift_stream_header",
-      version = 1L,
-      created = as.character(Sys.time()),
-      engine = "CPP",
-      args = list(
-        weight_mode     = weight_mode,
-        stat_mode       = stat_mode,
-        prev_strat      = prev_strat,
-        B_permutations  = B_permutations,
-        min_max_prev    = min_max_prev,
-        winsor_z        = winsor_z
-      ),
-      n_subjects = length(subjects_order),
-      n_peptides_total = length(peptides_order),
-      n_contrasts = NA_integer_ # will be filled after we construct universes
-    )
-    .stream_init(stream_path, header)
-  }
-
-  progress_path <- .progress_file(log_file, stream_path)
+  # --- 3) Initialize progress logging -------------------------------------------
+  progress_path <- .progress_file(log_file)
   if (isTRUE(log)) .progress_init(progress_path)
 
   # --- 4) Construct grouping universes (contrasts) -------------------------------
@@ -683,8 +654,6 @@ ph_prevalence_shift2 <- function(
       )
     )
 
-    if (!is.null(stream_path)) .stream_write_object(stream_path, row)
-
     if (isTRUE(log)) {
       msg <- sprintf(
         "%s / %s | n_pep=%d b=%d p=%g",
@@ -719,7 +688,7 @@ ph_prevalence_shift2 <- function(
   }
 
   # --- 7/8) Computation path: sequential vs parallel ----------------------------
-  result_rows <- if (is.null(stream_path)) list() else NULL
+  result_rows <- list()
 
   # decide workers
   # decide workers based on current future backend
@@ -742,14 +711,13 @@ ph_prevalence_shift2 <- function(
   }
   Sys.setenv(OMP_NUM_THREADS = "1", MKL_NUM_THREADS = "1", OPENBLAS_NUM_THREADS = "1")
 
-
   if (n_workers == 1L) {
     # --- sequential
     for (i in seq_len(nrow(master_plan))) {
       row <- .run_one(i)
-      if (is.null(stream_path) && !is.null(row)) result_rows[[length(result_rows) + 1L]] <- row
+      if (!is.null(row)) result_rows[[length(result_rows) + 1L]] <- row
     }
-  } else else {
+  } else {
     # --- parallel via future.apply (respect existing future plan)
     idx <- order(master_plan$work_weight, decreasing = TRUE)
     res_list <- future.apply::future_lapply(
@@ -779,16 +747,8 @@ ph_prevalence_shift2 <- function(
   }
 
   # ---- Collect results ---------------------------------------------------------
-  res <- if (is.null(stream_path)) {
-    # in-memory: compact & bind; tolerate all-NULL
-    rr <- purrr::compact(result_rows)
-    if (length(rr)) dplyr::bind_rows(rr) else tibble::tibble()
-  } else if (isTRUE(return_results)) {
-    .stream_read_all(stream_path) %>%
-      dplyr::filter(.data$type != "ph_prevalence_shift_stream_header")
-  } else {
-    return(invisible(NULL))
-  }
+  rr <- purrr::compact(result_rows)
+  res <- if (length(rr)) dplyr::bind_rows(rr) else tibble::tibble()
 
   # Return early if empty
   if (nrow(res) == 0L) {
