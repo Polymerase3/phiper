@@ -28,7 +28,8 @@ forest_delta(
   font_family = "Montserrat",
   seg_width = 1.2,
   point_size = 3.6,
-  show_grid = FALSE
+  show_grid = FALSE,
+  stat = c("T", "Z")
 )
 }
 \arguments{

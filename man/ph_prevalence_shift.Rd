@@ -2,18 +2,18 @@
 % Please edit documentation in R/prevalence-DELTA_test.R
 \name{ph_prevalence_shift}
 \alias{ph_prevalence_shift}
-\title{Global shift in peptide-level prevalence via subject-level permutation}
+\title{Global Shift in Peptide-level Prevalence via Subject-level Permutation}
 \usage{
 ph_prevalence_shift(
   x,
   rank_cols,
   group_cols,
   exist_col = "exist",
+  paired_by = NULL,
   interaction = FALSE,
   combine_cols = NULL,
   interaction_sep = "::",
   B_permutations = 2000L,
-  seed = 1L,
   smooth_eps_num = 0.5,
   smooth_eps_den_mult = 2,
   min_max_prev = 0,
@@ -21,137 +21,258 @@ ph_prevalence_shift(
   stat_mode = c("diff", "asin"),
   prev_strat = c("none", "decile"),
   winsor_z = 4,
-  parallel = NULL,
   rank_feature_keep = NULL,
   peptide_library = NULL,
-  auto_fetch_library = FALSE,
   log = FALSE,
   log_file = "ph_prevalence_shift.log",
-  stream_path = NULL,
-  return_results = TRUE,
-  append_stream = FALSE
+  fold_change = c("none", "sum", "mean", "max", "median"),
+  cross_prev = c("none", "sum", "mean", "max", "median")
 )
 }
 \arguments{
-\item{x}{A \code{phip_data} (recommended; must carry \code{peptide_library} when
-\code{rank_cols} include non-\code{peptide_id}) or a data.frame with the necessary
-columns.}
+\item{x}{A \code{phip_data} object (recommended; must carry a \code{peptide_library}
+when \code{rank_cols} includes non-\code{"peptide_id"}) or a data frame with the
+necessary columns.}
 
 \item{rank_cols}{Character vector of rank columns (e.g. \code{"peptide_id"},
-\code{"species"}, ...). Non-peptide ranks are joined from \code{x$peptide_library}.}
+\code{"species"}, ...). For non-peptide ranks, annotations are joined from a
+peptide library (see Details).}
 
-\item{group_cols}{Character vector of grouping columns that define universes;
-pairwise contrasts are constructed within each universe.}
+\item{group_cols}{Character vector of grouping columns that define
+universes; pairwise group contrasts are constructed within each
+\verb{(rank, feature, group_col)} stratum.}
 
 \item{exist_col}{Name of the 0/1 presence column. Default \code{"exist"}.}
 
-\item{interaction}{Logical; if \code{TRUE}, also create the interaction of the
-first two \code{group_cols}. Ignored if \code{combine_cols} is set.}
+\item{interaction}{Logical; reserved for future use (currently ignored). If
+\code{TRUE}, an interaction of the first two \code{group_cols} may be used as an
+additional \code{group_col} in future versions.}
 
-\item{combine_cols}{Optional length-2 vector; if provided, only that
-interaction is used as \code{group_col}.}
+\item{combine_cols}{Optional length-2 character vector; reserved for future
+use. If non-\code{NULL}, only this interaction would be used as \code{group_col}
+in future versions.}
 
 \item{interaction_sep}{Separator for interaction values. Default \code{"::"}.}
 
-\item{B_permutations}{Number of permutations \code{B}. Default \code{2000L}.}
+\item{B_permutations}{Number of permutations \code{B} used for the permutation
+p-value. Default \code{2000L}. Must be at least 100.}
 
-\item{seed}{RNG seed. Default \code{1L}.}
+\item{smooth_eps_num}{Laplace numerator epsilon \eqn{\varepsilon} used to
+smooth prevalence estimates. Default \code{0.5}.}
 
-\item{smooth_eps_num}{Laplace numerator epsilon. Default \code{0.5}.}
+\item{smooth_eps_den_mult}{Multiplicative factor \eqn{\lambda} applied to
+the denominator epsilon in the smoothing formula. Default \code{2.0}.}
 
-\item{smooth_eps_den_mult}{Multiplier for denominator epsilon. Default \code{2.0}.}
+\item{min_max_prev}{Minimum required value of \code{max(p1, p2)} for a peptide to
+be retained in the analysis. Default \code{0.0} (no prevalence filter).}
 
-\item{min_max_prev}{Keep peptides with \verb{max(p1, p2) >=} this. Default \code{0.0}.}
+\item{weight_mode}{One of \code{c("equal", "se_invvar", "n_eff_sqrt")},
+controlling how peptide-level z-scores are weighted in the Stouffer
+combination (see Details).}
 
-\item{weight_mode}{One of \code{c("equal","se_invvar","n_eff_sqrt")}.}
+\item{stat_mode}{One of \code{c("diff", "asin")}, determining whether z-scores
+are based on prevalence differences or the arcsin–sqrt transform.}
 
-\item{stat_mode}{One of \code{c("diff","asin")}.}
+\item{prev_strat}{One of \code{c("none", "decile")}. If \code{"decile"}, the Stouffer
+statistic is computed within prevalence deciles and the mean of
+decile-level z-scores is used as the global test statistic.}
 
-\item{prev_strat}{One of \code{c("none","decile")} for prevalence-stratified
-combining.}
+\item{winsor_z}{Winsorization threshold applied to peptide-level z-scores.
+Values beyond \verb{±winsor_z} are truncated. Default \code{4.0}.}
 
-\item{winsor_z}{Winsorization threshold for per-peptide z. Default \code{4.0}.}
+\item{rank_feature_keep}{Optional \strong{named list} mapping \code{rank} to a vector
+of \code{feature} values to keep. Only rank–feature strata in this list are
+tested; others are dropped after the peptide-level pivot.}
 
-\item{parallel}{Reserved (not used internally). Default \code{NULL}.}
+\item{peptide_library}{Optional data frame providing peptide annotations for
+non-peptide ranks. Must at least contain \code{peptide_id} and all requested
+\code{rank_cols} besides \code{"peptide_id"}. If \code{NULL}, the function falls back to
+\code{x$peptide_library} or \code{phiper::get_peptide_meta()} if available.}
 
-\item{rank_feature_keep}{Optional \strong{named list} \verb{rank -> values to keep};
-filters \verb{(rank, feature)} after pivot.}
+\item{log}{Logical; if \code{TRUE}, write progress messages (per contrast and
+overall) using the package's logging helpers.}
 
-\item{collect}{Keep \code{TRUE}; materialization is not required here.}
+\item{log_file}{Path to a log file used by the logging helpers if \code{log} is
+\code{TRUE}. Default \code{"ph_prevalence_shift.log"}.}
 
-\item{register_name}{Reserved; no-op here.}
+\item{fold_change}{Character scalar specifying whether and how to summarize
+a \code{fold_change} column (if present) over peptides and subjects in each
+contrast. One of \code{c("none", "sum", "mean", "max", "median")}. If \code{"none"},
+no fold-change summary is returned.}
 
-\item{progress_perm_every}{Print a small log every k permutations. Default \code{1L}.}
+\item{cross_prev}{Character scalar specifying whether and how to summarize
+pooled peptide-level prevalences across \verb{g1 ∪ g2} in each contrast. One
+of \code{c("none", "sum", "mean", "max", "median")}. If \code{"none"}, no
+prevalence summary is returned.}
 }
 \value{
 A tibble with one row per tested stratum:
-\verb{rank, feature, group_col, group1, group2, design, n_subjects_paired, n_peptides_used, T_obs, p_perm, p_adj_rank, mean_delta, frac_delta_pos, mean_delta_w, frac_delta_pos_w, category_rank_bh}.
+\itemize{
+\item \code{rank}, \code{feature}: rank and feature identifiers.
+\item \code{group_col}, \code{group1}, \code{group2}: grouping column and the ordered pair of
+groups compared.
+\item \code{design}: \code{"paired"} or \code{"unpaired"}.
+\item \code{n_subjects_paired}: number of paired subjects used in a paired design
+(or \code{NA} for unpaired).
+\item \code{n_peptides_used}: number of peptides contributing to the test.
+\item \code{m_eff}: effective number of peptides after prevalence filtering and
+weighting (as returned by the C++ helper).
+\item \code{T_obs}: observed Stouffer-type test statistic.
+\item \code{p_perm}: two-sided permutation p-value.
+\item \code{b}: number of permutations actually used (may be \verb{< B_permutations} if
+early stopping is implemented in the C++ helper).
+\item \code{p_adj_rank}: BH-adjusted p-value within each \code{rank}.
+\item \code{mean_delta}, \code{frac_delta_pos}, \code{mean_delta_w}, \code{frac_delta_pos_w}:
+unweighted/weighted summaries of peptide-level prevalence differences.
+\item \verb{fold_change_<mode>}: optional fold-change summary if \code{fold_change != "none"}.
+\item \verb{cross_prev_<mode>}: optional pooled prevalence summary if
+\code{cross_prev != "none"}.
+\item \code{category_rank_bh}: simple categorical label summarizing BH significance
+per rank (\code{"significant (BH, per rank)"}, \code{"nominal only"}, or
+\code{"not significant"}).
+}
 }
 \description{
-Tests for a \strong{global} (genome/antigen-wide) shift in peptide-level prevalence
-between two groups within each \verb{(rank, feature, group_col)} stratum by
-aggregating per-peptide effects into a single Stouffer-type statistic and
-assessing significance via \strong{label permutation} (paired or unpaired, chosen
-automatically from the data).
+Test for a \strong{global} (antigen-wide) shift in peptide-level
+prevalence between two groups within each \verb{(rank, feature, group_col)}
+stratum by aggregating per-peptide effects into a single Stouffer-type
+statistic and assessing significance via \strong{label permutation}.
 }
 \details{
-\strong{Overview.} For each stratum \verb{(rank, feature, group_col)} that yields a
-unique ordered pair of groups \verb{(g1, g2)}, the method:
+For each stratum \verb{(rank, feature, group_col)} that defines an ordered pair of
+groups \verb{(g1, g2)}, the procedure is:
 \enumerate{
-\item \strong{Peptide-level prevalence with smoothing.}
-For each peptide, compute smoothed prevalences in \code{g1} and \code{g2}:
-\deqn{ \hat p_k = \frac{x_k + \varepsilon}{n_k + \lambda \varepsilon}, \; k \in \{g1,g2\} , }
+\item \strong{Smoothed peptide-level prevalences.}
+For each peptide, smoothed prevalences in \code{g1} and \code{g2} are
+\deqn{
+     \hat p_k = \frac{x_k + \varepsilon}{n_k + \lambda \varepsilon},\quad k \in \{g1, g2\},
+   }
 where \code{x_k} is the number of samples with presence (\code{exist > 0}), \code{n_k}
-is the number of (distinct) samples (or paired subjects), \verb{\\varepsilon}
-is \code{smooth_eps_num}, and \verb{\\lambda} is \code{smooth_eps_den_mult}. Peptides with
-\verb{max( \\hat p_\{g1\}, \\hat p_\{g2\} ) < min_max_prev} are discarded.
+is the number of distinct samples (or paired subjects), \verb{\\varepsilon} is
+\code{smooth_eps_num}, and \verb{\\lambda} is \code{smooth_eps_den_mult}. Peptides with
+\eqn{\max(\hat p_{g1}, \hat p_{g2}) <} \code{min_max_prev} are discarded.
 \item \strong{Per-peptide effect and z-score (\code{stat_mode}).}
 \itemize{
 \item \code{"diff"}: effect \eqn{\Delta = \hat p_{g2} - \hat p_{g1}} with
-\eqn{ SE = \sqrt{\hat p_{g1}(1-\hat p_{g1})/n_{g1} + \hat p_{g2}(1-\hat p_{g2})/n_{g2}} } and
-\eqn{ z = \Delta / SE } (guarded by a tiny floor).
-\item \code{"asin"}: variance-stabilized difference of angles:
-\eqn{ z = \frac{\arcsin\sqrt{\hat p_{g2}} - \arcsin\sqrt{\hat p_{g1}}}{ \sqrt{ 1/(4n_{g1}) + 1/(4n_{g2}) } } .}
-Each \eqn{z} is \strong{winsorized} to \eqn{\pm} \code{winsor_z}.
+\deqn{
+       SE = \sqrt{\hat p_{g1}(1 - \hat p_{g1}) / n_{g1} +
+                  \hat p_{g2}(1 - \hat p_{g2}) / n_{g2}} ,
+     }
+and z-score \eqn{z = \Delta / SE} (with a small floor on \code{SE}).
+\item \code{"asin"}: variance-stabilized difference of angles,
+\deqn{
+       z = \frac{\arcsin \sqrt{\hat p_{g2}} - \arcsin \sqrt{\hat p_{g1}}}
+                {\sqrt{1 / (4 n_{g1}) + 1 / (4 n_{g2})}} .
+     }
 }
+
+Each \eqn{z_i} is then \strong{winsorized} to \eqn{\pm} \code{winsor_z}.
 \item \strong{Weights (\code{weight_mode}).}
 \itemize{
-\item \code{"equal"}: all peptides weight 1.
-\item \code{"se_invvar"}: inverse standard error (or the analogous denominator for
-\code{"asin"}).
-\item \code{"n_eff_sqrt"}: \eqn{ \sqrt{ n_{g1}\hat p_{g1} + n_{g2}\hat p_{g2} } } (proxy for expected positives).
+\item \code{"equal"}: all peptides get weight 1.
+\item \code{"se_invvar"}: weights proportional to the inverse standard error
+(or the analogous denominator for \code{"asin"}).
+\item \code{"n_eff_sqrt"}:
+\deqn{
+       w_i = \sqrt{ n_{g1} \hat p_{g1} + n_{g2} \hat p_{g2} },
+     }
+i.e. the square root of the expected number of positives across both
+groups.
 }
-\item \strong{Combine into one test statistic (Stouffer).}
-Let \eqn{w_i} be weights and \eqn{z_i} peptide z-scores.
+\item \strong{Combine into a single test statistic (Stouffer).}
+Let \eqn{w_i} be the weights and \eqn{z_i} the peptide-level z-scores.
 \itemize{
 \item If \code{prev_strat = "none"}:
-\deqn{ T_{\mathrm{obs}} = \frac{ \sum_i w_i z_i }{ \sqrt{ \sum_i w_i^2 } } . }
-\item If \code{prev_strat = "decile"}: bin peptides by deciles of pooled prevalence
-\eqn{ (\;n_{g1}\hat p_{g1} + n_{g2}\hat p_{g2}\;)/(\;n_{g1}+n_{g2}\;) } and combine a
-Stouffer \eqn{T_b} within each bin; report the \strong{mean} of bin-level z’s
-as \eqn{T_{\mathrm{obs}}} (stabilizes across prevalence regimes).
+\deqn{
+       T_{\mathrm{obs}} =
+         \frac{\sum_i w_i z_i}{\sqrt{\sum_i w_i^2}} .
+     }
+\item If \code{prev_strat = "decile"}: peptides are binned into deciles of pooled
+prevalence
+\deqn{
+       \frac{n_{g1}\hat p_{g1} + n_{g2}\hat p_{g2}}{n_{g1} + n_{g2}},
+     }
+a Stouffer statistic \eqn{T_b} is computed within each bin, and the
+\strong{mean} of the bin-level z-scores is reported as
+\eqn{T_{\mathrm{obs}}}.
 }
 \item \strong{Permutation scheme and p-value.}
-We compute a \strong{two-sided} permutation p-value for the global shift:
+A \strong{two-sided} permutation p-value for the global shift is computed:
 \itemize{
-\item \strong{Paired design:} when both groups have measurements for the same
-\code{subject_id}, we independently flip each subject’s labels (\code{g1}↔\code{g2})
-with 50/50 probability, recompute all steps (1–4) to get \eqn{T_b}.
-\item \strong{Unpaired design:} we shuffle sample labels while \strong{preserving group
-sizes} (draw a random split of samples into \code{n1}/\code{n2}), recompute (1–4)
-to get \eqn{T_b}.
+\item \strong{Paired design}: if both groups have measurements for the same
+\code{subject_id}, each subject’s labels (\code{g1} ↔ \code{g2}) are independently
+flipped with probability 1/2 and steps (1–4) are recomputed to obtain
+\eqn{T_b}.
+\item \strong{Unpaired design}: sample labels are shuffled while preserving group
+sizes (random split into \code{n1} / \code{n2}), and steps (1–4) are recomputed
+to obtain \eqn{T_b}.
 }
 
 With \eqn{B} permutations, the p-value is
-\deqn{ p = \frac{1 + \sum_{b=1}^{B} \mathbf{1}\{ |T_b| \ge |T_{\mathrm{obs}}| \} }{1 + B} , }
-which is the standard \emph{add-one} estimate ensuring non-zero p under the
-global null.
-\item \strong{Multiplicity.} For each \code{rank}, apply BH to \code{p_perm} → \code{p_adj_rank}.
+\deqn{
+     p =
+     \frac{1 + \sum_{b=1}^{B} \mathbf{1}\{|T_b| \ge |T_{\mathrm{obs}}|\}}
+          {1 + B},
+   }
+the standard add-one estimator that remains non-zero under the global
+null.
+\item \strong{Multiplicity.}
+For each \code{rank}, permutation p-values \code{p_perm} are adjusted with BH
+(per-rank) to obtain \code{p_adj_rank}. A simple categorical summary is
+returned in \code{category_rank_bh}.
+\item \strong{Optional summaries.}
+\itemize{
+\item If \code{fold_change != "none"} and a column \code{fold_change} is present in
+\code{x}, an aggregate of that column over the peptides and subjects in the
+contrast is returned as \verb{fold_change_<mode>} (\code{mode} = \code{"sum"},
+\code{"mean"}, \code{"max"}, \code{"median"}).
+\item If \code{cross_prev != "none"}, pooled peptide-level prevalences across
+\verb{g1 ∪ g2} are summarized with the same set of reducers (\code{"sum"},
+\code{"mean"}, \code{"max"}, \code{"median"}) and returned as \verb{cross_prev_<mode>}.
+}
 }
 
-\strong{Notes.}
+\strong{Input requirements.}
 \itemize{
-\item If a stratum doesn’t contain exactly two group levels, it’s skipped.
-\item Progress can be printed every \code{progress_perm_every} permutations.
+\item \code{exist_col} is treated as 0/1 presence.
+\item There must be \strong{at most one positive} per
+(\code{subject_id}, \code{peptide_id}, \code{group_col}, \code{group_value}); paired designs
+can have up to two positives across the two group levels. Violations
+trigger an error.
+\item Non-peptide ranks specified in \code{rank_cols} must be resolvable from a
+peptide library (see \code{peptide_library} below).
 }
+
+\strong{Peptide library resolution.}
+
+When \code{rank_cols} includes non-\code{"peptide_id"} ranks, a peptide library is
+required. It is resolved in the following order:
+\enumerate{
+\item \code{x$peptide_library} if \code{x} is a \code{phip_data} with an attached library.
+\item The explicit \code{peptide_library} argument.
+\item \code{phiper::get_peptide_meta()} if available (i.e. \code{phiper} is installed and
+exports this function).
 }
+
+If none of these are available, the function aborts with an informative
+error.
+}
+\section{Parallelization}{
+
+The permutation contrasts are evaluated either sequentially or in parallel
+using the \strong{current} \code{future} backend:
+\itemize{
+\item The function does \strong{not} change the global \code{future::plan()}.
+\item If \code{future} is installed, the number of workers is inferred from
+\code{future::nbrOfWorkers()}. To run in parallel, set up a \code{future} plan
+(e.g. \code{future::plan(multisession, workers = 8)}) \strong{outside} the function.
+\item Internal C++ code is constrained to a single thread per R worker
+(\code{RcppParallel::setThreadOptions(numThreads = 1)} and BLAS/OpenMP limits),
+to avoid oversubscription when using multiple workers.
+}
+
+Reproducibility of permutations is controlled via the global RNG:
+call \code{set.seed()} before \code{ph_prevalence_shift2()} to obtain reproducible
+results; each contrast draws its own seed from the global RNG state.
+}
+
