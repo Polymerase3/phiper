@@ -180,7 +180,7 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
  * @param B, seed, smooth_eps_num, smooth_eps_den, min_max_prev, winsor_z numeric.
  * @param weight_mode, stat_mode, prev_strat, design strings.
  *
- * @return List with fields: n_peptides_used, m_eff, T_obs, b, p_perm,
+ * @return List with fields: n_peptides_used, m_eff, T_obs, T_null_sd, b, p_perm,
  *         mean_delta, frac_delta_pos, mean_delta_w, frac_delta_pos_w.
  */
 // [[Rcpp::export]]
@@ -240,6 +240,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         _["n_peptides_used"]  = 0L,
         _["m_eff"]            = NA_REAL,
         _["T_obs"]            = NA_REAL,
+        _["T_null_sd"]        = NA_REAL,
         _["b"]                = 0L,
         _["p_perm"]           = NA_REAL,
         _["mean_delta"]       = NA_REAL,
@@ -278,6 +279,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
 
     int b_hits = 0;
     std::vector<uint64_t> Fmask(n_words_p, 0ULL); // flip mask
+    double sum_T = 0.0, sum_T2 = 0.0;
 
     for (int b = 0; b < B; ++b) {
       // Build flip mask F over P subjects
@@ -319,15 +321,28 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         std::vector<double> n1b(p1b.size(), (double)P), n2b(p2b.size(), (double)P);
         Tb = combine_T_internal(p1b, p2b, n1b, n2b, winsor_z, weight_mode, stat_mode, prev_strat).T_obs;
       }
+
+      sum_T  += Tb;
+      sum_T2 += Tb * Tb;
+
       if (std::fabs(Tb) >= std::fabs(obs.T_obs)) ++b_hits;
     }
 
     const double p_perm = (1.0 + (double)b_hits) / (1.0 + (double)B);
 
+    double T_null_sd = NA_REAL;
+    if (B > 0) {
+      const double Bd = (double)B;
+      const double mean_T = sum_T / Bd;
+      double var_T = (sum_T2 / Bd) - mean_T * mean_T;
+      if (var_T > 0.0) T_null_sd = std::sqrt(var_T);
+    }
+
     return Rcpp::List::create(
       _["n_peptides_used"]  = mu,
       _["m_eff"]            = m_eff,
       _["T_obs"]            = obs.T_obs,
+      _["T_null_sd"]        = T_null_sd,
       _["b"]                = b_hits,
       _["p_perm"]           = p_perm,
       _["mean_delta"]       = mean_delta,
@@ -361,6 +376,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         _["n_peptides_used"] = 0L,
         _["m_eff"] = NA_REAL,
         _["T_obs"] = NA_REAL,
+        _["T_null_sd"] = NA_REAL,
         _["b"] = NA_INTEGER,
         _["p_perm"] = NA_REAL,
         _["mean_delta"] = NA_REAL,
@@ -391,6 +407,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         _["n_peptides_used"]  = 0L,
         _["m_eff"]            = NA_REAL,
         _["T_obs"]            = NA_REAL,
+        _["T_null_sd"]        = NA_REAL,
         _["b"]                = 0L,
         _["p_perm"]           = NA_REAL,
         _["mean_delta"]       = NA_REAL,
@@ -430,6 +447,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     int b_hits = 0;
     std::vector<int> choose_idx(nA);
     std::vector<uint64_t> mask_A(n_words), mask_B(n_words);
+    double sum_T = 0.0, sum_T2 = 0.0;
 
     for (int b = 0; b < B; ++b) {
       // random split: sample nA indices for group A
@@ -481,15 +499,28 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         n2b.assign(p2b.size(), (double)nB);
         Tb = combine_T_internal(p1b, p2b, n1b, n2b, winsor_z, weight_mode, stat_mode, prev_strat).T_obs;
       }
+
+      sum_T  += Tb;
+      sum_T2 += Tb * Tb;
+
       if (std::fabs(Tb) >= std::fabs(obs.T_obs)) ++b_hits;
     }
 
     const double p_perm = (1.0 + (double)b_hits) / (1.0 + (double)B);
 
+    double T_null_sd = NA_REAL;
+    if (B > 0) {
+      const double Bd = (double)B;
+      const double mean_T = sum_T / Bd;
+      double var_T = (sum_T2 / Bd) - mean_T * mean_T;
+      if (var_T > 0.0) T_null_sd = std::sqrt(var_T);
+    }
+
     return Rcpp::List::create(
       _["n_peptides_used"]  = mu,
       _["m_eff"]            = m_eff,
       _["T_obs"]            = obs.T_obs,
+      _["T_null_sd"]        = T_null_sd,
       _["b"]                = b_hits,
       _["p_perm"]           = p_perm,
       _["mean_delta"]       = mean_delta,
