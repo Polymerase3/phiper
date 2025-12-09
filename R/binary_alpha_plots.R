@@ -910,7 +910,7 @@ plot_alpha_diversity_interactive <- function(
           ggplot2::aes(
             x = .data$x_mid, y = .data$y_line,
             label = paste0(
-              .data$n_peptides_thresh, " peptides in ≥",
+              .data$n_peptides_thresh, " peptides in >= ",
               round(prevalence_threshold * 100), "%"
             )
           ),
