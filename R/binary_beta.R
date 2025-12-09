@@ -1,3 +1,1890 @@
+#' @return A \code{dist} object containing pairwise distances between samples.
+#'   The normalized abundance matrix used to compute the distances is attached
+#'   as an attribute \code{"abundances"}.
+compute_distance <- function(ps,
+                             value_col = NULL,
+                             method_normalization = c("auto", "relative",
+                                                      "hellinger", "log", "none"),
+                             distance = "bray",
+                             n_threads = 1L,
+                             drop_all_zero_features = TRUE) {
+  method_normalization <- match.arg(method_normalization)
+
+  # ---------------------------------------------------------------------------
+  # 1) Basic checks and column selection
+  # ---------------------------------------------------------------------------
+  if (!inherits(ps, "phip_data")) {
+    .ph_abort("Input `ps` must be a <phip_data> object.",
+              step = "compute_distance")
+  }
+
+  dat <- ps$data_long
+  if (is.null(dat)) {
+    .ph_abort("`ps$data_long` is missing. Cannot construct abundance matrix.",
+              step = "compute_distance")
+  }
+
+  dat_cols <- dplyr::tbl_vars(dat)
+
+  # Decide which abundance column to use -------------------------------------
+  if (is.null(value_col)) {
+    candidates <- c("counts_hit", "counts_input", "fold_change", "counts")
+    hit <- candidates[candidates %in% dat_cols]
+    if (length(hit) == 0L) {
+      .ph_abort(
+        paste0(
+          "Could not infer an abundance column in `ps$data_long`. ",
+          "Tried: ", paste(candidates, collapse = ", "),
+          ". Please specify `value_col` explicitly."
+        ),
+        step = "compute_distance"
+      )
+    }
+    value_col <- hit[1L]
+    .ph_log_info(
+      paste0("Auto-detected `value_col = \"", value_col, "\"` from `ps$data_long`."),
+      step = "compute_distance"
+    )
+  }
+
+  if (!value_col %in% dat_cols) {
+    .ph_abort(
+      paste0("Column `", value_col, "` not found in `ps$data_long`."),
+      step = "compute_distance"
+    )
+  }
+
+  required_cols <- c("sample_id", "peptide_id", value_col)
+  missing_cols  <- setdiff(required_cols, dat_cols)
+  if (length(missing_cols) > 0L) {
+    .ph_abort(
+      paste0("Missing required column(s) in `ps$data_long`: ",
+             paste(missing_cols, collapse = ", ")),
+      step = "compute_distance"
+    )
+  }
+
+  .ph_log_info(
+    paste0("Building abundance matrix from `ps$data_long` using `", value_col, "`."),
+    step = "compute_distance"
+  )
+
+  value_sym <- rlang::sym(value_col)
+
+  # ---------------------------------------------------------------------------
+  # 2) Collect only needed columns and pivot in R (fast, avoids slow DB pivot)
+  # ---------------------------------------------------------------------------
+  .ph_log_info("Collecting long table (sample_id, peptide_id, value).",
+               step = "compute_distance")
+
+  dat_small <- dat |>
+    dplyr::select(sample_id, peptide_id, !!value_sym) |>
+    dplyr::collect()
+
+  # Replace NAs with 0 in abundance column
+  dat_small[[value_col]][is.na(dat_small[[value_col]])] <- 0
+
+  .ph_log_info("Pivoting to wide abundance matrix in R.",
+               step = "compute_distance")
+
+  wide_df <- dat_small |>
+    tidyr::pivot_wider(
+      id_cols     = sample_id,
+      names_from  = peptide_id,
+      values_from = !!value_sym,
+      values_fill = 0
+    )
+
+  if (!"sample_id" %in% names(wide_df)) {
+    .ph_abort("Failed to construct wide abundance table (no `sample_id`).",
+              step = "compute_distance")
+  }
+
+  mat <- wide_df |>
+    tibble::column_to_rownames("sample_id") |>
+    as.matrix()
+
+  if (nrow(mat) == 0L || ncol(mat) == 0L) {
+    .ph_abort(
+      "Abundance matrix is empty after reshaping. ",
+      "Check filters and `value_col`.",
+      step = "compute_distance"
+    )
+  }
+
+  # Optional: drop all-zero features (they carry no information) ------------
+  if (isTRUE(drop_all_zero_features)) {
+    cs <- colSums(mat, na.rm = TRUE)
+    keep <- cs != 0
+    if (!all(keep)) {
+      dropped <- sum(!keep)
+      mat <- mat[, keep, drop = FALSE]
+      .ph_log_info(
+        paste0(
+          "Dropped ", dropped,
+          " all-zero features before distance computation."
+        ),
+        step = "compute_distance"
+      )
+    }
+  }
+
+  .ph_log_info(
+    paste0("Abundance matrix has ", nrow(mat), " samples and ",
+           ncol(mat), " features after preprocessing."),
+    step = "compute_distance"
+  )
+
+  # ---------------------------------------------------------------------------
+  # 3) Normalization
+  # ---------------------------------------------------------------------------
+  if (identical(method_normalization, "auto")) {
+    vals <- mat[!is.na(mat)]
+    is_binary_data <- length(vals) > 0L && all(vals == 0 | vals == 1)
+    method_normalization <- if (is_binary_data) "none" else "relative"
+    .ph_log_info(
+      paste("Auto normalization selected -> using", method_normalization),
+      step = "compute_distance"
+    )
+  }
+
+  norm_mat <- switch(
+    method_normalization,
+    "none" = mat,
+    "relative" = {
+      rs <- rowSums(mat, na.rm = TRUE)
+      rs[rs == 0] <- 1
+      mat / rs
+    },
+    "hellinger" = {
+      rs <- rowSums(mat, na.rm = TRUE)
+      rs[rs == 0] <- 1
+      sqrt(mat / rs)
+    },
+    "log" = log1p(mat)
+  )
+
+  # ---------------------------------------------------------------------------
+  # 4) Distance computation
+  # ---------------------------------------------------------------------------
+  dist_method <- tolower(distance)
+  .ph_log_info(
+    paste("Computing distance:", toupper(dist_method)),
+    step = "compute_distance"
+  )
+
+  pd_supported <- c(
+    "euclidean", "minkowski", "manhattan", "canberra",
+    "binary", "maximum", "cosine", "chebyshev"
+  )
+
+  dist_obj <- NULL
+
+  if (dist_method == "bray" && rlang::is_installed("parallelDist")) {
+    # Bray-Curtis via threaded Manhattan
+    d_L1 <- parallelDist::parDist(norm_mat, method = "manhattan",
+                                  threads = n_threads)
+
+    s <- rowSums(norm_mat)
+    n <- length(s)
+    denom <- numeric(n * (n - 1L) / 2L)
+    k <- 1L
+    for (i in seq_len(n - 1L)) {
+      ni <- n - i
+      denom[k:(k + ni - 1L)] <- s[i] + s[(i + 1L):n]
+      k <- k + ni
+    }
+
+    bc_vals <- as.numeric(d_L1) / denom
+    dist_obj <- d_L1
+    dist_obj[] <- bc_vals
+
+  } else if (rlang::is_installed("parallelDist") &&
+             dist_method %in% pd_supported) {
+
+    dist_obj <- parallelDist::parDist(
+      norm_mat,
+      method  = dist_method,
+      threads = n_threads
+    )
+
+  } else {
+    if (!rlang::is_installed("vegan")) {
+      .ph_abort(
+        "Requested distance method requires 'vegan'. Please install it.",
+        step = "compute_distance"
+      )
+    }
+    dist_obj <- vegan::vegdist(norm_mat, method = dist_method)
+  }
+
+  .ph_log_info("Distance matrix computation complete.",
+               step = "compute_distance")
+
+  ## --- NEW: attach normalized abundance matrix as attribute ----------------
+  attr(dist_obj, "abundances") <- norm_mat
+
+  dist_obj
+}
+#' @title Principal Coordinates Analysis (PCoA) on a Distance Matrix
+#' @description
+#' Performs PCoA on a distance matrix (typically from \code{compute_distance()}),
+#' optionally correcting for negative eigenvalues, and returns coordinates,
+#' eigenvalues, variance explained, and feature loadings.
+#'
+#' @param dist_obj A \code{dist} object returned by \code{compute_distance()}.
+#'   The normalized abundance matrix used to compute the distances is expected
+#'   to be attached as an attribute \code{"abundances"} (a numeric matrix with
+#'   samples in rows and features in columns).
+#' @param neg_correction Method for adjusting negative eigenvalues (if any).
+#'   One of \code{"none"}, \code{"lingoes"}, or \code{"cailliez"}.
+#'   Default is \code{"none"} (no correction). If set to \code{"lingoes"}
+#'   or \code{"cailliez"}, the \pkg{vegan} package is required.
+#' @param n_axes Number of principal coordinate axes to return in the
+#'   sample scores. Default is 5.
+#' @param top_features Integer number of top features to return in loadings
+#'   (based on highest absolute scores on any axis). Default is 30.
+#'
+#' @return A list of class \code{"beta_pcoa"} with elements:
+#' \item{sample_coords}{A tibble with sample coordinates on the first
+#'   \code{n_axes} PCoA axes. Includes \code{sample_id} and one column per axis
+#'   (\code{PCoA1}, \code{PCoA2}, ...).}
+#' \item{eigenvalues}{Numeric vector of all eigenvalues from the PCoA.}
+#' \item{var_explained}{A one-row tibble summarizing the percentage of
+#'   variation explained by the first \code{n_axes} axes and the remainder
+#'   as \code{\%Other}. Percentages are computed from the sum of positive
+#'   eigenvalues.}
+#' \item{feature_loadings}{A tibble of top feature loadings for the first
+#'   \code{n_axes} axes. Each row is a feature, with columns for each axis
+#'   showing the feature's loading. Only the top \code{top_features} features
+#'   (by absolute loading on at least one axis) are included. Empty if the
+#'   \code{"abundances"} attribute is missing or cannot be aligned.}
+#'
+#' @details
+#' Negative eigenvalues indicate that the distances are not perfectly
+#' Euclidean. If \code{neg_correction} is \code{"lingoes"} or \code{"cailliez"},
+#' a correction is applied before PCoA using \code{vegan::wcmdscale()}.
+#' The variance explained is computed using only positive eigenvalues.
+#'
+#' Feature loadings are computed as weighted averages of sample scores,
+#' where weights are the feature abundances across samples (the normalized
+#' abundance matrix attached as an attribute to \code{dist_obj}).
+#'
+#' @examples
+#' \dontrun{
+#'   dist_bc <- compute_distance(ps, value_col = "counts_hit",
+#'                               method_normalization = "hellinger",
+#'                               distance = "bray")
+#'
+#'   pcoa_res <- compute_pcoa(dist_bc, neg_correction = "none", n_axes = 3)
+#'   pcoa_res$sample_coords
+#'   pcoa_res$var_explained
+#'   pcoa_res$feature_loadings
+#' }
+compute_pcoa <- function(dist_obj,
+                         neg_correction = c("none", "lingoes", "cailliez"),
+                         n_axes = 5,
+                         top_features = 30) {
+  neg_correction <- match.arg(neg_correction)
+
+  # ---------------------------------------------------------------------------
+  # 1) Check that dist_obj is a proper dist from compute_distance()
+  # ---------------------------------------------------------------------------
+  if (!inherits(dist_obj, "dist")) {
+    .ph_abort(
+      "`dist_obj` must be a `dist` object (e.g. returned by `compute_distance()`).",
+      step = "compute_pcoa"
+    )
+  }
+
+  d <- dist_obj
+  n <- attr(d, "Size")
+  labels <- attr(d, "Labels")
+
+  # vegan requirement if correction requested
+  if (!identical(neg_correction, "none") && !rlang::is_installed("vegan")) {
+    .ph_abort(
+      paste0(
+        "Negative eigenvalue correction ('", neg_correction,
+        "') requires the 'vegan' package."
+      ),
+      step = "compute_pcoa"
+    )
+  }
+
+  # ---------------------------------------------------------------------------
+  # 2) PCoA computation
+  # ---------------------------------------------------------------------------
+  .ph_log_info(
+    "Performing Principal Coordinates Analysis",
+    step = "compute_pcoa",
+    bullets = if (identical(neg_correction, "none")) NULL else
+      paste("using", neg_correction, "correction")
+  )
+
+  k_cmd <- min(max(1L, n_axes), n - 1L)
+
+  pcoa_fit <- if (identical(neg_correction, "none")) {
+    stats::cmdscale(d, eig = TRUE, k = k_cmd)
+  } else {
+    vegan::wcmdscale(d, eig = TRUE, k = k_cmd, add = neg_correction)
+  }
+
+  eig_vals <- as.numeric(pcoa_fit$eig %||% numeric(0L))
+
+  coords <- as.matrix(pcoa_fit$points)
+  if (is.null(coords)) {
+    coords <- matrix(0, nrow = n, ncol = 0)
+  }
+
+  if (ncol(coords) > 0L) {
+    colnames(coords) <- paste0("PCoA", seq_len(ncol(coords)))
+  }
+
+  if (!is.null(labels) && nrow(coords) == length(labels)) {
+    rownames(coords) <- labels
+  }
+
+  # ---------------------------------------------------------------------------
+  # 3) Sample coordinates (first n_axes)
+  # ---------------------------------------------------------------------------
+  k_use <- min(n_axes, ncol(coords))
+  coords_k <- if (k_use > 0L) {
+    coords[, seq_len(k_use), drop = FALSE]
+  } else {
+    matrix(
+      numeric(0L),
+      nrow = n,
+      ncol = 0L,
+      dimnames = list(labels, character(0L))
+    )
+  }
+
+  sample_coords <- tibble::as_tibble(coords_k, rownames = "sample_id")
+
+  # ---------------------------------------------------------------------------
+  # 4) Variance explained table
+  # ---------------------------------------------------------------------------
+  pos_eig <- pmax(eig_vals, 0)
+  sum_pos <- sum(pos_eig, na.rm = TRUE)
+
+  if (sum_pos > 0) {
+    pct_axes <- 100 * pos_eig[seq_len(k_use)] / sum_pos
+    pct_other <- 100 * sum(pos_eig[-seq_len(k_use)], na.rm = TRUE) / sum_pos
+  } else {
+    pct_axes <- rep(NA_real_, k_use)
+    pct_other <- NA_real_
+  }
+
+  names(pct_axes) <- paste0("%PCoA", seq_len(k_use))
+  var_explained <- tibble::as_tibble_row(
+    c(as.list(round(pct_axes, 3)), `%Other` = round(pct_other, 3))
+  )
+
+  # ---------------------------------------------------------------------------
+  # 5) Feature loadings (use abundances attribute from dist_obj)
+  # ---------------------------------------------------------------------------
+  feature_loadings <- tibble::tibble()
+
+  X <- attr(dist_obj, "abundances")
+  if (is.null(X)) {
+    .ph_warn(
+      "No 'abundances' attribute found on `dist_obj`; skipping feature loadings.",
+      step = "compute_pcoa"
+    )
+  } else {
+    X <- as.matrix(X)
+
+    coords_ids <- rownames(coords)
+    X_ids <- rownames(X)
+
+    if (is.null(coords_ids) || is.null(X_ids)) {
+      .ph_warn(
+        "Row names missing in coordinates or 'abundances'; cannot align samples for feature loadings.",
+        step = "compute_pcoa"
+      )
+    } else {
+      common_ids <- intersect(coords_ids, X_ids)
+
+      if (length(common_ids) < 2L) {
+        .ph_warn(
+          "Insufficient overlap between distance labels and abundance rows; skipping feature loadings.",
+          step = "compute_pcoa"
+        )
+      } else {
+        # Use up to min(n_axes, ncol(coords), 10) axes for loadings
+        ax_idx <- seq_len(min(n_axes, ncol(coords), 10L))
+        U <- coords[common_ids, ax_idx, drop = FALSE]
+        Xsub <- X[common_ids, , drop = FALSE]
+
+        # weights: total abundance per feature
+        w <- colSums(Xsub, na.rm = TRUE)
+        keep_feats <- which(w > 0)
+
+        if (length(keep_feats) > 0L) {
+          # crossprod: features x axes
+          S <- t(Xsub[, keep_feats, drop = FALSE]) %*% U
+          S <- sweep(S, 1, w[keep_feats], "/")
+
+          rownames(S) <- colnames(Xsub)[keep_feats]
+          colnames(S) <- colnames(U)
+
+          load_tbl <- tibble::as_tibble(S, rownames = "feature")
+
+          if (!is.null(top_features) && is.finite(top_features)) {
+            ax_names <- colnames(U)
+            top_list <- unique(unlist(lapply(seq_along(ax_names), function(j) {
+              ord <- order(abs(S[, j]), decreasing = TRUE)
+              head(rownames(S)[ord], top_features)
+            })))
+            load_tbl <- dplyr::filter(load_tbl, .data$feature %in% top_list)
+          }
+
+          feature_loadings <- load_tbl
+        }
+      }
+    }
+  }
+
+  # ---------------------------------------------------------------------------
+  # 6) Return
+  # ---------------------------------------------------------------------------
+  result <- list(
+    sample_coords    = sample_coords,
+    eigenvalues      = eig_vals,
+    var_explained    = var_explained,
+    feature_loadings = feature_loadings
+  )
+  class(result) <- "beta_pcoa"
+
+  .ph_log_info("PCoA analysis complete.", step = "compute_pcoa")
+
+  result
+}
+
+#' @title Constrained Ordination (db-RDA / CAP) on Distance Matrix
+#' @description
+#' Performs distance-based redundancy analysis (constrained PCoA, a.k.a. CAP)
+#' on a distance matrix using \pkg{vegan}::\code{capscale}, with optional
+#' negative eigenvalue correction. Returns constrained sample scores, eigenvalues,
+#' variance partitioning, and feature loadings.
+#'
+#' @param dist_obj A \code{dist} object returned by \code{compute_distance()}.
+#'   The normalized abundance matrix used to compute the distances is expected
+#'   to be attached as an attribute \code{"abundances"} (samples in rows,
+#'   features in columns).
+#' @param ps A \code{phip_data} object providing sample-level metadata in
+#'   \code{ps$data_long}. This table must contain \code{sample_id} and all
+#'   variables referenced on the right-hand side of \code{formula}.
+#' @param formula An R formula specifying the constraints (independent variables)
+#'   for the ordination, e.g. \code{~ type_person + age}. Do not include a
+#'   response on the left-hand side; the distance matrix is provided via
+#'   \code{dist_obj}.
+#' @param neg_correction One of \code{"none"}, \code{"lingoes"}, \code{"cailliez"}.
+#'   Method for negative eigenvalue correction. Default is \code{"none"}.
+#'   This is passed to the \code{add} argument of \code{vegan::capscale()}.
+#' @param top_features Integer number of top features to return in loadings
+#'   (based on highest absolute scores on any constrained axis). Default is 30.
+#'
+#' @return A list of class \code{"beta_capscale"} with elements:
+#' \item{sample_coords}{Tibble of sample scores on constrained axes
+#'   (\code{CAP1}, \code{CAP2}, ...). Contains \code{sample_id} and coordinates.}
+#' \item{eigenvalues}{Numeric vector of eigenvalues of the constrained axes.}
+#' \item{variance_partition}{Tibble with total inertia and inertia partitioned
+#'   into constrained and unconstrained components, with their proportion of total.}
+#' \item{feature_loadings}{Tibble of top feature loadings for constrained axes
+#'   (possibly empty if the \code{"abundances"} attribute is missing or cannot be aligned).}
+#' \item{cap_model}{The full \code{vegan::capscale} model object for further
+#'   inspection (e.g., \code{summary()}, \code{anova()}, etc.).}
+#'
+#' @examples
+#' \dontrun{
+#'   dist_bc <- compute_distance(ps, value_col = "counts_hit",
+#'                               method_normalization = "hellinger",
+#'                               distance = "bray")
+#'
+#'   cap_res <- compute_capscale(
+#'     dist_bc,
+#'     ps      = ps,
+#'     formula = ~ type_person + age
+#'   )
+#'   cap_res$variance_partition
+#'   cap_res$sample_coords
+#'   cap_res$feature_loadings
+#'   summary(cap_res$cap_model)
+#' }
+compute_capscale <- function(dist_obj,
+                             ps,
+                             formula,
+                             neg_correction = c("none", "lingoes", "cailliez"),
+                             top_features = 30) {
+  neg_correction <- match.arg(neg_correction)
+
+  if (!inherits(formula, "formula")) {
+    .ph_abort("`formula` must be an R formula (e.g., ~ group + time).",
+              step = "compute_capscale")
+  }
+
+  if (!inherits(dist_obj, "dist")) {
+    .ph_abort(
+      "`dist_obj` must be a `dist` object (e.g. returned by `compute_distance()`).",
+      step = "compute_capscale"
+    )
+  }
+
+  if (!inherits(ps, "phip_data")) {
+    .ph_abort("`ps` must be a <phip_data> object.",
+              step = "compute_capscale")
+  }
+
+  if (!rlang::is_installed("vegan")) {
+    .ph_abort("`compute_capscale()` requires the 'vegan' package.",
+              step = "compute_capscale")
+  }
+
+  # ---------------------------------------------------------------------------
+  # 1) Distance + labels
+  # ---------------------------------------------------------------------------
+  d <- dist_obj
+  labels <- attr(d, "Labels")
+  n      <- attr(d, "Size")
+
+  # Abundance matrix (normalized) from dist attributes (may be NULL)
+  X_all <- attr(dist_obj, "abundances")
+
+  # ---------------------------------------------------------------------------
+  # 2) Metadata from ps$data_long + alignment + NA handling
+  # ---------------------------------------------------------------------------
+  dat <- ps$data_long
+  if (is.null(dat)) {
+    .ph_abort("`ps$data_long` is missing. Cannot construct metadata.",
+              step = "compute_capscale")
+  }
+
+  dat_cols <- dplyr::tbl_vars(dat)
+  if (!"sample_id" %in% dat_cols) {
+    .ph_abort("`ps$data_long` must contain a `sample_id` column.",
+              step = "compute_capscale")
+  }
+
+  # RHS terms from formula (constraints)
+  rhs_terms <- attr(stats::terms(formula), "term.labels")
+  if (length(rhs_terms) == 0L) {
+    .ph_abort(
+      "No constraints provided in formula (RHS is empty). Use compute_pcoa() for unconstrained ordination.",
+      step = "compute_capscale"
+    )
+  }
+
+  missing_vars <- setdiff(rhs_terms, dat_cols)
+  if (length(missing_vars) > 0L) {
+    .ph_abort(
+      paste0(
+        "The following variables from the formula are missing in `ps$data_long`: ",
+        paste(missing_vars, collapse = ", ")
+      ),
+      step = "compute_capscale"
+    )
+  }
+
+  .ph_log_info(
+    "Building metadata from `ps$data_long`.",
+    step = "compute_capscale"
+  )
+
+  # Wyciągamy unikalne metadane na poziomie sample
+  meta_all <- dat |>
+    dplyr::select(sample_id, dplyr::all_of(rhs_terms)) |>
+    dplyr::distinct(sample_id, .keep_all = TRUE) |>
+    dplyr::collect() |>
+    as.data.frame()
+
+  if (nrow(meta_all) == 0L) {
+    .ph_abort(
+      "Constructed metadata has zero rows. Check that `ps$data_long` is not empty.",
+      step = "compute_capscale"
+    )
+  }
+
+  rownames(meta_all) <- meta_all$sample_id
+
+  # Dopasowanie metadanych do kolejności w macierzy dystansów
+  if (!is.null(labels)) {
+    idx <- match(labels, meta_all$sample_id)
+    missing_samples <- labels[is.na(idx)]
+    if (length(missing_samples) > 0L) {
+      .ph_abort(
+        paste0(
+          "The following samples from `dist_obj` are missing in `ps$data_long`: ",
+          paste(missing_samples, collapse = ", ")
+        ),
+        step = "compute_capscale"
+      )
+    }
+    meta_sub <- meta_all[idx, , drop = FALSE]
+    rownames(meta_sub) <- labels
+  } else {
+    meta_sub <- meta_all
+    labels   <- rownames(meta_sub)
+    n        <- length(labels)
+    .ph_warn(
+      "No labels found in `dist_obj`; assuming metadata row order matches the distance order.",
+      step = "compute_capscale"
+    )
+  }
+
+  # Usuwamy próbki z NA w którejkolwiek zmiennej z formuły
+  rhs_df <- meta_sub[, rhs_terms, drop = FALSE]
+  keep   <- stats::complete.cases(rhs_df)
+
+  if (!all(keep)) {
+    dropped <- sum(!keep)
+    .ph_log_info(
+      paste0("Dropping ", dropped,
+             " samples with missing values in constrained variables."),
+      step = "compute_capscale"
+    )
+  }
+
+  meta_df <- meta_sub[keep, , drop = FALSE]
+  if (nrow(meta_df) == 0L) {
+    .ph_abort(
+      "All samples have missing values in constrained variables; cannot fit CAP.",
+      step = "compute_capscale"
+    )
+  }
+
+  keep_labels <- rownames(meta_df)
+
+  # ---------------------------------------------------------------------------
+  # 3) Subset distance and abundances to complete-case samples
+  # ---------------------------------------------------------------------------
+  # subset distance matrix
+  mat_d    <- as.matrix(d)
+  mat_d_sub <- mat_d[keep_labels, keep_labels, drop = FALSE]
+  d        <- stats::as.dist(mat_d_sub)
+  n        <- attr(d, "Size")
+  labels   <- attr(d, "Labels")
+
+  # subset abundances (if present)
+  X_sub <- NULL
+  if (!is.null(X_all)) {
+    X_all <- as.matrix(X_all)
+    if (!is.null(rownames(X_all))) {
+      # align by sample names
+      X_sub <- X_all[keep_labels, , drop = FALSE]
+    } else {
+      .ph_warn(
+        "Abundance matrix has no row names; cannot align precisely with samples.",
+        step = "compute_capscale"
+      )
+    }
+  }
+
+  # ---------------------------------------------------------------------------
+  # 4) Build formula for capscale: d_resp ~ RHS
+  # ---------------------------------------------------------------------------
+  d_resp <- d
+
+  rhs_txt <- gsub("^~", "", paste(deparse(formula), collapse = " "))
+  cap_formula <- stats::as.formula(
+    paste("d_resp ~", rhs_txt),
+    env = environment()
+  )
+
+  add_arg <- if (identical(neg_correction, "none")) NULL else neg_correction
+
+  .ph_log_info(
+    "Fitting constrained ordination (CAP/db-RDA)",
+    step = "compute_capscale",
+    bullets = c(
+      paste("formula:", paste(deparse(formula), collapse = " ")),
+      if (!is.null(add_arg)) paste("neg_correction:", add_arg)
+    )
+  )
+
+  # ---------------------------------------------------------------------------
+  # 5) Fit capscale model
+  # ---------------------------------------------------------------------------
+  cap_fit <- vegan::capscale(cap_formula, data = meta_df, add = add_arg)
+
+  # ---------------------------------------------------------------------------
+  # 6) Sample scores on constrained axes
+  # ---------------------------------------------------------------------------
+  rank_constrained <- cap_fit$CCA$rank %||% 0L
+
+  if (rank_constrained > 0L) {
+    site_scores <- vegan::scores(
+      cap_fit,
+      display = "sites",
+      choices = seq_len(rank_constrained)
+    )
+    pts <- as.matrix(site_scores)
+  } else {
+    pts <- matrix(0, nrow = n, ncol = 0,
+                  dimnames = list(labels, character(0L)))
+  }
+
+  if (ncol(pts) > 0L && is.null(colnames(pts))) {
+    colnames(pts) <- paste0("CAP", seq_len(ncol(pts)))
+  }
+
+  if (!is.null(labels) && nrow(pts) == length(labels)) {
+    rownames(pts) <- labels
+  }
+
+  sample_coords <- tibble::as_tibble(pts, rownames = "sample_id")
+
+  # ---------------------------------------------------------------------------
+  # 7) Eigenvalues and variance partition
+  # ---------------------------------------------------------------------------
+  eig_constrained <- cap_fit$CCA$eig %||% numeric()
+
+  tot_inertia   <- cap_fit$tot.chi
+  cons_inertia  <- cap_fit$CCA$tot.chi %||% sum(cap_fit$CCA$eig %||% 0)
+  uncon_inertia <- cap_fit$CA$tot.chi  %||% sum(cap_fit$CA$eig %||% 0)
+
+  variance_partition <- tibble::tibble(
+    component  = c("Total", "Constrained", "Unconstrained"),
+    inertia    = c(tot_inertia, cons_inertia, uncon_inertia),
+    proportion = c(
+      1,
+      if (is.finite(tot_inertia) && tot_inertia > 0)
+        cons_inertia / tot_inertia else NA_real_,
+      if (is.finite(tot_inertia) && tot_inertia > 0)
+        uncon_inertia / tot_inertia else NA_real_
+    )
+  )
+
+  # ---------------------------------------------------------------------------
+  # 8) Feature loadings on constrained axes (using X_sub)
+  # ---------------------------------------------------------------------------
+  feature_loadings <- tibble::tibble()
+
+  if (!is.null(X_sub) && rank_constrained > 0L) {
+    coords_ids <- rownames(pts)
+    X_ids      <- rownames(X_sub)
+
+    if (is.null(coords_ids) || is.null(X_ids)) {
+      .ph_warn(
+        "Row names missing in sample scores or abundance matrix; cannot align for feature loadings.",
+        step = "compute_capscale"
+      )
+    } else {
+      common_ids <- intersect(coords_ids, X_ids)
+
+      if (length(common_ids) < 2L) {
+        .ph_warn(
+          "Insufficient overlap between distance labels and abundance rows; skipping feature loadings.",
+          step = "compute_capscale"
+        )
+      } else {
+        ax_idx <- seq_len(min(rank_constrained, 10L))
+        U    <- pts[common_ids, ax_idx, drop = FALSE]
+        Xsub <- X_sub[common_ids, , drop = FALSE]
+
+        w <- colSums(Xsub, na.rm = TRUE)
+        keep_feats <- which(w > 0)
+
+        if (length(keep_feats) > 0L) {
+          S <- t(Xsub[, keep_feats, drop = FALSE]) %*% U
+          S <- sweep(S, 1, w[keep_feats], "/")
+
+          rownames(S) <- colnames(Xsub)[keep_feats]
+          colnames(S) <- colnames(U)
+
+          load_tbl <- tibble::as_tibble(S, rownames = "feature")
+
+          if (!is.null(top_features) && is.finite(top_features)) {
+            ax_names <- colnames(U)
+            top_list <- unique(unlist(lapply(seq_along(ax_names), function(j) {
+              ord <- order(abs(S[, j]), decreasing = TRUE)
+              head(rownames(S)[ord], top_features)
+            })))
+            load_tbl <- dplyr::filter(load_tbl, .data$feature %in% top_list)
+          }
+
+          feature_loadings <- load_tbl
+        }
+      }
+    }
+  }
+
+  # ---------------------------------------------------------------------------
+  # 9) Return
+  # ---------------------------------------------------------------------------
+  result <- list(
+    sample_coords      = sample_coords,
+    eigenvalues        = as.numeric(eig_constrained),
+    variance_partition = variance_partition,
+    feature_loadings   = feature_loadings,
+    cap_model          = cap_fit
+  )
+  class(result) <- "beta_capscale"
+
+  .ph_log_info("CAP analysis complete.", step = "compute_capscale")
+
+  result
+}
+
+#' @title PERMANOVA with Global and Post-hoc Tests on Beta Diversity
+#' @description Performs PERMANOVA (adonis2) on a distance matrix for overall group/time effects,
+#' and optionally conducts post-hoc pairwise or contrast tests (e.g., between each pair of groups, etc.).
+#' Supports stratified permutations for repeated measures.
+#'
+#' @param dist_obj A \code{dist} object of distances between samples
+#'   (e.g., output of \code{compute_distance()}).
+#' @param ps A \code{phip_data} object providing sample-level metadata in
+#'   \code{ps$data_long}. This table must contain \code{sample_id} and the
+#'   columns specified in \code{group_col}, \code{time_col}, and optionally
+#'   \code{subject_col}.
+#' @param group_col Name of the grouping column in \code{ps$data_long}
+#'   (between-subject factor). Use \code{NULL} if no group factor.
+#' @param time_col Name of the time factor column in \code{ps$data_long}
+#'   (within-subject factor for longitudinal data). Use \code{NULL} if not
+#'   applicable. This should be a \emph{categorical} factor for this function
+#'   (continuous time not supported).
+#' @param subject_col Name of the subject identifier column in \code{ps$data_long}
+#'   (for repeated measures). Default \code{"subject_id"}. If this column is
+#'   present and \code{time_col} is provided, permutations will be stratified by
+#'   subject.
+#' @param permutations Number of permutations for significance testing
+#'   (default 999).
+#' @param contrasts Character vector specifying which post-hoc contrasts to perform.
+#'   Options: \code{"none"} (default) for no post-hoc tests,
+#'   \code{"pairwise"} for all pairwise comparisons,
+#'   \code{"each_vs_rest"} for each level vs. the rest,
+#'   and \code{"baseline"} for a specific baseline comparison.
+#' @param baseline_level If \code{contrasts} includes \code{"baseline"},
+#'   specify the factor level to use as baseline. For a time factor, if
+#'   \code{baseline_level} is \code{NULL}, the first level of \code{time_col}
+#'   will be used as baseline.
+#'
+#' @return A tibble with columns:
+#' \item{scope}{The scope of the test (e.g., \code{"global"}, \code{"group_pairwise"},
+#'   \code{"time_pairwise"}, \code{"each_vs_rest"}, \code{"baseline"}).}
+#' \item{contrast}{Description of the contrast (e.g., \code{"<global>"} for overall test,
+#'   \code{"A vs B"} for pairwise group comparisons, \code{"X vs other"} for each-vs-rest, etc.).}
+#' \item{term}{The term being tested. For global tests, this will be the factor name (or interaction).
+#'   For post-hoc tests, it may be \code{"group"} or \code{"time"} indicating which factor is being contrasted.}
+#' \item{F_stat}{F statistic of the PERMANOVA test (for global tests and some contrasts where applicable).}
+#' \item{R2}{R-squared (variance explained) for the term (global tests).}
+#' \item{p_value}{Permutation p-value for the test.}
+#' \item{n_perm}{Number of permutations used.}
+#'
+#' @details
+#' Global PERMANOVA uses a model with main effects of \code{group_col} and
+#' \code{time_col} and their interaction (if both are provided and have >1 level).
+#' Samples with missing values in the constrained variables (group/time and,
+#' when used for stratification, subject) are dropped \emph{before} fitting the
+#' model, and the distance matrix is subset to the remaining samples so that
+#' distances and metadata are always aligned.
+#'
+#' Post-hoc contrasts (\code{"pairwise"}, \code{"each_vs_rest"}, \code{"baseline"})
+#' follow the same logic as described in the detailed comments in the source,
+#' using \code{adonis2} with appropriate subsetting and, where applicable,
+#' subject stratification.
+#'
+#' @examples
+#' \dontrun{
+#'   permanova_res <- compute_permanova(
+#'     dist_bc,
+#'     ps        = ps,
+#'     group_col = "type_person",
+#'     time_col  = "timepoint"
+#'   )
+#'
+#'   permanova_res2 <- compute_permanova(
+#'     dist_bc,
+#'     ps        = ps,
+#'     group_col = "type_person",
+#'     time_col  = "timepoint",
+#'     contrasts = c("pairwise", "baseline"),
+#'     baseline_level = "T0"
+#'   )
+#' }
+compute_permanova <- function(dist_obj,
+                              ps,
+                              group_col = NULL,
+                              time_col = NULL,
+                              subject_col = "subject_id",
+                              permutations = 999,
+                              contrasts = "none",
+                              baseline_level = NULL) {
+
+  if (!inherits(dist_obj, "dist")) {
+    .ph_abort(
+      "`dist_obj` must be a `dist` object (e.g., from `compute_distance()`).",
+      step = "compute_permanova"
+    )
+  }
+  if (!inherits(ps, "phip_data")) {
+    .ph_abort("`ps` must be a <phip_data> object.",
+              step = "compute_permanova")
+  }
+  if (!rlang::is_installed("vegan")) {
+    .ph_abort("`compute_permanova()` requires the 'vegan' package.",
+              step = "compute_permanova")
+  }
+
+  # ---------------------------------------------------------------------------
+  # 0) Prepare result collector
+  # ---------------------------------------------------------------------------
+  results_list <- list()
+  add_result <- function(scope, contrast, term = NA, p_value = NA,
+                         F_stat = NA, R2 = NA) {
+    results_list[[length(results_list) + 1]] <<- tibble::tibble(
+      scope   = scope,
+      contrast = contrast,
+      term    = term,
+      F_stat  = F_stat,
+      R2      = R2,
+      p_value = p_value,
+      n_perm  = permutations
+    )
+  }
+
+  # ---------------------------------------------------------------------------
+  # 1) Start from distances + labels
+  # ---------------------------------------------------------------------------
+  d_full  <- dist_obj
+  labels_full <- attr(d_full, "Labels")
+  n_full  <- attr(d_full, "Size")
+
+  # ---------------------------------------------------------------------------
+  # 2) Build metadata from ps$data_long and align to dist labels
+  # ---------------------------------------------------------------------------
+  dat <- ps$data_long
+  if (is.null(dat)) {
+    .ph_abort("`ps$data_long` is missing. Cannot construct metadata.",
+              step = "compute_permanova")
+  }
+
+  dat_cols <- dplyr::tbl_vars(dat)
+  if (!"sample_id" %in% dat_cols) {
+    .ph_abort("`ps$data_long` must contain a `sample_id` column.",
+              step = "compute_permanova")
+  }
+
+  has_group   <- !is.null(group_col)   && group_col   %in% dat_cols
+  has_time    <- !is.null(time_col)    && time_col    %in% dat_cols
+  has_subject <- !is.null(subject_col) && subject_col %in% dat_cols
+
+  if (!is.null(group_col) && !has_group) {
+    .ph_abort(
+      paste0("Column `", group_col, "` not found in `ps$data_long`."),
+      step = "compute_permanova"
+    )
+  }
+  if (!is.null(time_col) && !has_time) {
+    .ph_abort(
+      paste0("Column `", time_col, "` not found in `ps$data_long`."),
+      step = "compute_permanova"
+    )
+  }
+
+  cols_needed <- c(
+    "sample_id",
+    if (has_group) group_col else character(0L),
+    if (has_time)  time_col  else character(0L),
+    if (has_subject) subject_col else character(0L)
+  )
+  cols_needed <- unique(cols_needed)
+
+  .ph_log_info(
+    "Building metadata from `ps$data_long`.",
+    step = "compute_permanova"
+  )
+
+  meta_all <- dat |>
+    dplyr::select(dplyr::all_of(cols_needed)) |>
+    dplyr::distinct(sample_id, .keep_all = TRUE) |>
+    dplyr::collect() |>
+    as.data.frame()
+
+  if (nrow(meta_all) == 0L) {
+    .ph_abort(
+      "Constructed metadata has zero rows. Check that `ps$data_long` is not empty.",
+      step = "compute_permanova"
+    )
+  }
+  rownames(meta_all) <- meta_all$sample_id
+
+  # Align metadata to distance labels
+  if (!is.null(labels_full)) {
+    idx_align <- match(labels_full, meta_all$sample_id)
+    missing_samples <- labels_full[is.na(idx_align)]
+    if (length(missing_samples) > 0L) {
+      .ph_abort(
+        paste0(
+          "The following samples from `dist_obj` are missing in `ps$data_long`: ",
+          paste(missing_samples, collapse = ", ")
+        ),
+        step = "compute_permanova"
+      )
+    }
+    meta_sub <- meta_all[idx_align, , drop = FALSE]
+    rownames(meta_sub) <- labels_full
+  } else {
+    meta_sub <- meta_all
+    labels_full <- rownames(meta_sub)
+    n_full <- length(labels_full)
+    .ph_warn(
+      "No labels found in `dist_obj`; assuming metadata row order matches the distance order.",
+      step = "compute_permanova"
+    )
+  }
+
+  # Coerce group/time to factor for safety
+  if (has_group) {
+    meta_sub[[group_col]] <- as.factor(meta_sub[[group_col]])
+  }
+  if (has_time) {
+    meta_sub[[time_col]] <- as.factor(meta_sub[[time_col]])
+  }
+
+  # ---------------------------------------------------------------------------
+  # 3) Drop samples with NA in constrained variables (+ subject if used)
+  # ---------------------------------------------------------------------------
+  vars_for_na <- c(
+    if (has_group) group_col else character(0L),
+    if (has_time)  time_col  else character(0L),
+    if (has_time && has_subject) subject_col else character(0L)  # subject used for strata in longitudinal
+  )
+  vars_for_na <- unique(vars_for_na)
+
+  if (length(vars_for_na) > 0L) {
+    keep <- stats::complete.cases(meta_sub[, vars_for_na, drop = FALSE])
+  } else {
+    keep <- rep(TRUE, nrow(meta_sub))
+  }
+
+  if (!all(keep)) {
+    dropped <- sum(!keep)
+    .ph_log_info(
+      paste0("Dropping ", dropped,
+             " samples with missing values in constrained/strata variables."),
+      step = "compute_permanova"
+    )
+  }
+
+  meta_df <- meta_sub[keep, , drop = FALSE]
+  if (nrow(meta_df) == 0L) {
+    .ph_abort(
+      "All samples have missing values in constrained/strata variables; cannot run PERMANOVA.",
+      step = "compute_permanova"
+    )
+  }
+  keep_labels <- rownames(meta_df)
+
+  # Subset distance matrix to kept samples
+  mat_d_full <- as.matrix(d_full)
+  mat_d_sub  <- mat_d_full[keep_labels, keep_labels, drop = FALSE]
+  d <- stats::as.dist(mat_d_sub)
+  labels <- attr(d, "Labels")
+  n      <- attr(d, "Size")
+
+  # Update factor presence after NA-drop
+  has_group <- has_group && length(unique(meta_df[[group_col]])) > 1L
+  has_time  <- has_time  && length(unique(meta_df[[time_col]]))  > 1L
+
+  # ---------------------------------------------------------------------------
+  # 4) Global PERMANOVA
+  # ---------------------------------------------------------------------------
+  rhs_terms <- character(0L)
+  if (has_group) rhs_terms <- c(rhs_terms, group_col)
+  if (has_time)  rhs_terms <- c(rhs_terms, time_col)
+  if (has_group && has_time) {
+    rhs_terms <- c(rhs_terms, paste(group_col, "*", time_col))
+  }
+
+  if (length(rhs_terms) == 0L) {
+    .ph_log_info(
+      "Global PERMANOVA skipped (insufficient number of factor levels).",
+      step = "compute_permanova"
+    )
+  } else {
+    formula_str <- paste("d_resp ~", paste(rhs_terms, collapse = " + "))
+    d_resp <- d
+    form <- stats::as.formula(formula_str, env = environment())
+
+    df <- meta_df
+    rownames(df) <- labels
+
+    # strata for global test: subject if time present and repeated measures
+    strata_var <- NULL
+    if (has_time && has_subject && subject_col %in% names(meta_df)) {
+      subj <- meta_df[[subject_col]]
+      subj_counts <- table(subj)
+      if (any(subj_counts > 1L)) {
+        strata_var <- subj
+      }
+    }
+
+    .ph_log_info(
+      "Running global PERMANOVA",
+      step = "compute_permanova",
+      bullets = c(
+        paste("model:", formula_str),
+        if (!is.null(strata_var)) "permutations stratified by subject"
+      )
+    )
+
+    adonis_res <- try(
+      vegan::adonis2(
+        form,
+        data        = df,
+        permutations = permutations,
+        by          = "terms",
+        strata      = strata_var,
+        parallel    = 1
+      ),
+      silent = TRUE
+    )
+
+    if (inherits(adonis_res, "try-error")) {
+      .ph_warn("Global PERMANOVA failed; no global results.",
+               step = "compute_permanova")
+    } else {
+      res_df <- as.data.frame(adonis_res)
+      res_df$term <- rownames(res_df)
+      # check terms: group, time, and interaction
+      for (term in c(
+        if (!is.null(group_col)) group_col else NULL,
+        if (!is.null(time_col))  time_col  else NULL,
+        if (!is.null(group_col) && !is.null(time_col))
+          paste(group_col, ":", time_col, sep = "") else NULL
+      )) {
+        if (!is.null(term) && term %in% res_df$term) {
+          row <- res_df[res_df$term == term, , drop = FALSE]
+          add_result(
+            "global",
+            "<global>",
+            term    = term,
+            F_stat  = row$F[1],
+            R2      = row$R2[1],
+            p_value = row$`Pr(>F)`[1]
+          )
+        }
+      }
+    }
+  }
+
+  # ---------------------------------------------------------------------------
+  # 5) Post-hoc contrasts (pairwise / each_vs_rest / baseline)
+  # ---------------------------------------------------------------------------
+  contrasts <- tolower(unique(contrasts))
+  contrasts[contrasts == "group_vs_rest"] <- "each_vs_rest"
+
+  # Determine baseline if needed
+  bl <- NULL
+  if ("baseline" %in% contrasts && !is.null(baseline_level)) {
+    bl <- baseline_level
+  }
+  if ("baseline" %in% contrasts && is.null(baseline_level) && has_time) {
+    bl <- sort(unique(meta_df[[time_col]]))[1]
+    .ph_log_info(
+      paste("baseline_level not provided; using", bl, "as baseline for time."),
+      step = "compute_permanova"
+    )
+  }
+
+  # helper: run two-level adonis on subset idx of current meta_df/d
+  run_two_level_adonis <- function(idx, fac, covar = NULL, strata = NULL,
+                                   scope_label, contrast_label, term_label) {
+    if (length(unique(fac)) < 2L || min(table(fac)) < 2L) {
+      .ph_log_info(
+        paste("Skipping test", contrast_label,
+              "- not enough samples in one or both groups."),
+        step = "compute_permanova"
+      )
+      return(NULL)
+    }
+    df_sub <- meta_df[idx, , drop = FALSE]
+    labels_sub <- labels[idx]
+    rownames(df_sub) <- labels_sub
+
+    form_rhs <- "fac"
+    if (!is.null(covar)) form_rhs <- paste(form_rhs, "+", covar)
+
+    fml <- stats::as.formula(paste("d_sub ~", form_rhs))
+    d_mat <- as.matrix(d)
+    d_sub <- stats::as.dist(d_mat[idx, idx, drop = FALSE])
+
+    ad <- vegan::adonis2(
+      fml,
+      data        = cbind(df_sub, fac = fac),
+      permutations = permutations,
+      strata      = strata,
+      by          = if (!is.null(covar)) "margin" else NULL
+    )
+
+    res <- as.data.frame(ad)
+    res$term <- rownames(res)
+    if ("fac" %in% res$term) {
+      row <- res[res$term == "fac", , drop = FALSE]
+      add_result(
+        scope_label,
+        contrast_label,
+        term    = term_label,
+        F_stat  = row$F[1],
+        R2      = row$R2[1] %||% NA_real_,
+        p_value = row$`Pr(>F)`[1]
+      )
+    }
+  }
+
+  # ---------------- pairwise -----------------------------------------------
+  if ("pairwise" %in% contrasts) {
+    # Pairwise group comparisons
+    if (has_group) {
+      groups <- na.omit(unique(meta_df[[group_col]]))
+      if (length(groups) > 1L) {
+        pairs <- utils::combn(groups, 2, simplify = FALSE)
+        for (p in pairs) {
+          sel <- which(meta_df[[group_col]] %in% p)
+
+          strata_use <- NULL
+          if (has_subject && subject_col %in% names(meta_df)) {
+            sub_sel <- meta_df[sel, subject_col]
+            # if any subject appears in both groups -> stratify
+            multi <- any(tapply(meta_df[sel, group_col], sub_sel,
+                                function(x) length(unique(x)) > 1L))
+            if (multi) strata_use <- sub_sel
+          }
+
+          fac_pair   <- factor(meta_df[sel, group_col], levels = p)
+          covar_term <- if (has_time) time_col else NULL
+
+          run_two_level_adonis(
+            idx            = sel,
+            fac            = fac_pair,
+            covar          = covar_term,
+            strata         = strata_use,
+            scope_label    = "group_pairwise",
+            contrast_label = paste(p, collapse = " vs "),
+            term_label     = group_col
+          )
+        }
+      }
+    }
+
+    # Pairwise time comparisons
+    if (has_time) {
+      times <- na.omit(unique(meta_df[[time_col]]))
+      if (length(times) > 1L) {
+        pairs <- utils::combn(times, 2, simplify = FALSE)
+        for (p in pairs) {
+          sel <- which(meta_df[[time_col]] %in% p)
+
+          strata_use <- NULL
+          if (has_subject && subject_col %in% names(meta_df)) {
+            sub_sel <- meta_df[sel, subject_col]
+            if (any(table(sub_sel) > 1L)) {
+              strata_use <- sub_sel
+            }
+          }
+
+          fac_pair   <- factor(meta_df[sel, time_col], levels = p)
+          covar_term <- if (has_group) group_col else NULL
+
+          run_two_level_adonis(
+            idx            = sel,
+            fac            = fac_pair,
+            covar          = covar_term,
+            strata         = strata_use,
+            scope_label    = "time_pairwise",
+            contrast_label = paste(p, collapse = " vs "),
+            term_label     = time_col
+          )
+        }
+      }
+    }
+  }
+
+  # ---------------- each_vs_rest -------------------------------------------
+  if ("each_vs_rest" %in% contrasts) {
+    # Each group vs rest
+    if (has_group && length(unique(meta_df[[group_col]])) > 1L) {
+      for (lvl in unique(meta_df[[group_col]])) {
+        fac_vec <- factor(
+          ifelse(meta_df[[group_col]] == lvl, lvl, "other"),
+          levels = c(lvl, "other")
+        )
+        if (length(unique(fac_vec)) < 2L || min(table(fac_vec)) < 2L) next
+        sel <- which(!is.na(fac_vec))
+        covar_term <- if (has_time) time_col else NULL
+
+        run_two_level_adonis(
+          idx            = sel,
+          fac            = fac_vec[sel],
+          covar          = covar_term,
+          strata         = NULL,
+          scope_label    = "each_vs_rest",
+          contrast_label = paste(lvl, "vs other"),
+          term_label     = group_col
+        )
+      }
+    }
+
+    # Each time vs rest
+    if (has_time && length(unique(meta_df[[time_col]])) > 1L) {
+      for (lvl in unique(meta_df[[time_col]])) {
+        fac_vec <- factor(
+          ifelse(meta_df[[time_col]] == lvl, lvl, "other"),
+          levels = c(lvl, "other")
+        )
+        if (length(unique(fac_vec)) < 2L || min(table(fac_vec)) < 2L) next
+        sel <- which(!is.na(fac_vec))
+
+        strata_use <- NULL
+        if (has_subject && subject_col %in% names(meta_df)) {
+          sub_sel <- meta_df[sel, subject_col]
+          if (any(table(sub_sel) > 1L)) strata_use <- sub_sel
+        }
+
+        covar_term <- if (has_group) group_col else NULL
+
+        run_two_level_adonis(
+          idx            = sel,
+          fac            = fac_vec[sel],
+          covar          = covar_term,
+          strata         = strata_use,
+          scope_label    = "each_vs_rest",
+          contrast_label = paste(lvl, "vs other"),
+          term_label     = time_col
+        )
+      }
+    }
+  }
+
+  # ---------------- baseline ------------------------------------------------
+  if ("baseline" %in% contrasts) {
+    if (is.null(bl)) {
+      .ph_warn(
+        "Baseline contrast requested but `baseline_level` not properly specified; skipping baseline tests.",
+        step = "compute_permanova"
+      )
+    } else {
+      # Baseline for time
+      if (has_time && bl %in% meta_df[[time_col]]) {
+        fac_vec <- factor(
+          ifelse(meta_df[[time_col]] == bl, bl, "not_baseline"),
+          levels = c(bl, "not_baseline")
+        )
+        sel <- which(!is.na(fac_vec))
+
+        strata_use <- NULL
+        if (has_subject && subject_col %in% names(meta_df)) {
+          sub_sel <- meta_df[sel, subject_col]
+          if (any(table(sub_sel) > 1L)) strata_use <- sub_sel
+        }
+
+        covar_term <- if (has_group) group_col else NULL
+
+        run_two_level_adonis(
+          idx            = sel,
+          fac            = fac_vec[sel],
+          covar          = covar_term,
+          strata         = strata_use,
+          scope_label    = "baseline",
+          contrast_label = paste(bl, "vs others"),
+          term_label     = time_col
+        )
+      }
+
+      # Baseline for group
+      if (has_group && bl %in% meta_df[[group_col]]) {
+        fac_vec <- factor(
+          ifelse(meta_df[[group_col]] == bl, bl, "not_baseline"),
+          levels = c(bl, "not_baseline")
+        )
+        sel <- which(!is.na(fac_vec))
+
+        covar_term <- if (has_time) time_col else NULL
+
+        run_two_level_adonis(
+          idx            = sel,
+          fac            = fac_vec[sel],
+          covar          = covar_term,
+          strata         = NULL,
+          scope_label    = "baseline",
+          contrast_label = paste(bl, "vs others"),
+          term_label     = group_col
+        )
+      }
+    }
+  }
+
+  # ---------------------------------------------------------------------------
+  # 6) Combine and return
+  # ---------------------------------------------------------------------------
+  result_df <- if (length(results_list) > 0L) {
+    dplyr::bind_rows(results_list)
+  } else {
+    tibble::tibble()
+  }
+
+  result_df
+}
+
+#' @title Test Homogeneity of Dispersion (Beta Dispersion)
+#' @description Computes distances of samples to group centroids (using
+#'   \code{vegan::betadisper}) and tests for differences in dispersion among
+#'   groups or time levels. Optionally performs pairwise and other post-hoc
+#'   tests on dispersion.
+#'
+#' @param dist_obj A \code{dist} object of sample distances (e.g. from
+#'   \code{compute_distance()}).
+#' @param ps A \code{phip_data} object providing sample-level metadata in
+#'   \code{ps$data_long}. This table must contain \code{sample_id} and the
+#'   columns specified in \code{group_col} and/or \code{time_col}.
+#' @param group_col Name of the group factor column in \code{ps$data_long}
+#'   (between-subjects). Use \code{NULL} if no group factor.
+#' @param time_col Name of the time factor column in \code{ps$data_long}
+#'   (within-subjects, categorical only). Use \code{NULL} if not applicable.
+#' @param subject_col Name of subject identifier column (for reference only;
+#'   not used directly in dispersion test calculations, but kept for API
+#'   consistency). Default \code{"subject_id"}.
+#' @param permutations Number of permutations for significance testing in
+#'   \code{vegan::permutest}. Default 999.
+#' @param contrasts Which dispersion contrasts to perform. Options:
+#'   \code{"none"} (default), \code{"pairwise"}, \code{"each_vs_rest"},
+#'   \code{"baseline"}. Interpretation analogiczna do \code{compute_permanova},
+#'   ale zastosowana do dyspersji.
+#' @param baseline_level If \code{contrasts} includes \code{"baseline"},
+#'   specify the baseline level of group or time to compare against others.
+#'
+#' @return A list of class \code{"beta_dispersion"} with:
+#' \item{distances}{Tibble of per-sample distances to centroid. Columns:
+#'   \code{sample_id}, \code{distance}, \code{level} (group/time level for
+#'   a given scope), \code{scope} (e.g. \code{"group"}, \code{"time"},
+#'   \code{"group:time"}), \code{contrast} (e.g. \code{"<global>"},
+#'   \code{"A vs B"}).}
+#' \item{tests}{Tibble of dispersion test results. Columns: \code{scope},
+#'   \code{contrast}, \code{term = "dispersion"}, \code{p_value}, \code{n_perm}.}
+#'
+#' @examples
+#' \dontrun{
+#'   dispersion_res <- compute_dispersion(
+#'     dist_bc,
+#'     ps        = ps,
+#'     group_col = "type_person",
+#'     time_col  = "timepoint",
+#'     contrasts = "pairwise"
+#'   )
+#'   dispersion_res$tests
+#'   head(dispersion_res$distances)
+#' }
+compute_dispersion <- function(dist_obj,
+                               ps,
+                               group_col = NULL,
+                               time_col = NULL,
+                               subject_col = "subject_id",
+                               permutations = 999,
+                               contrasts = "none",
+                               baseline_level = NULL) {
+
+  if (!inherits(dist_obj, "dist")) {
+    .ph_abort(
+      "`dist_obj` must be a `dist` object (e.g., from `compute_distance()`).",
+      step = "compute_dispersion"
+    )
+  }
+  if (!inherits(ps, "phip_data")) {
+    .ph_abort("`ps` must be a <phip_data> object.",
+              step = "compute_dispersion")
+  }
+  if (!rlang::is_installed("vegan")) {
+    .ph_abort("`compute_dispersion()` requires the 'vegan' package.",
+              step = "compute_dispersion"
+    )
+  }
+
+  # ---------------------------------------------------------------------------
+  # 1) Prepare metadata from ps$data_long and align to dist labels
+  # ---------------------------------------------------------------------------
+  d_full      <- dist_obj
+  labels_full <- attr(d_full, "Labels")
+
+  dat <- ps$data_long
+  if (is.null(dat)) {
+    .ph_abort("`ps$data_long` is missing. Cannot construct metadata.",
+              step = "compute_dispersion")
+  }
+
+  dat_cols <- dplyr::tbl_vars(dat)
+  if (!"sample_id" %in% dat_cols) {
+    .ph_abort("`ps$data_long` must contain a `sample_id` column.",
+              step = "compute_dispersion")
+  }
+
+  has_group <- !is.null(group_col) && group_col %in% dat_cols
+  has_time  <- !is.null(time_col)  && time_col  %in% dat_cols
+
+  if (!is.null(group_col) && !has_group) {
+    .ph_abort(
+      paste0("Column `", group_col, "` not found in `ps$data_long`."),
+      step = "compute_dispersion"
+    )
+  }
+  if (!is.null(time_col) && !has_time) {
+    .ph_abort(
+      paste0("Column `", time_col, "` not found in `ps$data_long`."),
+      step = "compute_dispersion"
+    )
+  }
+
+  cols_needed <- c(
+    "sample_id",
+    if (has_group) group_col else character(0L),
+    if (has_time)  time_col  else character(0L)
+  )
+  cols_needed <- unique(cols_needed)
+
+  .ph_log_info(
+    "Building metadata from `ps$data_long`.",
+    step = "compute_dispersion"
+  )
+
+  meta_all <- dat |>
+    dplyr::select(dplyr::all_of(cols_needed)) |>
+    dplyr::distinct(sample_id, .keep_all = TRUE) |>
+    dplyr::collect() |>
+    as.data.frame()
+
+  if (nrow(meta_all) == 0L) {
+    .ph_abort(
+      "Constructed metadata has zero rows. Check that `ps$data_long` is not empty.",
+      step = "compute_dispersion"
+    )
+  }
+  rownames(meta_all) <- meta_all$sample_id
+
+  # Align metadata to distance labels
+  if (!is.null(labels_full)) {
+    idx_align <- match(labels_full, meta_all$sample_id)
+    missing_samples <- labels_full[is.na(idx_align)]
+    if (length(missing_samples) > 0L) {
+      .ph_abort(
+        paste0(
+          "The following samples from `dist_obj` are missing in `ps$data_long`: ",
+          paste(missing_samples, collapse = ", ")
+        ),
+        step = "compute_dispersion"
+      )
+    }
+    meta_sub <- meta_all[idx_align, , drop = FALSE]
+    rownames(meta_sub) <- labels_full
+  } else {
+    meta_sub   <- meta_all
+    labels_full <- rownames(meta_sub)
+    .ph_warn(
+      "No labels found in `dist_obj`; assuming metadata row order matches the distance order.",
+      step = "compute_dispersion"
+    )
+  }
+
+  # Coerce grouping vars to factor
+  if (has_group) {
+    meta_sub[[group_col]] <- as.factor(meta_sub[[group_col]])
+  }
+  if (has_time) {
+    meta_sub[[time_col]] <- as.factor(meta_sub[[time_col]])
+  }
+
+  # ---------------------------------------------------------------------------
+  # 2) Drop samples with NA in group/time and subset distance matrix
+  # ---------------------------------------------------------------------------
+  vars_for_na <- c(
+    if (has_group) group_col else character(0L),
+    if (has_time)  time_col  else character(0L)
+  )
+  vars_for_na <- unique(vars_for_na)
+
+  if (length(vars_for_na) > 0L) {
+    keep <- stats::complete.cases(meta_sub[, vars_for_na, drop = FALSE])
+  } else {
+    keep <- rep(TRUE, nrow(meta_sub))
+  }
+
+  if (!all(keep)) {
+    dropped <- sum(!keep)
+    .ph_log_info(
+      paste0("Dropping ", dropped,
+             " samples with missing values in dispersion grouping variables."),
+      step = "compute_dispersion"
+    )
+  }
+
+  meta_df <- meta_sub[keep, , drop = FALSE]
+  if (nrow(meta_df) == 0L) {
+    .ph_abort(
+      "All samples have missing values in grouping variables; cannot run dispersion tests.",
+      step = "compute_dispersion"
+    )
+  }
+  keep_labels <- rownames(meta_df)
+
+  d_mat_full <- as.matrix(d_full)
+  d_mat_sub  <- d_mat_full[keep_labels, keep_labels, drop = FALSE]
+  d          <- stats::as.dist(d_mat_sub)
+  labels     <- attr(d, "Labels")
+
+  # Re-evaluate factor presence after NA drop
+  has_group <- has_group && length(unique(meta_df[[group_col]])) > 1L
+  has_time  <- has_time  && length(unique(meta_df[[time_col]]))  > 1L
+
+  # ---------------------------------------------------------------------------
+  # 3) Prepare collectors for distances and tests
+  # ---------------------------------------------------------------------------
+  distances_list <- list()
+  tests_list     <- list()
+
+  add_distance_rows <- function(sample_ids, dists, level_vals,
+                                scope_val, contrast_val) {
+    distances_list[[length(distances_list) + 1L]] <<- tibble::tibble(
+      sample_id = sample_ids,
+      distance  = dists,
+      level     = level_vals,
+      scope     = scope_val,
+      contrast  = contrast_val
+    )
+  }
+
+  add_test_row <- function(scope_val, contrast_val, p_val) {
+    tests_list[[length(tests_list) + 1L]] <<- tibble::tibble(
+      scope    = scope_val,
+      contrast = contrast_val,
+      term     = "dispersion",
+      p_value  = p_val,
+      n_perm   = permutations
+    )
+  }
+
+  # ---------------------------------------------------------------------------
+  # 4) Global dispersion tests (group, time, group:time)
+  # ---------------------------------------------------------------------------
+  if (has_group) {
+    fac <- factor(meta_df[[group_col]])
+    bd <- try(vegan::betadisper(d, fac), silent = TRUE)
+    if (inherits(bd, "try-error")) {
+      .ph_warn(
+        "betadisper failed for group factor; skipping group dispersion test.",
+        step = "compute_dispersion"
+      )
+    } else {
+      add_distance_rows(
+        sample_ids = names(bd$distances),
+        dists      = as.numeric(bd$distances),
+        level_vals = as.character(bd$group),
+        scope_val  = "group",
+        contrast_val = "<global>"
+      )
+      pt <- vegan::permutest(bd, permutations = permutations, parallel = 1)
+      pval <- tryCatch(pt$tab[1, "Pr(>F)"], error = function(e) NA_real_)
+      add_test_row("group", "<global>", pval)
+    }
+  }
+
+  if (has_time) {
+    if (!is.numeric(meta_df[[time_col]])) {
+      fac <- factor(meta_df[[time_col]])
+      bd <- try(vegan::betadisper(d, fac), silent = TRUE)
+      if (inherits(bd, "try-error")) {
+        .ph_warn(
+          "betadisper failed for time factor; skipping time dispersion test.",
+          step = "compute_dispersion"
+        )
+      } else {
+        add_distance_rows(
+          sample_ids = names(bd$distances),
+          dists      = as.numeric(bd$distances),
+          level_vals = as.character(bd$group),
+          scope_val  = "time",
+          contrast_val = "<global>"
+        )
+        pt <- vegan::permutest(bd, permutations = permutations, parallel = 1)
+        pval <- tryCatch(pt$tab[1, "Pr(>F)"], error = function(e) NA_real_)
+        add_test_row("time", "<global>", pval)
+      }
+    } else {
+      .ph_warn(
+        "`time_col` is numeric; continuous dispersion by time not supported. Skipping time dispersion test.",
+        step = "compute_dispersion"
+      )
+    }
+  }
+
+  if (has_group && has_time && !is.numeric(meta_df[[time_col]])) {
+    inter_factor <- factor(
+      paste(meta_df[[group_col]], meta_df[[time_col]], sep = " * ")
+    )
+    if (length(unique(inter_factor)) > 1L) {
+      bd <- try(vegan::betadisper(d, inter_factor), silent = TRUE)
+      if (!inherits(bd, "try-error")) {
+        add_distance_rows(
+          sample_ids = names(bd$distances),
+          dists      = as.numeric(bd$distances),
+          level_vals = as.character(bd$group),
+          scope_val  = "group:time",
+          contrast_val = "<global>"
+        )
+        pt <- vegan::permutest(bd, permutations = permutations, parallel = 1)
+        pval <- tryCatch(pt$tab[1, "Pr(>F)"], error = function(e) NA_real_)
+        add_test_row("group:time", "<global>", pval)
+      }
+    }
+  }
+
+  # ---------------------------------------------------------------------------
+  # 5) Helper for subset dispersion tests
+  # ---------------------------------------------------------------------------
+  run_disp_test <- function(idx, fac_vec, scope_lab, contrast_lab) {
+    if (length(unique(fac_vec)) < 2L || min(table(fac_vec)) < 2L) {
+      .ph_log_info(
+        paste("Skipping dispersion test for", contrast_lab, "- not enough data."),
+        step = "compute_dispersion"
+      )
+      return(NULL)
+    }
+    d_mat <- as.matrix(d)
+    d_sub <- stats::as.dist(d_mat[idx, idx, drop = FALSE])
+    bd <- try(vegan::betadisper(d_sub, fac_vec), silent = TRUE)
+    if (inherits(bd, "try-error")) return(NULL)
+
+    add_distance_rows(
+      sample_ids = names(bd$distances),
+      dists      = as.numeric(bd$distances),
+      level_vals = as.character(bd$group),
+      scope_val  = scope_lab,
+      contrast_val = contrast_lab
+    )
+    pt <- vegan::permutest(bd, permutations = permutations, parallel = 1)
+    pval <- tryCatch(pt$tab[1, "Pr(>F)"], error = function(e) NA_real_)
+    add_test_row(scope_lab, contrast_lab, pval)
+  }
+
+  # ---------------------------------------------------------------------------
+  # 6) Post-hoc contrasts
+  # ---------------------------------------------------------------------------
+  contrasts <- tolower(unique(contrasts))
+  contrasts[contrasts == "group_vs_rest"] <- "each_vs_rest"
+
+  # Pairwise
+  if ("pairwise" %in% contrasts) {
+    # groups
+    if (has_group) {
+      grps <- na.omit(unique(meta_df[[group_col]]))
+      if (length(grps) > 1L) {
+        for (pair in utils::combn(grps, 2, simplify = FALSE)) {
+          sel <- which(meta_df[[group_col]] %in% pair)
+          fac <- factor(meta_df[sel, group_col], levels = pair)
+          run_disp_test(sel, fac_vec = fac, scope_lab = "group",
+                        contrast_lab = paste(pair, collapse = " vs "))
+        }
+      }
+    }
+    # time
+    if (has_time && !is.numeric(meta_df[[time_col]])) {
+      times <- na.omit(unique(meta_df[[time_col]]))
+      if (length(times) > 1L) {
+        for (pair in utils::combn(times, 2, simplify = FALSE)) {
+          sel <- which(meta_df[[time_col]] %in% pair)
+          fac <- factor(meta_df[sel, time_col], levels = pair)
+          run_disp_test(sel, fac_vec = fac, scope_lab = "time",
+                        contrast_lab = paste(pair, collapse = " vs "))
+        }
+      }
+    }
+  }
+
+  # Each vs rest
+  if ("each_vs_rest" %in% contrasts) {
+    if (has_group && length(unique(meta_df[[group_col]])) > 1L) {
+      for (lvl in unique(meta_df[[group_col]])) {
+        fac_vec <- factor(
+          ifelse(meta_df[[group_col]] == lvl, lvl, "other"),
+          levels = c(lvl, "other")
+        )
+        sel <- which(!is.na(fac_vec))
+        run_disp_test(sel, fac_vec = fac_vec[sel], scope_lab = "group",
+                      contrast_lab = paste(lvl, "vs rest"))
+      }
+    }
+    if (has_time && !is.numeric(meta_df[[time_col]]) &&
+        length(unique(meta_df[[time_col]])) > 1L) {
+      for (lvl in unique(meta_df[[time_col]])) {
+        fac_vec <- factor(
+          ifelse(meta_df[[time_col]] == lvl, lvl, "other"),
+          levels = c(lvl, "other")
+        )
+        sel <- which(!is.na(fac_vec))
+        run_disp_test(sel, fac_vec = fac_vec[sel], scope_lab = "time",
+                      contrast_lab = paste(lvl, "vs rest"))
+      }
+    }
+  }
+
+  # Baseline
+  if ("baseline" %in% contrasts) {
+    if (is.null(baseline_level)) {
+      .ph_warn(
+        "Baseline contrast requested but no `baseline_level` provided; skipping.",
+        step = "compute_dispersion"
+      )
+    } else {
+      # baseline for group
+      if (has_group && baseline_level %in% meta_df[[group_col]]) {
+        fac_vec <- factor(
+          ifelse(meta_df[[group_col]] == baseline_level,
+                 baseline_level, "other"),
+          levels = c(baseline_level, "other")
+        )
+        sel <- which(!is.na(fac_vec))
+        run_disp_test(sel, fac_vec = fac_vec[sel], scope_lab = "group",
+                      contrast_lab = paste(baseline_level, "vs others"))
+      }
+      # baseline for time
+      if (has_time && !is.numeric(meta_df[[time_col]]) &&
+          baseline_level %in% meta_df[[time_col]]) {
+        fac_vec <- factor(
+          ifelse(meta_df[[time_col]] == baseline_level,
+                 baseline_level, "other"),
+          levels = c(baseline_level, "other")
+        )
+        sel <- which(!is.na(fac_vec))
+        run_disp_test(sel, fac_vec = fac_vec[sel], scope_lab = "time",
+                      contrast_lab = paste(baseline_level, "vs others"))
+      }
+    }
+  }
+
+  # ---------------------------------------------------------------------------
+  # 7) Combine and return
+  # ---------------------------------------------------------------------------
+  distances_tbl <- if (length(distances_list)) {
+    dplyr::bind_rows(distances_list)
+  } else {
+    tibble::tibble()
+  }
+
+  tests_tbl <- if (length(tests_list)) {
+    dplyr::bind_rows(tests_list)
+  } else {
+    tibble::tibble()
+  }
+
+  result <- list(
+    distances = distances_tbl,
+    tests     = tests_tbl
+  )
+  class(result) <- "beta_dispersion"
+
+  result
+}
+
+
 # ------------------------------------------------------------------------------
 # internals (shared)
 # ------------------------------------------------------------------------------
@@ -124,6 +2011,369 @@
     return(mat)
   }
 }
+
+#' Compute t-SNE embeddings for samples
+#'
+#' @description
+#' Runs t-distributed stochastic neighbour embedding (t-SNE) on a
+#' sample-wise distance matrix (typically returned by [compute_distance()])
+#' and returns a tibble with t-SNE coordinates and selected sample-level
+#' metadata.
+#'
+#' The function expects that rows/columns (or labels) of the distance
+#' object correspond to `sample_id`s present in `ps$data_long`.
+#'
+#' @param ps A [`phip_data`] object.
+#' @param dist_obj A sample-wise distance object. Can be either:
+#'   * a [`dist`] object (e.g. from [compute_distance()]), or
+#'   * a numeric, symmetric matrix with row/column names giving `sample_id`s.
+#' @param dims Integer number of t-SNE dimensions to compute (2 or 3).
+#'   Defaults to `3L` so that both 2D and 3D plots can be generated from
+#'   the same result.
+#' @param perplexity Numeric perplexity parameter passed to [Rtsne::Rtsne()].
+#'   Must be smaller than the number of samples; if it is too large, it is
+#'   automatically reduced with a warning.
+#' @param theta Speed/accuracy tradeoff for the Barnes-Hut approximation,
+#'   passed to [Rtsne::Rtsne()]. Defaults to `0.5`.
+#' @param max_iter Maximum number of iterations for t-SNE, passed to
+#'   [Rtsne::Rtsne()]. Defaults to `1000L`.
+#' @param meta_cols Optional character vector of column names in
+#'   `ps$data_long` to attach as sample-level metadata. If `NULL`
+#'   (default), the function tries to use `ps$meta$extra_cols` and keeps
+#'   the intersection with columns available in `ps$data_long`.
+#' @param seed Optional integer random seed for reproducibility. If
+#'   provided, the function temporarily sets the seed for the duration of
+#'   the t-SNE computation and restores the previous RNG state afterwards.
+#' @param check_duplicates Logical; passed to [Rtsne::Rtsne()]. For
+#'   distance input, duplicates are not expected, so the default is
+#'   `FALSE`.
+#' @param ... Additional arguments passed on to [Rtsne::Rtsne()].
+#'
+#' @return
+#' A tibble with class `c("phip_tsne", "tbl_df", "tbl", "data.frame")`
+#' containing at least:
+#' \describe{
+#'   \item{sample_id}{Sample identifier (from distance labels or matrix row names).}
+#'   \item{tSNE1, tSNE2}{t-SNE coordinates for the first two dimensions.}
+#'   \item{tSNE3}{Third t-SNE dimension if `dims >= 3`, otherwise `NA`.}
+#' }
+#'
+#' Additional columns specified in `meta_cols` are attached by a left join
+#' on `sample_id` (one unique row per `sample_id` is enforced).
+#'
+#' Attributes:
+#' * `"distance"`: the original `dist_obj` as supplied.
+#' * `"tsne_params"`: a list of key t-SNE parameters and the original call.
+#' * `"meta_cols"`: the character vector of metadata columns actually used.
+#'
+#' @details
+#' This function runs t-SNE in *distance mode* (`is_distance = TRUE`), using
+#' the supplied distance object directly. Distance computation itself is
+#' handled elsewhere, typically via [compute_distance()].
+#'
+#' @examples
+#' \dontrun{
+#' # Assume ps is a <phip_data> and D is a distance from compute_distance():
+#' D <- compute_distance(ps, value_col = "fold_change")
+#'
+#' tsne_res <- compute_tsne(
+#'   ps       = ps,
+#'   dist_obj = D,
+#'   dims     = 3L,
+#'   perplexity = 30,
+#'   meta_cols  = c("type_person", "sex", "age")
+#' )
+#'
+#' # 2D plot, coloured by type_person
+#' plot_tsne(tsne_res, view = "2d", colour = "type_person")
+#'
+#' # 3D interactive plot (requires plotly)
+#' plot_tsne(tsne_res, view = "3d", colour = "type_person")
+#' }
+#'
+#' @export
+compute_tsne <- function(ps,
+                         dist_obj,
+                         dims = 3L,
+                         perplexity = 30,
+                         theta = 0.5,
+                         max_iter = 1000L,
+                         meta_cols = NULL,
+                         seed = NULL,
+                         check_duplicates = FALSE,
+                         ...) {
+  # ---------------------------------------------------------------------------
+  # Basic checks
+  # ---------------------------------------------------------------------------
+  if (!inherits(ps, "phip_data")) {
+    .ph_abort("Input `ps` must be a <phip_data> object.",
+              step = "compute_tsne")
+  }
+
+  if (missing(dist_obj)) {
+    .ph_abort("Argument `dist_obj` is required. Run `compute_distance()` first.",
+              step = "compute_tsne")
+  }
+
+  if (!inherits(dist_obj, "dist") && !is.matrix(dist_obj)) {
+    .ph_abort(
+      "Argument `dist_obj` must be either a <dist> object or a numeric matrix.",
+      step = "compute_tsne"
+    )
+  }
+
+  if (!dims %in% c(2L, 3L)) {
+    .ph_abort("Argument `dims` must be either 2 or 3.",
+              step = "compute_tsne")
+  }
+
+  if (!rlang::is_installed("Rtsne")) {
+    .ph_abort(
+      "Package 'Rtsne' is required to compute t-SNE. Please install it.",
+      step = "compute_tsne"
+    )
+  }
+
+  # ---------------------------------------------------------------------------
+  # Extract labels and size
+  # ---------------------------------------------------------------------------
+  if (inherits(dist_obj, "dist")) {
+    n_samples <- attr(dist_obj, "Size")
+    labels <- attr(dist_obj, "Labels")
+
+    if (is.null(labels)) {
+      # Fallback: integer sequence if labels are missing
+      labels <- as.character(seq_len(n_samples))
+      .ph_warn(
+        "Distance object has no labels; using integer indices as `sample_id`.",
+        step = "compute_tsne"
+      )
+    }
+  } else {
+    # matrix input
+    if (!is.numeric(dist_obj)) {
+      .ph_abort("If `dist_obj` is a matrix, it must be numeric.",
+                step = "compute_tsne")
+    }
+    if (nrow(dist_obj) != ncol(dist_obj)) {
+      .ph_abort("Distance matrix must be square (same number of rows and columns).",
+                step = "compute_tsne")
+    }
+    n_samples <- nrow(dist_obj)
+    labels <- rownames(dist_obj)
+    if (is.null(labels)) {
+      labels <- as.character(seq_len(n_samples))
+      .ph_warn(
+        "Distance matrix has no rownames; using integer indices as `sample_id`.",
+        step = "compute_tsne"
+      )
+    }
+  }
+
+  if (n_samples < 3L) {
+    .ph_abort(
+      "t-SNE requires at least 3 samples.",
+      step = "compute_tsne"
+    )
+  }
+
+  if (length(labels) != n_samples) {
+    .ph_abort(
+      "Length of distance labels does not match the number of samples.",
+      step = "compute_tsne"
+    )
+  }
+
+  if (anyDuplicated(labels)) {
+    .ph_abort(
+      "Distance labels (sample IDs) must be unique.",
+      step = "compute_tsne"
+    )
+  }
+
+  # ---------------------------------------------------------------------------
+  # Perplexity sanity check
+  # ---------------------------------------------------------------------------
+  max_perplexity <- floor((n_samples - 1L) / 3L)
+  if (perplexity >= n_samples) {
+    .ph_abort(
+      paste0(
+        "Perplexity (", perplexity, ") must be smaller than the number of samples (",
+        n_samples, ")."
+      ),
+      step = "compute_tsne"
+    )
+  }
+  if (perplexity > max_perplexity) {
+    .ph_warn(
+      paste0(
+        "Perplexity (", perplexity, ") is high for n = ", n_samples,
+        "; reducing to ", max_perplexity, "."
+      ),
+      step = "compute_tsne"
+    )
+    perplexity <- max_perplexity
+  }
+
+  # ---------------------------------------------------------------------------
+  # Prepare metadata column selection
+  # ---------------------------------------------------------------------------
+  dat <- ps$data_long
+
+  if (!is.null(dat)) {
+    dat_cols <- dplyr::tbl_vars(dat)
+  } else {
+    dat_cols <- character()
+    .ph_warn(
+      "`ps$data_long` is NULL; no metadata columns can be attached.",
+      step = "compute_tsne"
+    )
+  }
+
+  if (is.null(meta_cols)) {
+    # Start from meta$extra_cols if available, then intersect with data_long
+    extra <- ps$meta$extra_cols %||% character()
+    meta_cols <- intersect(extra, dat_cols)
+  } else {
+    # User-specified meta_cols: keep only those present in data_long
+    missing_cols <- setdiff(meta_cols, dat_cols)
+    if (length(missing_cols) > 0L) {
+      .ph_warn(
+        paste0(
+          "The following `meta_cols` are not present in `ps$data_long` and ",
+          "will be ignored: ",
+          paste(missing_cols, collapse = ", ")
+        ),
+        step = "compute_tsne"
+      )
+      meta_cols <- intersect(meta_cols, dat_cols)
+    }
+  }
+
+  # ---------------------------------------------------------------------------
+  # Run Rtsne in distance mode
+  # ---------------------------------------------------------------------------
+  .ph_log_info(
+    paste0("Running t-SNE with dims = ", dims,
+           ", perplexity = ", perplexity,
+           " on ", n_samples, " samples (distance input)."),
+    step = "compute_tsne"
+  )
+
+  # Temporary RNG seed control
+  if (!is.null(seed)) {
+    old_seed <- .Random.seed
+    on.exit({
+      if (exists("old_seed", inherits = FALSE)) {
+        .Random.seed <<- old_seed
+      }
+    }, add = TRUE)
+    set.seed(seed)
+  }
+
+  tsne_fit <- if (inherits(dist_obj, "dist")) {
+    Rtsne::Rtsne(
+      dist_obj,
+      is_distance      = TRUE,
+      dims             = dims,
+      perplexity       = perplexity,
+      theta            = theta,
+      max_iter         = max_iter,
+      check_duplicates = check_duplicates,
+      ...
+    )
+  } else {
+    # matrix input
+    Rtsne::Rtsne(
+      as.matrix(dist_obj),
+      is_distance      = TRUE,
+      dims             = dims,
+      perplexity       = perplexity,
+      theta            = theta,
+      max_iter         = max_iter,
+      check_duplicates = check_duplicates,
+      ...
+    )
+  }
+
+  coords <- tsne_fit$Y
+
+  if (!is.matrix(coords) || nrow(coords) != n_samples || ncol(coords) != dims) {
+    .ph_abort(
+      "Unexpected output from Rtsne::Rtsne(): coordinate matrix has wrong shape.",
+      step = "compute_tsne"
+    )
+  }
+
+  # ---------------------------------------------------------------------------
+  # Build base result tibble
+  # ---------------------------------------------------------------------------
+  tsne_df <- tibble::tibble(
+    sample_id = labels,
+    tSNE1     = coords[, 1],
+    tSNE2     = if (dims >= 2L) coords[, 2L] else NA_real_,
+    tSNE3     = if (dims >= 3L) coords[, 3L] else NA_real_
+  )
+
+  # ---------------------------------------------------------------------------
+  # Attach metadata (if requested / available)
+  # ---------------------------------------------------------------------------
+  if (!is.null(dat) && length(meta_cols) > 0L) {
+    .ph_log_info(
+      paste0(
+        "Attaching metadata columns to t-SNE result: ",
+        paste(meta_cols, collapse = ", ")
+      ),
+      step = "compute_tsne"
+    )
+
+    meta_tbl <- dat |>
+      dplyr::select(sample_id, dplyr::all_of(meta_cols)) |>
+      dplyr::distinct() |>
+      dplyr::collect()
+
+    if (anyDuplicated(meta_tbl$sample_id)) {
+      .ph_warn(
+        paste0(
+          "Metadata rows are not unique per `sample_id`. ",
+          "Keeping the first row per sample."
+        ),
+        step = "compute_tsne"
+      )
+
+      meta_tbl <- meta_tbl |>
+        dplyr::group_by(sample_id) |>
+        dplyr::slice(1L) |>
+        dplyr::ungroup()
+    }
+
+    tsne_df <- tsne_df |>
+      dplyr::left_join(meta_tbl, by = "sample_id")
+  }
+
+  .ph_log_info("t-SNE embedding computation finished.",
+               step = "compute_tsne")
+
+  # ---------------------------------------------------------------------------
+  # Attach attributes and class
+  # ---------------------------------------------------------------------------
+  attr(tsne_df, "distance") <- dist_obj
+  attr(tsne_df, "tsne_params") <- list(
+    dims        = dims,
+    perplexity  = perplexity,
+    theta       = theta,
+    max_iter    = max_iter,
+    seed        = seed,
+    check_dup   = check_duplicates,
+    call        = match.call()
+  )
+  attr(tsne_df, "meta_cols") <- meta_cols
+
+  class(tsne_df) <- c("phip_tsne", class(tsne_df))
+
+  tsne_df
+}
+
 
 # get the phiper-package specific options; can be modified by the user
 .ph_opt <- function(key, default) {
