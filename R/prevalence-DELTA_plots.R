@@ -439,7 +439,7 @@ forest_delta <- function(
     seg_width     = 1.2,
     point_size    = 3.6,
     show_grid     = FALSE,
-    stat          = c("T", "Z")
+    stat          = c("T", "T_stand", "Z_from_p")
 ) {
   if (!is.data.frame(x)) stop("`x` must be a data.frame/tibble.")
   stat <- match.arg(stat)
@@ -452,19 +452,6 @@ forest_delta <- function(
 
   # helper: pt -> ggplot size units
   .pt_to_gg <- function(pt) pt / 2.845
-
-  # compute signed Z from p if requested or needed for plotting
-  if (isTRUE(add_signed_z_from_p) || identical(stat, "Z")) {
-    if (!"p_perm" %in% names(x)) {
-      stop("Column `p_perm` is required to compute signed Z from p-values.")
-    }
-    p_two <- x$p_perm
-    p_two[!is.na(p_two)] <- pmin(
-      pmax(p_two[!is.na(p_two)], .Machine$double.eps),
-      1 - .Machine$double.eps
-    )
-    x$Z_signed_from_p_2s <- sign(x$T_obs) * stats::qnorm(1 - p_two / 2)
-  }
 
   df_rk <- dplyr::filter(x, .data$rank == rank_of_interest)
 
@@ -493,18 +480,26 @@ forest_delta <- function(
   }
 
   # choose statistic used for ranking and selection
-  if (identical(stat, "Z")) {
-    if (!"Z_signed_from_p_2s" %in% names(df_rk)) {
-      stop("`Z_signed_from_p_2s` not found. Set `add_signed_z_from_p = TRUE` or pre-compute it.")
-    }
-    df_rk$stat_for_sort <- df_rk$Z_signed_from_p_2s
-    stat_title        <- "signed Z from p-values (2-sided)"
-    stat_title_short  <- "signed Z"
-  } else {
+  if (identical(stat, "T")) {
     df_rk$stat_for_sort <- df_rk$T_obs
-    stat_title        <- "Stouffer T (raw)"
-    stat_title_short  <- "Stouffer T"
+    stat_title       <- "Stouffer T (raw)"
+    stat_title_short <- "Stouffer T"
+  } else if (identical(stat, "T_stand")) {
+    if (!"T_obs_stand" %in% names(df_rk)) {
+      stop("Column `T_obs_stand` not found in `x`.")
+    }
+    df_rk$stat_for_sort <- df_rk$T_obs_stand
+    stat_title       <- "Stouffer T (permutation-standardized)"
+    stat_title_short <- "T (standardized)"
+  } else {  # "Z_from_p"
+    if (!"Z_from_p" %in% names(df_rk)) {
+      stop("Column `Z_from_p` not found; pass ph_prevalence_shift() results or provide Z_from_p yourself.")
+    }
+    df_rk$stat_for_sort <- df_rk$Z_from_p
+    stat_title       <- "Z from permutation p-values"
+    stat_title_short <- "Z_from_p"
   }
+
 
   # selection based on chosen statistic
   n_pos <- sum(df_rk$stat_for_sort > 0, na.rm = TRUE)
@@ -525,11 +520,14 @@ forest_delta <- function(
     )
 
   # this is what goes on the x-axis
-  if (identical(stat, "Z")) {
-    df_plot$stat_val <- df_plot$Z_signed_from_p_2s
-  } else {
+  if (identical(stat, "T")) {
     df_plot$stat_val <- df_plot$T_obs
+  } else if (identical(stat, "T_stand")) {
+    df_plot$stat_val <- df_plot$T_obs_stand
+  } else {  # "Z" or "Z_from_p"
+    df_plot$stat_val <- df_plot$Z_from_p
   }
+
 
   g1  <- if (nrow(df_plot)) df_plot$group1[1] else ""
   g2  <- if (nrow(df_plot)) df_plot$group2[1] else ""
@@ -726,7 +724,7 @@ forest_delta_plotly <- function(
     font_family   = "Montserrat",
     seg_width     = 1.6,
     point_size    = 11,
-    stat          = c("T", "Z")
+    stat          = c("T", "T_stand", "Z_from_p")
 ) {
   if (!is.data.frame(x)) stop("`x` must be a data.frame/tibble.")
   stat <- match.arg(stat)
@@ -736,19 +734,6 @@ forest_delta_plotly <- function(
   miss <- setdiff(need_cols, colnames(x))
   if (length(miss)) stop(paste("`x` is missing required columns:", paste(miss, collapse = ", ")))
   if (!is.null(n_each)) { n_neg_each <- n_pos_each <- as.integer(n_each) }
-
-  # compute signed Z from p if requested or needed for plotting
-  if (isTRUE(add_signed_z_from_p) || identical(stat, "Z")) {
-    if (!"p_perm" %in% names(x)) {
-      stop("Column `p_perm` is required to compute signed Z from p-values.")
-    }
-    p_two <- x$p_perm
-    p_two[!is.na(p_two)] <- pmin(
-      pmax(p_two[!is.na(p_two)], .Machine$double.eps),
-      1 - .Machine$double.eps
-    )
-    x$Z_signed_from_p_2s <- sign(x$T_obs) * stats::qnorm(1 - p_two / 2)
-  }
 
   df_rk <- dplyr::filter(x, .data$rank == rank_of_interest)
 
@@ -766,12 +751,16 @@ forest_delta_plotly <- function(
     }
   }
 
-  stat_title <- if (identical(stat, "Z")) {
-    "signed Z from p-values (2-sided)"
-  } else {
-    "Stouffer T (raw)"
+  if (identical(stat, "T")) {
+    stat_title       <- "Stouffer T (raw)"
+    stat_title_short <- "Stouffer T"
+  } else if (identical(stat, "T_stand")) {
+    stat_title       <- "Stouffer T (permutation-standardized)"
+    stat_title_short <- "T (standardized)"
+  } else {  # "Z" or "Z_from_p"
+    stat_title       <- "Z from permutation p-values"
+    stat_title_short <- "Z_from_p"
   }
-  stat_title_short <- if (identical(stat, "Z")) "signed Z" else "Stouffer T"
 
   if (nrow(df_rk) == 0L) {
     plt <- plotly::plot_ly(type = "scatter", mode = "text") |>
@@ -796,13 +785,18 @@ forest_delta_plotly <- function(
   }
 
   # choose statistic used for ranking and selection
-  if (identical(stat, "Z")) {
-    if (!"Z_signed_from_p_2s" %in% names(df_rk)) {
-      stop("`Z_signed_from_p_2s` not found. Set `add_signed_z_from_p = TRUE` or pre-compute it.")
-    }
-    df_rk$stat_for_sort <- df_rk$Z_signed_from_p_2s
-  } else {
+  if (identical(stat, "T")) {
     df_rk$stat_for_sort <- df_rk$T_obs
+  } else if (identical(stat, "T_stand")) {
+    if (!"T_obs_stand" %in% names(df_rk)) {
+      stop("Column `T_obs_stand` not found in `x`.")
+    }
+    df_rk$stat_for_sort <- df_rk$T_obs_stand
+  } else {  # "Z" or "Z_from_p"
+    if (!"Z_from_p" %in% names(df_rk)) {
+      stop("Column `Z_from_p` not found; pass ph_prevalence_shift() results or provide Z_from_p yourself.")
+    }
+    df_rk$stat_for_sort <- df_rk$Z_from_p
   }
 
   # selection based on chosen statistic
@@ -824,10 +818,12 @@ forest_delta_plotly <- function(
     )
 
   # statistic on x-axis
-  if (identical(stat, "Z")) {
-    df_plot$stat_val <- df_plot$Z_signed_from_p_2s
-  } else {
+  if (identical(stat, "T")) {
     df_plot$stat_val <- df_plot$T_obs
+  } else if (identical(stat, "T_stand")) {
+    df_plot$stat_val <- df_plot$T_obs_stand
+  } else {  # "Z" or "Z_from_p"
+    df_plot$stat_val <- df_plot$Z_from_p
   }
 
   g1  <- if (nrow(df_plot)) df_plot$group1[1] else ""
