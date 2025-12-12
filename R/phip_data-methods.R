@@ -221,9 +221,12 @@ get_peptide_library <- function(x) {
 #' @examples 
 #' \donttest{
 #' pd <- phip_load_example_data()
-#' export_parquet(pd, "output_data.parquet")
+#' out_path <- tempfile(fileext = ".parquet")
+#' export_parquet(pd, out_path)
+#' unlink(out_path)
 #' }
 #'
+#' @importFrom DBI sqlInterpolate dbQuoteString dbExecute
 #' @export
 export_parquet <- function(x, path) {
   .check_pd(x)
