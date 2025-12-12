@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <limits>
+
 
 using namespace Rcpp;
 
@@ -181,7 +183,7 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
  * @param weight_mode, stat_mode, prev_strat, design strings.
  *
  * @return List with fields: n_peptides_used, m_eff, T_obs, T_null_sd, b, p_perm,
- *         mean_delta, frac_delta_pos, mean_delta_w, frac_delta_pos_w.
+ *         max_delta, frac_delta_pos, frac_delta_pos_w.
  */
 // [[Rcpp::export]]
 Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
@@ -243,9 +245,8 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         _["T_null_sd"]        = NA_REAL,
         _["b"]                = 0L,
         _["p_perm"]           = NA_REAL,
-        _["mean_delta"]       = NA_REAL,
+        _["max_delta"]       = NA_REAL,
         _["frac_delta_pos"]   = NA_REAL,
-        _["mean_delta_w"]     = NA_REAL,
         _["frac_delta_pos_w"] = NA_REAL
       );
     }
@@ -258,15 +259,17 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     CombineOut obs = combine_T_internal(p1, p2, n1, n2, winsor_z, weight_mode, stat_mode, prev_strat);
 
     // Moments
-    double mean_delta = 0.0, frac_pos = 0.0, mean_delta_w = 0.0, frac_pos_w = 0.0;
+    double max_delta = 0.0;  // max absolute delta
+    double frac_pos = 0.0, frac_pos_w = 0.0;
     for (int i = 0; i < mu; ++i) {
-      mean_delta += obs.delta[i];
-      if (obs.delta[i] > 0) frac_pos += 1.0;
-      mean_delta_w += obs.w_norm[i] * obs.delta[i];
-      frac_pos_w   += obs.w_norm[i] * (obs.delta[i] > 0 ? 1.0 : 0.0);
+      const double d = obs.delta[i];
+      const double ad = std::fabs(d);
+
+      if (ad > max_delta) max_delta = ad;
+      if (d > 0) frac_pos += 1.0;
+      frac_pos_w += obs.w_norm[i] * (d > 0 ? 1.0 : 0.0);
     }
-    mean_delta   /= (double)mu;
-    frac_pos     /= (double)mu;
+    frac_pos /= (double)mu;
 
     // m_eff = 1 / sum(w_norm^2)
     double sum_w2 = 0.0;
@@ -345,9 +348,8 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
       _["T_null_sd"]        = T_null_sd,
       _["b"]                = b_hits,
       _["p_perm"]           = p_perm,
-      _["mean_delta"]       = mean_delta,
+      _["max_delta"]        = max_delta,
       _["frac_delta_pos"]   = frac_pos,
-      _["mean_delta_w"]     = mean_delta_w,
       _["frac_delta_pos_w"] = frac_pos_w
     );
   }
@@ -379,9 +381,8 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         _["T_null_sd"] = NA_REAL,
         _["b"] = NA_INTEGER,
         _["p_perm"] = NA_REAL,
-        _["mean_delta"] = NA_REAL,
+        _["max_delta"] = NA_REAL,
         _["frac_delta_pos"] = NA_REAL,
-        _["mean_delta_w"] = NA_REAL,
         _["frac_delta_pos_w"] = NA_REAL
       );
     }
@@ -410,9 +411,8 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         _["T_null_sd"]        = NA_REAL,
         _["b"]                = 0L,
         _["p_perm"]           = NA_REAL,
-        _["mean_delta"]       = NA_REAL,
+        _["max_delta"]        = NA_REAL,
         _["frac_delta_pos"]   = NA_REAL,
-        _["mean_delta_w"]     = NA_REAL,
         _["frac_delta_pos_w"] = NA_REAL
       );
     }
@@ -421,15 +421,17 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     CombineOut obs = combine_T_internal(p1, p2, n1, n2, winsor_z, weight_mode, stat_mode, prev_strat);
 
     // Moments
-    double mean_delta = 0.0, frac_pos = 0.0, mean_delta_w = 0.0, frac_pos_w = 0.0;
+    double max_delta = 0.0;  // max absolute delta
+    double frac_pos = 0.0, frac_pos_w = 0.0;
     for (int i = 0; i < mu; ++i) {
-      mean_delta += obs.delta[i];
-      if (obs.delta[i] > 0) frac_pos += 1.0;
-      mean_delta_w += obs.w_norm[i] * obs.delta[i];
-      frac_pos_w   += obs.w_norm[i] * (obs.delta[i] > 0 ? 1.0 : 0.0);
+      const double d = obs.delta[i];
+      const double ad = std::fabs(d);
+
+      if (ad > max_delta) max_delta = ad;
+      if (d > 0) frac_pos += 1.0;
+      frac_pos_w += obs.w_norm[i] * (d > 0 ? 1.0 : 0.0);
     }
-    mean_delta   /= (double)mu;
-    frac_pos     /= (double)mu;
+    frac_pos /= (double)mu;
 
     // m_eff = 1 / sum(w_norm^2)
     double sum_w2 = 0.0;
@@ -523,9 +525,8 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
       _["T_null_sd"]        = T_null_sd,
       _["b"]                = b_hits,
       _["p_perm"]           = p_perm,
-      _["mean_delta"]       = mean_delta,
+      _["max_delta"]        = max_delta,
       _["frac_delta_pos"]   = frac_pos,
-      _["mean_delta_w"]     = mean_delta_w,
       _["frac_delta_pos_w"] = frac_pos_w
     );
   }

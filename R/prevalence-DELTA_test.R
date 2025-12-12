@@ -215,8 +215,9 @@
 #' - `b`: number of permutations actually used (may be `< B_permutations` if
 #'   early stopping is implemented in the C++ helper).
 #' - `p_adj_rank`: BH-adjusted p-value within each `rank`.
-#' - `mean_delta`, `frac_delta_pos`, `mean_delta_w`, `frac_delta_pos_w`:
-#'   unweighted/weighted summaries of peptide-level prevalence differences.
+#' - `max_delta`, `frac_delta_pos`, `frac_delta_pos_w`:
+#'   maximum absolute peptide-level prevalence difference
+#'   and unweighted/weighted fractions of positive peptide-level deltas.
 #' - `fold_change_<mode>`: optional fold-change summary if `fold_change != "none"`.
 #' - `cross_prev_<mode>`: optional pooled prevalence summary if
 #'   `cross_prev != "none"`.
@@ -894,8 +895,8 @@ ph_prevalence_shift <- function(
         T_obs_stand = {
           sd_null <- as.numeric(res$T_null_sd)
           ifelse(!is.na(sd_null) & sd_null > 0,
-            as.numeric(res$T_obs) / sd_null,
-            NA_real_
+                 as.numeric(res$T_obs) / sd_null,
+                 NA_real_
           )
         },
         Z_from_p = {
@@ -909,9 +910,8 @@ ph_prevalence_shift <- function(
         },
         b = as.integer(res$b),
         p_perm = as.numeric(res$p_perm),
-        mean_delta = as.numeric(res$mean_delta),
-        frac_delta_pos = as.numeric(res$frac_delta_pos),
-        mean_delta_w = as.numeric(res$mean_delta_w),
+        max_delta       = as.numeric(res$max_delta),
+        frac_delta_pos  = as.numeric(res$frac_delta_pos),
         frac_delta_pos_w = as.numeric(res$frac_delta_pos_w),
         !!paste0("fold_change_", fold_change) := fc_val,
         !!paste0("cross_prev_", cross_prev) := cp_val
@@ -1031,8 +1031,8 @@ ph_prevalence_shift <- function(
       T_obs = numeric(), T_obs_stand = numeric(), Z_from_p = numeric(),
       p_perm = numeric(), b = integer(),
       p_adj_rank = numeric(),
-      mean_delta = numeric(), frac_delta_pos = numeric(),
-      mean_delta_w = numeric(), frac_delta_pos_w = numeric(),
+      max_delta = numeric(), frac_delta_pos = numeric(),
+      frac_delta_pos_w = numeric(),
       category_rank_bh = character()
     ))
   }
@@ -1062,7 +1062,7 @@ ph_prevalence_shift <- function(
       n_subjects_paired, n_peptides_used, m_eff,
       T_obs, T_obs_stand, Z_from_p, p_perm, b,
       p_adj_rank,
-      mean_delta, frac_delta_pos, mean_delta_w, frac_delta_pos_w,
+      max_delta, frac_delta_pos, frac_delta_pos_w,
       dplyr::any_of(paste0("fold_change_", fold_change)),
       dplyr::any_of(paste0("cross_prev_", cross_prev)),
       category_rank_bh
