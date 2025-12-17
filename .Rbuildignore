@@ -8,3 +8,4 @@
 ^local-data$
 ^local-cache$
 ^dev$
+^.pr_agent.toml$

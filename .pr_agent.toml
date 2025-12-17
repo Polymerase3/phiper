@@ -1,0 +1,22 @@
+[pr_code_suggestions]
+demand_code_suggestions_self_review = true
+suggestions_depth='exhaustive'
+extra_instructions="""
+- don't give suggestions about link being broken
+"""
+
+[pr_description] # /describe #
+enable_pr_diagram=true
+
+[pr_reviewer]
+require_todo_scan=true
+
+[github_app]
+pr_commands = [
+    "/describe --pr_description.final_update_message=false",
+    "/improve"
+]
+
+push_commands = [
+    "/describe",
+]
