@@ -10,3 +10,4 @@
 ^codemeta\.json$
 ^README\.Rmd$
 ^dev$
+^.pr_agent.toml$
