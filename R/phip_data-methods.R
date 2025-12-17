@@ -230,6 +230,8 @@ get_peptide_library <- function(x) {
 #' @export
 export_parquet <- function(x, path) {
   .check_pd(x)
+  .chk_extension(path, "path", c("parquet", "parq", "pq", "pqt"))
+  .chk_path(dirname(path), "path", is_dir=TRUE)
 
   .chk_cond(
     get_backend(x) != "duckdb",

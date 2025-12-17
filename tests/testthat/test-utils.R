@@ -83,6 +83,35 @@ test_that(".chk_path validates path + ext", {
   )
 })
 
+test_that(".chk_path works for folders", {
+  tmp <- withr::local_tempdir()
+
+  # Default is is_dir=FALSE
+  expect_error(
+    .chk_path(tmp, "arg")
+  )
+
+  # Explicit *file* check
+  expect_error(
+    .chk_path(tmp, "arg", is_dir=FALSE)
+  )
+
+  # Correct folder check
+  expect_silent(
+    .chk_path(tmp, "arg", is_dir=TRUE)
+  )
+
+  # Both folder and extension should fail
+  expect_error(
+    .chk_path(tmp, "arg", c("txt", "pqt"), is_dir=TRUE)
+  )
+
+  # Non existing directory should fail
+  expect_error(
+    .chk_path("this/path/should/definetly/not/exist", "arg", is_dir=TRUE)
+  )
+})
+
 # -------------------------------------------------------------------------
 # word_list / add_quotes ---------------------------------------------------
 # -------------------------------------------------------------------------

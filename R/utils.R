@@ -243,7 +243,8 @@
 # -- validate path to file -----------------------------------------------------
 .chk_path <- function(path,
                       arg_name,
-                      extension) {
+                      extension,
+                      is_dir = FALSE) {
   ## error when path not a string
   .chk_cond(
     !chk::vld_string(path),
@@ -253,15 +254,32 @@
   )
 
   ## error when path does not exist
-  .chk_cond(
-    !chk::vld_file(path),
-    sprintf("File for `%s` does not exist.", arg_name),
-    step    = "path validation",
-    bullets = sprintf("path: %s", path)
-  )
+  if (is_dir) {
+    .chk_cond(
+      !chk::vld_dir(path),
+      sprintf("Folder for `%s` does not exist.", arg_name),
+      step    = "path validation",
+      bullets = sprintf("path: %s", path)
+    )
+  } else {
+    .chk_cond(
+      !chk::vld_file(path),
+      sprintf("File for `%s` does not exist.", arg_name),
+      step    = "path validation",
+      bullets = sprintf("path: %s", path)
+    )
+  }
 
   # optionally extension check if provided
   if (!missing(extension) && length(extension)) {
+      ## error when both is_dir and extension are given
+      .chk_cond(
+        is_dir,
+        sprintf("Can't check if `%s` is both a valid direcotry and has a certain extension", arg_name),
+        step    = "path validation",
+        bullets = sprintf("path: %s", path)
+      )
+
     .chk_extension(
       path,
       arg_name,

@@ -1,0 +1,47 @@
+skip_if_not_installed("chk")
+
+# -------------------------------------------------------------------------
+# export_parquet ----------------------------------------------------------
+# -------------------------------------------------------------------------
+test_that("export_parquet sanity checks", {
+  # Must export a phip_data object
+  tmp_path <- withr::local_tempfile(fileext = ".parquet")
+  expect_error(
+    phiper::export_parquet(123, tmp_path)
+  )
+
+  df = phiper::phip_load_example_data()
+
+  # Output path should be file (not folder)
+  tmp_dir <- withr::local_tempdir()
+  expect_error(
+    phiper::export_parquet(df, tmp_dir)
+  )
+
+  # Invalid output path extension
+  expect_error(
+    phiper::export_parquet(df, withr::local_tempfile(fileext = ".txt"))
+  )
+  expect_error(
+    phiper::export_parquet(df, withr::local_tempfile(fileext = ".csv"))
+  )
+  expect_error(
+    phiper::export_parquet(df, withr::local_tempfile(fileext = ".tsv"))
+  )
+  expect_error(
+    phiper::export_parquet(df, withr::local_tempfile(fileext = ".rdata"))
+  )
+})
+
+test_that("export_parquet exports as expected", {
+  tmp_path <- withr::local_tempfile(fileext = ".parquet")
+  df = phiper::phip_load_example_data()
+
+  expect_silent(
+    phiper::export_parquet(df, tmp_path)
+  )
+
+  exported_df = read_parquet(tmp_path)
+
+  expect_true(all.equal(df$data_long |> collect(), exported_df))
+})
