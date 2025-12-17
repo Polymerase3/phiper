@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
 [![Codecov test coverage](https://codecov.io/gh/Polymerase3/phiper/graph/badge.svg)](https://app.codecov.io/gh/Polymerase3/phiper)
 [![R-CMD-check](https://github.com/Polymerase3/phiper/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Polymerase3/phiper/actions/workflows/R-CMD-check.yaml)
 [![pkgcheck](https://github.com/Polymerase3/phiper/workflows/pkgcheck/badge.svg)](https://github.com/Polymerase3/phiper/actions?query=workflow%3Apkgcheck)
-[![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+[![Project Status: Active/Unstable](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 
 <!-- badges: end -->
@@ -40,7 +40,7 @@ pak::pak("Polymerase3/phiper")
 devtools::install_github("Polymerase3/phiper")
 ```
 
-## Minimal example
+## Usage
 
 For testing, exploration, and minimal examples we provide the `phip_mixture` dataset. It is a simulated PhIP-Seq–like antibody repertoire for two groups (A, B) and two time points (T1, T2), with per-subject, per-peptide presence/absence (`exist`) plus corresponding read counts and fold changes. The dataset is generated from a simple mixture of rare and common peptide prevalences with Poisson-distributed counts and is intended solely for testing and illustrative examples, without any biological interpretation.
 
@@ -147,11 +147,4 @@ Bug reports, feature requests, and questions are welcome. Please open an issue o
 
 - <https://github.com/Polymerase3/phiper/issues>
 
-If you would like to contribute code:
-
-1. Fork the repository and create a feature branch.
-2. Make your changes, including tests and documentation where appropriate.
-3. Ensure that `R CMD check` passes locally (or via GitHub Actions).
-4. Open a pull request describing the changes and their motivation.
-
-We are happy to review contributions and discuss design choices in the issue tracker or pull requests.
+If you’d like to contribute, please read [CONTRIBUTING.md](CONTRIBUTING.md).

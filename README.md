@@ -8,7 +8,7 @@ coverage](https://codecov.io/gh/Polymerase3/phiper/graph/badge.svg)](https://app
 [![R-CMD-check](https://github.com/Polymerase3/phiper/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Polymerase3/phiper/actions/workflows/R-CMD-check.yaml)
 [![pkgcheck](https://github.com/Polymerase3/phiper/workflows/pkgcheck/badge.svg)](https://github.com/Polymerase3/phiper/actions?query=workflow%3Apkgcheck)
 [![Project Status:
-Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+Active/Unstable](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 
@@ -34,7 +34,7 @@ pak::pak("Polymerase3/phiper")
 devtools::install_github("Polymerase3/phiper")
 ```
 
-## Minimal example
+## Usage
 
 For testing, exploration, and minimal examples we provide the
 `phip_mixture` dataset. It is a simulated PhIP-Seq–like antibody
@@ -130,15 +130,15 @@ plot_enrichment_counts(
   interaction_only  = TRUE,
   annotation_size   = 3
 )
-#> [15:36:06] INFO  Plotting enrichment counts (<phip_data>)
+#> [15:47:57] INFO  Plotting enrichment counts (<phip_data>)
 #>                  -> group_cols: 'group', 'time'
-#> [15:36:06] INFO  building enrichment count plot
+#> [15:47:57] INFO  building enrichment count plot
 #>                  -> grouping variable: '..phip_interaction..'
-#> [15:36:06] OK    plot built
-#> [15:36:06] OK    building enrichment count plot - done
-#>                  -> elapsed: 0.147s
-#> [15:36:06] OK    Plotting enrichment counts (<phip_data>) - done
+#> [15:47:57] OK    plot built
+#> [15:47:57] OK    building enrichment count plot - done
 #>                  -> elapsed: 0.151s
+#> [15:47:57] OK    Plotting enrichment counts (<phip_data>) - done
+#>                  -> elapsed: 0.155s
 ```
 
 <img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" />
@@ -162,29 +162,29 @@ alpha <- compute_alpha_diversity(
   group_interaction = TRUE,
   interaction_only  = TRUE
 )
-#> [15:36:07] INFO  Peptide library attached on main connection
+#> [15:47:58] INFO  Peptide library attached on main connection
 #>                    - available columns: peptide_id, aa_seq, pos, len_seq,
 #>                      Fullname, Description, is_IEDB_or_cntrl, is_auto …(+22)
-#> [15:36:07] INFO  Computing alpha diversity (<phip_data>)
+#> [15:47:58] INFO  Computing alpha diversity (<phip_data>)
 #>                  -> group_cols: 'group', 'time'; ranks: 'peptide_id'
-#> [15:36:07] OK    Computing alpha diversity (<phip_data>) - done
-#>                  -> elapsed: 0.115s
+#> [15:47:58] OK    Computing alpha diversity (<phip_data>) - done
+#>                  -> elapsed: 0.116s
 
 head(alpha)
 #> $`group * time`
 #> # A tibble: 80 × 7
 #>    rank       sample_id phip_interaction subject_id richness simpson_diversity
 #>    <chr>      <chr>     <chr>            <chr>         <int>             <dbl>
-#>  1 peptide_id B_T2_1    B * T2           1               262             0.996
-#>  2 peptide_id A_T1_14   A * T1           14              209             0.995
-#>  3 peptide_id B_T1_15   B * T1           15              165             0.994
-#>  4 peptide_id B_T1_17   B * T1           17              146             0.993
-#>  5 peptide_id B_T2_17   B * T2           17              285             0.996
-#>  6 peptide_id B_T1_20   B * T1           20              170             0.994
-#>  7 peptide_id B_T1_22   B * T1           22              177             0.994
-#>  8 peptide_id B_T1_23   B * T1           23              157             0.994
-#>  9 peptide_id A_T1_5    A * T1           5               192             0.995
-#> 10 peptide_id B_T2_8    B * T2           8               275             0.996
+#>  1 peptide_id B_T1_13   B * T1           13              141             0.993
+#>  2 peptide_id A_T2_13   A * T2           13              333             0.997
+#>  3 peptide_id B_T2_13   B * T2           13              282             0.996
+#>  4 peptide_id B_T2_22   B * T2           22              317             0.997
+#>  5 peptide_id B_T2_23   B * T2           23              303             0.997
+#>  6 peptide_id B_T1_3    B * T1           3               174             0.994
+#>  7 peptide_id B_T2_5    B * T2           5               283             0.996
+#>  8 peptide_id A_T1_6    A * T1           6               187             0.995
+#>  9 peptide_id B_T1_7    B * T1           7               169             0.994
+#> 10 peptide_id A_T2_8    A * T2           8               310             0.997
 #> # ℹ 70 more rows
 #> # ℹ 1 more variable: shannon_diversity <dbl>
 ```
@@ -205,10 +205,10 @@ plot_alpha_diversity(
       hjust = 1
     )
   )
-#> [15:36:07] INFO  plotting alpha diversity (precomputed)
+#> [15:47:58] INFO  plotting alpha diversity (precomputed)
 #>                  -> metric: richness
-#> [15:36:07] OK    plotting alpha diversity (precomputed) - done
-#>                  -> elapsed: 0.071s
+#> [15:47:58] OK    plotting alpha diversity (precomputed) - done
+#>                  -> elapsed: 0.073s
 ```
 
 <img src="man/figures/README-unnamed-chunk-9-1.png" width="100%" />
@@ -220,13 +220,5 @@ issue on the GitHub tracker:
 
 - <https://github.com/Polymerase3/phiper/issues>
 
-If you would like to contribute code:
-
-1.  Fork the repository and create a feature branch.
-2.  Make your changes, including tests and documentation where
-    appropriate.
-3.  Ensure that `R CMD check` passes locally (or via GitHub Actions).
-4.  Open a pull request describing the changes and their motivation.
-
-We are happy to review contributions and discuss design choices in the
-issue tracker or pull requests.
+If you’d like to contribute, please read
+[CONTRIBUTING.md](CONTRIBUTING.md).
