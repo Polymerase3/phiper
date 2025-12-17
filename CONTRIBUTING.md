@@ -1,7 +1,6 @@
 # Contributing to phiper
 
 This outlines how to propose a change to phiper.
-For a detailed discussion on contributing to this and other tidyverse packages, please see the [development contributing guide](https://rstd.io/tidy-contrib) and our [code review principles](https://code-review.tidyverse.org/).
 
 ## Fixing typos
 
@@ -39,9 +38,3 @@ See our guide on [how to create a great issue](https://code-review.tidyverse.org
 
 *  We use [testthat](https://cran.r-project.org/package=testthat) for unit tests. 
    Contributions with test cases included are easier to accept.  
-
-## Code of Conduct
-
-Please note that the phiper project is released with a
-[Contributor Code of Conduct](CODE_OF_CONDUCT.md). By contributing to this
-project you agree to abide by its terms.
