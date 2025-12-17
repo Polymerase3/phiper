@@ -6,12 +6,18 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  # Manually trigger the Action under Actions/pkgcheck
-  workflow_dispatch:
-  # Run on every push to main
   push:
-    branches:
-      - main
+    paths:
+      - "R/**"              # any R source file
+      - "tests/**"          # testthat files
+      - "DESCRIPTION"       # bumping version, deps, etc.
+      - "NAMESPACE"         # roxygenise output
+  pull_request:
+    paths:
+      - "R/**"
+      - "tests/**"
+      - "DESCRIPTION"
+      - "NAMESPACE"
 
 jobs:
   pkgcheck:
