@@ -253,3 +253,204 @@ testthat::test_that("compute_distance bray agrees with vegan and manual", {
   }
   testthat::expect_equal(as.numeric(d), v, tolerance = 1e-10)
 })
+
+
+# helper: compute a distance object with abundances attached
+.get_dist_for_pcoa <- function(ps_small,
+                               value_col_preferred = c("fold_change", "exist"),
+                               norm = "hellinger",
+                               distance = "bray") {
+
+  dat <- if("phip_data" %in% class(ps_small)) ps_small$data_long else ps_small
+  cols <- dplyr::tbl_vars(dat)
+  val_col <- NULL
+  for (nm in value_col_preferred) {
+    if (nm %in% cols) {
+      val_col <- nm
+      break
+    }
+  }
+  if (is.null(val_col)) testthat::skip("example data_long has neither
+                                       fold_change nor exist")
+
+  suppressWarnings(compute_distance(
+    ps_small,
+    value_col = val_col,
+    method_normalization = norm,
+    distance = distance,
+    n_threads = 1L
+  ))
+}
+
+testthat::test_that("compute_pcoa returns expected structure and types", {
+
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
+
+  res <- suppressWarnings(compute_pcoa(
+    d,
+    neg_correction = "none",
+    n_axes = 5L,
+    top_features = 30L
+  ))
+
+  testthat::expect_s3_class(res, "beta_pcoa")
+  testthat::expect_true(is.list(res))
+
+  testthat::expect_true(all(c("sample_coords", "eigenvalues", "var_explained", "feature_loadings") %in% names(res)))
+
+  testthat::expect_s3_class(res$sample_coords, "tbl_df")
+  testthat::expect_true("sample_id" %in% names(res$sample_coords))
+  testthat::expect_true(is.numeric(res$eigenvalues))
+  testthat::expect_s3_class(res$var_explained, "tbl_df")
+  testthat::expect_equal(nrow(res$var_explained), 1L)
+  testthat::expect_s3_class(res$feature_loadings, "tbl_df")
+
+  # sample_coords rows should match dist size
+  n <- attr(d, "Size")
+  testthat::expect_equal(nrow(res$sample_coords), n)
+
+  # pcoa axes count should be <= min(n_axes, n - 1)
+  k_expected <- min(5L, n - 1L)
+  axis_cols <- grep("^PCoA\\d+$", names(res$sample_coords), value = TRUE)
+  testthat::expect_equal(length(axis_cols), k_expected)
+
+  # var_explained should contain %Other and %PCoA* columns for returned axes
+  testthat::expect_true("%Other" %in% names(res$var_explained))
+  if (k_expected > 0L) {
+    testthat::expect_true(all(paste0("%PCoA", seq_len(k_expected)) %in%
+                                names(res$var_explained)))
+  }
+})
+
+testthat::test_that("compute_pcoa errors for dist objects with < 2 samples", {
+
+  d1 <- stats::dist(matrix(1, nrow = 1))
+  testthat::expect_error(
+    compute_pcoa(d1),
+    regexp = "(?i)at least 2 samples"
+  )
+})
+
+testthat::test_that("compute_pcoa validates inputs (chk)", {
+
+  testthat::expect_error(
+    compute_pcoa("not_a_dist"),
+    regexp = "(?i)dist|s3|class|chk"
+  )
+
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small)
+
+  testthat::expect_error(
+    compute_pcoa(d, n_axes = 0L),
+    regexp = "(?i)n_axes|gt|positive|chk"
+  )
+
+  testthat::expect_error(
+    compute_pcoa(d, top_features = 0L),
+    regexp = "(?i)top_features|gt|positive|chk"
+  )
+
+  testthat::expect_error(
+    compute_pcoa(d, neg_correction = "nope"),
+    regexp = "(?i)neg_correction|arg|match"
+  )
+})
+
+testthat::test_that("compute_pcoa uses all requested axes up to n-1
+                    (no hard cap at 10)", {
+
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small)
+
+  n <- attr(d, "Size")
+  testthat::expect_true(n >= 2L)
+
+  n_axes_req <- 12L
+  k_expected <- min(n_axes_req, n - 1L)
+
+  res <- suppressWarnings(compute_pcoa(d, n_axes = n_axes_req,
+                                       top_features = 10L))
+  axis_cols <- grep("^PCoA\\d+$", names(res$sample_coords), value = TRUE)
+
+  testthat::expect_equal(length(axis_cols), k_expected)
+
+  # if the data has enough samples, this would fail with the old hard cap of 10
+  if ((n - 1L) >= 12L) {
+    testthat::expect_true("PCoA12" %in% axis_cols)
+  }
+})
+
+testthat::test_that("compute_pcoa feature_loadings: skips when abundances
+                    missing", {
+
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small)
+
+  # remove abundances attribute
+  attr(d, "abundances") <- NULL
+
+  res <- suppressWarnings(compute_pcoa(d, n_axes = 3L, top_features = 10L))
+  testthat::expect_s3_class(res$feature_loadings, "tbl_df")
+  testthat::expect_equal(nrow(res$feature_loadings), 0L)
+})
+
+testthat::test_that("compute_pcoa feature_loadings: returns expected columns and respects top_features logic", {
+
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small)
+
+  res <- suppressWarnings(compute_pcoa(d, n_axes = 3L, top_features = 2L))
+
+  fl <- res$feature_loadings
+  # may still be empty if alignment fails, but on example data it should work
+  testthat::expect_true(is.data.frame(fl))
+  if (nrow(fl) > 0L) {
+    testthat::expect_true("feature" %in% names(fl))
+    testthat::expect_true(all(paste0("PCoA", 1:3) %in% names(fl)))
+    testthat::expect_equal(length(unique(fl$feature)), nrow(fl))
+
+    # selection is union of top_features per axis, so upper bound is top_features * n_axes
+    testthat::expect_lte(nrow(fl), 2L * 3L)
+  }
+})
+
+testthat::test_that("compute_pcoa reproducibility: repeated runs match across parameter combinations", {
+
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small)
+
+  combos <- list(
+    list(neg = "none",     n_axes = 3L, top = 10L),
+    list(neg = "none",     n_axes = 5L, top = 5L)
+  )
+
+  if (rlang::is_installed("vegan")) {
+    combos <- c(
+      combos,
+      list(list(neg = "lingoes",  n_axes = 3L, top = 10L)),
+      list(list(neg = "cailliez", n_axes = 3L, top = 10L))
+    )
+  }
+
+  for (cmb in combos) {
+    r1 <- withr::with_seed(123, suppressWarnings(compute_pcoa(
+      d,
+      neg_correction = cmb$neg,
+      n_axes = cmb$n_axes,
+      top_features = cmb$top
+    )))
+    r2 <- withr::with_seed(123, suppressWarnings(compute_pcoa(
+      d,
+      neg_correction = cmb$neg,
+      n_axes = cmb$n_axes,
+      top_features = cmb$top
+    )))
+
+    testthat::expect_equal(r1$sample_coords, r2$sample_coords, tolerance = 1e-12)
+    testthat::expect_equal(r1$eigenvalues, r2$eigenvalues, tolerance = 1e-12)
+    testthat::expect_equal(r1$var_explained, r2$var_explained, tolerance = 1e-12)
+    testthat::expect_equal(r1$feature_loadings, r2$feature_loadings, tolerance = 1e-12)
+  }
+})
