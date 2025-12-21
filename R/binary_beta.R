@@ -103,7 +103,6 @@
 #'   dplyr::collect()
 #'
 #' # compute distances (needs either 'parallelDist' or 'vegan')
-#' if (rlang::is_installed("parallelDist") || rlang::is_installed("vegan")) {
 #'   val_col <- if ("counts_hits" %in% dplyr::tbl_vars(ps_small)) {
 #'     "counts_hits"
 #'   } else {
@@ -121,7 +120,7 @@
 #'   a <- attr(d, "abundances")
 #'   a[1:min(5, nrow(a)), 1:min(5, ncol(a)), drop = FALSE]
 #' }
-#' }
+#' @export
 compute_distance <- function(ps,
                              value_col = NULL,
                              method_normalization = c("auto", "relative",
@@ -331,127 +330,177 @@ compute_distance <- function(ps,
   dist_obj
 }
 
-#' @title Principal Coordinates Analysis (PCoA) on a Distance Matrix
-#' @description
-#' Performs PCoA on a distance matrix (typically from \code{compute_distance()}),
-#' optionally correcting for negative eigenvalues, and returns coordinates,
-#' eigenvalues, variance explained, and feature loadings.
+#' @title Principal Components Analysis (PCoA) on a Distance Matrix
+#' @description Performs PCoA on a distance matrix (typically from
+#' \code{compute_distance()}), optionally correcting for negative eigenvalues,
+#' and returns coordinates, eigenvalues, variance explained, and feature
+#' loadings.
 #'
-#' @param dist_obj A \code{dist} object returned by \code{compute_distance()}.
-#'   The normalized abundance matrix used to compute the distances is expected
-#'   to be attached as an attribute \code{"abundances"} (a numeric matrix with
-#'   samples in rows and features in columns).
-#' @param neg_correction Method for adjusting negative eigenvalues (if any).
-#'   One of \code{"none"}, \code{"lingoes"}, or \code{"cailliez"}.
-#'   Default is \code{"none"} (no correction). If set to \code{"lingoes"}
-#'   or \code{"cailliez"}, the \pkg{vegan} package is required.
-#' @param n_axes Number of principal coordinate axes to return in the
-#'   sample scores. Default is 5.
-#' @param top_features Integer number of top features to return in loadings
-#'   (based on highest absolute scores on any axis). Default is 30.
+#' @param dist_obj a \code{dist} object (for example returned by
+#'   \code{compute_distance()}). The normalized abundance matrix used to compute
+#'   the distances is attached as attribute \code{"abundances"} (numeric
+#'   matrix with samples in rows and features in columns). If missing, feature
+#'   loadings are skipped.
+#' @param neg_correction character scalar. Method for adjusting negative
+#'   eigenvalues (if any). One of \code{"none"}, \code{"lingoes"}, or
+#'   \code{"cailliez"}. Default is \code{"none"}.
+#' @param n_axes integer scalar. Number of pcoa axes to return in the sample
+#'   scores. Must be > 0. Internally, \code{k = min(n_axes, n_samples - 1)}.
+#' @param top_features integer scalar. Number of features to keep per axis when
+#'   reporting loadings. Features are selected by taking the union of the top
+#'   \code{top_features} features (by absolute loading) for each returned axis.
+#'   Must be > 0.
 #'
-#' @return A list of class \code{"beta_pcoa"} with elements:
-#' \item{sample_coords}{A tibble with sample coordinates on the first
-#'   \code{n_axes} PCoA axes. Includes \code{sample_id} and one column per axis
-#'   (\code{PCoA1}, \code{PCoA2}, ...).}
-#' \item{eigenvalues}{Numeric vector of all eigenvalues from the PCoA.}
-#' \item{var_explained}{A one-row tibble summarizing the percentage of
-#'   variation explained by the first \code{n_axes} axes and the remainder
-#'   as \code{\%Other}. Percentages are computed from the sum of positive
-#'   eigenvalues.}
-#' \item{feature_loadings}{A tibble of top feature loadings for the first
-#'   \code{n_axes} axes. Each row is a feature, with columns for each axis
-#'   showing the feature's loading. Only the top \code{top_features} features
-#'   (by absolute loading on at least one axis) are included. Empty if the
-#'   \code{"abundances"} attribute is missing or cannot be aligned.}
+#' @return a list of class \code{"beta_pcoa"} with elements:
+#' \itemize{
+#'   \item \code{sample_coords}: tibble with \code{sample_id} and columns
+#'     \code{PCoA1}, \code{PCoA2}, ... up to \code{n_axes} (or fewer if
+#'     \code{n_samples - 1} is smaller).
+#'   \item \code{eigenvalues}: numeric vector of eigenvalues from the pcoa.
+#'   \item \code{var_explained}: one-row tibble with percent variance explained
+#'     by the returned axes and \code{%Other}. percentages are computed from the
+#'     sum of positive eigenvalues.
+#'   \item \code{feature_loadings}: tibble of feature loadings for the returned
+#'     axes (empty if \code{"abundances"} is missing or cannot be aligned).
+#' }
 #'
 #' @details
-#' Negative eigenvalues indicate that the distances are not perfectly
-#' Euclidean. If \code{neg_correction} is \code{"lingoes"} or \code{"cailliez"},
-#' a correction is applied before PCoA using \code{vegan::wcmdscale()}.
-#' The variance explained is computed using only positive eigenvalues.
+#' Negative eigenvalues indicate that the distances are not perfectly euclidean.
+#' If \code{neg_correction} is \code{"lingoes"} or \code{"cailliez"}, a
+#' correction is applied via \code{vegan::wcmdscale(add = ...)}.
 #'
-#' Feature loadings are computed as weighted averages of sample scores,
-#' where weights are the feature abundances across samples (the normalized
-#' abundance matrix attached as an attribute to \code{dist_obj}).
+#' Feature loadings are computed as abundance-weighted averages of sample
+#' scores:
+#' \code{t(X) %*% U / colSums(X)}, where \code{X} is the abundance matrix and
+#' \code{U} are the sample coordinates.
 #'
 #' @examples
-#' \dontrun{
-#'   dist_bc <- compute_distance(ps, value_col = "counts_hit",
-#'                               method_normalization = "hellinger",
-#'                               distance = "bray")
+#' \donttest{
+#' # compute a distance matrix with an attached abundance matrix
+#' # build an example <phip_data> object from the package example dataset
+#' phip_path <- phip_example_path()
 #'
-#'   pcoa_res <- compute_pcoa(dist_bc, neg_correction = "none", n_axes = 3)
+#' ps <- phip_convert(
+#'   data_long_path    = phip_path,
+#'   backend           = "duckdb",
+#'   peptide_library   = TRUE,
+#'   subject_id        = "subject_id",
+#'   peptide_id        = "peptide_id",
+#'   sample_id         = "sample_id",
+#'   exist             = "exist",
+#'   timepoint         = "timepoint_factor",
+#'   fold_change       = "fold_change",
+#'   materialise_table = TRUE,
+#'   auto_expand       = TRUE,
+#'   n_cores           = 2
+#' )
+#'
+#' # small subset for speed: 5 peptides at time t1
+#' keep_pep <- c("16627", "5243", "24799", "16196", "18003")
+#' dat_cols <- dplyr::tbl_vars(ps$data_long)
+#' tp_col <- "time"
+#'
+#' ps_small <- ps %>%
+#'   dplyr::filter(
+#'     peptide_id %in% keep_pep,
+#'     !!rlang::sym(tp_col) == "T1"
+#'   ) %>%
+#'   dplyr::collect()
+#'
+#' # compute distances (needs either 'parallelDist' or 'vegan')
+#'   val_col <- if ("counts_hits" %in% dplyr::tbl_vars(ps_small)) {
+#'     "counts_hits"
+#'   } else {
+#'     "exist"
+#'   }
+#'
+#'   d <- compute_distance(
+#'     ps_small,
+#'     value_col = val_col,
+#'     method_normalization = "hellinger",
+#'     distance = "bray",
+#'     n_threads = 2L
+#'   )
+#'
+#'   pcoa_res <- compute_pcoa(dist_bc, neg_correction = "none", n_axes = 3L)
 #'   pcoa_res$sample_coords
 #'   pcoa_res$var_explained
 #'   pcoa_res$feature_loadings
 #' }
+#' @export
 compute_pcoa <- function(dist_obj,
                          neg_correction = c("none", "lingoes", "cailliez"),
-                         n_axes = 5,
-                         top_features = 30) {
+                         n_axes = 5L,
+                         top_features = 30L) {
+  # ---------------------------------------------------------------------------
+  # 1) input validation
+  # ---------------------------------------------------------------------------
+  chk::chk_s3_class(dist_obj, "dist")
   neg_correction <- match.arg(neg_correction)
+  chk::chk_count(n_axes)
+  chk::chk_gt(n_axes, 0)
+  chk::chk_count(top_features)
+  chk::chk_gt(top_features, 0)
 
-  # ---------------------------------------------------------------------------
-  # 1) Check that dist_obj is a proper dist from compute_distance()
-  # ---------------------------------------------------------------------------
-  if (!inherits(dist_obj, "dist")) {
-    .ph_abort(
-      "`dist_obj` must be a `dist` object (e.g. returned by `compute_distance()`).",
-      step = "compute_pcoa"
-    )
+  n <- attr(dist_obj, "Size")
+  if (is.null(n) || n < 2L) {
+    .ph_abort("`dist_obj` must contain at least 2 samples.", step = "compute_pcoa")
   }
 
-  d <- dist_obj
-  n <- attr(d, "Size")
-  labels <- attr(d, "Labels")
+  labels <- attr(dist_obj, "Labels")
+  if (is.null(labels) || length(labels) != n) {
+    labels <- as.character(seq_len(n))
+  }
 
-  # vegan requirement if correction requested
+  # vegan is only required when negative eigenvalue correction is requested
   if (!identical(neg_correction, "none") && !rlang::is_installed("vegan")) {
     .ph_abort(
       paste0(
-        "Negative eigenvalue correction ('", neg_correction,
-        "') requires the 'vegan' package."
+        "negative eigenvalue correction ('", neg_correction,
+        "') requires the suggested package 'vegan'."
       ),
       step = "compute_pcoa"
     )
   }
 
   # ---------------------------------------------------------------------------
-  # 2) PCoA computation
+  # 2) pcoa computation
   # ---------------------------------------------------------------------------
   .ph_log_info(
-    "Performing Principal Coordinates Analysis",
+    "performing principal coordinates analysis",
     step = "compute_pcoa",
     bullets = if (identical(neg_correction, "none")) NULL else
       paste("using", neg_correction, "correction")
   )
 
-  k_cmd <- min(max(1L, n_axes), n - 1L)
+  # cmdscale requires k in [1, n - 1]
+  k_cmd <- min(n_axes, n - 1L)
 
   pcoa_fit <- if (identical(neg_correction, "none")) {
-    stats::cmdscale(d, eig = TRUE, k = k_cmd)
+    stats::cmdscale(dist_obj, eig = TRUE, k = k_cmd)
   } else {
-    vegan::wcmdscale(d, eig = TRUE, k = k_cmd, add = neg_correction)
+    vegan::wcmdscale(dist_obj, eig = TRUE, k = k_cmd, add = neg_correction)
   }
 
-  eig_vals <- as.numeric(pcoa_fit$eig %||% numeric(0L))
+  eig_vals <- pcoa_fit$eig
+  if (is.null(eig_vals)) eig_vals <- numeric(0L)
+  eig_vals <- as.numeric(eig_vals)
 
   coords <- as.matrix(pcoa_fit$points)
   if (is.null(coords)) {
-    coords <- matrix(0, nrow = n, ncol = 0)
+    coords <- matrix(0, nrow = n, ncol = 0L)
   }
 
+  # enforce stable axis and sample naming
   if (ncol(coords) > 0L) {
     colnames(coords) <- paste0("PCoA", seq_len(ncol(coords)))
   }
-
-  if (!is.null(labels) && nrow(coords) == length(labels)) {
+  if (nrow(coords) == n) {
     rownames(coords) <- labels
   }
 
   # ---------------------------------------------------------------------------
-  # 3) Sample coordinates (first n_axes)
+  # 3) sample coordinates (first n_axes, or fewer)
   # ---------------------------------------------------------------------------
   k_use <- min(n_axes, ncol(coords))
   coords_k <- if (k_use > 0L) {
@@ -468,14 +517,18 @@ compute_pcoa <- function(dist_obj,
   sample_coords <- tibble::as_tibble(coords_k, rownames = "sample_id")
 
   # ---------------------------------------------------------------------------
-  # 4) Variance explained table
+  # 4) variance explained (based on positive eigenvalues)
   # ---------------------------------------------------------------------------
   pos_eig <- pmax(eig_vals, 0)
   sum_pos <- sum(pos_eig, na.rm = TRUE)
 
-  if (sum_pos > 0) {
+  if (sum_pos > 0 && k_use > 0L) {
     pct_axes <- 100 * pos_eig[seq_len(k_use)] / sum_pos
-    pct_other <- 100 * sum(pos_eig[-seq_len(k_use)], na.rm = TRUE) / sum_pos
+    pct_other <- if (length(pos_eig) > k_use) {
+      100 * sum(pos_eig[(k_use + 1L):length(pos_eig)], na.rm = TRUE) / sum_pos
+    } else {
+      0
+    }
   } else {
     pct_axes <- rep(NA_real_, k_use)
     pct_other <- NA_real_
@@ -487,16 +540,19 @@ compute_pcoa <- function(dist_obj,
   )
 
   # ---------------------------------------------------------------------------
-  # 5) Feature loadings (use abundances attribute from dist_obj)
+  # 5) feature loadings (requires abundances attribute)
   # ---------------------------------------------------------------------------
   feature_loadings <- tibble::tibble()
 
   X <- attr(dist_obj, "abundances")
   if (is.null(X)) {
     .ph_warn(
-      "No 'abundances' attribute found on `dist_obj`; skipping feature loadings.",
+      "no 'abundances' attribute found on `dist_obj`; skipping feature loadings.",
       step = "compute_pcoa"
     )
+  } else if (k_use < 1L) {
+    # no axes, nothing to load
+    feature_loadings <- tibble::tibble()
   } else {
     X <- as.matrix(X)
 
@@ -505,7 +561,7 @@ compute_pcoa <- function(dist_obj,
 
     if (is.null(coords_ids) || is.null(X_ids)) {
       .ph_warn(
-        "Row names missing in coordinates or 'abundances'; cannot align samples for feature loadings.",
+        "row names missing in coordinates or 'abundances'; cannot align samples for feature loadings.",
         step = "compute_pcoa"
       )
     } else {
@@ -513,21 +569,21 @@ compute_pcoa <- function(dist_obj,
 
       if (length(common_ids) < 2L) {
         .ph_warn(
-          "Insufficient overlap between distance labels and abundance rows; skipping feature loadings.",
+          "insufficient overlap between distance labels and abundance rows; skipping feature loadings.",
           step = "compute_pcoa"
         )
       } else {
-        # Use up to min(n_axes, ncol(coords), 10) axes for loadings
-        ax_idx <- seq_len(min(n_axes, ncol(coords), 10L))
+        # compute loadings for all returned axes (no hard cap)
+        ax_idx <- seq_len(k_use)
         U <- coords[common_ids, ax_idx, drop = FALSE]
         Xsub <- X[common_ids, , drop = FALSE]
 
-        # weights: total abundance per feature
+        # keep features with nonzero total weight
         w <- colSums(Xsub, na.rm = TRUE)
         keep_feats <- which(w > 0)
 
         if (length(keep_feats) > 0L) {
-          # crossprod: features x axes
+          # feature x axis loadings: weighted mean of sample scores
           S <- t(Xsub[, keep_feats, drop = FALSE]) %*% U
           S <- sweep(S, 1, w[keep_feats], "/")
 
@@ -536,23 +592,21 @@ compute_pcoa <- function(dist_obj,
 
           load_tbl <- tibble::as_tibble(S, rownames = "feature")
 
-          if (!is.null(top_features) && is.finite(top_features)) {
-            ax_names <- colnames(U)
-            top_list <- unique(unlist(lapply(seq_along(ax_names), function(j) {
-              ord <- order(abs(S[, j]), decreasing = TRUE)
-              head(rownames(S)[ord], top_features)
-            })))
-            load_tbl <- dplyr::filter(load_tbl, .data$feature %in% top_list)
-          }
+          # select up to top_features per axis, then take the union
+          ax_names <- colnames(U)
+          top_list <- unique(unlist(lapply(seq_along(ax_names), function(j) {
+            ord <- order(abs(S[, j]), decreasing = TRUE)
+            head(rownames(S)[ord], top_features)
+          })))
 
-          feature_loadings <- load_tbl
+          feature_loadings <- dplyr::filter(load_tbl, .data$feature %in% top_list)
         }
       }
     }
   }
 
   # ---------------------------------------------------------------------------
-  # 6) Return
+  # 6) return
   # ---------------------------------------------------------------------------
   result <- list(
     sample_coords    = sample_coords,
@@ -562,8 +616,7 @@ compute_pcoa <- function(dist_obj,
   )
   class(result) <- "beta_pcoa"
 
-  .ph_log_info("PCoA analysis complete.", step = "compute_pcoa")
-
+  .ph_log_info("pcoa analysis complete.", step = "compute_pcoa")
   result
 }
 
