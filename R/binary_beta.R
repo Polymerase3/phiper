@@ -1,55 +1,184 @@
-#' @return A \code{dist} object containing pairwise distances between samples.
-#'   The normalized abundance matrix used to compute the distances is attached
-#'   as an attribute \code{"abundances"}.
+#' @title Compute Pairwise Sample Distances
+#'
+#' @description This function builds a sample-by-feature abundance matrix from a
+#' \code{phip_data} object (using \code{ps$data_long}), optionally normalizes
+#' the matrix, and then computes pairwise distances between samples.
+#'
+#' The normalized abundance matrix used for distance calculation is attached
+#' to the returned \code{dist} object as attribute \code{"abundances"}.
+#'
+#' Note: this function collects \code{ps$data_long} into memory and pivots to a
+#' wide matrix in r. This can be large for big cohorts and/or large peptide
+#' sets.
+#'
+#' @param ps input data. either:
+#'   \itemize{
+#'     \item a \code{phip_data} object, in which case \code{ps$data_long} is
+#'     used, or
+#'     \item a \code{data_long}-like table (a data.frame or dplyr \code{tbl})
+#'       containing at least \code{sample_id}, \code{peptide_id}, and the column
+#'       given by \code{value_col}.
+#'   }
+#'
+#' @param value_col character scalar. Name of the abundance column in
+#' \code{ps$data_long}. If \code{NULL}, the function tries (in order)
+#' \code{exist},  \code{counts_hit}, \code{counts_input}, \code{fold_change}.
+#'
+#' @param method_normalization character scalar. normalization applied to the
+#' abundance matrix before distance computation. one of:
+#' \itemize{
+#'   \item \code{"auto"}: uses \code{"none"} for binary (0/1) data, otherwise
+#'     uses \code{"relative"}.
+#'   \item \code{"relative"}: divide each row by its row sum.
+#'   \item \code{"hellinger"}: \code{sqrt(relative)}.
+#'   \item \code{"log"}: \code{log1p} transform.
+#'   \item \code{"none"}: no normalization.
+#' }
+#'
+#' @param distance character scalar. distance method name. the string is
+#'   lowercased internally.
+#'
+#'   supported methods depend on which packages are installed:
+#'
+#'   - fast path (if package 'parallelDist' is installed):
+#'     * "bray" (bray-curtis). Computed via threaded l1 distances and
+#'       normalization (equivalent to bray-curtis on the normalized matrix).
+#'     * "euclidean"
+#'     * "minkowski"
+#'     * "manhattan"
+#'     * "canberra"
+#'     * "binary"
+#'     * "maximum" (maximum/supremum/chebyshev distance). Note: 'parallelDist'
+#'       documents this as method "maximum"; passing "chebyshev" may fail unless
+#'       you map it to "maximum" before calling parDist().
+#'     * "cosine"
+#'
+#'   - fallback path (requires package 'vegan'). Any method supported by
+#'   vegan::vegdist(), partial match allowed:
+#'     "manhattan", "euclidean", "canberra", "clark", "bray", "kulczynski",
+#'     "jaccard", "gower", "altGower", "morisita", "horn", "mountford", "raup",
+#'     "binomial", "chao", "cao", "mahalanobis", "chisq", "chord", "hellinger",
+#'     "aitchison", "robust.aitchison".
+#'
+#'   if 'parallelDist' is installed but the requested method is not in the fast
+#'   list above, the function falls back to vegan::vegdist().
+#'
+#' @param n_threads integer scalar. Number of cpu threads passed to
+#' \code{parallelDist::parDist(threads = ...)}.
+#'
+#' @return a \code{dist} object of pairwise sample distances. The attribute
+#' \code{"abundances"} contains the normalized abundance matrix used for the
+#' calculation (rows are samples, columns are features).
+#'
+#' @examples
+#' \donttest{
+#' # build an example <phip_data> object from the package example dataset
+#' phip_path <- phip_example_path()
+#'
+#' ps <- phip_convert(
+#'   data_long_path    = phip_path,
+#'   backend           = "duckdb",
+#'   peptide_library   = TRUE,
+#'   subject_id        = "subject_id",
+#'   peptide_id        = "peptide_id",
+#'   sample_id         = "sample_id",
+#'   exist             = "exist",
+#'   timepoint         = "timepoint_factor",
+#'   fold_change       = "fold_change",
+#'   materialise_table = TRUE,
+#'   auto_expand       = TRUE,
+#'   n_cores           = 2
+#' )
+#'
+#' # small subset for speed: 5 peptides at time t1
+#' keep_pep <- c("16627", "5243", "24799", "16196", "18003")
+#' dat_cols <- dplyr::tbl_vars(ps$data_long)
+#' tp_col <- "time"
+#'
+#' ps_small <- ps %>%
+#'   dplyr::filter(
+#'     peptide_id %in% keep_pep,
+#'     !!rlang::sym(tp_col) == "T1"
+#'   ) %>%
+#'   dplyr::collect()
+#'
+#' # compute distances (needs either 'parallelDist' or 'vegan')
+#' if (rlang::is_installed("parallelDist") || rlang::is_installed("vegan")) {
+#'   val_col <- if ("counts_hits" %in% dplyr::tbl_vars(ps_small)) {
+#'     "counts_hits"
+#'   } else {
+#'     "exist"
+#'   }
+#'
+#'   d <- compute_distance(
+#'     ps_small,
+#'     value_col = val_col,
+#'     method_normalization = "hellinger",
+#'     distance = "bray",
+#'     n_threads = 2L
+#'   )
+#'
+#'   a <- attr(d, "abundances")
+#'   a[1:min(5, nrow(a)), 1:min(5, ncol(a)), drop = FALSE]
+#' }
+#' }
 compute_distance <- function(ps,
                              value_col = NULL,
                              method_normalization = c("auto", "relative",
-                                                      "hellinger", "log", "none"),
+                                                      "hellinger", "log",
+                                                      "none"),
                              distance = "bray",
-                             n_threads = 1L,
-                             drop_all_zero_features = TRUE) {
+                             n_threads = 1L) {
+  # ----------------------------------------------------------------------------
+  # input validation (chk)
+  # ----------------------------------------------------------------------------
+  if (!is.null(value_col)) chk::chk_string(value_col)
+  chk::chk_character(method_normalization)
+  chk::chk_string(distance)
+  chk::chk_count(n_threads)
+  chk::chk_gt(n_threads, 0)
+
   method_normalization <- match.arg(method_normalization)
+  dist_method <- tolower(distance)
 
-  # ---------------------------------------------------------------------------
-  # 1) Basic checks and column selection
-  # ---------------------------------------------------------------------------
-  if (!inherits(ps, "phip_data")) {
-    .ph_abort("Input `ps` must be a <phip_data> object.",
-              step = "compute_distance")
+  # if ps is <phip_data>, overwrite ps with ps$data_long;
+  # otherwise treat ps as data_long
+  if (inherits(ps, "phip_data")) {
+    chk::chk_not_null(ps$data_long)
+    ps <- ps$data_long
   }
 
-  dat <- ps$data_long
-  if (is.null(dat)) {
-    .ph_abort("`ps$data_long` is missing. Cannot construct abundance matrix.",
-              step = "compute_distance")
-  }
-
+  # ----------------------------------------------------------------------------
+  # 1) column selection and basic structure checks
+  # ----------------------------------------------------------------------------
+  dat <- ps
   dat_cols <- dplyr::tbl_vars(dat)
 
-  # Decide which abundance column to use -------------------------------------
+  # decide which abundance column to use
   if (is.null(value_col)) {
-    candidates <- c("counts_hit", "counts_input", "fold_change", "counts")
+    candidates <- c("exist", "counts_hits", "counts_control", "fold_change")
     hit <- candidates[candidates %in% dat_cols]
     if (length(hit) == 0L) {
       .ph_abort(
         paste0(
-          "Could not infer an abundance column in `ps$data_long`. ",
-          "Tried: ", paste(candidates, collapse = ", "),
-          ". Please specify `value_col` explicitly."
+          "could not infer an abundance column in `ps$data_long`. ",
+          "tried: ", paste(candidates, collapse = ", "),
+          ". please specify `value_col` explicitly."
         ),
         step = "compute_distance"
       )
     }
     value_col <- hit[1L]
     .ph_log_info(
-      paste0("Auto-detected `value_col = \"", value_col, "\"` from `ps$data_long`."),
+      paste0("auto-detected `value_col = \"", value_col,
+             "\"` from `ps$data_long`."),
       step = "compute_distance"
     )
   }
 
   if (!value_col %in% dat_cols) {
     .ph_abort(
-      paste0("Column `", value_col, "` not found in `ps$data_long`."),
+      paste0("column `", value_col, "` not found in `ps`."),
       step = "compute_distance"
     )
   }
@@ -58,33 +187,59 @@ compute_distance <- function(ps,
   missing_cols  <- setdiff(required_cols, dat_cols)
   if (length(missing_cols) > 0L) {
     .ph_abort(
-      paste0("Missing required column(s) in `ps$data_long`: ",
+      paste0("missing required column(s) in `ps`: ",
              paste(missing_cols, collapse = ", ")),
       step = "compute_distance"
     )
   }
 
   .ph_log_info(
-    paste0("Building abundance matrix from `ps$data_long` using `", value_col, "`."),
+    paste0("building abundance matrix from `ps` using `",
+           value_col, "`."),
     step = "compute_distance"
   )
 
   value_sym <- rlang::sym(value_col)
 
-  # ---------------------------------------------------------------------------
-  # 2) Collect only needed columns and pivot in R (fast, avoids slow DB pivot)
-  # ---------------------------------------------------------------------------
-  .ph_log_info("Collecting long table (sample_id, peptide_id, value).",
+  # ----------------------------------------------------------------------------
+  # 2) collect only needed columns and pivot in r
+  # ----------------------------------------------------------------------------
+  .ph_log_info("collecting long table (sample_id, peptide_id, value).",
                step = "compute_distance")
 
   dat_small <- dat |>
     dplyr::select(sample_id, peptide_id, !!value_sym) |>
     dplyr::collect()
 
-  # Replace NAs with 0 in abundance column
+  # basic sanity checks on collected data
+  if (anyNA(dat_small$sample_id) || anyNA(dat_small$peptide_id)) {
+    .ph_abort(
+      "`ps` contains missing values in `sample_id` and/or
+      `peptide_id`.",
+      step = "compute_distance"
+    )
+  }
+
+  # duplicates will break pivot_wider (or create list-cols); require uniqueness
+  if (anyDuplicated(dat_small[, c("sample_id", "peptide_id")]) > 0L) {
+    .ph_abort(
+      "found duplicated (sample_id, peptide_id) pairs in `ps`.",
+      step = "compute_distance"
+    )
+  }
+
+  # replace nas with 0 in abundance column
   dat_small[[value_col]][is.na(dat_small[[value_col]])] <- 0
 
-  .ph_log_info("Pivoting to wide abundance matrix in R.",
+  # ensure abundance is numeric
+  if (!is.numeric(dat_small[[value_col]])) {
+    .ph_abort(
+      paste0("`", value_col, "` must be numeric after collect()."),
+      step = "compute_distance"
+    )
+  }
+
+  .ph_log_info("pivoting to wide abundance matrix in r.",
                step = "compute_distance")
 
   wide_df <- dat_small |>
@@ -96,7 +251,7 @@ compute_distance <- function(ps,
     )
 
   if (!"sample_id" %in% names(wide_df)) {
-    .ph_abort("Failed to construct wide abundance table (no `sample_id`).",
+    .ph_abort("failed to construct wide abundance table (no `sample_id`).",
               step = "compute_distance")
   }
 
@@ -106,44 +261,27 @@ compute_distance <- function(ps,
 
   if (nrow(mat) == 0L || ncol(mat) == 0L) {
     .ph_abort(
-      "Abundance matrix is empty after reshaping. ",
-      "Check filters and `value_col`.",
+      "abundance matrix is empty after reshaping. check filters and
+      `value_col`.",
       step = "compute_distance"
     )
   }
 
-  # Optional: drop all-zero features (they carry no information) ------------
-  if (isTRUE(drop_all_zero_features)) {
-    cs <- colSums(mat, na.rm = TRUE)
-    keep <- cs != 0
-    if (!all(keep)) {
-      dropped <- sum(!keep)
-      mat <- mat[, keep, drop = FALSE]
-      .ph_log_info(
-        paste0(
-          "Dropped ", dropped,
-          " all-zero features before distance computation."
-        ),
-        step = "compute_distance"
-      )
-    }
-  }
-
   .ph_log_info(
-    paste0("Abundance matrix has ", nrow(mat), " samples and ",
+    paste0("abundance matrix has ", nrow(mat), " samples and ",
            ncol(mat), " features after preprocessing."),
     step = "compute_distance"
   )
 
   # ---------------------------------------------------------------------------
-  # 3) Normalization
+  # 3) normalization
   # ---------------------------------------------------------------------------
   if (identical(method_normalization, "auto")) {
     vals <- mat[!is.na(mat)]
     is_binary_data <- length(vals) > 0L && all(vals == 0 | vals == 1)
     method_normalization <- if (is_binary_data) "none" else "relative"
     .ph_log_info(
-      paste("Auto normalization selected -> using", method_normalization),
+      paste0("auto normalization selected -> using ", method_normalization),
       step = "compute_distance"
     )
   }
@@ -165,63 +303,29 @@ compute_distance <- function(ps,
   )
 
   # ---------------------------------------------------------------------------
-  # 4) Distance computation
+  # 4) distance computation
   # ---------------------------------------------------------------------------
-  dist_method <- tolower(distance)
   .ph_log_info(
-    paste("Computing distance:", toupper(dist_method)),
+    paste0("computing distance: ", dist_method),
     step = "compute_distance"
-  )
-
-  pd_supported <- c(
-    "euclidean", "minkowski", "manhattan", "canberra",
-    "binary", "maximum", "cosine", "chebyshev"
   )
 
   dist_obj <- NULL
 
-  if (dist_method == "bray" && rlang::is_installed("parallelDist")) {
-    # Bray-Curtis via threaded Manhattan
-    d_L1 <- parallelDist::parDist(norm_mat, method = "manhattan",
-                                  threads = n_threads)
-
-    s <- rowSums(norm_mat)
-    n <- length(s)
-    denom <- numeric(n * (n - 1L) / 2L)
-    k <- 1L
-    for (i in seq_len(n - 1L)) {
-      ni <- n - i
-      denom[k:(k + ni - 1L)] <- s[i] + s[(i + 1L):n]
-      k <- k + ni
-    }
-
-    bc_vals <- as.numeric(d_L1) / denom
-    dist_obj <- d_L1
-    dist_obj[] <- bc_vals
-
-  } else if (rlang::is_installed("parallelDist") &&
-             dist_method %in% pd_supported) {
-
+  if (rlang::is_installed("parallelDist")) {
     dist_obj <- parallelDist::parDist(
       norm_mat,
       method  = dist_method,
       threads = n_threads
     )
-
   } else {
-    if (!rlang::is_installed("vegan")) {
-      .ph_abort(
-        "Requested distance method requires 'vegan'. Please install it.",
-        step = "compute_distance"
-      )
-    }
     dist_obj <- vegan::vegdist(norm_mat, method = dist_method)
   }
 
-  .ph_log_info("Distance matrix computation complete.",
+  .ph_log_info("distance matrix computation complete.",
                step = "compute_distance")
 
-  ## --- NEW: attach normalized abundance matrix as attribute ----------------
+  # attach normalized abundance matrix as attribute
   attr(dist_obj, "abundances") <- norm_mat
 
   dist_obj
@@ -2024,7 +2128,7 @@ compute_dispersion <- function(dist_obj,
 #' The function expects that rows/columns (or labels) of the distance
 #' object correspond to `sample_id`s present in `ps$data_long`.
 #'
-#' @param ps A [`phip_data`] object.
+#' @param ps A `phip_data` object.
 #' @param dist_obj A sample-wise distance object. Can be either:
 #'   * a [`dist`] object (e.g. from [compute_distance()]), or
 #'   * a numeric, symmetric matrix with row/column names giving `sample_id`s.
