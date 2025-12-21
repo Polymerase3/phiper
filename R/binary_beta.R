@@ -304,6 +304,8 @@ compute_distance <- function(ps,
   # ---------------------------------------------------------------------------
   # 4) distance computation
   # ---------------------------------------------------------------------------
+  if (dist_method == "chebyshev") dist_method <- "maximum"
+
   .ph_log_info(
     paste0("computing distance: ", dist_method),
     step = "compute_distance"
@@ -311,12 +313,38 @@ compute_distance <- function(ps,
 
   dist_obj <- NULL
 
-  if (rlang::is_installed("parallelDist")) {
+  pd_methods <- c(
+    "bray", "euclidean", "minkowski", "manhattan", "canberra",
+    "binary", "maximum", "cosine"
+  )
+
+  vegan_methods <- c(
+    "manhattan", "euclidean", "canberra", "clark", "bray", "kulczynski",
+    "jaccard", "gower", "altgower", "morisita", "horn", "mountford", "raup",
+    "binomial", "chao", "cao", "mahalanobis", "chisq", "chord", "hellinger",
+    "aitchison", "robust.aitchison"
+  )
+
+  use_pd <- dist_method %in% pd_methods
+
+  if (use_pd) {
+    if (!rlang::is_installed("parallelDist")) {
+      .ph_abort(
+        paste0(
+          "`distance = \"", distance, "\"` requires the suggested package
+          'parallelDist'. ",
+          "Please install 'parallelDist' or choose a vegan::vegdist() method."
+        ),
+        step = "compute_distance"
+      )
+    }
+
     dist_obj <- parallelDist::parDist(
       norm_mat,
       method  = dist_method,
       threads = n_threads
     )
+
   } else {
     dist_obj <- vegan::vegdist(norm_mat, method = dist_method)
   }
