@@ -44,7 +44,8 @@ Suggests:
     testthat (>= 3.0.0),
     yaml,
     withr,
-    ggpubr
+    ggpubr,
+    parallelDist
 Config/testthat/edition: 3
 Imports: 
     chk,
