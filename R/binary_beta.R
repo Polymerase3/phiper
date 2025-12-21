@@ -432,9 +432,9 @@ compute_pcoa <- function(dist_obj,
                          neg_correction = c("none", "lingoes", "cailliez"),
                          n_axes = 5L,
                          top_features = 30L) {
-  # ---------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
   # 1) input validation
-  # ---------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
   chk::chk_s3_class(dist_obj, "dist")
   neg_correction <- match.arg(neg_correction)
   chk::chk_count(n_axes)
@@ -444,7 +444,8 @@ compute_pcoa <- function(dist_obj,
 
   n <- attr(dist_obj, "Size")
   if (is.null(n) || n < 2L) {
-    .ph_abort("`dist_obj` must contain at least 2 samples.", step = "compute_pcoa")
+    .ph_abort("`dist_obj` must contain at least 2 samples.",
+              step = "compute_pcoa")
   }
 
   labels <- attr(dist_obj, "Labels")
@@ -452,20 +453,9 @@ compute_pcoa <- function(dist_obj,
     labels <- as.character(seq_len(n))
   }
 
-  # vegan is only required when negative eigenvalue correction is requested
-  if (!identical(neg_correction, "none") && !rlang::is_installed("vegan")) {
-    .ph_abort(
-      paste0(
-        "negative eigenvalue correction ('", neg_correction,
-        "') requires the suggested package 'vegan'."
-      ),
-      step = "compute_pcoa"
-    )
-  }
-
-  # ---------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
   # 2) pcoa computation
-  # ---------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
   .ph_log_info(
     "performing principal coordinates analysis",
     step = "compute_pcoa",
@@ -499,9 +489,9 @@ compute_pcoa <- function(dist_obj,
     rownames(coords) <- labels
   }
 
-  # ---------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
   # 3) sample coordinates (first n_axes, or fewer)
-  # ---------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
   k_use <- min(n_axes, ncol(coords))
   coords_k <- if (k_use > 0L) {
     coords[, seq_len(k_use), drop = FALSE]
@@ -516,9 +506,9 @@ compute_pcoa <- function(dist_obj,
 
   sample_coords <- tibble::as_tibble(coords_k, rownames = "sample_id")
 
-  # ---------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
   # 4) variance explained (based on positive eigenvalues)
-  # ---------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
   pos_eig <- pmax(eig_vals, 0)
   sum_pos <- sum(pos_eig, na.rm = TRUE)
 
@@ -539,15 +529,16 @@ compute_pcoa <- function(dist_obj,
     c(as.list(round(pct_axes, 3)), `%Other` = round(pct_other, 3))
   )
 
-  # ---------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
   # 5) feature loadings (requires abundances attribute)
-  # ---------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
   feature_loadings <- tibble::tibble()
 
   X <- attr(dist_obj, "abundances")
   if (is.null(X)) {
     .ph_warn(
-      "no 'abundances' attribute found on `dist_obj`; skipping feature loadings.",
+      "no 'abundances' attribute found on `dist_obj`;
+      skipping feature loadings.",
       step = "compute_pcoa"
     )
   } else if (k_use < 1L) {
@@ -561,7 +552,8 @@ compute_pcoa <- function(dist_obj,
 
     if (is.null(coords_ids) || is.null(X_ids)) {
       .ph_warn(
-        "row names missing in coordinates or 'abundances'; cannot align samples for feature loadings.",
+        "row names missing in coordinates or 'abundances'; cannot align samples
+        for feature loadings.",
         step = "compute_pcoa"
       )
     } else {
@@ -569,11 +561,12 @@ compute_pcoa <- function(dist_obj,
 
       if (length(common_ids) < 2L) {
         .ph_warn(
-          "insufficient overlap between distance labels and abundance rows; skipping feature loadings.",
+          "insufficient overlap between distance labels and abundance rows;
+          skipping feature loadings.",
           step = "compute_pcoa"
         )
       } else {
-        # compute loadings for all returned axes (no hard cap)
+        # compute loadings for all returned axes
         ax_idx <- seq_len(k_use)
         U <- coords[common_ids, ax_idx, drop = FALSE]
         Xsub <- X[common_ids, , drop = FALSE]
@@ -599,7 +592,8 @@ compute_pcoa <- function(dist_obj,
             head(rownames(S)[ord], top_features)
           })))
 
-          feature_loadings <- dplyr::filter(load_tbl, .data$feature %in% top_list)
+          feature_loadings <- dplyr::filter(load_tbl,
+                                            .data$feature %in% top_list)
         }
       }
     }
