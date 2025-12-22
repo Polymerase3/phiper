@@ -642,29 +642,33 @@ compute_pcoa <- function(dist_obj,
   result
 }
 
-#' @title Constrained Ordination (db-RDA / CAP) on Distance Matrix
-#' @description
-#' Performs distance-based redundancy analysis (constrained PCoA, a.k.a. CAP)
-#' on a distance matrix using \pkg{vegan}::\code{capscale}, with optional
-#' negative eigenvalue correction. Returns constrained sample scores, eigenvalues,
-#' variance partitioning, and feature loadings.
+#' @title Constrained Ordination (db-rda / cap) on Distance Matrix
+#'
+#' @description Performs distance-based redundancy analysis (constrained pcoa,
+#'   a.k.a. cap) on a distance matrix using \pkg{vegan}::\code{capscale}, with
+#'   optional negative eigenvalue correction. Returns constrained sample scores,
+#'   eigenvalues, variance partitioning, and feature loadings.
 #'
 #' @param dist_obj A \code{dist} object returned by \code{compute_distance()}.
 #'   The normalized abundance matrix used to compute the distances is expected
 #'   to be attached as an attribute \code{"abundances"} (samples in rows,
 #'   features in columns).
-#' @param ps A \code{phip_data} object providing sample-level metadata in
-#'   \code{ps$data_long}. This table must contain \code{sample_id} and all
-#'   variables referenced on the right-hand side of \code{formula}.
-#' @param formula An R formula specifying the constraints (independent variables)
-#'   for the ordination, e.g. \code{~ type_person + age}. Do not include a
+#' @param ps A \code{phip_data} object or a table providing sample-level
+#'   metadata. This table must contain \code{sample_id} and all variables
+#'   referenced on the right-hand side of \code{formula}. Note that variable
+#'   detection uses \code{all.vars(terms(formula))}, so transformed terms like
+#'   \code{log(age)} are supported as long as \code{age} exists.
+#' @param formula An R formula specifying the constraints (independent
+#'   variables) for the ordination, e.g. \code{~ sex + age}. Do not include a
 #'   response on the left-hand side; the distance matrix is provided via
 #'   \code{dist_obj}.
-#' @param neg_correction One of \code{"none"}, \code{"lingoes"}, \code{"cailliez"}.
-#'   Method for negative eigenvalue correction. Default is \code{"none"}.
-#'   This is passed to the \code{add} argument of \code{vegan::capscale()}.
-#' @param top_features Integer number of top features to return in loadings
-#'   (based on highest absolute scores on any constrained axis). Default is 30.
+#' @param neg_correction One of \code{"none"}, \code{"lingoes"},
+#'   \code{"cailliez"}. Method for negative eigenvalue correction. Default is
+#'   \code{"none"}. Passed to the \code{add} argument of
+#'   \code{vegan::capscale()}.
+#' @param top_features Integer scalar. Number of top features to return in
+#'   loadings (selected per constrained axis by absolute loading, then unioned).
+#'   Default is 30.
 #'
 #' @return A list of class \code{"beta_capscale"} with elements:
 #' \item{sample_coords}{Tibble of sample scores on constrained axes
@@ -673,71 +677,103 @@ compute_pcoa <- function(dist_obj,
 #' \item{variance_partition}{Tibble with total inertia and inertia partitioned
 #'   into constrained and unconstrained components, with their proportion of total.}
 #' \item{feature_loadings}{Tibble of top feature loadings for constrained axes
-#'   (possibly empty if the \code{"abundances"} attribute is missing or cannot be aligned).}
-#' \item{cap_model}{The full \code{vegan::capscale} model object for further
-#'   inspection (e.g., \code{summary()}, \code{anova()}, etc.).}
+#'   (possibly empty if the \code{"abundances"} attribute is missing or cannot be aligned).
+#'   To limit runtime/memory, loadings are computed for at most 10 constrained axes.}
+#' \item{cap_model}{The full \code{vegan::capscale} model object.}
 #'
 #' @examples
-#' \dontrun{
-#'   dist_bc <- compute_distance(ps, value_col = "counts_hit",
-#'                               method_normalization = "hellinger",
-#'                               distance = "bray")
+#' \donttest{
+#' phip_path <- phip_example_path()
 #'
-#'   cap_res <- compute_capscale(
-#'     dist_bc,
-#'     ps      = ps,
-#'     formula = ~ type_person + age
-#'   )
-#'   cap_res$variance_partition
-#'   cap_res$sample_coords
-#'   cap_res$feature_loadings
-#'   summary(cap_res$cap_model)
+#' ps <- phip_convert(
+#'   data_long_path    = phip_path,
+#'   backend           = "duckdb",
+#'   peptide_library   = TRUE,
+#'   subject_id        = "subject_id",
+#'   peptide_id        = "peptide_id",
+#'   sample_id         = "sample_id",
+#'   exist             = "exist",
+#'   timepoint         = "timepoint_factor",
+#'   fold_change       = "fold_change",
+#'   materialise_table = TRUE,
+#'   auto_expand       = TRUE,
+#'   n_cores           = 2
+#' )
+#'
+#' # small subset for speed: 5 peptides at time t1
+#' keep_pep <- c("16627", "5243", "24799", "16196", "18003")
+#' dat_cols <- dplyr::tbl_vars(ps$data_long)
+#' tp_col <- if ("time" %in% dat_cols) "time" else "timepoint_factor"
+#'
+#' ps_small <- ps |>
+#'   dplyr::filter(
+#'     peptide_id %in% keep_pep,
+#'     !!rlang::sym(tp_col) == "T1"
+#'   ) |>
+#'   dplyr::collect()
+#'
+#' val_col <- if ("fold_change" %in% dplyr::tbl_vars(ps_small)) {
+#'   "fold_change"
+#' } else {
+#'   "exist"
 #' }
+#'
+#' dist_bc <- compute_distance(
+#'   ps_small,
+#'   value_col = val_col,
+#'   method_normalization = "hellinger",
+#'   distance = "bray",
+#'   n_threads = 2L
+#' )
+#'
+#' # pick a simple constraint that exists in the example data (fallback order)
+#' dat <- ps_small
+#' cand <- c("group", "big_group", "type_person", "sex", "age")
+#' rhs_var <- cand[cand %in% dplyr::tbl_vars(dat)][1]
+#'
+#' cap_res <- compute_capscale(
+#'   dist_bc,
+#'   ps      = ps_small,
+#'   formula = stats::as.formula(paste0("~ ", rhs_var)),
+#'   neg_correction = "none",
+#'   top_features   = 30L
+#' )
+#'
+#' cap_res$variance_partition
+#' cap_res$sample_coords
+#' cap_res$feature_loadings
+#' }
+#' @export
 compute_capscale <- function(dist_obj,
                              ps,
                              formula,
                              neg_correction = c("none", "lingoes", "cailliez"),
-                             top_features = 30) {
+                             top_features = 30L) {
+  # ----------------------------------------------------------------------------
+  # 0) input validation
+  # ----------------------------------------------------------------------------
+  chk::chk_s3_class(dist_obj, "dist")
+  chk::chk_true(inherits(formula, "formula"))
   neg_correction <- match.arg(neg_correction)
-
-  if (!inherits(formula, "formula")) {
-    .ph_abort("`formula` must be an R formula (e.g., ~ group + time).",
-              step = "compute_capscale")
-  }
-
-  if (!inherits(dist_obj, "dist")) {
-    .ph_abort(
-      "`dist_obj` must be a `dist` object (e.g. returned by `compute_distance()`).",
-      step = "compute_capscale"
-    )
-  }
-
-  if (!inherits(ps, "phip_data")) {
-    .ph_abort("`ps` must be a <phip_data> object.",
-              step = "compute_capscale")
-  }
-
-  if (!rlang::is_installed("vegan")) {
-    .ph_abort("`compute_capscale()` requires the 'vegan' package.",
-              step = "compute_capscale")
-  }
+  chk::chk_count(top_features)
+  chk::chk_gt(top_features, 0)
 
   # ---------------------------------------------------------------------------
-  # 1) Distance + labels
+  # 1) distance + labels
   # ---------------------------------------------------------------------------
   d <- dist_obj
   labels <- attr(d, "Labels")
-  n      <- attr(d, "Size")
+  n <- attr(d, "Size")
 
-  # Abundance matrix (normalized) from dist attributes (may be NULL)
+  # abundance matrix from dist attributes (may be null)
   X_all <- attr(dist_obj, "abundances")
 
   # ---------------------------------------------------------------------------
-  # 2) Metadata from ps$data_long + alignment + NA handling
+  # 2) metadata from ps + variable checks + alignment + na handling
   # ---------------------------------------------------------------------------
-  dat <- ps$data_long
+  dat <- if("phip_data" %in% class(ps)) ps$data_long else ps
   if (is.null(dat)) {
-    .ph_abort("`ps$data_long` is missing. Cannot construct metadata.",
+    .ph_abort("`ps` is missing. cannot construct metadata.",
               step = "compute_capscale")
   }
 
@@ -747,20 +783,23 @@ compute_capscale <- function(dist_obj,
               step = "compute_capscale")
   }
 
-  # RHS terms from formula (constraints)
-  rhs_terms <- attr(stats::terms(formula), "term.labels")
-  if (length(rhs_terms) == 0L) {
+  # required variables from formula rhs (supports transformations like log(age))
+  vars_needed <- all.vars(stats::terms(formula))
+  vars_needed <- setdiff(vars_needed, ".") # defensive
+
+  if (length(vars_needed) == 0L) {
     .ph_abort(
-      "No constraints provided in formula (RHS is empty). Use compute_pcoa() for unconstrained ordination.",
+      "No constraints provided in formula (rhs is empty).
+      Use compute_pcoa() for unconstrained ordination.",
       step = "compute_capscale"
     )
   }
 
-  missing_vars <- setdiff(rhs_terms, dat_cols)
+  missing_vars <- setdiff(vars_needed, dat_cols)
   if (length(missing_vars) > 0L) {
     .ph_abort(
       paste0(
-        "The following variables from the formula are missing in `ps$data_long`: ",
+        "the following variables from the formula are missing in `ps`: ",
         paste(missing_vars, collapse = ", ")
       ),
       step = "compute_capscale"
@@ -768,34 +807,34 @@ compute_capscale <- function(dist_obj,
   }
 
   .ph_log_info(
-    "Building metadata from `ps$data_long`.",
+    "building metadata from `ps$data_long`.",
     step = "compute_capscale"
   )
 
-  # Wyciągamy unikalne metadane na poziomie sample
+  # sample-level metadata (one row per sample_id)
   meta_all <- dat |>
-    dplyr::select(sample_id, dplyr::all_of(rhs_terms)) |>
+    dplyr::select(sample_id, dplyr::all_of(vars_needed)) |>
     dplyr::distinct(sample_id, .keep_all = TRUE) |>
     dplyr::collect() |>
     as.data.frame()
 
   if (nrow(meta_all) == 0L) {
     .ph_abort(
-      "Constructed metadata has zero rows. Check that `ps$data_long` is not empty.",
+      "constructed metadata has zero rows. check that `ps` is not empty.",
       step = "compute_capscale"
     )
   }
 
   rownames(meta_all) <- meta_all$sample_id
 
-  # Dopasowanie metadanych do kolejności w macierzy dystansów
+  # align metadata to distance order
   if (!is.null(labels)) {
     idx <- match(labels, meta_all$sample_id)
     missing_samples <- labels[is.na(idx)]
     if (length(missing_samples) > 0L) {
       .ph_abort(
         paste0(
-          "The following samples from `dist_obj` are missing in `ps$data_long`: ",
+          "the following samples from `dist_obj` are missing in `ps`: ",
           paste(missing_samples, collapse = ", ")
         ),
         step = "compute_capscale"
@@ -805,22 +844,38 @@ compute_capscale <- function(dist_obj,
     rownames(meta_sub) <- labels
   } else {
     meta_sub <- meta_all
-    labels   <- rownames(meta_sub)
-    n        <- length(labels)
+    labels <- rownames(meta_sub)
+    n <- length(labels)
+
     .ph_warn(
-      "No labels found in `dist_obj`; assuming metadata row order matches the distance order.",
+      "no labels found in `dist_obj`; assuming metadata row order matches
+      the distance order.",
       step = "compute_capscale"
     )
+
+    # critical: propagate assumed labels to the dist object so downstream
+    # indexing works
+    if (!is.null(attr(d, "Size")) && attr(d, "Size") != n) {
+      .ph_abort(
+        paste0(
+          "cannot align distance and metadata without labels: dist size is ",
+          attr(d, "Size"),
+          " but metadata has ", n, " samples."
+        ),
+        step = "compute_capscale"
+      )
+    }
+    attr(d, "Labels") <- labels
   }
 
-  # Usuwamy próbki z NA w którejkolwiek zmiennej z formuły
-  rhs_df <- meta_sub[, rhs_terms, drop = FALSE]
-  keep   <- stats::complete.cases(rhs_df)
+  # drop samples with any missing values in required variables
+  rhs_df <- meta_sub[, vars_needed, drop = FALSE]
+  keep <- stats::complete.cases(rhs_df)
 
   if (!all(keep)) {
     dropped <- sum(!keep)
     .ph_log_info(
-      paste0("Dropping ", dropped,
+      paste0("dropping ", dropped,
              " samples with missing values in constrained variables."),
       step = "compute_capscale"
     )
@@ -829,69 +884,65 @@ compute_capscale <- function(dist_obj,
   meta_df <- meta_sub[keep, , drop = FALSE]
   if (nrow(meta_df) == 0L) {
     .ph_abort(
-      "All samples have missing values in constrained variables; cannot fit CAP.",
+      "all samples have missing values in constrained variables; cannot fit
+      cap.",
       step = "compute_capscale"
     )
   }
 
   keep_labels <- rownames(meta_df)
 
-  # ---------------------------------------------------------------------------
-  # 3) Subset distance and abundances to complete-case samples
-  # ---------------------------------------------------------------------------
-  # subset distance matrix
-  mat_d    <- as.matrix(d)
+  # ----------------------------------------------------------------------------
+  # 3) subset distance and abundances to complete-case samples
+  # ----------------------------------------------------------------------------
+  mat_d <- as.matrix(d)
   mat_d_sub <- mat_d[keep_labels, keep_labels, drop = FALSE]
-  d        <- stats::as.dist(mat_d_sub)
-  n        <- attr(d, "Size")
-  labels   <- attr(d, "Labels")
+  d <- stats::as.dist(mat_d_sub)
+  n <- attr(d, "Size")
+  labels <- attr(d, "Labels")
 
-  # subset abundances (if present)
   X_sub <- NULL
   if (!is.null(X_all)) {
     X_all <- as.matrix(X_all)
     if (!is.null(rownames(X_all))) {
-      # align by sample names
       X_sub <- X_all[keep_labels, , drop = FALSE]
     } else {
       .ph_warn(
-        "Abundance matrix has no row names; cannot align precisely with samples.",
+        "abundance matrix has no row names; cannot align precisely with
+        samples.",
         step = "compute_capscale"
       )
     }
   }
 
-  # ---------------------------------------------------------------------------
-  # 4) Build formula for capscale: d_resp ~ RHS
-  # ---------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
+  # 4) build capscale formula: d_resp ~ rhs
+  # ----------------------------------------------------------------------------
   d_resp <- d
+  cap_formula <- stats::update.formula(formula, d_resp ~ .)
+  environment(cap_formula) <- environment()
 
-  rhs_txt <- gsub("^~", "", paste(deparse(formula), collapse = " "))
-  cap_formula <- stats::as.formula(
-    paste("d_resp ~", rhs_txt),
-    env = environment()
-  )
-
-  add_arg <- if (identical(neg_correction, "none")) NULL else neg_correction
+  add_arg <- if (identical(neg_correction, "none")) FALSE else neg_correction
 
   .ph_log_info(
-    "Fitting constrained ordination (CAP/db-RDA)",
+    "fitting constrained ordination (cap/db-rda)",
     step = "compute_capscale",
     bullets = c(
-      paste("formula:", paste(deparse(formula), collapse = " ")),
-      if (!is.null(add_arg)) paste("neg_correction:", add_arg)
+      paste0("formula: ", paste(deparse(formula), collapse = " ")),
+      if (!identical(add_arg, FALSE)) paste0("neg_correction: ", add_arg)
     )
   )
 
-  # ---------------------------------------------------------------------------
-  # 5) Fit capscale model
-  # ---------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
+  # 5) fit capscale model
+  # ----------------------------------------------------------------------------
   cap_fit <- vegan::capscale(cap_formula, data = meta_df, add = add_arg)
 
-  # ---------------------------------------------------------------------------
-  # 6) Sample scores on constrained axes
-  # ---------------------------------------------------------------------------
-  rank_constrained <- cap_fit$CCA$rank %||% 0L
+  # ----------------------------------------------------------------------------
+  # 6) sample scores on constrained axes
+  # ----------------------------------------------------------------------------
+  rank_constrained <- cap_fit$CCA$rank
+  if (is.null(rank_constrained)) rank_constrained <- 0L
 
   if (rank_constrained > 0L) {
     site_scores <- vegan::scores(
@@ -901,28 +952,31 @@ compute_capscale <- function(dist_obj,
     )
     pts <- as.matrix(site_scores)
   } else {
-    pts <- matrix(0, nrow = n, ncol = 0,
+    pts <- matrix(0, nrow = n, ncol = 0L,
                   dimnames = list(labels, character(0L)))
   }
 
   if (ncol(pts) > 0L && is.null(colnames(pts))) {
     colnames(pts) <- paste0("CAP", seq_len(ncol(pts)))
   }
-
   if (!is.null(labels) && nrow(pts) == length(labels)) {
     rownames(pts) <- labels
   }
 
   sample_coords <- tibble::as_tibble(pts, rownames = "sample_id")
 
-  # ---------------------------------------------------------------------------
-  # 7) Eigenvalues and variance partition
-  # ---------------------------------------------------------------------------
-  eig_constrained <- cap_fit$CCA$eig %||% numeric()
+  # ----------------------------------------------------------------------------
+  # 7) eigenvalues and variance partition
+  # ----------------------------------------------------------------------------
+  eig_constrained <- cap_fit$CCA$eig
+  if (is.null(eig_constrained)) eig_constrained <- numeric()
 
-  tot_inertia   <- cap_fit$tot.chi
-  cons_inertia  <- cap_fit$CCA$tot.chi %||% sum(cap_fit$CCA$eig %||% 0)
-  uncon_inertia <- cap_fit$CA$tot.chi  %||% sum(cap_fit$CA$eig %||% 0)
+  tot_inertia <- cap_fit$tot.chi
+  cons_inertia <- cap_fit$CCA$tot.chi
+  if (is.null(cons_inertia)) cons_inertia <- sum(cap_fit$CCA$eig %||% 0)
+
+  uncon_inertia <- cap_fit$CA$tot.chi
+  if (is.null(uncon_inertia)) uncon_inertia <- sum(cap_fit$CA$eig %||% 0)
 
   variance_partition <- tibble::tibble(
     component  = c("Total", "Constrained", "Unconstrained"),
@@ -937,17 +991,18 @@ compute_capscale <- function(dist_obj,
   )
 
   # ---------------------------------------------------------------------------
-  # 8) Feature loadings on constrained axes (using X_sub)
+  # 8) feature loadings on constrained axes (using X_sub)
   # ---------------------------------------------------------------------------
   feature_loadings <- tibble::tibble()
 
   if (!is.null(X_sub) && rank_constrained > 0L) {
     coords_ids <- rownames(pts)
-    X_ids      <- rownames(X_sub)
+    X_ids <- rownames(X_sub)
 
     if (is.null(coords_ids) || is.null(X_ids)) {
       .ph_warn(
-        "Row names missing in sample scores or abundance matrix; cannot align for feature loadings.",
+        "row names missing in sample scores or abundance matrix; cannot align
+        for feature loadings.",
         step = "compute_capscale"
       )
     } else {
@@ -955,12 +1010,15 @@ compute_capscale <- function(dist_obj,
 
       if (length(common_ids) < 2L) {
         .ph_warn(
-          "Insufficient overlap between distance labels and abundance rows; skipping feature loadings.",
+          "insufficient overlap between distance labels and abundance rows;
+          skipping feature loadings.",
           step = "compute_capscale"
         )
       } else {
+        # to limit runtime/memory, compute loadings for at most 10 constrained
+        # axes
         ax_idx <- seq_len(min(rank_constrained, 10L))
-        U    <- pts[common_ids, ax_idx, drop = FALSE]
+        U <- pts[common_ids, ax_idx, drop = FALSE]
         Xsub <- X_sub[common_ids, , drop = FALSE]
 
         w <- colSums(Xsub, na.rm = TRUE)
@@ -975,24 +1033,22 @@ compute_capscale <- function(dist_obj,
 
           load_tbl <- tibble::as_tibble(S, rownames = "feature")
 
-          if (!is.null(top_features) && is.finite(top_features)) {
-            ax_names <- colnames(U)
-            top_list <- unique(unlist(lapply(seq_along(ax_names), function(j) {
-              ord <- order(abs(S[, j]), decreasing = TRUE)
-              head(rownames(S)[ord], top_features)
-            })))
-            load_tbl <- dplyr::filter(load_tbl, .data$feature %in% top_list)
-          }
+          ax_names <- colnames(U)
+          top_list <- unique(unlist(lapply(seq_along(ax_names), function(j) {
+            ord <- order(abs(S[, j]), decreasing = TRUE)
+            head(rownames(S)[ord], top_features)
+          })))
 
-          feature_loadings <- load_tbl
+          feature_loadings <- dplyr::filter(load_tbl,
+                                            .data$feature %in% top_list)
         }
       }
     }
   }
 
-  # ---------------------------------------------------------------------------
-  # 9) Return
-  # ---------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
+  # 9) return
+  # ----------------------------------------------------------------------------
   result <- list(
     sample_coords      = sample_coords,
     eigenvalues        = as.numeric(eig_constrained),
@@ -1002,7 +1058,7 @@ compute_capscale <- function(dist_obj,
   )
   class(result) <- "beta_capscale"
 
-  .ph_log_info("CAP analysis complete.", step = "compute_capscale")
+  .ph_log_info("cap analysis complete.", step = "compute_capscale")
 
   result
 }

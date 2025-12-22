@@ -396,7 +396,8 @@ testthat::test_that("compute_pcoa feature_loadings: skips when abundances
   testthat::expect_equal(nrow(res$feature_loadings), 0L)
 })
 
-testthat::test_that("compute_pcoa feature_loadings: returns expected columns and respects top_features logic", {
+testthat::test_that("compute_pcoa feature_loadings: returns expected columns
+                    and respects top_features logic", {
 
   ps_small <- .get_ps_small_for_distance()
   d <- .get_dist_for_pcoa(ps_small)
@@ -416,7 +417,8 @@ testthat::test_that("compute_pcoa feature_loadings: returns expected columns and
   }
 })
 
-testthat::test_that("compute_pcoa reproducibility: repeated runs match across parameter combinations", {
+testthat::test_that("compute_pcoa reproducibility: repeated runs match across
+                    parameter combinations", {
 
   ps_small <- .get_ps_small_for_distance()
   d <- .get_dist_for_pcoa(ps_small)
@@ -452,5 +454,235 @@ testthat::test_that("compute_pcoa reproducibility: repeated runs match across pa
     testthat::expect_equal(r1$eigenvalues, r2$eigenvalues, tolerance = 1e-12)
     testthat::expect_equal(r1$var_explained, r2$var_explained, tolerance = 1e-12)
     testthat::expect_equal(r1$feature_loadings, r2$feature_loadings, tolerance = 1e-12)
+  }
+})
+
+# tests/testthat/test-mcompute_capscale.R
+
+# this file assumes these helpers already exist in the test suite:
+# - .get_ps_small_for_distance()
+# - .get_dist_for_pcoa()
+
+# helper: pick a constraint variable that exists and has >=2 distinct values
+.pick_constraint_var_cap <- function(ps_small) {
+  dat <- if ("phip_data" %in% class(ps_small)) ps_small$data_long else ps_small
+  cols <- dplyr::tbl_vars(dat)
+
+  candidates <- c("group", "big_group", "type_person", "sex", "age")
+  candidates <- candidates[candidates %in% cols]
+  if (length(candidates) == 0L) return(NULL)
+
+  meta <- dat |>
+    dplyr::select(sample_id, dplyr::all_of(candidates)) |>
+    dplyr::distinct(sample_id, .keep_all = TRUE) |>
+    dplyr::collect()
+
+  for (v in candidates) {
+    x <- meta[[v]]
+    if (!all(is.na(x)) && dplyr::n_distinct(x, na.rm = TRUE) >= 2L) return(v)
+  }
+
+  NULL
+}
+
+testthat::test_that("compute_capscale: full coverage (success, warnings,
+                    errors, edge cases, reproducibility)", {
+
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
+
+  # ---------------------------------------------------------------------------
+  # 1) happy path (basic structure)
+  # ---------------------------------------------------------------------------
+  rhs_var <- .pick_constraint_var_cap(ps_small)
+
+  fml <- stats::as.formula(paste0("~ ", rhs_var))
+
+  res <- suppressWarnings(compute_capscale(
+    dist_obj = d,
+    ps = ps_small,
+    formula = fml,
+    neg_correction = "none",
+    top_features = 30L
+  ))
+
+  testthat::expect_s3_class(res, "beta_capscale")
+  testthat::expect_true(all(c(
+    "sample_coords", "eigenvalues", "variance_partition",
+    "feature_loadings", "cap_model"
+  ) %in% names(res)))
+
+  testthat::expect_s3_class(res$sample_coords, "tbl_df")
+  testthat::expect_true("sample_id" %in% names(res$sample_coords))
+  testthat::expect_true(is.numeric(res$eigenvalues))
+  testthat::expect_s3_class(res$variance_partition, "tbl_df")
+  testthat::expect_equal(nrow(res$variance_partition), 3L)
+  testthat::expect_true(all(c("component", "inertia", "proportion") %in%
+                              names(res$variance_partition)))
+  testthat::expect_s3_class(res$feature_loadings, "tbl_df")
+  testthat::expect_true(inherits(res$cap_model, "capscale"))
+
+  # "Total" proportion should be 1
+  tot_row <- res$variance_partition[res$variance_partition$component == "Total",
+                                    , drop = FALSE]
+  testthat::expect_equal(tot_row$proportion, 1)
+
+  # ---------------------------------------------------------------------------
+  # 2) reproducibility (same seed -> identical outputs)
+  # ---------------------------------------------------------------------------
+  r1 <- withr::with_seed(123, suppressWarnings(compute_capscale(
+    dist_obj = d,
+    ps = ps_small,
+    formula = fml,
+    neg_correction = "none",
+    top_features = 30L
+  )))
+  r2 <- withr::with_seed(123, suppressWarnings(compute_capscale(
+    dist_obj = d,
+    ps = ps_small,
+    formula = fml,
+    neg_correction = "none",
+    top_features = 30L
+  )))
+
+  testthat::expect_equal(r1$sample_coords, r2$sample_coords, tolerance = 1e-12)
+  testthat::expect_equal(r1$eigenvalues, r2$eigenvalues, tolerance = 1e-12)
+  testthat::expect_equal(r1$variance_partition, r2$variance_partition,
+                         tolerance = 1e-12)
+  testthat::expect_equal(r1$feature_loadings, r2$feature_loadings,
+                         tolerance = 1e-12)
+
+  # ----------------------------------------------------------------------------
+  # 3) neg_correction branches
+  # ----------------------------------------------------------------------------
+  r_lin <- suppressWarnings(compute_capscale(d, ps_small, fml,
+                                              neg_correction = "lingoes",
+                                              top_features = 10L))
+  r_cai <- suppressWarnings(compute_capscale(d, ps_small, fml,
+                                              neg_correction = "cailliez",
+                                              top_features = 10L))
+  testthat::expect_s3_class(r_lin, "beta_capscale")
+  testthat::expect_s3_class(r_cai, "beta_capscale")
+
+  # ----------------------------------------------------------------------------
+  # 4) transformed rhs terms supported (all.vars(terms()))
+  # ----------------------------------------------------------------------------
+  dat <- if ("phip_data" %in% class(ps_small)) ps_small$data_long else ps_small
+  cols <- dplyr::tbl_vars(dat)
+  if ("age" %in% cols) {
+    testthat::expect_silent(suppressWarnings(compute_capscale(
+      dist_obj = d,
+      ps = ps_small,
+      formula = ~ log(age),
+      neg_correction = "none",
+      top_features = 5L
+    )))
+  }
+
+  # ----------------------------------------------------------------------------
+  # 5) warning branches (single test file, but cover both warnings)
+  #    - no labels in dist_obj (warn)
+  #    - no abundances (feature loadings empty, no warning in your final func
+  # ----------------------------------------------------------------------------
+  d_no_labels <- d
+  attr(d_no_labels, "Labels") <- NULL
+
+  # keep "Size" intact
+  testthat::expect_warning(
+    compute_capscale(
+      dist_obj = d_no_labels,
+      ps = ps_small,
+      formula = fml,
+      neg_correction = "none",
+      top_features = 10L
+    ),
+    regexp = "(?i)no labels found"
+  )
+
+  d_no_ab <- d
+  attr(d_no_ab, "abundances") <- NULL
+  res_no_ab <- suppressWarnings(compute_capscale(
+    dist_obj = d_no_ab,
+    ps = ps_small,
+    formula = fml,
+    neg_correction = "none",
+    top_features = 10L
+  ))
+  testthat::expect_s3_class(res_no_ab$feature_loadings, "tbl_df")
+  testthat::expect_equal(nrow(res_no_ab$feature_loadings), 0L)
+
+  # ----------------------------------------------------------------------------
+  # 6) error branches (chk + .ph_abort paths)
+  # ----------------------------------------------------------------------------
+
+  # dist_obj not dist -> chk error
+  testthat::expect_error(
+    compute_capscale(dist_obj = "nope", ps = ps_small, formula = fml),
+    regexp = "(?i)dist|s3|class|chk"
+  )
+
+  # formula not formula -> chk error
+  testthat::expect_error(
+    compute_capscale(dist_obj = d, ps = ps_small, formula = "not a formula"),
+    regexp = "(?i)formula|chk|true"
+  )
+
+  # top_features invalid -> chk error
+  testthat::expect_error(
+    compute_capscale(dist_obj = d, ps = ps_small, formula = fml,
+                     top_features = 0L),
+    regexp = "(?i)top_features|gt|positive|chk"
+  )
+
+  # ps is NULL / missing -> .ph_abort
+  testthat::expect_error(
+    compute_capscale(dist_obj = d, ps = NULL, formula = fml),
+    regexp = "(?i)ps.*missing|cannot construct metadata"
+  )
+
+  # missing required variables -> .ph_abort
+  testthat::expect_error(
+    compute_capscale(dist_obj = d, ps = ps_small,
+                      formula = ~ definitely_not_a_column),
+    regexp = "(?i)missing.*variables|definitely_not_a_column"
+  )
+
+  # rhs empty -> .ph_abort
+  testthat::expect_error(
+    compute_capscale(dist_obj = d, ps = ps_small, formula = ~ 1),
+    regexp = "(?i)no constraints.*rhs is empty|unconstrained"
+  )
+
+  # ps without sample_id -> .ph_abort
+  ps_no_sid <- dat |>
+    dplyr::select(-sample_id)
+  testthat::expect_error(
+    compute_capscale(dist_obj = d, ps = ps_no_sid, formula = fml),
+    regexp = "(?i)sample_id"
+  )
+
+  # dist labels not present in ps -> .ph_abort
+  d_bad_labels <- d
+  attr(d_bad_labels, "Labels") <- paste0("not_in_ps_",
+                                         seq_len(attr(d_bad_labels, "Size")))
+  testthat::expect_error(
+    compute_capscale(dist_obj = d_bad_labels, ps = ps_small, formula = fml),
+    regexp = "(?i)missing in `ps`|missing in ps"
+  )
+
+  # all missing in constrained vars -> .ph_abort
+  # force a metadata column used in formula to be NA for all samples
+  dat_meta <- dat |>
+    dplyr::select(sample_id, dplyr::all_of(rhs_var)) |>
+    dplyr::distinct(sample_id, .keep_all = TRUE) |>
+    dplyr::collect()
+  if (nrow(dat_meta) > 0L) {
+    dat_all_na <- dat |>
+      dplyr::mutate(!!rlang::sym(rhs_var) := NA) # makes complete.cases FALSE
+
+    testthat::expect_error(
+      compute_capscale(dist_obj = d, ps = dat_all_na, formula = fml),
+      regexp = "(?i)all samples have missing values"
+    )
   }
 })
