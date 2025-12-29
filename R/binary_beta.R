@@ -1159,18 +1159,12 @@ compute_permanova <- function(dist_obj,
   chk::chk_gt(permutations, 0)
   chk::chk_character(contrasts)
   if (!is.null(baseline_level)) chk::chk_string(baseline_level)
-  
+
   # if ps is <phip_data>, overwrite ps with ps$data_long;
   # otherwise treat ps as data_long
   if (inherits(ps, "phip_data")) {
     chk::chk_not_null(ps$data_long)
     ps <- ps$data_long
-  }
-  
-  # check if vegan is installed
-  if (!rlang::is_installed("vegan")) {
-    .ph_abort("`compute_permanova()` requires the 'vegan' package.",
-              step = "compute_permanova")
   }
 
   # ---------------------------------------------------------------------------
@@ -1744,18 +1738,12 @@ compute_dispersion <- function(dist_obj,
   chk::chk_gt(permutations, 0)
   chk::chk_character(contrasts)
   if (!is.null(baseline_level)) chk::chk_string(baseline_level)
-  
+
   # if ps is <phip_data>, overwrite ps with ps$data_long;
   # otherwise treat ps as data_long
   if (inherits(ps, "phip_data")) {
     chk::chk_not_null(ps$data_long)
     ps <- ps$data_long
-  }
-  
-  # check if vegan is installed
-  if (!rlang::is_installed("vegan")) {
-    .ph_abort("`compute_dispersion()` requires the 'vegan' package.",
-              step = "compute_dispersion")
   }
 
   # ---------------------------------------------------------------------------
@@ -2223,10 +2211,6 @@ compute_dispersion <- function(dist_obj,
     return(parallelDist::parDist(mat, method = method, threads = n_threads))
   }
 
-  # vegan fallback section (not-recommended; slow)
-  if (!rlang::is_installed("vegan")) {
-    .ph_abort("Requested distance method requires 'vegan'. Please install it.")
-  }
   vegan::vegdist(mat, method = method)
 }
 
