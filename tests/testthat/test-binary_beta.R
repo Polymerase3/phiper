@@ -992,3 +992,384 @@ testthat::test_that("compute_dispersion: ps as data.frame vs phip_data", {
   ))
   testthat::expect_s3_class(res2, "beta_dispersion")
 })
+
+# tests for compute_tsne function
+
+testthat::test_that("compute_tsne: basic functionality and structure", {
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
+  
+  testthat::skip_if_not_installed("Rtsne")
+  
+  # basic t-SNE computation
+  res <- suppressWarnings(compute_tsne(
+    ps = ps_small,
+    dist_obj = d,
+    dims = 3L,
+    perplexity = 5,  # small for limited sample size
+    seed = 42
+  ))
+  
+  testthat::expect_s3_class(res, "phip_tsne")
+  testthat::expect_s3_class(res, "tbl_df")
+  testthat::expect_true(all(c("sample_id", "tSNE1", "tSNE2", "tSNE3") %in% names(res)))
+  
+  # check dimensions match distance object
+  n_samples <- attr(d, "Size")
+  testthat::expect_equal(nrow(res), n_samples)
+  
+  # check coordinates are numeric
+  testthat::expect_true(is.numeric(res$tSNE1))
+  testthat::expect_true(is.numeric(res$tSNE2))
+  testthat::expect_true(is.numeric(res$tSNE3))
+  
+  # check attributes
+  testthat::expect_identical(attr(res, "distance"), d)
+  testthat::expect_true(is.list(attr(res, "tsne_params")))
+  testthat::expect_true(is.character(attr(res, "meta_cols")))
+})
+
+testthat::test_that("compute_tsne: dims parameter controls output dimensions", {
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
+  
+  testthat::skip_if_not_installed("Rtsne")
+  
+  # 2D t-SNE
+  res2d <- suppressWarnings(compute_tsne(
+    ps = ps_small,
+    dist_obj = d,
+    dims = 2L,
+    perplexity = 5,
+    seed = 42
+  ))
+  
+  testthat::expect_true(all(c("tSNE1", "tSNE2") %in% names(res2d)))
+  testthat::expect_true(all(is.na(res2d$tSNE3)))
+  
+  # 3D t-SNE
+  res3d <- suppressWarnings(compute_tsne(
+    ps = ps_small,
+    dist_obj = d,
+    dims = 3L,
+    perplexity = 5,
+    seed = 42
+  ))
+  
+  testthat::expect_true(all(c("tSNE1", "tSNE2", "tSNE3") %in% names(res3d)))
+  testthat::expect_true(all(!is.na(res3d$tSNE3)))
+})
+
+testthat::test_that("compute_tsne: metadata attachment works correctly", {
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
+  
+  testthat::skip_if_not_installed("Rtsne")
+  
+  # find available metadata columns
+  dat <- if ("phip_data" %in% class(ps_small)) ps_small$data_long else ps_small
+  cols <- dplyr::tbl_vars(dat)
+  meta_candidates <- c("subject_id", "timepoint", "timepoint_factor", "group", "sex")
+  available_meta <- intersect(meta_candidates, cols)
+  
+  if (length(available_meta) > 0L) {
+    res <- suppressWarnings(compute_tsne(
+      ps = ps_small,
+      dist_obj = d,
+      dims = 2L,
+      perplexity = 5,
+      meta_cols = available_meta[1:min(2, length(available_meta))],
+      seed = 42
+    ))
+    
+    # check that metadata columns were attached
+    for (col in available_meta[1:min(2, length(available_meta))]) {
+      testthat::expect_true(col %in% names(res))
+    }
+  }
+})
+
+testthat::test_that("compute_tsne: matrix input works", {
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
+  
+  testthat::skip_if_not_installed("Rtsne")
+  
+  # convert dist to matrix
+  d_mat <- as.matrix(d)
+  
+  res <- suppressWarnings(compute_tsne(
+    ps = ps_small,
+    dist_obj = d_mat,
+    dims = 2L,
+    perplexity = 5,
+    seed = 42
+  ))
+  
+  testthat::expect_s3_class(res, "phip_tsne")
+  testthat::expect_equal(nrow(res), nrow(d_mat))
+})
+
+testthat::test_that("compute_tsne: reproducibility with seed", {
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
+  
+  testthat::skip_if_not_installed("Rtsne")
+  
+  res1 <- suppressWarnings(compute_tsne(
+    ps = ps_small,
+    dist_obj = d,
+    dims = 2L,
+    perplexity = 5,
+    seed = 123
+  ))
+  
+  res2 <- suppressWarnings(compute_tsne(
+    ps = ps_small,
+    dist_obj = d,
+    dims = 2L,
+    perplexity = 5,
+    seed = 123
+  ))
+  
+  testthat::expect_equal(res1$tSNE1, res2$tSNE1, tolerance = 1e-10)
+  testthat::expect_equal(res1$tSNE2, res2$tSNE2, tolerance = 1e-10)
+})
+
+testthat::test_that("compute_tsne: input validation errors", {
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
+  
+  testthat::skip_if_not_installed("Rtsne")
+  
+  # missing dist_obj
+  testthat::expect_error(
+    compute_tsne(ps = ps_small),
+    regexp = "(?i)dist_obj.*required"
+  )
+  
+  # invalid dist_obj type
+  testthat::expect_error(
+    compute_tsne(ps = ps_small, dist_obj = "not_a_distance"),
+    regexp = "(?i)dist.*object.*matrix"
+  )
+  
+  # invalid dims
+  testthat::expect_error(
+    compute_tsne(ps = ps_small, dist_obj = d, dims = 4L),
+    regexp = "(?i)dims.*2.*3"
+  )
+  
+  testthat::expect_error(
+    compute_tsne(ps = ps_small, dist_obj = d, dims = 1L),
+    regexp = "(?i)dims.*2.*3"
+  )
+  
+  # invalid perplexity
+  testthat::expect_error(
+    compute_tsne(ps = ps_small, dist_obj = d, perplexity = 0),
+    regexp = "(?i)gt|positive|chk"
+  )
+  
+  testthat::expect_error(
+    compute_tsne(ps = ps_small, dist_obj = d, perplexity = -5),
+    regexp = "(?i)gt|positive|chk"
+  )
+  
+  # invalid theta
+  testthat::expect_error(
+    compute_tsne(ps = ps_small, dist_obj = d, theta = -1),
+    regexp = "(?i)gte|chk"
+  )
+  
+  # invalid max_iter
+  testthat::expect_error(
+    compute_tsne(ps = ps_small, dist_obj = d, max_iter = 0L),
+    regexp = "(?i)gt|positive|chk"
+  )
+  
+  # invalid meta_cols
+  testthat::expect_error(
+    compute_tsne(ps = ps_small, dist_obj = d, meta_cols = 123),
+    regexp = "(?i)character|chk"
+  )
+  
+  # invalid seed
+  testthat::expect_error(
+    compute_tsne(ps = ps_small, dist_obj = d, seed = "not_numeric"),
+    regexp = "(?i)count|chk"
+  )
+  
+  # invalid check_duplicates
+  testthat::expect_error(
+    compute_tsne(ps = ps_small, dist_obj = d, check_duplicates = "not_logical"),
+    regexp = "(?i)flag|chk"
+  )
+})
+
+testthat::test_that("compute_tsne: perplexity too large gets adjusted", {
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
+  
+  testthat::skip_if_not_installed("Rtsne")
+  
+  n_samples <- attr(d, "Size")
+  
+  # perplexity >= n_samples should error
+  testthat::expect_error(
+    compute_tsne(ps = ps_small, dist_obj = d, perplexity = n_samples),
+    regexp = "(?i)perplexity.*smaller.*samples"
+  )
+  
+  # perplexity too high should warn and adjust
+  if (n_samples > 10) {
+    testthat::expect_warning(
+      compute_tsne(ps = ps_small, dist_obj = d, perplexity = n_samples - 2),
+      regexp = "(?i)perplexity.*high.*reducing"
+    )
+  }
+})
+
+testthat::test_that("compute_tsne: handles missing labels gracefully", {
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
+  
+  testthat::skip_if_not_installed("Rtsne")
+  
+  # remove labels from distance object
+  d_no_labels <- d
+  attr(d_no_labels, "Labels") <- NULL
+  
+  testthat::expect_warning(
+    res <- compute_tsne(ps = ps_small, dist_obj = d_no_labels, dims = 2L, perplexity = 5),
+    regexp = "(?i)no labels.*integer indices"
+  )
+  
+  testthat::expect_s3_class(res, "phip_tsne")
+  testthat::expect_true(all(res$sample_id %in% as.character(seq_len(attr(d, "Size")))))
+})
+
+testthat::test_that("compute_tsne: handles non-square matrix error", {
+  ps_small <- .get_ps_small_for_distance()
+  
+  testthat::skip_if_not_installed("Rtsne")
+  
+  # create non-square matrix
+  non_square <- matrix(1:12, nrow = 3, ncol = 4)
+  
+  testthat::expect_error(
+    compute_tsne(ps = ps_small, dist_obj = non_square),
+    regexp = "(?i)square.*rows.*columns"
+  )
+})
+
+testthat::test_that("compute_tsne: handles non-numeric matrix error", {
+  ps_small <- .get_ps_small_for_distance()
+  
+  testthat::skip_if_not_installed("Rtsne")
+  
+  # create non-numeric matrix
+  char_mat <- matrix(letters[1:9], nrow = 3, ncol = 3)
+  
+  testthat::expect_error(
+    compute_tsne(ps = ps_small, dist_obj = char_mat),
+    regexp = "(?i)matrix.*numeric"
+  )
+})
+
+testthat::test_that("compute_tsne: handles too few samples error", {
+  testthat::skip_if_not_installed("Rtsne")
+  
+  # create tiny distance with only 2 samples
+  tiny_dist <- stats::dist(matrix(c(1, 2), nrow = 2))
+  ps_tiny <- data.frame(sample_id = c("s1", "s2"))
+  
+  testthat::expect_error(
+    compute_tsne(ps = ps_tiny, dist_obj = tiny_dist),
+    regexp = "(?i)at least 3 samples"
+  )
+})
+
+testthat::test_that("compute_tsne: handles duplicate labels error", {
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
+  
+  testthat::skip_if_not_installed("Rtsne")
+  
+  # create distance with duplicate labels
+  d_dup <- d
+  labels <- attr(d_dup, "Labels")
+  if (length(labels) > 1) {
+    labels[2] <- labels[1]  # make duplicate
+    attr(d_dup, "Labels") <- labels
+    
+    testthat::expect_error(
+      compute_tsne(ps = ps_small, dist_obj = d_dup),
+      regexp = "(?i)unique|duplicate"
+    )
+  }
+})
+
+testthat::test_that("compute_tsne: ps as data.frame vs phip_data", {
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
+  
+  testthat::skip_if_not_installed("Rtsne")
+  
+  # test with phip_data object
+  if ("phip_data" %in% class(ps_small)) {
+    res1 <- suppressWarnings(compute_tsne(
+      ps = ps_small,
+      dist_obj = d,
+      dims = 2L,
+      perplexity = 5,
+      seed = 42
+    ))
+    testthat::expect_s3_class(res1, "phip_tsne")
+  }
+  
+  # test with data.frame directly
+  dat <- if ("phip_data" %in% class(ps_small)) ps_small$data_long else ps_small
+  res2 <- suppressWarnings(compute_tsne(
+    ps = dat,
+    dist_obj = d,
+    dims = 2L,
+    perplexity = 5,
+    seed = 42
+  ))
+  testthat::expect_s3_class(res2, "phip_tsne")
+})
+
+testthat::test_that("compute_tsne: handles missing sample_id column", {
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
+  
+  testthat::skip_if_not_installed("Rtsne")
+  
+  # remove sample_id column
+  dat <- if ("phip_data" %in% class(ps_small)) ps_small$data_long else ps_small
+  ps_no_sid <- dat |> dplyr::select(-sample_id)
+  
+  testthat::expect_error(
+    compute_tsne(ps = ps_no_sid, dist_obj = d),
+    regexp = "(?i)sample_id"
+  )
+})
+
+testthat::test_that("compute_tsne: warns about missing metadata columns", {
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
+  
+  testthat::skip_if_not_installed("Rtsne")
+  
+  testthat::expect_warning(
+    compute_tsne(
+      ps = ps_small,
+      dist_obj = d,
+      dims = 2L,
+      perplexity = 5,
+      meta_cols = c("nonexistent_column", "another_missing_col")
+    ),
+    regexp = "(?i)not present.*ignored"
+  )
+})
