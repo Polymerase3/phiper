@@ -1070,17 +1070,17 @@ compute_capscale <- function(dist_obj,
 #'
 #' @param dist_obj A \code{dist} object of distances between samples
 #'   (e.g., output of \code{compute_distance()}).
-#' @param ps A \code{phip_data} object providing sample-level metadata in
-#'   \code{ps$data_long}. This table must contain \code{sample_id} and the
+#' @param ps A \code{phip_data} object or a table providing sample-level
+#'   metadata. This table must contain \code{sample_id} and the
 #'   columns specified in \code{group_col}, \code{time_col}, and optionally
 #'   \code{subject_col}.
-#' @param group_col Name of the grouping column in \code{ps$data_long}
+#' @param group_col Name of the grouping column in \code{ps}
 #'   (between-subject factor). Use \code{NULL} if no group factor.
-#' @param time_col Name of the time factor column in \code{ps$data_long}
+#' @param time_col Name of the time factor column in \code{ps}
 #'   (within-subject factor for longitudinal data). Use \code{NULL} if not
 #'   applicable. This should be a \emph{categorical} factor for this function
 #'   (continuous time not supported).
-#' @param subject_col Name of the subject identifier column in \code{ps$data_long}
+#' @param subject_col Name of the subject identifier column in \code{ps}
 #'   (for repeated measures). Default \code{"subject_id"}. If this column is
 #'   present and \code{time_col} is provided, permutations will be stratified by
 #'   subject.
@@ -1139,6 +1139,7 @@ compute_capscale <- function(dist_obj,
 #'     baseline_level = "T0"
 #'   )
 #' }
+#' @export
 compute_permanova <- function(dist_obj,
                               ps,
                               group_col = NULL,
@@ -1291,7 +1292,7 @@ compute_permanova <- function(dist_obj,
   }
 
   # ---------------------------------------------------------------------------
-  # 3) Drop samples with NA in constrained variables (+ subject if used)
+  # drop samples with na in constrained variables (+ subject if used)
   # ---------------------------------------------------------------------------
   vars_for_na <- c(
     if (has_group) group_col else character(0L),
