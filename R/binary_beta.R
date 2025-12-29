@@ -2130,85 +2130,124 @@ compute_dispersion <- function(dist_obj,
   result
 }
 
-#' Compute t-SNE embeddings for samples
+#' @title Compute t-SNE Embeddings for Sample Distances
 #'
-#' @description
-#' Runs t-distributed stochastic neighbour embedding (t-SNE) on a
-#' sample-wise distance matrix (typically returned by [compute_distance()])
-#' and returns a tibble with t-SNE coordinates and selected sample-level
-#' metadata.
+#' @description Performs t-distributed stochastic neighbor embedding (t-SNE)
+#' on a sample distance matrix to create low-dimensional embeddings for
+#' visualization. Returns t-SNE coordinates with optional sample metadata
+#' attached.
 #'
-#' The function expects that rows/columns (or labels) of the distance
-#' object correspond to `sample_id`s present in `ps$data_long`.
+#' @param ps A \code{phip_data} object or a table providing sample-level
+#'   metadata. This table must contain \code{sample_id} and any columns
+#'   specified in \code{meta_cols}.
+#' @param dist_obj A sample distance object. Either:
+#'   \itemize{
+#'     \item A \code{dist} object (e.g., from \code{compute_distance()}).
+#'     \item A numeric, symmetric matrix with row/column names corresponding
+#'       to \code{sample_id}s.
+#'   }
+#' @param dims Integer scalar. Number of t-SNE dimensions to compute (2 or 3).
+#'   Default is 3 to enable both 2D and 3D visualizations.
+#' @param perplexity Numeric scalar. Perplexity parameter for t-SNE. Must be
+#'   smaller than the number of samples. If too large, it is automatically
+#'   reduced with a warning.
+#' @param theta Numeric scalar. Speed/accuracy tradeoff for Barnes-Hut
+#'   approximation. Default is 0.5.
+#' @param max_iter Integer scalar. Maximum number of t-SNE iterations.
+#'   Default is 1000.
+#' @param meta_cols Character vector. Column names from \code{ps} to attach
+#'   as metadata. If \code{NULL}, uses \code{ps$meta$extra_cols} when
+#'   available.
+#' @param seed Integer scalar. Random seed for reproducibility. If provided,
+#'   the seed is temporarily set and restored after computation.
+#' @param check_duplicates Logical scalar. Whether to check for duplicate
+#'   points. Default is \code{FALSE} for distance input.
+#' @param ... Additional arguments passed to \code{Rtsne::Rtsne()}.
 #'
-#' @param ps A `phip_data` object.
-#' @param dist_obj A sample-wise distance object. Can be either:
-#'   * a [`dist`] object (e.g. from [compute_distance()]), or
-#'   * a numeric, symmetric matrix with row/column names giving `sample_id`s.
-#' @param dims Integer number of t-SNE dimensions to compute (2 or 3).
-#'   Defaults to `3L` so that both 2D and 3D plots can be generated from
-#'   the same result.
-#' @param perplexity Numeric perplexity parameter passed to [Rtsne::Rtsne()].
-#'   Must be smaller than the number of samples; if it is too large, it is
-#'   automatically reduced with a warning.
-#' @param theta Speed/accuracy tradeoff for the Barnes-Hut approximation,
-#'   passed to [Rtsne::Rtsne()]. Defaults to `0.5`.
-#' @param max_iter Maximum number of iterations for t-SNE, passed to
-#'   [Rtsne::Rtsne()]. Defaults to `1000L`.
-#' @param meta_cols Optional character vector of column names in
-#'   `ps$data_long` to attach as sample-level metadata. If `NULL`
-#'   (default), the function tries to use `ps$meta$extra_cols` and keeps
-#'   the intersection with columns available in `ps$data_long`.
-#' @param seed Optional integer random seed for reproducibility. If
-#'   provided, the function temporarily sets the seed for the duration of
-#'   the t-SNE computation and restores the previous RNG state afterwards.
-#' @param check_duplicates Logical; passed to [Rtsne::Rtsne()]. For
-#'   distance input, duplicates are not expected, so the default is
-#'   `FALSE`.
-#' @param ... Additional arguments passed on to [Rtsne::Rtsne()].
-#'
-#' @return
-#' A tibble with class `c("phip_tsne", "tbl_df", "tbl", "data.frame")`
-#' containing at least:
-#' \describe{
-#'   \item{sample_id}{Sample identifier (from distance labels or matrix row names).}
-#'   \item{tSNE1, tSNE2}{t-SNE coordinates for the first two dimensions.}
-#'   \item{tSNE3}{Third t-SNE dimension if `dims >= 3`, otherwise `NA`.}
+#' @return A tibble of class \code{c("phip_tsne", "tbl_df", "tbl", "data.frame")}
+#' with columns:
+#' \itemize{
+#'   \item \code{sample_id}: Sample identifier from distance labels.
+#'   \item \code{tSNE1}, \code{tSNE2}: First two t-SNE dimensions.
+#'   \item \code{tSNE3}: Third dimension if \code{dims >= 3}, otherwise \code{NA}.
+#'   \item Additional metadata columns as specified in \code{meta_cols}.
 #' }
-#'
-#' Additional columns specified in `meta_cols` are attached by a left join
-#' on `sample_id` (one unique row per `sample_id` is enforced).
 #'
 #' Attributes:
-#' * `"distance"`: the original `dist_obj` as supplied.
-#' * `"tsne_params"`: a list of key t-SNE parameters and the original call.
-#' * `"meta_cols"`: the character vector of metadata columns actually used.
-#'
-#' @details
-#' This function runs t-SNE in *distance mode* (`is_distance = TRUE`), using
-#' the supplied distance object directly. Distance computation itself is
-#' handled elsewhere, typically via [compute_distance()].
-#'
-#' @examples
-#' \dontrun{
-#' # Assume ps is a <phip_data> and D is a distance from compute_distance():
-#' D <- compute_distance(ps, value_col = "fold_change")
-#'
-#' tsne_res <- compute_tsne(
-#'   ps       = ps,
-#'   dist_obj = D,
-#'   dims     = 3L,
-#'   perplexity = 30,
-#'   meta_cols  = c("type_person", "sex", "age")
-#' )
-#'
-#' # 2D plot, coloured by type_person
-#' plot_tsne(tsne_res, view = "2d", colour = "type_person")
-#'
-#' # 3D interactive plot (requires plotly)
-#' plot_tsne(tsne_res, view = "3d", colour = "type_person")
+#' \itemize{
+#'   \item \code{"distance"}: The original \code{dist_obj}.
+#'   \item \code{"tsne_params"}: List of t-SNE parameters and function call.
+#'   \item \code{"meta_cols"}: Character vector of metadata columns used.
 #' }
 #'
+#' @details
+#' This function runs t-SNE in distance mode (\code{is_distance = TRUE}),
+#' using the supplied distance matrix directly. The distance computation
+#' should be performed separately using \code{compute_distance()}.
+#'
+#' Samples with missing values in metadata columns are retained in the t-SNE
+#' result but will have \code{NA} values for those metadata columns.
+#'
+#' @examples
+#' \donttest{
+#' # Build example phip_data object
+#' phip_path <- phip_example_path()
+#'
+#' ps <- phip_convert(
+#'   data_long_path    = phip_path,
+#'   backend           = "duckdb",
+#'   peptide_library   = TRUE,
+#'   subject_id        = "subject_id",
+#'   peptide_id        = "peptide_id",
+#'   sample_id         = "sample_id",
+#'   exist             = "exist",
+#'   timepoint         = "timepoint_factor",
+#'   fold_change       = "fold_change",
+#'   materialise_table = TRUE,
+#'   auto_expand       = TRUE,
+#'   n_cores           = 2
+#' )
+#'
+#' # Small subset for speed
+#' keep_pep <- c("16627", "5243", "24799", "16196", "18003")
+#' dat_cols <- dplyr::tbl_vars(ps$data_long)
+#' tp_col <- "time"
+#'
+#' ps_small <- ps %>%
+#'   dplyr::filter(
+#'     peptide_id %in% keep_pep,
+#'     !!rlang::sym(tp_col) == "T1"
+#'   ) %>%
+#'   dplyr::collect()
+#'
+#' # Compute distance matrix
+#' val_col <- if ("fold_change" %in% dplyr::tbl_vars(ps_small)) {
+#'   "fold_change"
+#' } else {
+#'   "exist"
+#' }
+#'
+#' d <- compute_distance(
+#'   ps_small,
+#'   value_col = val_col,
+#'   method_normalization = "hellinger",
+#'   distance = "bray",
+#'   n_threads = 2L
+#' )
+#'
+#' # Compute t-SNE embeddings
+#' tsne_res <- compute_tsne(
+#'   ps       = ps_small,
+#'   dist_obj = d,
+#'   dims     = 3L,
+#'   perplexity = 15,
+#'   meta_cols = c("subject_id", "timepoint"),
+#'   seed     = 42
+#' )
+#'
+#' # View results
+#' head(tsne_res)
+#' }
 #' @export
 compute_tsne <- function(ps,
                          dist_obj,
@@ -2220,14 +2259,9 @@ compute_tsne <- function(ps,
                          seed = NULL,
                          check_duplicates = FALSE,
                          ...) {
-  # ---------------------------------------------------------------------------
-  # Basic checks
-  # ---------------------------------------------------------------------------
-  if (!inherits(ps, "phip_data")) {
-    .ph_abort("Input `ps` must be a <phip_data> object.",
-              step = "compute_tsne")
-  }
-
+  # ----------------------------------------------------------------------------
+  # input validation (chk)
+  # ----------------------------------------------------------------------------
   if (missing(dist_obj)) {
     .ph_abort("Argument `dist_obj` is required. Run `compute_distance()` first.",
               step = "compute_tsne")
@@ -2240,10 +2274,24 @@ compute_tsne <- function(ps,
     )
   }
 
+  chk::chk_count(dims)
   if (!dims %in% c(2L, 3L)) {
     .ph_abort("Argument `dims` must be either 2 or 3.",
               step = "compute_tsne")
   }
+
+  chk::chk_number(perplexity)
+  chk::chk_gt(perplexity, 0)
+
+  chk::chk_number(theta)
+  chk::chk_gte(theta, 0)
+
+  chk::chk_count(max_iter)
+  chk::chk_gt(max_iter, 0)
+
+  if (!is.null(meta_cols)) chk::chk_character(meta_cols)
+  if (!is.null(seed)) chk::chk_count(seed)
+  chk::chk_flag(check_duplicates)
 
   if (!rlang::is_installed("Rtsne")) {
     .ph_abort(
@@ -2252,15 +2300,19 @@ compute_tsne <- function(ps,
     )
   }
 
-  # ---------------------------------------------------------------------------
-  # Extract labels and size
-  # ---------------------------------------------------------------------------
+  # if ps is <phip_data>, validate it; otherwise treat as data table
+  if (inherits(ps, "phip_data")) {
+    chk::chk_not_null(ps$data_long)
+  }
+
+  # ----------------------------------------------------------------------------
+  # extract labels and size from distance object
+  # ----------------------------------------------------------------------------
   if (inherits(dist_obj, "dist")) {
     n_samples <- attr(dist_obj, "Size")
     labels <- attr(dist_obj, "Labels")
 
     if (is.null(labels)) {
-      # Fallback: integer sequence if labels are missing
       labels <- as.character(seq_len(n_samples))
       .ph_warn(
         "Distance object has no labels; using integer indices as `sample_id`.",
@@ -2268,7 +2320,7 @@ compute_tsne <- function(ps,
       )
     }
   } else {
-    # matrix input
+    # matrix input validation
     if (!is.numeric(dist_obj)) {
       .ph_abort("If `dist_obj` is a matrix, it must be numeric.",
                 step = "compute_tsne")
@@ -2309,9 +2361,9 @@ compute_tsne <- function(ps,
     )
   }
 
-  # ---------------------------------------------------------------------------
-  # Perplexity sanity check
-  # ---------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
+  # perplexity validation and adjustment
+  # ----------------------------------------------------------------------------
   max_perplexity <- floor((n_samples - 1L) / 3L)
   if (perplexity >= n_samples) {
     .ph_abort(
@@ -2333,32 +2385,40 @@ compute_tsne <- function(ps,
     perplexity <- max_perplexity
   }
 
-  # ---------------------------------------------------------------------------
-  # Prepare metadata column selection
-  # ---------------------------------------------------------------------------
-  dat <- ps$data_long
+  # ----------------------------------------------------------------------------
+  # prepare metadata from ps
+  # ----------------------------------------------------------------------------
+  dat <- if (inherits(ps, "phip_data")) ps$data_long else ps
 
   if (!is.null(dat)) {
     dat_cols <- dplyr::tbl_vars(dat)
+    if (!"sample_id" %in% dat_cols) {
+      .ph_abort("`ps` must contain a `sample_id` column.",
+                step = "compute_tsne")
+    }
   } else {
     dat_cols <- character()
     .ph_warn(
-      "`ps$data_long` is NULL; no metadata columns can be attached.",
+      "`ps` is NULL or has no data; no metadata columns can be attached.",
       step = "compute_tsne"
     )
   }
 
   if (is.null(meta_cols)) {
-    # Start from meta$extra_cols if available, then intersect with data_long
-    extra <- ps$meta$extra_cols %||% character()
-    meta_cols <- intersect(extra, dat_cols)
+    # try to use meta$extra_cols if ps is phip_data
+    if (inherits(ps, "phip_data")) {
+      extra <- ps$meta$extra_cols %||% character()
+      meta_cols <- intersect(extra, dat_cols)
+    } else {
+      meta_cols <- character()
+    }
   } else {
-    # User-specified meta_cols: keep only those present in data_long
+    # user-specified meta_cols: keep only those present in data
     missing_cols <- setdiff(meta_cols, dat_cols)
     if (length(missing_cols) > 0L) {
       .ph_warn(
         paste0(
-          "The following `meta_cols` are not present in `ps$data_long` and ",
+          "The following `meta_cols` are not present in `ps` and ",
           "will be ignored: ",
           paste(missing_cols, collapse = ", ")
         ),
@@ -2368,9 +2428,9 @@ compute_tsne <- function(ps,
     }
   }
 
-  # ---------------------------------------------------------------------------
-  # Run Rtsne in distance mode
-  # ---------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
+  # run t-SNE computation
+  # ----------------------------------------------------------------------------
   .ph_log_info(
     paste0("Running t-SNE with dims = ", dims,
            ", perplexity = ", perplexity,
@@ -2378,7 +2438,7 @@ compute_tsne <- function(ps,
     step = "compute_tsne"
   )
 
-  # Temporary RNG seed control
+  # temporary RNG seed control
   if (!is.null(seed)) {
     old_seed <- .Random.seed
     on.exit({
@@ -2401,7 +2461,6 @@ compute_tsne <- function(ps,
       ...
     )
   } else {
-    # matrix input
     Rtsne::Rtsne(
       as.matrix(dist_obj),
       is_distance      = TRUE,
@@ -2423,9 +2482,9 @@ compute_tsne <- function(ps,
     )
   }
 
-  # ---------------------------------------------------------------------------
-  # Build base result tibble
-  # ---------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
+  # build base result tibble
+  # ----------------------------------------------------------------------------
   tsne_df <- tibble::tibble(
     sample_id = labels,
     tSNE1     = coords[, 1],
@@ -2433,9 +2492,9 @@ compute_tsne <- function(ps,
     tSNE3     = if (dims >= 3L) coords[, 3L] else NA_real_
   )
 
-  # ---------------------------------------------------------------------------
-  # Attach metadata (if requested / available)
-  # ---------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
+  # attach metadata (if requested and available)
+  # ----------------------------------------------------------------------------
   if (!is.null(dat) && length(meta_cols) > 0L) {
     .ph_log_info(
       paste0(
@@ -2472,9 +2531,9 @@ compute_tsne <- function(ps,
   .ph_log_info("t-SNE embedding computation finished.",
                step = "compute_tsne")
 
-  # ---------------------------------------------------------------------------
-  # Attach attributes and class
-  # ---------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
+  # attach attributes and class
+  # ----------------------------------------------------------------------------
   attr(tsne_df, "distance") <- dist_obj
   attr(tsne_df, "tsne_params") <- list(
     dims        = dims,
