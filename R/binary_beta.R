@@ -1147,24 +1147,33 @@ compute_permanova <- function(dist_obj,
                               permutations = 999,
                               contrasts = "none",
                               baseline_level = NULL) {
-
-  if (!inherits(dist_obj, "dist")) {
-    .ph_abort(
-      "`dist_obj` must be a `dist` object (e.g., from `compute_distance()`).",
-      step = "compute_permanova"
-    )
+  # ----------------------------------------------------------------------------
+  # input validation (chk)
+  # ----------------------------------------------------------------------------
+  chk::chk_s3_class(dist_obj, "dist")
+  if (!is.null(group_col)) chk::chk_string(group_col)
+  if (!is.null(time_col)) chk::chk_string(time_col)
+  chk::chk_string(subject_col)
+  chk::chk_count(permutations)
+  chk::chk_gt(permutations, 0)
+  chk::chk_character(contrasts)
+  if (!is.null(baseline_level)) chk::chk_string(baseline_level)
+  
+  # if ps is <phip_data>, overwrite ps with ps$data_long;
+  # otherwise treat ps as data_long
+  if (inherits(ps, "phip_data")) {
+    chk::chk_not_null(ps$data_long)
+    ps <- ps$data_long
   }
-  if (!inherits(ps, "phip_data")) {
-    .ph_abort("`ps` must be a <phip_data> object.",
-              step = "compute_permanova")
-  }
+  
+  # check if vegan is installed
   if (!rlang::is_installed("vegan")) {
     .ph_abort("`compute_permanova()` requires the 'vegan' package.",
               step = "compute_permanova")
   }
 
   # ---------------------------------------------------------------------------
-  # 0) Prepare result collector
+  # prepare result collector
   # ---------------------------------------------------------------------------
   results_list <- list()
   add_result <- function(scope, contrast, term = NA, p_value = NA,
@@ -1181,24 +1190,24 @@ compute_permanova <- function(dist_obj,
   }
 
   # ---------------------------------------------------------------------------
-  # 1) Start from distances + labels
+  # start from distances + labels
   # ---------------------------------------------------------------------------
   d_full  <- dist_obj
   labels_full <- attr(d_full, "Labels")
   n_full  <- attr(d_full, "Size")
 
   # ---------------------------------------------------------------------------
-  # 2) Build metadata from ps$data_long and align to dist labels
+  # build metadata from ps and align to dist labels
   # ---------------------------------------------------------------------------
-  dat <- ps$data_long
+  dat <- ps
   if (is.null(dat)) {
-    .ph_abort("`ps$data_long` is missing. Cannot construct metadata.",
+    .ph_abort("`ps` is missing. Cannot construct metadata.",
               step = "compute_permanova")
   }
 
   dat_cols <- dplyr::tbl_vars(dat)
   if (!"sample_id" %in% dat_cols) {
-    .ph_abort("`ps$data_long` must contain a `sample_id` column.",
+    .ph_abort("`ps` must contain a `sample_id` column.",
               step = "compute_permanova")
   }
 
@@ -1208,13 +1217,13 @@ compute_permanova <- function(dist_obj,
 
   if (!is.null(group_col) && !has_group) {
     .ph_abort(
-      paste0("Column `", group_col, "` not found in `ps$data_long`."),
+      paste0("Column `", group_col, "` not found in `ps`."),
       step = "compute_permanova"
     )
   }
   if (!is.null(time_col) && !has_time) {
     .ph_abort(
-      paste0("Column `", time_col, "` not found in `ps$data_long`."),
+      paste0("Column `", time_col, "` not found in `ps`."),
       step = "compute_permanova"
     )
   }
@@ -1227,8 +1236,9 @@ compute_permanova <- function(dist_obj,
   )
   cols_needed <- unique(cols_needed)
 
+  # build metadata from ps
   .ph_log_info(
-    "Building metadata from `ps$data_long`.",
+    "building metadata from `ps`.",
     step = "compute_permanova"
   )
 
@@ -1240,20 +1250,20 @@ compute_permanova <- function(dist_obj,
 
   if (nrow(meta_all) == 0L) {
     .ph_abort(
-      "Constructed metadata has zero rows. Check that `ps$data_long` is not empty.",
+      "constructed metadata has zero rows. check that `ps` is not empty.",
       step = "compute_permanova"
     )
   }
   rownames(meta_all) <- meta_all$sample_id
 
-  # Align metadata to distance labels
+  # align metadata to distance order
   if (!is.null(labels_full)) {
     idx_align <- match(labels_full, meta_all$sample_id)
     missing_samples <- labels_full[is.na(idx_align)]
     if (length(missing_samples) > 0L) {
       .ph_abort(
         paste0(
-          "The following samples from `dist_obj` are missing in `ps$data_long`: ",
+          "the following samples from `dist_obj` are missing in `ps`: ",
           paste(missing_samples, collapse = ", ")
         ),
         step = "compute_permanova"
@@ -1266,12 +1276,13 @@ compute_permanova <- function(dist_obj,
     labels_full <- rownames(meta_sub)
     n_full <- length(labels_full)
     .ph_warn(
-      "No labels found in `dist_obj`; assuming metadata row order matches the distance order.",
+      "no labels found in `dist_obj`; assuming metadata row order matches
+      the distance order.",
       step = "compute_permanova"
     )
   }
 
-  # Coerce group/time to factor for safety
+  # coerce group/time to factor for safety
   if (has_group) {
     meta_sub[[group_col]] <- as.factor(meta_sub[[group_col]])
   }
@@ -1298,7 +1309,7 @@ compute_permanova <- function(dist_obj,
   if (!all(keep)) {
     dropped <- sum(!keep)
     .ph_log_info(
-      paste0("Dropping ", dropped,
+      paste0("dropping ", dropped,
              " samples with missing values in constrained/strata variables."),
       step = "compute_permanova"
     )
@@ -1307,25 +1318,25 @@ compute_permanova <- function(dist_obj,
   meta_df <- meta_sub[keep, , drop = FALSE]
   if (nrow(meta_df) == 0L) {
     .ph_abort(
-      "All samples have missing values in constrained/strata variables; cannot run PERMANOVA.",
+      "all samples have missing values in constrained/strata variables; cannot run permanova.",
       step = "compute_permanova"
     )
   }
   keep_labels <- rownames(meta_df)
 
-  # Subset distance matrix to kept samples
+  # subset distance matrix to complete-case samples
   mat_d_full <- as.matrix(d_full)
   mat_d_sub  <- mat_d_full[keep_labels, keep_labels, drop = FALSE]
   d <- stats::as.dist(mat_d_sub)
   labels <- attr(d, "Labels")
   n      <- attr(d, "Size")
 
-  # Update factor presence after NA-drop
+  # update factor presence after na-drop
   has_group <- has_group && length(unique(meta_df[[group_col]])) > 1L
   has_time  <- has_time  && length(unique(meta_df[[time_col]]))  > 1L
 
   # ---------------------------------------------------------------------------
-  # 4) Global PERMANOVA
+  # global permanova
   # ---------------------------------------------------------------------------
   rhs_terms <- character(0L)
   if (has_group) rhs_terms <- c(rhs_terms, group_col)
@@ -1336,7 +1347,7 @@ compute_permanova <- function(dist_obj,
 
   if (length(rhs_terms) == 0L) {
     .ph_log_info(
-      "Global PERMANOVA skipped (insufficient number of factor levels).",
+      "global permanova skipped (insufficient number of factor levels).",
       step = "compute_permanova"
     )
   } else {
@@ -1358,7 +1369,7 @@ compute_permanova <- function(dist_obj,
     }
 
     .ph_log_info(
-      "Running global PERMANOVA",
+      "running global permanova",
       step = "compute_permanova",
       bullets = c(
         paste("model:", formula_str),
@@ -1379,7 +1390,7 @@ compute_permanova <- function(dist_obj,
     )
 
     if (inherits(adonis_res, "try-error")) {
-      .ph_warn("Global PERMANOVA failed; no global results.",
+      .ph_warn("global permanova failed; no global results.",
                step = "compute_permanova")
     } else {
       res_df <- as.data.frame(adonis_res)
@@ -1407,12 +1418,12 @@ compute_permanova <- function(dist_obj,
   }
 
   # ---------------------------------------------------------------------------
-  # 5) Post-hoc contrasts (pairwise / each_vs_rest / baseline)
+  # post-hoc contrasts (pairwise / each_vs_rest / baseline)
   # ---------------------------------------------------------------------------
   contrasts <- tolower(unique(contrasts))
   contrasts[contrasts == "group_vs_rest"] <- "each_vs_rest"
 
-  # Determine baseline if needed
+  # determine baseline if needed
   bl <- NULL
   if ("baseline" %in% contrasts && !is.null(baseline_level)) {
     bl <- baseline_level
@@ -1430,7 +1441,7 @@ compute_permanova <- function(dist_obj,
                                    scope_label, contrast_label, term_label) {
     if (length(unique(fac)) < 2L || min(table(fac)) < 2L) {
       .ph_log_info(
-        paste("Skipping test", contrast_label,
+        paste("skipping test", contrast_label,
               "- not enough samples in one or both groups."),
         step = "compute_permanova"
       )
@@ -1470,9 +1481,9 @@ compute_permanova <- function(dist_obj,
     }
   }
 
-  # ---------------- pairwise -----------------------------------------------
+  # pairwise
   if ("pairwise" %in% contrasts) {
-    # Pairwise group comparisons
+    # pairwise group comparisons
     if (has_group) {
       groups <- na.omit(unique(meta_df[[group_col]]))
       if (length(groups) > 1L) {
@@ -1505,7 +1516,7 @@ compute_permanova <- function(dist_obj,
       }
     }
 
-    # Pairwise time comparisons
+    # pairwise time comparisons
     if (has_time) {
       times <- na.omit(unique(meta_df[[time_col]]))
       if (length(times) > 1L) {
@@ -1538,9 +1549,9 @@ compute_permanova <- function(dist_obj,
     }
   }
 
-  # ---------------- each_vs_rest -------------------------------------------
+  # each_vs_rest
   if ("each_vs_rest" %in% contrasts) {
-    # Each group vs rest
+    # each group vs rest
     if (has_group && length(unique(meta_df[[group_col]])) > 1L) {
       for (lvl in unique(meta_df[[group_col]])) {
         fac_vec <- factor(
@@ -1563,7 +1574,7 @@ compute_permanova <- function(dist_obj,
       }
     }
 
-    # Each time vs rest
+    # each time vs rest
     if (has_time && length(unique(meta_df[[time_col]])) > 1L) {
       for (lvl in unique(meta_df[[time_col]])) {
         fac_vec <- factor(
@@ -1594,7 +1605,7 @@ compute_permanova <- function(dist_obj,
     }
   }
 
-  # ---------------- baseline ------------------------------------------------
+  # baseline
   if ("baseline" %in% contrasts) {
     if (is.null(bl)) {
       .ph_warn(
@@ -1602,7 +1613,7 @@ compute_permanova <- function(dist_obj,
         step = "compute_permanova"
       )
     } else {
-      # Baseline for time
+      # baseline for time
       if (has_time && bl %in% meta_df[[time_col]]) {
         fac_vec <- factor(
           ifelse(meta_df[[time_col]] == bl, bl, "not_baseline"),
@@ -1629,7 +1640,7 @@ compute_permanova <- function(dist_obj,
         )
       }
 
-      # Baseline for group
+      # baseline for group
       if (has_group && bl %in% meta_df[[group_col]]) {
         fac_vec <- factor(
           ifelse(meta_df[[group_col]] == bl, bl, "not_baseline"),
@@ -1653,7 +1664,7 @@ compute_permanova <- function(dist_obj,
   }
 
   # ---------------------------------------------------------------------------
-  # 6) Combine and return
+  # combine and return
   # ---------------------------------------------------------------------------
   result_df <- if (length(results_list) > 0L) {
     dplyr::bind_rows(results_list)
@@ -1672,12 +1683,12 @@ compute_permanova <- function(dist_obj,
 #'
 #' @param dist_obj A \code{dist} object of sample distances (e.g. from
 #'   \code{compute_distance()}).
-#' @param ps A \code{phip_data} object providing sample-level metadata in
-#'   \code{ps$data_long}. This table must contain \code{sample_id} and the
+#' @param ps A \code{phip_data} object or a table providing sample-level
+#'   metadata. This table must contain \code{sample_id} and the
 #'   columns specified in \code{group_col} and/or \code{time_col}.
-#' @param group_col Name of the group factor column in \code{ps$data_long}
+#' @param group_col Name of the group factor column in \code{ps}
 #'   (between-subjects). Use \code{NULL} if no group factor.
-#' @param time_col Name of the time factor column in \code{ps$data_long}
+#' @param time_col Name of the time factor column in \code{ps}
 #'   (within-subjects, categorical only). Use \code{NULL} if not applicable.
 #' @param subject_col Name of subject identifier column (for reference only;
 #'   not used directly in dispersion test calculations, but kept for API
@@ -1686,8 +1697,8 @@ compute_permanova <- function(dist_obj,
 #'   \code{vegan::permutest}. Default 999.
 #' @param contrasts Which dispersion contrasts to perform. Options:
 #'   \code{"none"} (default), \code{"pairwise"}, \code{"each_vs_rest"},
-#'   \code{"baseline"}. Interpretation analogiczna do \code{compute_permanova},
-#'   ale zastosowana do dyspersji.
+#'   \code{"baseline"}. Interpretation analogous to \code{compute_permanova},
+#'   but applied to dispersion.
 #' @param baseline_level If \code{contrasts} includes \code{"baseline"},
 #'   specify the baseline level of group or time to compare against others.
 #'
@@ -1712,6 +1723,7 @@ compute_permanova <- function(dist_obj,
 #'   dispersion_res$tests
 #'   head(dispersion_res$distances)
 #' }
+#' @export
 compute_dispersion <- function(dist_obj,
                                ps,
                                group_col = NULL,
@@ -1720,38 +1732,46 @@ compute_dispersion <- function(dist_obj,
                                permutations = 999,
                                contrasts = "none",
                                baseline_level = NULL) {
-
-  if (!inherits(dist_obj, "dist")) {
-    .ph_abort(
-      "`dist_obj` must be a `dist` object (e.g., from `compute_distance()`).",
-      step = "compute_dispersion"
-    )
+  # ----------------------------------------------------------------------------
+  # input validation (chk)
+  # ----------------------------------------------------------------------------
+  chk::chk_s3_class(dist_obj, "dist")
+  if (!is.null(group_col)) chk::chk_string(group_col)
+  if (!is.null(time_col)) chk::chk_string(time_col)
+  chk::chk_string(subject_col)
+  chk::chk_count(permutations)
+  chk::chk_gt(permutations, 0)
+  chk::chk_character(contrasts)
+  if (!is.null(baseline_level)) chk::chk_string(baseline_level)
+  
+  # if ps is <phip_data>, overwrite ps with ps$data_long;
+  # otherwise treat ps as data_long
+  if (inherits(ps, "phip_data")) {
+    chk::chk_not_null(ps$data_long)
+    ps <- ps$data_long
   }
-  if (!inherits(ps, "phip_data")) {
-    .ph_abort("`ps` must be a <phip_data> object.",
-              step = "compute_dispersion")
-  }
+  
+  # check if vegan is installed
   if (!rlang::is_installed("vegan")) {
     .ph_abort("`compute_dispersion()` requires the 'vegan' package.",
-              step = "compute_dispersion"
-    )
+              step = "compute_dispersion")
   }
 
   # ---------------------------------------------------------------------------
-  # 1) Prepare metadata from ps$data_long and align to dist labels
+  # prepare metadata from ps and align to dist labels
   # ---------------------------------------------------------------------------
   d_full      <- dist_obj
   labels_full <- attr(d_full, "Labels")
 
-  dat <- ps$data_long
+  dat <- ps
   if (is.null(dat)) {
-    .ph_abort("`ps$data_long` is missing. Cannot construct metadata.",
+    .ph_abort("`ps` is missing. Cannot construct metadata.",
               step = "compute_dispersion")
   }
 
   dat_cols <- dplyr::tbl_vars(dat)
   if (!"sample_id" %in% dat_cols) {
-    .ph_abort("`ps$data_long` must contain a `sample_id` column.",
+    .ph_abort("`ps` must contain a `sample_id` column.",
               step = "compute_dispersion")
   }
 
@@ -1760,13 +1780,13 @@ compute_dispersion <- function(dist_obj,
 
   if (!is.null(group_col) && !has_group) {
     .ph_abort(
-      paste0("Column `", group_col, "` not found in `ps$data_long`."),
+      paste0("Column `", group_col, "` not found in `ps`."),
       step = "compute_dispersion"
     )
   }
   if (!is.null(time_col) && !has_time) {
     .ph_abort(
-      paste0("Column `", time_col, "` not found in `ps$data_long`."),
+      paste0("Column `", time_col, "` not found in `ps`."),
       step = "compute_dispersion"
     )
   }
@@ -1778,8 +1798,9 @@ compute_dispersion <- function(dist_obj,
   )
   cols_needed <- unique(cols_needed)
 
+  # build metadata from ps
   .ph_log_info(
-    "Building metadata from `ps$data_long`.",
+    "building metadata from `ps`.",
     step = "compute_dispersion"
   )
 
@@ -1791,20 +1812,20 @@ compute_dispersion <- function(dist_obj,
 
   if (nrow(meta_all) == 0L) {
     .ph_abort(
-      "Constructed metadata has zero rows. Check that `ps$data_long` is not empty.",
+      "constructed metadata has zero rows. check that `ps` is not empty.",
       step = "compute_dispersion"
     )
   }
   rownames(meta_all) <- meta_all$sample_id
 
-  # Align metadata to distance labels
+  # align metadata to distance labels
   if (!is.null(labels_full)) {
     idx_align <- match(labels_full, meta_all$sample_id)
     missing_samples <- labels_full[is.na(idx_align)]
     if (length(missing_samples) > 0L) {
       .ph_abort(
         paste0(
-          "The following samples from `dist_obj` are missing in `ps$data_long`: ",
+          "the following samples from `dist_obj` are missing in `ps`: ",
           paste(missing_samples, collapse = ", ")
         ),
         step = "compute_dispersion"
@@ -1816,12 +1837,12 @@ compute_dispersion <- function(dist_obj,
     meta_sub   <- meta_all
     labels_full <- rownames(meta_sub)
     .ph_warn(
-      "No labels found in `dist_obj`; assuming metadata row order matches the distance order.",
+      "no labels found in `dist_obj`; assuming metadata row order matches the distance order.",
       step = "compute_dispersion"
     )
   }
 
-  # Coerce grouping vars to factor
+  # coerce grouping vars to factor
   if (has_group) {
     meta_sub[[group_col]] <- as.factor(meta_sub[[group_col]])
   }
@@ -1830,7 +1851,7 @@ compute_dispersion <- function(dist_obj,
   }
 
   # ---------------------------------------------------------------------------
-  # 2) Drop samples with NA in group/time and subset distance matrix
+  # drop samples with na in group/time and subset distance matrix
   # ---------------------------------------------------------------------------
   vars_for_na <- c(
     if (has_group) group_col else character(0L),
@@ -1847,7 +1868,7 @@ compute_dispersion <- function(dist_obj,
   if (!all(keep)) {
     dropped <- sum(!keep)
     .ph_log_info(
-      paste0("Dropping ", dropped,
+      paste0("dropping ", dropped,
              " samples with missing values in dispersion grouping variables."),
       step = "compute_dispersion"
     )
@@ -1856,7 +1877,7 @@ compute_dispersion <- function(dist_obj,
   meta_df <- meta_sub[keep, , drop = FALSE]
   if (nrow(meta_df) == 0L) {
     .ph_abort(
-      "All samples have missing values in grouping variables; cannot run dispersion tests.",
+      "all samples have missing values in grouping variables; cannot run dispersion tests.",
       step = "compute_dispersion"
     )
   }
@@ -1867,12 +1888,12 @@ compute_dispersion <- function(dist_obj,
   d          <- stats::as.dist(d_mat_sub)
   labels     <- attr(d, "Labels")
 
-  # Re-evaluate factor presence after NA drop
+  # re-evaluate factor presence after na drop
   has_group <- has_group && length(unique(meta_df[[group_col]])) > 1L
   has_time  <- has_time  && length(unique(meta_df[[time_col]]))  > 1L
 
   # ---------------------------------------------------------------------------
-  # 3) Prepare collectors for distances and tests
+  # prepare collectors for distances and tests
   # ---------------------------------------------------------------------------
   distances_list <- list()
   tests_list     <- list()
@@ -1899,7 +1920,7 @@ compute_dispersion <- function(dist_obj,
   }
 
   # ---------------------------------------------------------------------------
-  # 4) Global dispersion tests (group, time, group:time)
+  # global dispersion tests (group, time, group:time)
   # ---------------------------------------------------------------------------
   if (has_group) {
     fac <- factor(meta_df[[group_col]])
@@ -1946,7 +1967,7 @@ compute_dispersion <- function(dist_obj,
       }
     } else {
       .ph_warn(
-        "`time_col` is numeric; continuous dispersion by time not supported. Skipping time dispersion test.",
+        "`time_col` is numeric; continuous dispersion by time not supported. skipping time dispersion test.",
         step = "compute_dispersion"
       )
     }
@@ -1974,12 +1995,12 @@ compute_dispersion <- function(dist_obj,
   }
 
   # ---------------------------------------------------------------------------
-  # 5) Helper for subset dispersion tests
+  # helper for subset dispersion tests
   # ---------------------------------------------------------------------------
   run_disp_test <- function(idx, fac_vec, scope_lab, contrast_lab) {
     if (length(unique(fac_vec)) < 2L || min(table(fac_vec)) < 2L) {
       .ph_log_info(
-        paste("Skipping dispersion test for", contrast_lab, "- not enough data."),
+        paste("skipping dispersion test for", contrast_lab, "- not enough data."),
         step = "compute_dispersion"
       )
       return(NULL)
@@ -2002,12 +2023,12 @@ compute_dispersion <- function(dist_obj,
   }
 
   # ---------------------------------------------------------------------------
-  # 6) Post-hoc contrasts
+  # post-hoc contrasts
   # ---------------------------------------------------------------------------
   contrasts <- tolower(unique(contrasts))
   contrasts[contrasts == "group_vs_rest"] <- "each_vs_rest"
 
-  # Pairwise
+  # pairwise
   if ("pairwise" %in% contrasts) {
     # groups
     if (has_group) {
@@ -2035,7 +2056,7 @@ compute_dispersion <- function(dist_obj,
     }
   }
 
-  # Each vs rest
+  # each vs rest
   if ("each_vs_rest" %in% contrasts) {
     if (has_group && length(unique(meta_df[[group_col]])) > 1L) {
       for (lvl in unique(meta_df[[group_col]])) {
@@ -2062,7 +2083,7 @@ compute_dispersion <- function(dist_obj,
     }
   }
 
-  # Baseline
+  # baseline
   if ("baseline" %in% contrasts) {
     if (is.null(baseline_level)) {
       .ph_warn(
@@ -2097,7 +2118,7 @@ compute_dispersion <- function(dist_obj,
   }
 
   # ---------------------------------------------------------------------------
-  # 7) Combine and return
+  # combine and return
   # ---------------------------------------------------------------------------
   distances_tbl <- if (length(distances_list)) {
     dplyr::bind_rows(distances_list)

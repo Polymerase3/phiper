@@ -686,3 +686,309 @@ testthat::test_that("compute_capscale: full coverage (success, warnings,
     )
   }
 })
+
+# helper: pick a constraint variable that exists and has >=2 distinct values for permanova/dispersion
+.pick_constraint_var_perm <- function(ps_small) {
+  dat <- if ("phip_data" %in% class(ps_small)) ps_small$data_long else ps_small
+  cols <- dplyr::tbl_vars(dat)
+
+  candidates <- c("group", "big_group", "type_person", "sex", "age")
+  candidates <- candidates[candidates %in% cols]
+  if (length(candidates) == 0L) return(NULL)
+
+  meta <- dat |>
+    dplyr::select(sample_id, dplyr::all_of(candidates)) |>
+    dplyr::distinct(sample_id, .keep_all = TRUE) |>
+    dplyr::collect()
+
+  for (v in candidates) {
+    x <- meta[[v]]
+    if (!all(is.na(x)) && dplyr::n_distinct(x, na.rm = TRUE) >= 2L) return(v)
+  }
+
+  NULL
+}
+
+testthat::test_that("compute_permanova: basic functionality and input validation", {
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
+  
+  # skip if vegan not available
+  testthat::skip_if_not_installed("vegan")
+  
+  # pick a grouping variable that exists
+  group_var <- .pick_constraint_var_perm(ps_small)
+  testthat::skip_if(is.null(group_var), "no suitable grouping variable found")
+  
+  # basic permanova test
+  res <- suppressWarnings(compute_permanova(
+    dist_obj = d,
+    ps = ps_small,
+    group_col = group_var,
+    permutations = 99  # small for speed
+  ))
+  
+  testthat::expect_s3_class(res, "tbl_df")
+  testthat::expect_true(all(c("scope", "contrast", "term", "p_value", "n_perm") %in% names(res)))
+  testthat::expect_true(nrow(res) >= 1L)  # at least global test
+  
+  # test with both group and time (if available)
+  dat <- if ("phip_data" %in% class(ps_small)) ps_small$data_long else ps_small
+  cols <- dplyr::tbl_vars(dat)
+  time_candidates <- c("timepoint", "timepoint_factor", "time")
+  time_var <- intersect(time_candidates, cols)[1]
+  
+  if (!is.na(time_var)) {
+    res2 <- suppressWarnings(compute_permanova(
+      dist_obj = d,
+      ps = ps_small,
+      group_col = group_var,
+      time_col = time_var,
+      permutations = 99
+    ))
+    testthat::expect_s3_class(res2, "tbl_df")
+    testthat::expect_true(nrow(res2) >= 1L)
+  }
+})
+
+testthat::test_that("compute_permanova: contrasts and edge cases", {
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
+  
+  testthat::skip_if_not_installed("vegan")
+  
+  group_var <- .pick_constraint_var_perm(ps_small)
+  testthat::skip_if(is.null(group_var), "no suitable grouping variable found")
+  
+  # test pairwise contrasts
+  res_pair <- suppressWarnings(compute_permanova(
+    dist_obj = d,
+    ps = ps_small,
+    group_col = group_var,
+    contrasts = "pairwise",
+    permutations = 99
+  ))
+  
+  testthat::expect_s3_class(res_pair, "tbl_df")
+  # should have global + pairwise results
+  testthat::expect_true(any(res_pair$scope == "global"))
+  
+  # test each_vs_rest
+  res_each <- suppressWarnings(compute_permanova(
+    dist_obj = d,
+    ps = ps_small,
+    group_col = group_var,
+    contrasts = "each_vs_rest",
+    permutations = 99
+  ))
+  
+  testthat::expect_s3_class(res_each, "tbl_df")
+  testthat::expect_true(any(res_each$scope == "global"))
+})
+
+testthat::test_that("compute_permanova: input validation errors", {
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
+  
+  testthat::skip_if_not_installed("vegan")
+  
+  # dist_obj not dist
+  testthat::expect_error(
+    compute_permanova(dist_obj = "not_dist", ps = ps_small),
+    regexp = "(?i)dist|s3|class|chk"
+  )
+  
+  # ps is NULL
+  testthat::expect_error(
+    compute_permanova(dist_obj = d, ps = NULL),
+    regexp = "(?i)ps.*missing|cannot construct metadata"
+  )
+  
+  # missing sample_id column
+  dat <- if ("phip_data" %in% class(ps_small)) ps_small$data_long else ps_small
+  ps_no_sid <- dat |> dplyr::select(-sample_id)
+  testthat::expect_error(
+    compute_permanova(dist_obj = d, ps = ps_no_sid),
+    regexp = "(?i)sample_id"
+  )
+  
+  # non-existent group column
+  testthat::expect_error(
+    compute_permanova(dist_obj = d, ps = ps_small, group_col = "nonexistent"),
+    regexp = "(?i)not found"
+  )
+  
+  # invalid permutations
+  testthat::expect_error(
+    compute_permanova(dist_obj = d, ps = ps_small, permutations = 0),
+    regexp = "(?i)gt|positive|chk"
+  )
+})
+
+testthat::test_that("compute_permanova: ps as data.frame vs phip_data", {
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
+  
+  testthat::skip_if_not_installed("vegan")
+  
+  group_var <- .pick_constraint_var_perm(ps_small)
+  testthat::skip_if(is.null(group_var), "no suitable grouping variable found")
+  
+  # test with phip_data object
+  if ("phip_data" %in% class(ps_small)) {
+    res1 <- suppressWarnings(compute_permanova(
+      dist_obj = d,
+      ps = ps_small,
+      group_col = group_var,
+      permutations = 99
+    ))
+    testthat::expect_s3_class(res1, "tbl_df")
+  }
+  
+  # test with data.frame directly
+  dat <- if ("phip_data" %in% class(ps_small)) ps_small$data_long else ps_small
+  res2 <- suppressWarnings(compute_permanova(
+    dist_obj = d,
+    ps = dat,
+    group_col = group_var,
+    permutations = 99
+  ))
+  testthat::expect_s3_class(res2, "tbl_df")
+})
+
+testthat::test_that("compute_dispersion: basic functionality and input validation", {
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
+  
+  testthat::skip_if_not_installed("vegan")
+  
+  group_var <- .pick_constraint_var_perm(ps_small)
+  testthat::skip_if(is.null(group_var), "no suitable grouping variable found")
+  
+  # basic dispersion test
+  res <- suppressWarnings(compute_dispersion(
+    dist_obj = d,
+    ps = ps_small,
+    group_col = group_var,
+    permutations = 99
+  ))
+  
+  testthat::expect_s3_class(res, "beta_dispersion")
+  testthat::expect_true(all(c("distances", "tests") %in% names(res)))
+  testthat::expect_s3_class(res$distances, "tbl_df")
+  testthat::expect_s3_class(res$tests, "tbl_df")
+  
+  # check distances structure
+  if (nrow(res$distances) > 0L) {
+    testthat::expect_true(all(c("sample_id", "distance", "level", "scope", "contrast") %in% names(res$distances)))
+  }
+  
+  # check tests structure
+  if (nrow(res$tests) > 0L) {
+    testthat::expect_true(all(c("scope", "contrast", "term", "p_value", "n_perm") %in% names(res$tests)))
+    testthat::expect_true(all(res$tests$term == "dispersion"))
+  }
+})
+
+testthat::test_that("compute_dispersion: contrasts and edge cases", {
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
+  
+  testthat::skip_if_not_installed("vegan")
+  
+  group_var <- .pick_constraint_var_perm(ps_small)
+  testthat::skip_if(is.null(group_var), "no suitable grouping variable found")
+  
+  # test pairwise contrasts
+  res_pair <- suppressWarnings(compute_dispersion(
+    dist_obj = d,
+    ps = ps_small,
+    group_col = group_var,
+    contrasts = "pairwise",
+    permutations = 99
+  ))
+  
+  testthat::expect_s3_class(res_pair, "beta_dispersion")
+  testthat::expect_true(all(c("distances", "tests") %in% names(res_pair)))
+  
+  # test each_vs_rest
+  res_each <- suppressWarnings(compute_dispersion(
+    dist_obj = d,
+    ps = ps_small,
+    group_col = group_var,
+    contrasts = "each_vs_rest",
+    permutations = 99
+  ))
+  
+  testthat::expect_s3_class(res_each, "beta_dispersion")
+})
+
+testthat::test_that("compute_dispersion: input validation errors", {
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
+  
+  testthat::skip_if_not_installed("vegan")
+  
+  # dist_obj not dist
+  testthat::expect_error(
+    compute_dispersion(dist_obj = "not_dist", ps = ps_small),
+    regexp = "(?i)dist|s3|class|chk"
+  )
+  
+  # ps is NULL
+  testthat::expect_error(
+    compute_dispersion(dist_obj = d, ps = NULL),
+    regexp = "(?i)ps.*missing|cannot construct metadata"
+  )
+  
+  # missing sample_id column
+  dat <- if ("phip_data" %in% class(ps_small)) ps_small$data_long else ps_small
+  ps_no_sid <- dat |> dplyr::select(-sample_id)
+  testthat::expect_error(
+    compute_dispersion(dist_obj = d, ps = ps_no_sid),
+    regexp = "(?i)sample_id"
+  )
+  
+  # non-existent group column
+  testthat::expect_error(
+    compute_dispersion(dist_obj = d, ps = ps_small, group_col = "nonexistent"),
+    regexp = "(?i)not found"
+  )
+  
+  # invalid permutations
+  testthat::expect_error(
+    compute_dispersion(dist_obj = d, ps = ps_small, permutations = 0),
+    regexp = "(?i)gt|positive|chk"
+  )
+})
+
+testthat::test_that("compute_dispersion: ps as data.frame vs phip_data", {
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
+  
+  testthat::skip_if_not_installed("vegan")
+  
+  group_var <- .pick_constraint_var_perm(ps_small)
+  testthat::skip_if(is.null(group_var), "no suitable grouping variable found")
+  
+  # test with phip_data object
+  if ("phip_data" %in% class(ps_small)) {
+    res1 <- suppressWarnings(compute_dispersion(
+      dist_obj = d,
+      ps = ps_small,
+      group_col = group_var,
+      permutations = 99
+    ))
+    testthat::expect_s3_class(res1, "beta_dispersion")
+  }
+  
+  # test with data.frame directly
+  dat <- if ("phip_data" %in% class(ps_small)) ps_small$data_long else ps_small
+  res2 <- suppressWarnings(compute_dispersion(
+    dist_obj = d,
+    ps = dat,
+    group_col = group_var,
+    permutations = 99
+  ))
+  testthat::expect_s3_class(res2, "beta_dispersion")
+})
