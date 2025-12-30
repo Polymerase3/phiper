@@ -858,7 +858,7 @@ deltaplot_interactive <- function(
     stat_title <- "Z from permutation p-values"
     stat_title_short <- "Z_from_p"
     if (!"Z_from_p" %in% names(df_rk)) {
-      .ph_abort("Column `Z_from_p` not found; pass ph_prevalence_shift()
+      .ph_abort("Column `Z_from_p` not found; pass compute_delta()
                 results or provide Z_from_p yourself.")
     }
     stat_for_sort <- df_rk$Z_from_p
@@ -1014,7 +1014,7 @@ deltaplot_interactive <- function(
 #'
 #' @examples
 #'
-#' # in this example we mock the output of ph_prevalence_shift with a simple
+#' # in this example we mock the output of compute_delta with a simple
 #' # data.frame - it works the same
 #' set.seed(1)
 #' n <- 20

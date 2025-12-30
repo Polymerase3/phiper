@@ -142,7 +142,7 @@
 #'   to avoid oversubscription when using multiple workers.
 #'
 #' Reproducibility of permutations is controlled via the global RNG:
-#' call `set.seed()` before `ph_prevalence_shift()` to obtain reproducible
+#' call `set.seed()` before `compute_delta()` to obtain reproducible
 #' results; each contrast draws its own seed from the global RNG state.
 #'
 #' @param x A `phip_data` object (recommended to attach a `peptide_library`
@@ -190,7 +190,7 @@
 #' @param log Logical; if `TRUE`, write progress messages (per contrast and
 #'   overall) using the package's logging helpers.
 #' @param log_file Path to a log file used by the logging helpers if `log` is
-#'   `TRUE`. Default `"ph_prevalence_shift.log"`.
+#'   `TRUE`. Default `"compute_delta.log"`.
 #' @param fold_change Character scalar specifying whether and how to summarize
 #'   a `fold_change` column (if present) over peptides and subjects in each
 #'   contrast. One of `c("none", "sum", "mean", "max", "median")`. If `"none"`,
@@ -234,7 +234,7 @@
 #'
 #' # Minimal global shift test across groups (unpaired)
 #' set.seed(1)
-#' res <- ph_prevalence_shift(
+#' res <- compute_delta(
 #'   pd,
 #'   rank_cols = "peptide_id",
 #'   group_cols = "group",
@@ -256,7 +256,7 @@
 #'   stringsAsFactors = FALSE
 #' )
 #'
-#' res <- ph_prevalence_shift(
+#' res <- compute_delta(
 #'   x                  = pd_filt,
 #'   exist_col          = "exist",
 #'   rank_cols          = "species",
@@ -274,7 +274,7 @@
 #' }
 #'
 #' @export
-ph_prevalence_shift <- function(
+compute_delta <- function(
   x, rank_cols, group_cols,
   exist_col = "exist",
   paired_by = NULL,
@@ -292,7 +292,7 @@ ph_prevalence_shift <- function(
   rank_feature_keep = NULL,
   peptide_library = NULL,
   log = FALSE,
-  log_file = "ph_prevalence_shift.log",
+  log_file = "compute_delta.log",
   fold_change = c("none", "sum", "mean", "max", "median"),
   cross_prev = c("none", "sum", "mean", "max", "median")
 ) {

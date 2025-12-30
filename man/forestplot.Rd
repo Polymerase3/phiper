@@ -128,7 +128,7 @@ or T_stand.
 }
 \examples{
 
-# in this example we mock the output of ph_prevalence_shift with a simple
+# in this example we mock the output of compute_delta with a simple
 # data.frame - it works the same
 set.seed(1)
 n <- 20
