@@ -86,6 +86,8 @@ summarize the trend.
 }
 \examples{
 \donttest{
+library(dplyr)
+library(rlang)
 phip_path <- phip_example_path()
 
 ps <- phip_convert(
@@ -131,7 +133,8 @@ group_pair <- c(pair_tbl$group1[1], pair_tbl$group2[1])
 p <- deltaplot_interactive(
   prev_tbl,
   group_pair_values = group_pair,
-  group_labels = group_pair
+  group_labels = group_pair,
+  add_smooth = FALSE
 )
 
 p

@@ -47,6 +47,8 @@
 #'
 #' @examples
 #' \donttest{
+#' library(dplyr)
+#' library(rlang)
 #' phip_path <- phip_example_path()
 #'
 #' ps <- phip_convert(
@@ -89,10 +91,11 @@
 #' pair_tbl <- unique(prev_tbl[, c("group1", "group2")])
 #' group_pair <- c(pair_tbl$group1[1], pair_tbl$group2[1])
 #'
-#' p <- deltaplot_prevalence(
+#' p <- deltaplot(
 #'   prev_tbl,
 #'   group_pair_values = group_pair,
-#'   group_labels = group_pair
+#'   group_labels = group_pair,
+#'   y_label = "Delta prevalence (group2 - group1)"
 #' )
 #'
 #' print(p)
@@ -402,6 +405,8 @@ deltaplot <- function(
 #'
 #' @examples
 #' \donttest{
+#' library(dplyr)
+#' library(rlang)
 #' phip_path <- phip_example_path()
 #'
 #' ps <- phip_convert(
@@ -447,7 +452,8 @@ deltaplot <- function(
 #' p <- deltaplot_interactive(
 #'   prev_tbl,
 #'   group_pair_values = group_pair,
-#'   group_labels = group_pair
+#'   group_labels = group_pair,
+#'   add_smooth = FALSE
 #' )
 #'
 #' p
@@ -1036,7 +1042,8 @@ deltaplot_interactive <- function(
 #'   n_pos_each = 5,
 #'   left_label = "More in control",
 #'   right_label = "More in treated",
-#'   use_diverging_colors = TRUE
+#'   use_diverging_colors = TRUE,
+#'   font_family = "sans"
 #' )
 #'
 #' print(out$plot)
@@ -1176,7 +1183,7 @@ forestplot <- function(
       x = stat_title,
       y = NULL
     ) +
-    theme_phip() +
+    theme_phip(base_family = font_family) +
     ggplot2::theme(
       text = ggplot2::element_text(size = base_text_pt, family = font_family),
       plot.title = ggplot2::element_text(
@@ -1347,38 +1354,40 @@ forestplot <- function(
 #' @return A list with \code{data} and \code{plot} (plotly object).
 #'
 #' @examples
-#' set.seed(1)
-#' n <- 20
-#' results_tbl <- data.frame(
-#'   rank = rep("species", n),
-#'   feature = paste0("feat_", seq_len(n)),
-#'   group1 = "control",
-#'   group2 = "treated",
-#'   design = "case-control",
-#'   T_obs = rnorm(n, sd = 2),
-#'   p_perm = runif(n),
-#'   p_adj_rank = p.adjust(runif(n), method = "BH"),
-#'   category_rank_bh = ifelse(runif(n) < 0.2, "significant (BH, per rank)",
-#'     "ns"
-#'   ),
-#'   T_obs_stand = rnorm(n),
-#'   Z_from_p = qnorm(1 - runif(n) / 2) * sign(rnorm(n))
-#' )
+#' \donttest{
+#'   set.seed(1)
+#'   n <- 20
+#'   results_tbl <- data.frame(
+#'     rank = rep("species", n),
+#'     feature = paste0("feat_", seq_len(n)),
+#'     group1 = "control",
+#'     group2 = "treated",
+#'     design = "case-control",
+#'     T_obs = rnorm(n, sd = 2),
+#'     p_perm = runif(n),
+#'     p_adj_rank = p.adjust(runif(n), method = "BH"),
+#'     category_rank_bh = ifelse(runif(n) < 0.2, "significant (BH, per rank)",
+#'       "ns"
+#'     ),
+#'     T_obs_stand = rnorm(n),
+#'     Z_from_p = qnorm(1 - runif(n) / 2) * sign(rnorm(n))
+#'   )
 #'
-#' out <- forestplot_interactive(
-#'   results_tbl,
-#'   rank_of_interest = "species",
-#'   statistic_to_plot = "T",
-#'   n_neg_each = 5,
-#'   n_pos_each = 5,
-#'   left_label = "More in control",
-#'   right_label = "More in treated",
-#'   use_diverging_colors = TRUE,
-#'   label_x_gap_frac = 0,
-#'   label_y_offset = -0.05
-#' )
+#'   out <- forestplot_interactive(
+#'     results_tbl,
+#'     rank_of_interest = "species",
+#'     statistic_to_plot = "T",
+#'     n_neg_each = 5,
+#'     n_pos_each = 5,
+#'     left_label = "More in control",
+#'     right_label = "More in treated",
+#'     use_diverging_colors = TRUE,
+#'     label_x_gap_frac = 0,
+#'     label_y_offset = -0.05
+#'   )
 #'
-#' out$plot
+#'   out$plot
+#' }
 #' @export
 forestplot_interactive <- function(
   results_tbl,
@@ -1702,6 +1711,8 @@ forestplot_interactive <- function(
 #'
 #' @examples
 #' \donttest{
+#' library(dplyr)
+#' library(rlang)
 #' phip_path <- phip_example_path()
 #'
 #' ps <- phip_convert(
@@ -1746,7 +1757,8 @@ forestplot_interactive <- function(
 #' p <- ecdf_plot(
 #'   prev_tbl,
 #'   group_pair_values = group_pair,
-#'   group_labels = group_pair
+#'   group_labels = group_pair,
+#'   show_ks_test = FALSE
 #' )
 #'
 #' print(p)
@@ -1981,6 +1993,8 @@ ecdf_plot <- function(
 #'
 #' @examples
 #' \donttest{
+#' library(dplyr)
+#' library(rlang)
 #' phip_path <- phip_example_path()
 #'
 #' ps <- phip_convert(
@@ -2025,7 +2039,8 @@ ecdf_plot <- function(
 #' p <- ecdf_plot_interactive(
 #'   prev_tbl,
 #'   group_pair_values = group_pair,
-#'   group_labels = group_pair
+#'   group_labels = group_pair,
+#'   show_ks_test = FALSE
 #' )
 #'
 #' p

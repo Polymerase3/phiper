@@ -112,36 +112,38 @@ plotting: raw \code{T_obs}, permutation-standardized \code{T_obs_stand}, or
 \code{Z_from_p} (signed Z from permutation p-values).
 }
 \examples{
-set.seed(1)
-n <- 20
-results_tbl <- data.frame(
-  rank = rep("species", n),
-  feature = paste0("feat_", seq_len(n)),
-  group1 = "control",
-  group2 = "treated",
-  design = "case-control",
-  T_obs = rnorm(n, sd = 2),
-  p_perm = runif(n),
-  p_adj_rank = p.adjust(runif(n), method = "BH"),
-  category_rank_bh = ifelse(runif(n) < 0.2, "significant (BH, per rank)",
-    "ns"
-  ),
-  T_obs_stand = rnorm(n),
-  Z_from_p = qnorm(1 - runif(n) / 2) * sign(rnorm(n))
-)
+\donttest{
+  set.seed(1)
+  n <- 20
+  results_tbl <- data.frame(
+    rank = rep("species", n),
+    feature = paste0("feat_", seq_len(n)),
+    group1 = "control",
+    group2 = "treated",
+    design = "case-control",
+    T_obs = rnorm(n, sd = 2),
+    p_perm = runif(n),
+    p_adj_rank = p.adjust(runif(n), method = "BH"),
+    category_rank_bh = ifelse(runif(n) < 0.2, "significant (BH, per rank)",
+      "ns"
+    ),
+    T_obs_stand = rnorm(n),
+    Z_from_p = qnorm(1 - runif(n) / 2) * sign(rnorm(n))
+  )
 
-out <- forestplot_interactive(
-  results_tbl,
-  rank_of_interest = "species",
-  statistic_to_plot = "T",
-  n_neg_each = 5,
-  n_pos_each = 5,
-  left_label = "More in control",
-  right_label = "More in treated",
-  use_diverging_colors = TRUE,
-  label_x_gap_frac = 0,
-  label_y_offset = -0.05
-)
+  out <- forestplot_interactive(
+    results_tbl,
+    rank_of_interest = "species",
+    statistic_to_plot = "T",
+    n_neg_each = 5,
+    n_pos_each = 5,
+    left_label = "More in control",
+    right_label = "More in treated",
+    use_diverging_colors = TRUE,
+    label_x_gap_frac = 0,
+    label_y_offset = -0.05
+  )
 
-out$plot
+  out$plot
+}
 }

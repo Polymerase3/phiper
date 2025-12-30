@@ -156,7 +156,8 @@ out <- forestplot(
   n_pos_each = 5,
   left_label = "More in control",
   right_label = "More in treated",
-  use_diverging_colors = TRUE
+  use_diverging_colors = TRUE,
+  font_family = "sans"
 )
 
 print(out$plot)

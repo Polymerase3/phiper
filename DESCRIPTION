@@ -61,9 +61,10 @@ Imports:
     tibble,
     tidyr,
     vegan,
-    Rcpp, 
+    Rcpp,
     RcppParallel,
     doParallel,
     foreach,
     forcats,
-    utils
+    utils,
+    plotly

@@ -64,6 +64,8 @@ and p-value along with the median difference.
 }
 \examples{
 \donttest{
+library(dplyr)
+library(rlang)
 phip_path <- phip_example_path()
 
 ps <- phip_convert(
@@ -108,7 +110,8 @@ group_pair <- c(pair_tbl$group1[1], pair_tbl$group2[1])
 p <- ecdf_plot(
   prev_tbl,
   group_pair_values = group_pair,
-  group_labels = group_pair
+  group_labels = group_pair,
+  show_ks_test = FALSE
 )
 
 print(p)

@@ -84,6 +84,8 @@ across pooled prevalence.
 }
 \examples{
 \donttest{
+library(dplyr)
+library(rlang)
 phip_path <- phip_example_path()
 
 ps <- phip_convert(
@@ -126,10 +128,11 @@ prev_tbl <- as.data.frame(prev_res)
 pair_tbl <- unique(prev_tbl[, c("group1", "group2")])
 group_pair <- c(pair_tbl$group1[1], pair_tbl$group2[1])
 
-p <- deltaplot_prevalence(
+p <- deltaplot(
   prev_tbl,
   group_pair_values = group_pair,
-  group_labels = group_pair
+  group_labels = group_pair,
+  y_label = "Delta prevalence (group2 - group1)"
 )
 
 print(p)
