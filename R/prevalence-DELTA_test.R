@@ -227,6 +227,52 @@
 #'   per rank (`"significant (BH, per rank)"`, `"nominal only"`, or
 #'   `"not significant"`).
 #'
+#' @examples
+#' \donttest{
+#' # Load example PhIP-Seq data shipped with the package
+#' pd <- phip_load_example_data()
+#'
+#' # Minimal global shift test across groups (unpaired)
+#' set.seed(1)
+#' res <- ph_prevalence_shift(
+#'   pd,
+#'   rank_cols = "peptide_id",
+#'   group_cols = "group",
+#'   B_permutations = 100
+#' )
+#' res
+#'
+#' # Small unpaired subset with a mock peptide library
+#' pd_filt <- pd %>%
+#'   dplyr::filter(
+#'     peptide_id %in% c("16627", "5243", "24799", "16196", "18003"),
+#'     timepoint == "T1"
+#'   ) %>%
+#'   dplyr::collect()
+#'
+#' mock_peplib <- data.frame(
+#'   peptide_id = c("16627", "5243", "24799", "16196", "18003"),
+#'   species    = rep("mock_species", 5),
+#'   stringsAsFactors = FALSE
+#' )
+#'
+#' res <- ph_prevalence_shift(
+#'   x                  = pd_filt,
+#'   exist_col          = "exist",
+#'   rank_cols          = "species",
+#'   group_cols         = "group",
+#'   peptide_library    = mock_peplib,
+#'   B_permutations     = 500L,  # smaller for speed
+#'   weight_mode        = "n_eff_sqrt",
+#'   stat_mode          = "asin",
+#'   prev_strat         = "none",
+#'   winsor_z           = Inf,
+#'   rank_feature_keep  = list(species = NULL),
+#'   log                = FALSE
+#' )
+#' res
+#' }
+#'
 #' @export
 ph_prevalence_shift <- function(
   x, rank_cols, group_cols,
@@ -975,29 +1021,31 @@ ph_prevalence_shift <- function(
   if (rlang::is_installed("RcppParallel")) {
     RcppParallel::setThreadOptions(numThreads = 1) # fairness > peak single-task
   } #            speed
-  Sys.setenv(
-    OMP_NUM_THREADS = "1", MKL_NUM_THREADS = "1",
+  env_threads <- c(
+    OMP_NUM_THREADS = "1",
+    MKL_NUM_THREADS = "1",
     OPENBLAS_NUM_THREADS = "1"
   )
-
-  if (n_workers == 1L) {
-    # --- sequential
-    for (i in seq_len(nrow(master_plan))) {
-      row <- .run_one(i)
-      if (!is.null(row)) result_rows[[length(result_rows) + 1L]] <- row
+  result_rows <- withr::with_envvar(env_threads, {
+    if (n_workers == 1L) {
+      # --- sequential
+      for (i in seq_len(nrow(master_plan))) {
+        row <- .run_one(i)
+        if (!is.null(row)) result_rows[[length(result_rows) + 1L]] <- row
+      }
+      result_rows
+    } else {
+      # --- parallel via future.apply (respect existing future plan)
+      idx <- order(master_plan$work_weight, decreasing = TRUE)
+      future.apply::future_lapply(
+        X = idx, FUN = .run_one,
+        future.seed = TRUE,
+        future.scheduling = Inf,
+        future.chunk.size = 1,
+        future.packages = c("dplyr", "tibble", "tidyr")
+      )
     }
-  } else {
-    # --- parallel via future.apply (respect existing future plan)
-    idx <- order(master_plan$work_weight, decreasing = TRUE)
-    res_list <- future.apply::future_lapply(
-      X = idx, FUN = .run_one,
-      future.seed = TRUE,
-      future.scheduling = Inf,
-      future.chunk.size = 1,
-      future.packages = c("dplyr", "tibble", "tidyr")
-    )
-    result_rows <- res_list
-  }
+  })
 
   # ---- Final log -------------------------------------------------------------
   if (isTRUE(log)) {
