@@ -336,7 +336,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     double T_null_sd = NA_REAL;
     if (B > 0) {
       const double mean_T = sum_T / static_cast<double>(B);
-      double var_T = (sum_T2 / Bd) - mean_T * mean_T;
+      double var_T = (sum_T2 / static_cast<double>(B)) - mean_T * mean_T;
       if (var_T > 0.0) T_null_sd = std::sqrt(var_T);
     }
 
