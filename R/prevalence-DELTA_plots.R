@@ -690,11 +690,7 @@ deltaplot_interactive <- function(
   plt
 }
 
-# -------------------------------------------------------------------------
-# forest_delta: top/bottom forest plot for DELTA/Stouffer results (RAW T_obs)
-# -------------------------------------------------------------------------
-
-#' Forest plot of top/bottom raw Stouffer T by rank (with arrows)
+#' @title Forest Plot of Top/Bottom Raw Stouffer T by Rank
 #'
 #' @description
 #' Builds a forest plot highlighting the most extreme positive and negative
@@ -778,7 +774,7 @@ deltaplot_interactive <- function(
 #'   Z_from_p = qnorm(1 - runif(n) / 2) * sign(rnorm(n))
 #' )
 #'
-#' out <- forest_delta(
+#' out <- forestplot(
 #'   results_tbl,
 #'   rank_of_interest = "species",
 #'   statistic_to_plot = "T",
@@ -791,7 +787,7 @@ deltaplot_interactive <- function(
 #'
 #' print(out$plot)
 #' @export
-forest_delta <- function(
+forestplot <- function(
     results_tbl,
     rank_of_interest,
     statistic_to_plot = c("T", "T_stand", "Z_from_p"),
@@ -1083,72 +1079,135 @@ forest_delta <- function(
   list(data = df_plot, plot = p)
 }
 
-#' @title Interactive forest plot of top/bottom raw Stouffer T by rank
-#' @description Plotly version of \code{forest_delta()} with the same selection
-#'   logic and styling parameters.
-#' @param results_tbl A data frame/tibble with required columns documented in
-#'   \code{forest_delta()}.
-#' @param rank_of_interest Character scalar, e.g. \code{"species"}.
-#' @param n_neg_each,n_pos_each Integers; per-tail counts.
-#' @param use_diverging_colors Logical; if \code{TRUE}, apply a blue-to-red gradient.
-#' @param filter_significant Column name to filter on, or \code{"none"}.
-#' @param sig_level Threshold for numeric significance columns. Default 0.05.
-#' @param left_label,right_label Arrow-end labels.
-#' @param arrow_length_frac Fraction of max |T_obs| for arrow half-length.
-#' @param label_x_gap_frac Horizontal label gap (fraction of max |T_obs|).
-#' @param y_pad Vertical padding above top category (y units).
-#' @param label_y_offset Additional vertical label offset.
-#' @param label_vjust Included for API parity (ggplot-only).
+#' @title Interactive Forest Plot of Top/Bottom DELTA/Stouffer Statistics
+#'
+#' @description
+#' Plotly version of \code{forestplot()} that highlights the most extreme
+#' positive and negative features within a chosen rank. The plot shows the top
+#' \code{n_pos_each} features on the positive side and the top \code{n_neg_each}
+#' features on the negative side, ordered by the selected statistic
+#' (\code{statistic_to_plot}).
+#'
+#' @details
+#' The y-axis lists feature names (sorted by the chosen statistic), and the
+#' x-axis shows the signed effect size for each feature. Each feature is drawn
+#' as a horizontal segment from zero to its statistic value, with a point at the
+#' end of the segment. A dashed vertical line marks zero to separate negative
+#' from positive shifts. The title and subtitle report the contrast and how many
+#' features are shown.
+#'
+#' If \code{use_diverging_colors = TRUE}, segments/points are colored by
+#' magnitude on a blue-to-red scale (negative to positive), otherwise a single
+#' color is used. Arrow annotations label the direction of enrichment for each
+#' group.
+#'
+#' \code{statistic_to_plot} controls the statistic used for both ranking and
+#' plotting: raw \code{T_obs}, permutation-standardized \code{T_obs_stand}, or
+#' \code{Z_from_p} (signed Z from permutation p-values).
+#'
+#' @param results_tbl Data frame/tibble with at least:
+#'   \code{rank, feature, group1, group2, design, T_obs, p_perm, p_adj_rank, category_rank_bh}.
+#' @param rank_of_interest Character scalar specifying the rank to plot (e.g., \code{"species"}).
+#' @param statistic_to_plot Which statistic to rank/plot: \code{"T"} (raw \code{T_obs}),
+#'   \code{"T_stand"} (permutation-standardized), or \code{"Z_from_p"} (signed Z from permutation p).
+#' @param n_neg_each Number of most negative features to show. Default 15.
+#' @param n_pos_each Number of most positive features to show. Default 15.
+#' @param filter_significant Column name to filter on, or \code{"none"} to disable filtering.
+#'   If the column is numeric, keep rows where \code{col <= sig_level}; if character,
+#'   keep rows where \code{col == "significant (BH, per rank)"}.
+#' @param sig_level Significance threshold used when \code{filter_significant} is numeric. Default 0.05.
+#' @param left_label Text for the left arrow/side label.
+#' @param right_label Text for the right arrow/side label.
+#' @param arrow_length_frac Fraction of max \eqn{|T|} used as half-length of arrows.
+#' @param label_x_gap_frac Horizontal label gap for arrow labels beyond arrow tips
+#'   (fraction of max \eqn{|T|}).
+#' @param label_y_offset Additional vertical offset for arrow-end labels (y-axis units).
 #' @param arrow_color Arrow/label color.
 #' @param arrow_linewidth Arrow line width (plotly units).
 #' @param arrow_head_length_mm Arrow head size (approximate, plotly units).
+#' @param use_diverging_colors Logical; if \code{TRUE}, lines/points are shaded blue (negative)
+#'   to red (positive) with higher contrast; otherwise monochrome.
 #' @param show_grid Logical; show grid lines.
 #' @param base_text_pt Base text size.
 #' @param font_family Font family name.
 #' @param seg_width Segment line width.
 #' @param point_size Point size.
-#' @param statistic_to_plot Which statistic to plot: \code{"T"},
-#'   \code{"T_stand"}, or \code{"Z_from_p"}.
+#'
 #' @return A list with \code{data} and \code{plot} (plotly object).
+#'
+#' @examples
+#' set.seed(1)
+#' n <- 20
+#' results_tbl <- data.frame(
+#'   rank = rep("species", n),
+#'   feature = paste0("feat_", seq_len(n)),
+#'   group1 = "control",
+#'   group2 = "treated",
+#'   design = "case-control",
+#'   T_obs = rnorm(n, sd = 2),
+#'   p_perm = runif(n),
+#'   p_adj_rank = p.adjust(runif(n), method = "BH"),
+#'   category_rank_bh = ifelse(runif(n) < 0.2, "significant (BH, per rank)", "ns"),
+#'   T_obs_stand = rnorm(n),
+#'   Z_from_p = qnorm(1 - runif(n) / 2) * sign(rnorm(n))
+#' )
+#'
+#' out <- forestplot_interactive(
+#'   results_tbl,
+#'   rank_of_interest = "species",
+#'   statistic_to_plot = "T",
+#'   n_neg_each = 5,
+#'   n_pos_each = 5,
+#'   left_label = "More in control",
+#'   right_label = "More in treated",
+#'   use_diverging_colors = TRUE,
+#'   label_x_gap_frac  = 0,
+#'   label_y_offset = -0.05
+#' )
+#'
+#' out$plot
 #' @export
-forest_delta_plotly <- function(
+forestplot_interactive <- function(
     results_tbl,
     rank_of_interest,
+    statistic_to_plot = c("T", "T_stand", "Z_from_p"),
     n_neg_each = 15,
     n_pos_each = 15,
-    use_diverging_colors = FALSE,
     filter_significant = "none",
     sig_level = 0.05,
     left_label    = "More in group1",
     right_label   = "More in group2",
     arrow_length_frac = 0.35,
     label_x_gap_frac  = 0.06,
-    y_pad         = 0.6,
     label_y_offset = 0.00,
-    label_vjust    = -0.30,
     arrow_color   = "red",
     arrow_linewidth = 0.6,
     arrow_head_length_mm = 3.0,
+    use_diverging_colors = FALSE,
     show_grid     = FALSE,
     base_text_pt  = 12,
     font_family   = "Montserrat",
     seg_width     = 1.6,
-    point_size    = 11,
-    statistic_to_plot = c("T", "T_stand", "Z_from_p")
+    point_size    = 11
 ) {
+  # ---- Input validation ------------------------------------------------------
   if (!is.data.frame(results_tbl)) {
     .ph_abort("`results_tbl` must be a data.frame/tibble.")
   }
   statistic_to_plot <- match.arg(statistic_to_plot)
 
+  # ---- Required columns ------------------------------------------------------
   need_cols <- c("rank","feature","group1","group2","design",
                  "T_obs","p_perm","p_adj_rank","category_rank_bh")
   miss <- setdiff(need_cols, colnames(results_tbl))
   if (length(miss)) {
     .ph_abort(paste("`results_tbl` is missing required columns:", paste(miss, collapse = ", ")))
   }
+
+  # ---- Subset to rank --------------------------------------------------------
   df_rk <- dplyr::filter(results_tbl, .data$rank == rank_of_interest)
 
+  # ---- Optional significance filter -----------------------------------------
   if (!identical(filter_significant, "none")) {
     if (!filter_significant %in% colnames(df_rk)) {
       .ph_abort(paste0("column '", filter_significant, "' not found"))
@@ -1163,17 +1222,28 @@ forest_delta_plotly <- function(
     }
   }
 
+  # ---- Choose ranking/plotting statistic ------------------------------------
   if (identical(statistic_to_plot, "T")) {
     stat_title       <- "Stouffer T (raw)"
     stat_title_short <- "Stouffer T"
+    stat_for_sort <- df_rk$T_obs
   } else if (identical(statistic_to_plot, "T_stand")) {
     stat_title       <- "Stouffer T (permutation-standardized)"
     stat_title_short <- "T (standardized)"
+    if (!"T_obs_stand" %in% names(df_rk)) {
+      .ph_abort("Column `T_obs_stand` not found in `x`.")
+    }
+    stat_for_sort <- df_rk$T_obs_stand
   } else {  # "Z" or "Z_from_p"
     stat_title       <- "Z from permutation p-values"
     stat_title_short <- "Z_from_p"
+    if (!"Z_from_p" %in% names(df_rk)) {
+      .ph_abort("Column `Z_from_p` not found; pass ph_prevalence_shift() results or provide Z_from_p yourself.")
+    }
+    stat_for_sort <- df_rk$Z_from_p
   }
 
+  # ---- Early return when no data --------------------------------------------
   if (nrow(df_rk) == 0L) {
     plt <- plotly::plot_ly(type = "scatter", mode = "text") |>
       plotly::layout(
@@ -1196,22 +1266,8 @@ forest_delta_plotly <- function(
     return(list(data = df_rk, plot = plt))
   }
 
-  # choose statistic used for ranking and selection
-  if (identical(statistic_to_plot, "T")) {
-    df_rk$stat_for_sort <- df_rk$T_obs
-  } else if (identical(statistic_to_plot, "T_stand")) {
-    if (!"T_obs_stand" %in% names(df_rk)) {
-      stop("Column `T_obs_stand` not found in `x`.")
-    }
-    df_rk$stat_for_sort <- df_rk$T_obs_stand
-  } else {  # "Z" or "Z_from_p"
-    if (!"Z_from_p" %in% names(df_rk)) {
-      stop("Column `Z_from_p` not found; pass ph_prevalence_shift() results or provide Z_from_p yourself.")
-    }
-    df_rk$stat_for_sort <- df_rk$Z_from_p
-  }
-
-  # selection based on chosen statistic
+  # ---- Select top/bottom features -------------------------------------------
+  df_rk$stat_for_sort <- stat_for_sort
   n_pos <- sum(df_rk$stat_for_sort > 0, na.rm = TRUE)
   n_neg <- sum(df_rk$stat_for_sort < 0, na.rm = TRUE)
 
@@ -1229,20 +1285,15 @@ forest_delta_plotly <- function(
       species_label = forcats::fct_reorder(.data$species_label, .data$stat_for_sort)
     )
 
-  # statistic on x-axis
-  if (identical(statistic_to_plot, "T")) {
-    df_plot$stat_val <- df_plot$T_obs
-  } else if (identical(statistic_to_plot, "T_stand")) {
-    df_plot$stat_val <- df_plot$T_obs_stand
-  } else {  # "Z" or "Z_from_p"
-    df_plot$stat_val <- df_plot$Z_from_p
-  }
+  # ---- Pick statistic for the x-axis ----------------------------------------
+  df_plot$stat_val <- df_plot$stat_for_sort
 
+  # ---- Labels for title/subtitle --------------------------------------------
   g1  <- if (nrow(df_plot)) df_plot$group1[1] else ""
   g2  <- if (nrow(df_plot)) df_plot$group2[1] else ""
   des <- if (nrow(df_plot)) df_plot$design[1] else ""
 
-  # color scaling based on plotted statistic
+  # ---- Color scaling ---------------------------------------------------------
   vals    <- df_plot$stat_val
   max_neg <- max(abs(vals[vals < 0]), na.rm = TRUE)
   max_pos <- max(abs(vals[vals > 0]), na.rm = TRUE)
@@ -1257,6 +1308,7 @@ forest_delta_plotly <- function(
   gamma <- 0.85
   df_plot$T_col <- sign(df_plot$T_col) * (abs(df_plot$T_col))^gamma
 
+  # ---- Hover fields ----------------------------------------------------------
   if (!"n_peptides_used" %in% names(df_plot)) df_plot$n_peptides_used <- NA_integer_
   df_plot$padj_hover <- if ("padj_wbh" %in% names(df_plot)) df_plot$padj_wbh else {
     if ("p_adj_rank" %in% names(df_plot)) df_plot$p_adj_rank else NA_real_
@@ -1276,6 +1328,7 @@ forest_delta_plotly <- function(
     ifelse(is.na(df_plot$padj_hover), "NA", formatC(df_plot$padj_hover, format = "e", digits = 2))
   )
 
+  # ---- Color mapping ---------------------------------------------------------
   map_hex <- local({
     cols <- c("#1f4e79", "#6f94c2", "#eeeeee", "#e7a39c", "#8e1b10")
     ramp <- grDevices::colorRampPalette(cols)(256)
@@ -1291,6 +1344,7 @@ forest_delta_plotly <- function(
   y_levels <- levels(df_plot$species_label)
   df_plot$species_chr <- as.character(df_plot$species_label)
 
+  # ---- Build plotly figure ---------------------------------------------------
   plt <- plotly::plot_ly()
 
   plt <- plotly::layout(
@@ -1329,6 +1383,7 @@ forest_delta_plotly <- function(
     marker     = list(size = point_size, color = pt_hex, opacity = 1)
   )
 
+  # ---- Arrows and labels -----------------------------------------------------
   maxabs <- max(abs(df_plot$stat_val), na.rm = TRUE)
   if (!is.finite(maxabs) || maxabs == 0) maxabs <- 1
   x_off  <- arrow_length_frac * maxabs
