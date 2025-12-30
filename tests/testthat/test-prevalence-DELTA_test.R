@@ -1,23 +1,8 @@
-# tests/testthat/test-ph_prevalence_shift.R
+# tests/testthat/test-compute_delta.R
 
-test_that("ph_prevalence_shift works for unpaired design (mock species)", {
+test_that("compute_delta works for unpaired design (mock species)", {
   # example phip_data
-  phip_path <- phip_example_path()
-
-  ps <- phip_convert(
-    data_long_path    = phip_path,
-    backend           = "duckdb",
-    peptide_library   = TRUE,
-    subject_id        = "subject_id",
-    peptide_id        = "peptide_id",
-    sample_id         = "sample_id",
-    exist             = "exist",
-    timepoint         = "timepoint_factor",
-    fold_change       = "fold_change",
-    materialise_table = TRUE,
-    auto_expand       = TRUE,
-    n_cores           = 2
-  )
+  ps <- phip_load_example_data()
 
   # small unpaired subset: one species, two groups at T1
   ps_filt <- ps %>%
@@ -33,7 +18,7 @@ test_that("ph_prevalence_shift works for unpaired design (mock species)", {
     stringsAsFactors = FALSE
   )
 
-  res <- ph_prevalence_shift(
+  res <- compute_delta(
     x                  = ps_filt,
     exist_col          = "exist",
     rank_cols          = "species",
@@ -80,25 +65,10 @@ test_that("ph_prevalence_shift works for unpaired design (mock species)", {
   expect_lte(res$p_perm, 1)
 })
 
-test_that("ph_prevalence_shift handles paired design via paired_by and returns
+test_that("compute_delta handles paired design via paired_by and returns
           standardized T", {
   # build example phip_data
-  phip_path <- phip_example_path()
-
-  ps <- phip_convert(
-    data_long_path    = phip_path,
-    backend           = "duckdb",
-    peptide_library   = TRUE,
-    subject_id        = "subject_id",
-    peptide_id        = "peptide_id",
-    sample_id         = "sample_id",
-    exist             = "exist",
-    timepoint         = "timepoint_factor",
-    fold_change       = "fold_change",
-    materialise_table = TRUE,
-    auto_expand       = TRUE,
-    n_cores           = 2
-  )
+  ps <- phip_load_example_data()
 
   # subset: one mock species, group A, two timepoints
   ps_filt2 <- ps %>%
@@ -149,7 +119,7 @@ test_that("ph_prevalence_shift handles paired design via paired_by and returns
     ) %>%
     dplyr::select(-flipped)
 
-  res <- ph_prevalence_shift(
+  res <- compute_delta(
     x                  = ps_filt2_flipped,
     paired_by          = "subject_id",
     exist_col          = "exist",
@@ -190,7 +160,7 @@ test_that("ph_prevalence_shift handles paired design via paired_by and returns
   expect_false(is.na(res$Z_from_p))
 })
 
-test_that("ph_prevalence_shift errors on duplicate positives within group", {
+test_that("compute_delta errors on duplicate positives within group", {
   # toy data with duplicate positive for same subject/peptide/group
   toy_dup <- tibble::tibble(
     sample_id  = c("s1", "s2"),
@@ -201,7 +171,7 @@ test_that("ph_prevalence_shift errors on duplicate positives within group", {
   )
 
   expect_error(
-    ph_prevalence_shift(
+    compute_delta(
       x                  = toy_dup,
       exist_col          = "exist",
       rank_cols          = "peptide_id",
@@ -225,25 +195,10 @@ test_that("ph_prevalence_shift errors on duplicate positives within group", {
   )
 })
 
-test_that("ph_prevalence_shift gives consistent direction for T_obs,
+test_that("compute_delta gives consistent direction for T_obs,
           T_obs_stand and Z_from_p", {
   # reuse unpaired example, smaller B for speed
-  phip_path <- phip_example_path()
-
-  ps <- phip_convert(
-    data_long_path    = phip_path,
-    backend           = "duckdb",
-    peptide_library   = TRUE,
-    subject_id        = "subject_id",
-    peptide_id        = "peptide_id",
-    sample_id         = "sample_id",
-    exist             = "exist",
-    timepoint         = "timepoint_factor",
-    fold_change       = "fold_change",
-    materialise_table = TRUE,
-    auto_expand       = TRUE,
-    n_cores           = 2
-  )
+  ps <- phip_load_example_data()
 
   ps_filt <- ps %>%
     dplyr::filter(
@@ -258,7 +213,7 @@ test_that("ph_prevalence_shift gives consistent direction for T_obs,
     stringsAsFactors = FALSE
   )
 
-  res <- ph_prevalence_shift(
+  res <- compute_delta(
     x                  = ps_filt,
     exist_col          = "exist",
     rank_cols          = "species",
@@ -279,15 +234,11 @@ test_that("ph_prevalence_shift gives consistent direction for T_obs,
   )
 
   # only check direction when standardized T is available
-  if (!is.na(res$T_obs_stand)) {
-    expect_equal(sign(res$T_obs), sign(res$T_obs_stand))
-  }
-  if (!is.na(res$Z_from_p)) {
-    expect_equal(sign(res$T_obs), sign(res$Z_from_p))
-  }
+  expect_equal(sign(res$T_obs), sign(res$T_obs_stand))
+  expect_equal(sign(res$T_obs), sign(res$Z_from_p))
 })
 
-test_that("ph_prevalence_shift returns NA T_obs_stand when permutation
+test_that("compute_delta returns NA T_obs_stand when permutation
           variance is zero", {
   # toy data: one peptide, two groups, identical prevalence pattern
   toy <- tibble::tibble(
@@ -298,7 +249,7 @@ test_that("ph_prevalence_shift returns NA T_obs_stand when permutation
     exist      = 1L
   )
 
-  res <- ph_prevalence_shift(
+  res <- compute_delta(
     x                  = toy,
     exist_col          = "exist",
     rank_cols          = "peptide_id",
@@ -332,7 +283,7 @@ test_that("ph_prevalence_shift returns NA T_obs_stand when permutation
   )
 })
 
-test_that("ph_prevalence_shift aborts when required columns are missing", {
+test_that("compute_delta aborts when required columns are missing", {
   toy_missing <- tibble::tibble(
     sample_id  = "s1",
     peptide_id = "pep1",
@@ -341,7 +292,7 @@ test_that("ph_prevalence_shift aborts when required columns are missing", {
   )
 
   expect_error(
-    ph_prevalence_shift(
+    compute_delta(
       x                  = toy_missing,
       exist_col          = "exist",
       rank_cols          = "peptide_id",
@@ -364,7 +315,7 @@ test_that("ph_prevalence_shift aborts when required columns are missing", {
   )
 })
 
-test_that("ph_prevalence_shift aborts when all peptides are zero after hits
+test_that("compute_delta aborts when all peptides are zero after hits
           guard", {
   toy_zero <- tibble::tibble(
     sample_id  = c("s1", "s2"),
@@ -375,7 +326,7 @@ test_that("ph_prevalence_shift aborts when all peptides are zero after hits
   )
 
   expect_error(
-    ph_prevalence_shift(
+    compute_delta(
       x                  = toy_zero,
       exist_col          = "exist",
       rank_cols          = "peptide_id",
@@ -398,7 +349,7 @@ test_that("ph_prevalence_shift aborts when all peptides are zero after hits
   )
 })
 
-test_that("ph_prevalence_shift aborts when peptide_library misses required
+test_that("compute_delta aborts when peptide_library misses required
           rank columns", {
   toy_df <- tibble::tibble(
     sample_id  = "s1",
@@ -413,7 +364,7 @@ test_that("ph_prevalence_shift aborts when peptide_library misses required
   )
 
   expect_error(
-    ph_prevalence_shift(
+    compute_delta(
       x                  = toy_df,
       exist_col          = "exist",
       rank_cols          = "species",
@@ -436,7 +387,7 @@ test_that("ph_prevalence_shift aborts when peptide_library misses required
   )
 })
 
-test_that("ph_prevalence_shift works with rank_cols = 'peptide_id' only", {
+test_that("compute_delta works with rank_cols = 'peptide_id' only", {
   toy_df <- tibble::tibble(
     sample_id  = c("s1", "s2"),
     subject_id = c("id1", "id2"),
@@ -445,7 +396,7 @@ test_that("ph_prevalence_shift works with rank_cols = 'peptide_id' only", {
     exist      = c(1L, 0L)
   )
 
-  res <- ph_prevalence_shift(
+  res <- compute_delta(
     x                  = toy_df,
     exist_col          = "exist",
     rank_cols          = "peptide_id",
@@ -469,7 +420,7 @@ test_that("ph_prevalence_shift works with rank_cols = 'peptide_id' only", {
   expect_true(all(res$rank == "peptide_id"))
 })
 
-test_that("ph_prevalence_shift uses peptide_library attached to phip_data", {
+test_that("compute_delta uses peptide_library attached to phip_data", {
   toy_long <- tibble::tibble(
     sample_id  = c("s1", "s2"),
     subject_id = c("id1", "id2"),
@@ -489,7 +440,7 @@ test_that("ph_prevalence_shift uses peptide_library attached to phip_data", {
   )
   class(x_phip) <- "phip_data"
 
-  res <- ph_prevalence_shift(
+  res <- compute_delta(
     x                  = x_phip,
     exist_col          = "exist",
     rank_cols          = "species",
@@ -514,7 +465,7 @@ test_that("ph_prevalence_shift uses peptide_library attached to phip_data", {
   expect_equal(res$feature, "mock_species")
 })
 
-test_that("ph_prevalence_shift logs to default log_file in a temporary
+test_that("compute_delta logs to default log_file in a temporary
           directory", {
   skip_if_not_installed("filelock")
 
@@ -540,7 +491,7 @@ test_that("ph_prevalence_shift logs to default log_file in a temporary
   tmp <- withr::local_tempdir()
   withr::local_dir(tmp)
 
-  res <- ph_prevalence_shift(
+  res <- compute_delta(
     x                  = x_phip,
     exist_col          = "exist",
     rank_cols          = "peptide_id",
@@ -556,16 +507,16 @@ test_that("ph_prevalence_shift logs to default log_file in a temporary
     rank_feature_keep  = NULL,
     peptide_library    = NULL,
     log                = TRUE,
-    # using default: log_file = "ph_prevalence_shift.log"
+    # using default: log_file = "compute_delta.log"
     fold_change        = "none",
     cross_prev         = "none"
   )
 
-  expect_true(file.exists("ph_prevalence_shift.log"))
-  expect_true(file.exists("ph_prevalence_shift.log.progress.bin"))
+  expect_true(file.exists("compute_delta.log"))
+  expect_true(file.exists("compute_delta.log.progress.bin"))
 })
 
-test_that("ph_prevalence_shift logs to a custom log_file path", {
+test_that("compute_delta logs to a custom log_file path", {
   skip_if_not_installed("filelock")
 
   toy_long <- tibble::tibble(
@@ -592,7 +543,7 @@ test_that("ph_prevalence_shift logs to a custom log_file path", {
 
   custom_log <- file.path(tmp, "my_custom_shift.log")
 
-  res <- ph_prevalence_shift(
+  res <- compute_delta(
     x                  = x_phip,
     exist_col          = "exist",
     rank_cols          = "peptide_id",
@@ -617,7 +568,7 @@ test_that("ph_prevalence_shift logs to a custom log_file path", {
   expect_true(file.exists(paste0(custom_log, ".progress.bin")))
 })
 
-test_that("ph_prevalence_shift computes fold_change summaries correctly for
+test_that("compute_delta computes fold_change summaries correctly for
           all modes", {
   toy_fc <- tibble::tibble(
     sample_id  = c("s1", "s2", "s3", "s4"),
@@ -642,7 +593,7 @@ test_that("ph_prevalence_shift computes fold_change summaries correctly for
 
   run_fc <- function(mode) {
     set.seed(1)
-    ph_prevalence_shift(
+    compute_delta(
       x                  = toy_fc,
       exist_col          = "exist",
       rank_cols          = "peptide_id",
@@ -675,7 +626,7 @@ test_that("ph_prevalence_shift computes fold_change summaries correctly for
   expect_equal(res_median$fold_change_median,   expected$fc_median)
 })
 
-test_that("ph_prevalence_shift computes cross_prev summaries correctly for all
+test_that("compute_delta computes cross_prev summaries correctly for all
           modes", {
   toy_cp <- tibble::tibble(
     sample_id  = c("s1", "s2", "s3", "s4"),
@@ -705,7 +656,7 @@ test_that("ph_prevalence_shift computes cross_prev summaries correctly for all
 
   run_cp <- function(mode) {
     set.seed(1)
-    ph_prevalence_shift(
+    compute_delta(
       x                  = toy_cp,
       exist_col          = "exist",
       rank_cols          = "species",
@@ -737,7 +688,7 @@ test_that("ph_prevalence_shift computes cross_prev summaries correctly for all
   expect_equal(res_median$cross_prev_median,   expected_median)
 })
 
-test_that("ph_prevalence_shift supports se_invvar weights with asin and diff
+test_that("compute_delta supports se_invvar weights with asin and diff
           z-scores", {
   toy_se <- tibble::tibble(
     sample_id  = c("s1",  "s2",  "s3",  "s4"),
@@ -749,7 +700,7 @@ test_that("ph_prevalence_shift supports se_invvar weights with asin and diff
 
   # se_invvar + asin
   set.seed(1)
-  res_asin <- ph_prevalence_shift(
+  res_asin <- compute_delta(
     x                  = toy_se,
     exist_col          = "exist",
     rank_cols          = "peptide_id",
@@ -771,7 +722,7 @@ test_that("ph_prevalence_shift supports se_invvar weights with asin and diff
 
   # se_invvar + diff
   set.seed(1)
-  res_diff <- ph_prevalence_shift(
+  res_diff <- compute_delta(
     x                  = toy_se,
     exist_col          = "exist",
     rank_cols          = "peptide_id",
@@ -799,7 +750,7 @@ test_that("ph_prevalence_shift supports se_invvar weights with asin and diff
   expect_false(all(is.na(res_diff$T_obs)))
 })
 
-test_that("ph_prevalence_shift supports prevalence-stratified combination
+test_that("compute_delta supports prevalence-stratified combination
           (deciles)", {
   toy_dec <- tibble::tibble(
     sample_id  = c("s1", "s2", "s3", "s4"),
@@ -814,7 +765,7 @@ test_that("ph_prevalence_shift supports prevalence-stratified combination
     dplyr::distinct(peptide_id, species)
 
   set.seed(1)
-  res <- ph_prevalence_shift(
+  res <- compute_delta(
     x                  = toy_dec,
     exist_col          = "exist",
     rank_cols          = "species",
@@ -839,7 +790,7 @@ test_that("ph_prevalence_shift supports prevalence-stratified combination
   expect_true(all(is.numeric(res$T_obs)))
 })
 
-test_that("ph_prevalence_shift returns NA stats when no peptides pass
+test_that("compute_delta returns NA stats when no peptides pass
           min_max_prev (unpaired)", {
   toy_prev <- tibble::tibble(
     sample_id  = c("s1","s2","s3","s4"),
@@ -850,7 +801,7 @@ test_that("ph_prevalence_shift returns NA stats when no peptides pass
   )
 
   set.seed(1)
-  res <- ph_prevalence_shift(
+  res <- compute_delta(
     x                  = toy_prev,
     exist_col          = "exist",
     rank_cols          = "peptide_id",
@@ -879,7 +830,7 @@ test_that("ph_prevalence_shift returns NA stats when no peptides pass
   expect_true(all(is.na(res$mean_delta_w)))
 })
 
-test_that("ph_prevalence_shift returns NA stats when no peptides pass
+test_that("compute_delta returns NA stats when no peptides pass
           min_max_prev (paired)", {
   toy_prev_p <- tibble::tibble(
     sample_id  = c("s1","s2","s3","s4"),
@@ -890,7 +841,7 @@ test_that("ph_prevalence_shift returns NA stats when no peptides pass
   )
 
   set.seed(1)
-  res <- ph_prevalence_shift(
+  res <- compute_delta(
     x                  = toy_prev_p,
     paired_by          = "subject_id",
     exist_col          = "exist",
@@ -915,7 +866,7 @@ test_that("ph_prevalence_shift returns NA stats when no peptides pass
   expect_equal(nrow(res), 0L)
 })
 
-test_that("ph_prevalence_shift uses global RNG reproducibly and advances .Random.seed deterministically", {
+test_that("compute_delta uses global RNG reproducibly and advances .Random.seed deterministically", {
   toy_rng <- tibble::tibble(
     sample_id  = paste0("s", 1:10),
     subject_id = paste0("id", 1:10),
@@ -928,7 +879,7 @@ test_that("ph_prevalence_shift uses global RNG reproducibly and advances .Random
   set.seed(1234)
   seed_before1 <- .Random.seed
 
-  res1 <- ph_prevalence_shift(
+  res1 <- compute_delta(
     x                  = toy_rng,
     exist_col          = "exist",
     rank_cols          = "peptide_id",
@@ -954,7 +905,7 @@ test_that("ph_prevalence_shift uses global RNG reproducibly and advances .Random
   set.seed(1234)
   seed_before2 <- .Random.seed
 
-  res2 <- ph_prevalence_shift(
+  res2 <- compute_delta(
     x                  = toy_rng,
     exist_col          = "exist",
     rank_cols          = "peptide_id",
@@ -987,7 +938,7 @@ test_that("ph_prevalence_shift uses global RNG reproducibly and advances .Random
   expect_equal(res1, res2)
 })
 
-test_that("ph_prevalence_shift aborts on bitset/peptide dimension mismatch", {
+test_that("compute_delta aborts on bitset/peptide dimension mismatch", {
   toy_df <- tibble::tibble(
     sample_id  = c("s1", "s2"),
     subject_id = c("id1", "id2"),
@@ -1008,7 +959,7 @@ test_that("ph_prevalence_shift aborts on bitset/peptide dimension mismatch", {
   )
 
   expect_error(
-    ph_prevalence_shift(
+    compute_delta(
       x                  = toy_df,
       exist_col          = "exist",
       rank_cols          = "peptide_id",
