@@ -122,8 +122,9 @@ weighting (as returned by the C++ helper).
 \item \code{b}: number of permutations actually used (may be \verb{< B_permutations} if
 early stopping is implemented in the C++ helper).
 \item \code{p_adj_rank}: BH-adjusted p-value within each \code{rank}.
-\item \code{mean_delta}, \code{frac_delta_pos}, \code{mean_delta_w}, \code{frac_delta_pos_w}:
-unweighted/weighted summaries of peptide-level prevalence differences.
+\item \code{max_delta}, \code{frac_delta_pos}, \code{frac_delta_pos_w}:
+maximum absolute peptide-level prevalence difference
+and unweighted/weighted fractions of positive peptide-level deltas.
 \item \verb{fold_change_<mode>}: optional fold-change summary if \code{fold_change != "none"}.
 \item \verb{cross_prev_<mode>}: optional pooled prevalence summary if
 \code{cross_prev != "none"}.
