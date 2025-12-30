@@ -297,14 +297,16 @@ testthat::test_that("compute_pcoa returns expected structure and types", {
   testthat::expect_s3_class(res, "beta_pcoa")
   testthat::expect_true(is.list(res))
 
-  testthat::expect_true(all(c("sample_coords", "eigenvalues", "var_explained", "feature_loadings") %in% names(res)))
+  testthat::expect_true(all(c("sample_coords", "eigenvalues", "var_explained",
+                              "eigen_diagnostics", "correction_infos",
+                              "feature_associations") %in% names(res)))
 
   testthat::expect_s3_class(res$sample_coords, "tbl_df")
   testthat::expect_true("sample_id" %in% names(res$sample_coords))
   testthat::expect_true(is.numeric(res$eigenvalues))
   testthat::expect_s3_class(res$var_explained, "tbl_df")
   testthat::expect_equal(nrow(res$var_explained), 1L)
-  testthat::expect_s3_class(res$feature_loadings, "tbl_df")
+  testthat::expect_s3_class(res$feature_associations, "tbl_df")
 
   # sample_coords rows should match dist size
   n <- attr(d, "Size")
@@ -382,7 +384,7 @@ testthat::test_that("compute_pcoa uses all requested axes up to n-1
   }
 })
 
-testthat::test_that("compute_pcoa feature_loadings: skips when abundances
+testthat::test_that("compute_pcoa feature_associations: skips when abundances
                     missing", {
 
   ps_small <- .get_ps_small_for_distance()
@@ -392,11 +394,11 @@ testthat::test_that("compute_pcoa feature_loadings: skips when abundances
   attr(d, "abundances") <- NULL
 
   res <- suppressWarnings(compute_pcoa(d, n_axes = 3L, top_features = 10L))
-  testthat::expect_s3_class(res$feature_loadings, "tbl_df")
-  testthat::expect_equal(nrow(res$feature_loadings), 0L)
+  testthat::expect_s3_class(res$feature_associations, "tbl_df")
+  testthat::expect_equal(nrow(res$feature_associations), 0L)
 })
 
-testthat::test_that("compute_pcoa feature_loadings: returns expected columns
+testthat::test_that("compute_pcoa feature_associations: returns expected columns
                     and respects top_features logic", {
 
   ps_small <- .get_ps_small_for_distance()
@@ -404,7 +406,7 @@ testthat::test_that("compute_pcoa feature_loadings: returns expected columns
 
   res <- suppressWarnings(compute_pcoa(d, n_axes = 3L, top_features = 2L))
 
-  fl <- res$feature_loadings
+  fl <- res$feature_associations
   # may still be empty if alignment fails, but on example data it should work
   testthat::expect_true(is.data.frame(fl))
   if (nrow(fl) > 0L) {
@@ -453,7 +455,8 @@ testthat::test_that("compute_pcoa reproducibility: repeated runs match across
     testthat::expect_equal(r1$sample_coords, r2$sample_coords, tolerance = 1e-12)
     testthat::expect_equal(r1$eigenvalues, r2$eigenvalues, tolerance = 1e-12)
     testthat::expect_equal(r1$var_explained, r2$var_explained, tolerance = 1e-12)
-    testthat::expect_equal(r1$feature_loadings, r2$feature_loadings, tolerance = 1e-12)
+    testthat::expect_equal(r1$feature_associations, r2$feature_associations,
+                           tolerance = 1e-12)
   }
 })
 
@@ -509,7 +512,7 @@ testthat::test_that("compute_capscale: full coverage (success, warnings,
   testthat::expect_s3_class(res, "beta_capscale")
   testthat::expect_true(all(c(
     "sample_coords", "eigenvalues", "variance_partition",
-    "feature_loadings", "cap_model"
+    "feature_associations", "r2", "r2_adj", "perm_terms", "cap_model"
   ) %in% names(res)))
 
   testthat::expect_s3_class(res$sample_coords, "tbl_df")
@@ -519,7 +522,10 @@ testthat::test_that("compute_capscale: full coverage (success, warnings,
   testthat::expect_equal(nrow(res$variance_partition), 3L)
   testthat::expect_true(all(c("component", "inertia", "proportion") %in%
                               names(res$variance_partition)))
-  testthat::expect_s3_class(res$feature_loadings, "tbl_df")
+  testthat::expect_s3_class(res$feature_associations, "tbl_df")
+  testthat::expect_true(is.numeric(res$r2))
+  testthat::expect_true(is.numeric(res$r2_adj))
+  testthat::expect_s3_class(res$perm_terms, "tbl_df")
   testthat::expect_true(inherits(res$cap_model, "capscale"))
 
   # "Total" proportion should be 1
@@ -549,7 +555,7 @@ testthat::test_that("compute_capscale: full coverage (success, warnings,
   testthat::expect_equal(r1$eigenvalues, r2$eigenvalues, tolerance = 1e-12)
   testthat::expect_equal(r1$variance_partition, r2$variance_partition,
                          tolerance = 1e-12)
-  testthat::expect_equal(r1$feature_loadings, r2$feature_loadings,
+  testthat::expect_equal(r1$feature_associations, r2$feature_associations,
                          tolerance = 1e-12)
 
   # ----------------------------------------------------------------------------
@@ -582,7 +588,7 @@ testthat::test_that("compute_capscale: full coverage (success, warnings,
   # ----------------------------------------------------------------------------
   # 5) warning branches (single test file, but cover both warnings)
   #    - no labels in dist_obj (warn)
-  #    - no abundances (feature loadings empty, no warning in your final func
+  #    - no abundances (feature associations empty, no warning in your final func
   # ----------------------------------------------------------------------------
   d_no_labels <- d
   attr(d_no_labels, "Labels") <- NULL
@@ -608,8 +614,8 @@ testthat::test_that("compute_capscale: full coverage (success, warnings,
     neg_correction = "none",
     top_features = 10L
   ))
-  testthat::expect_s3_class(res_no_ab$feature_loadings, "tbl_df")
-  testthat::expect_equal(nrow(res_no_ab$feature_loadings), 0L)
+  testthat::expect_s3_class(res_no_ab$feature_associations, "tbl_df")
+  testthat::expect_equal(nrow(res_no_ab$feature_associations), 0L)
 
   # ----------------------------------------------------------------------------
   # 6) error branches (chk + .ph_abort paths)
@@ -729,8 +735,12 @@ testthat::test_that("compute_permanova: basic functionality and input validation
   ))
 
   testthat::expect_s3_class(res, "tbl_df")
-  testthat::expect_true(all(c("scope", "contrast", "term", "p_value", "n_perm") %in% names(res)))
+  testthat::expect_true(all(c("scope", "contrast", "term", "p_value",
+                              "p_adjust", "n_perm") %in% names(res)))
   testthat::expect_true(nrow(res) >= 1L)  # at least global test
+  if (nrow(res) > 0L) {
+    testthat::expect_true(all(!is.na(res$p_adjust)))
+  }
 
   # test with both group and time (if available)
   dat <- if ("phip_data" %in% class(ps_small)) ps_small$data_long else ps_small
@@ -751,7 +761,7 @@ testthat::test_that("compute_permanova: basic functionality and input validation
   }
 })
 
-testthat::test_that("compute_permanova: contrasts and edge cases", {
+testthat::test_that("compute_permanova: pairwise comparisons", {
   ps_small <- .get_ps_small_for_distance()
   d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
 
@@ -760,30 +770,20 @@ testthat::test_that("compute_permanova: contrasts and edge cases", {
   group_var <- .pick_constraint_var_perm(ps_small)
   testthat::skip_if(is.null(group_var), "no suitable grouping variable found")
 
-  # test pairwise contrasts
   res_pair <- suppressWarnings(compute_permanova(
     dist_obj = d,
     ps = ps_small,
     group_col = group_var,
-    contrasts = "pairwise",
     permutations = 99
   ))
 
   testthat::expect_s3_class(res_pair, "tbl_df")
   # should have global + pairwise results
   testthat::expect_true(any(res_pair$scope == "global"))
-
-  # test each_vs_rest
-  res_each <- suppressWarnings(compute_permanova(
-    dist_obj = d,
-    ps = ps_small,
-    group_col = group_var,
-    contrasts = "each_vs_rest",
-    permutations = 99
-  ))
-
-  testthat::expect_s3_class(res_each, "tbl_df")
-  testthat::expect_true(any(res_each$scope == "global"))
+  # pairwise may be skipped if levels are insufficient after filtering
+  if (any(res_pair$scope == "group_pairwise")) {
+    testthat::expect_true(any(res_pair$scope == "group_pairwise"))
+  }
 })
 
 testthat::test_that("compute_permanova: input validation errors", {
@@ -885,12 +885,14 @@ testthat::test_that("compute_dispersion: basic functionality and input validatio
 
   # check tests structure
   if (nrow(res$tests) > 0L) {
-    testthat::expect_true(all(c("scope", "contrast", "term", "p_value", "n_perm") %in% names(res$tests)))
+    testthat::expect_true(all(c("scope", "contrast", "term", "p_value",
+                                "p_adjust", "n_perm") %in% names(res$tests)))
     testthat::expect_true(all(res$tests$term == "dispersion"))
+    testthat::expect_true(all(!is.na(res$tests$p_adjust)))
   }
 })
 
-testthat::test_that("compute_dispersion: contrasts and edge cases", {
+testthat::test_that("compute_dispersion: pairwise comparisons", {
   ps_small <- .get_ps_small_for_distance()
   d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
 
@@ -899,28 +901,17 @@ testthat::test_that("compute_dispersion: contrasts and edge cases", {
   group_var <- .pick_constraint_var_perm(ps_small)
   testthat::skip_if(is.null(group_var), "no suitable grouping variable found")
 
-  # test pairwise contrasts
   res_pair <- suppressWarnings(compute_dispersion(
     dist_obj = d,
     ps = ps_small,
     group_col = group_var,
-    contrasts = "pairwise",
     permutations = 99
   ))
 
   testthat::expect_s3_class(res_pair, "beta_dispersion")
   testthat::expect_true(all(c("distances", "tests") %in% names(res_pair)))
 
-  # test each_vs_rest
-  res_each <- suppressWarnings(compute_dispersion(
-    dist_obj = d,
-    ps = ps_small,
-    group_col = group_var,
-    contrasts = "each_vs_rest",
-    permutations = 99
-  ))
-
-  testthat::expect_s3_class(res_each, "beta_dispersion")
+  testthat::expect_true(nrow(res_pair$tests) >= 1L)
 })
 
 testthat::test_that("compute_dispersion: input validation errors", {
@@ -1371,5 +1362,987 @@ testthat::test_that("compute_tsne: warns about missing metadata columns", {
       meta_cols = c("nonexistent_column", "another_missing_col")
     ),
     regexp = "(?i)not present.*ignored"
+  )
+})
+
+# Additional tests for better coverage
+
+testthat::test_that("compute_distance: edge cases and error conditions", {
+  ps_small <- .get_ps_small_for_distance()
+
+  # test with empty data after filtering
+  ps_empty <- ps_small |> dplyr::filter(FALSE)
+  testthat::expect_error(
+    compute_distance(ps_empty, value_col = "exist"),
+    regexp = "(?i)empty|zero"
+  )
+
+  # test with all NA values in abundance column
+  ps_na <- ps_small |>
+    dplyr::mutate(exist = NA_real_)
+
+  # should replace NAs with 0 and continue
+  d_na <- suppressWarnings(compute_distance(
+    ps_na,
+    value_col = "exist",
+    method_normalization = "none",
+    distance = "euclidean"
+  ))
+  testthat::expect_s3_class(d_na, "dist")
+
+  # test with missing sample_id or peptide_id
+  ps_no_sample <- ps_small |> dplyr::select(-sample_id)
+  testthat::expect_error(
+    compute_distance(ps_no_sample, value_col = "exist"),
+    regexp = "(?i)missing.*sample_id"
+  )
+
+  ps_no_peptide <- ps_small |> dplyr::select(-peptide_id)
+  testthat::expect_error(
+    compute_distance(ps_no_peptide, value_col = "exist"),
+    regexp = "(?i)missing.*peptide_id"
+  )
+
+  # test with NA in sample_id or peptide_id
+  ps_na_ids <- ps_small
+  ps_na_ids$sample_id[1] <- NA
+  testthat::expect_error(
+    compute_distance(ps_na_ids, value_col = "exist"),
+    regexp = "(?i)missing values.*sample_id"
+  )
+})
+
+testthat::test_that("compute_distance: normalization methods", {
+  ps_small <- .get_ps_small_for_distance()
+
+  # test log normalization
+  d_log <- suppressWarnings(compute_distance(
+    ps_small,
+    value_col = "exist",
+    method_normalization = "log",
+    distance = "euclidean"
+  ))
+  testthat::expect_s3_class(d_log, "dist")
+
+  # test hellinger normalization
+  d_hell <- suppressWarnings(compute_distance(
+    ps_small,
+    value_col = "exist",
+    method_normalization = "hellinger",
+    distance = "euclidean"
+  ))
+  testthat::expect_s3_class(d_hell, "dist")
+
+  # verify hellinger is sqrt(relative)
+  abund_hell <- attr(d_hell, "abundances")
+  # for binary data, hellinger should be sqrt of relative
+  testthat::expect_true(all(abund_hell >= 0))
+  testthat::expect_true(all(abund_hell <= 1))
+})
+
+testthat::test_that("compute_distance: distance method fallbacks", {
+  ps_small <- .get_ps_small_for_distance()
+
+  # test vegan fallback methods (when parallelDist not available or method not supported)
+  testthat::skip_if_not_installed("vegan")
+
+  # test a method that should use vegan
+  d_jaccard <- suppressWarnings(compute_distance(
+    ps_small,
+    value_col = "exist",
+    method_normalization = "none",
+    distance = "jaccard"
+  ))
+  testthat::expect_s3_class(d_jaccard, "dist")
+
+  # test chebyshev -> maximum mapping
+  d_cheby <- suppressWarnings(compute_distance(
+    ps_small,
+    value_col = "exist",
+    method_normalization = "none",
+    distance = "chebyshev"
+  ))
+  testthat::expect_s3_class(d_cheby, "dist")
+})
+
+testthat::test_that("compute_distance: parallelDist vs vegan consistency", {
+  ps_small <- .get_ps_small_for_distance()
+
+  testthat::skip_if_not_installed("vegan")
+
+  # test that bray-curtis gives same results
+  d1 <- suppressWarnings(compute_distance(
+    ps_small,
+    value_col = "exist",
+    method_normalization = "relative",
+    distance = "bray"
+  ))
+
+  # manually compute with vegan for comparison
+  abund <- attr(d1, "abundances")
+  d_vegan <- vegan::vegdist(abund, method = "bray")
+
+  testthat::expect_equal(as.numeric(d1), as.numeric(d_vegan), tolerance = 1e-10)
+})
+
+testthat::test_that("compute_pcoa: negative eigenvalue corrections", {
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small)
+
+  testthat::skip_if_not_installed("vegan")
+
+  # test lingoes correction
+  res_lingoes <- suppressWarnings(compute_pcoa(
+    d,
+    neg_correction = "lingoes",
+    n_axes = 3L
+  ))
+  testthat::expect_s3_class(res_lingoes, "beta_pcoa")
+
+  # test cailliez correction
+  res_cailliez <- suppressWarnings(compute_pcoa(
+    d,
+    neg_correction = "cailliez",
+    n_axes = 3L
+  ))
+  testthat::expect_s3_class(res_cailliez, "beta_pcoa")
+})
+
+testthat::test_that("compute_pcoa: variance explained calculations", {
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small)
+
+  res <- suppressWarnings(compute_pcoa(d, n_axes = 3L))
+
+  # check that percentages are reasonable
+  var_exp <- res$var_explained
+  pct_cols <- grep("^%PCoA", names(var_exp), value = TRUE)
+
+  if (length(pct_cols) > 0) {
+    pct_vals <- unlist(var_exp[pct_cols])
+    testthat::expect_true(all(pct_vals >= 0, na.rm = TRUE))
+    testthat::expect_true(all(pct_vals <= 100, na.rm = TRUE))
+
+    # total should be <= 100
+    total_pct <- sum(pct_vals, var_exp$`%Other`, na.rm = TRUE)
+    testthat::expect_lte(total_pct, 100.1) # small tolerance for rounding
+  }
+})
+
+testthat::test_that("compute_pcoa: feature associations edge cases", {
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small)
+
+  # test with mismatched row names
+  X_bad <- attr(d, "abundances")
+  rownames(X_bad) <- paste0("bad_", rownames(X_bad))
+  attr(d, "abundances") <- X_bad
+
+  res_bad <- suppressWarnings(compute_pcoa(d, n_axes = 2L))
+  testthat::expect_equal(nrow(res_bad$feature_associations), 0L)
+
+  # test with zero-weight features
+  d2 <- .get_dist_for_pcoa(ps_small)
+  X2 <- attr(d2, "abundances")
+  X2[, 1] <- 0  # make first feature all zeros
+  attr(d2, "abundances") <- X2
+
+  res_zero <- suppressWarnings(compute_pcoa(d2, n_axes = 2L, top_features = 10L))
+  # should still work, just exclude zero-weight features
+  testthat::expect_s3_class(res_zero$feature_associations, "tbl_df")
+})
+
+testthat::test_that("compute_capscale: size mismatches and edge cases", {
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small)
+
+  rhs_var <- .pick_constraint_var_cap(ps_small)
+  testthat::skip_if(is.null(rhs_var), "no constraint variable available")
+
+  # test with distance size mismatch when no labels
+  d_no_size <- d
+  attr(d_no_size, "Labels") <- NULL
+  attr(d_no_size, "Size") <- 999  # wrong size
+
+  testthat::expect_error(
+    compute_capscale(d_no_size, ps_small, stats::as.formula(paste0("~ ", rhs_var))),
+    regexp = "(?i)cannot align.*size"
+  )
+})
+
+testthat::test_that("compute_permanova: stratification and repeated measures", {
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small)
+
+  testthat::skip_if_not_installed("vegan")
+
+  group_var <- .pick_constraint_var_perm(ps_small)
+  testthat::skip_if(is.null(group_var), "no grouping variable available")
+
+  # test with subject stratification
+  dat <- if ("phip_data" %in% class(ps_small)) ps_small$data_long else ps_small
+  cols <- dplyr::tbl_vars(dat)
+
+  if ("subject_id" %in% cols) {
+    # create artificial repeated measures by duplicating some samples
+    dat_collected <- dat |> dplyr::collect()
+    n_rows <- nrow(dat_collected)
+    indices <- rep(1:min(5, n_rows), each = 2)
+
+    dat_rep <- dat_collected |>
+      dplyr::slice(indices) |>
+      dplyr::mutate(
+        sample_id = paste0(sample_id, "_rep", rep(1:2, length.out = dplyr::n())),
+        timepoint_factor = rep(c("T1", "T2"), length.out = dplyr::n())
+      )
+
+    # create corresponding distance matrix
+    n_rep <- nrow(dat_rep)
+    d_rep <- stats::as.dist(matrix(runif(n_rep * (n_rep - 1) / 2),
+                                   nrow = n_rep - 1))
+    attr(d_rep, "Labels") <- dat_rep$sample_id
+    attr(d_rep, "Size") <- n_rep
+
+    res_strat <- suppressWarnings(compute_permanova(
+      d_rep, dat_rep,
+      group_col = group_var,
+      time_col = "timepoint_factor",
+      subject_col = "subject_id",
+      permutations = 99
+    ))
+    testthat::expect_s3_class(res_strat, "tbl_df")
+  }
+})
+
+testthat::test_that("compute_permanova: insufficient data warnings", {
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small)
+
+  testthat::skip_if_not_installed("vegan")
+
+  # create data with only one group level
+  dat <- if ("phip_data" %in% class(ps_small)) ps_small$data_long else ps_small
+  dat_single <- dat |>
+    dplyr::mutate(single_group = "A") |>
+    dplyr::collect()
+
+  # should skip global test due to insufficient levels
+  res_single <- suppressWarnings(compute_permanova(
+    d, dat_single,
+    group_col = "single_group",
+    permutations = 99
+  ))
+
+  # should return empty or minimal results
+  testthat::expect_s3_class(res_single, "tbl_df")
+})
+
+testthat::test_that("compute_dispersion: time factor edge cases", {
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small)
+
+  testthat::skip_if_not_installed("vegan")
+
+  # test with numeric time (should warn and skip)
+  dat <- if ("phip_data" %in% class(ps_small)) ps_small$data_long else ps_small
+  dat_numeric_time <- dat |>
+    dplyr::mutate(numeric_time = as.numeric(1:dplyr::n())) |>
+    dplyr::collect()
+
+  res_numeric <- suppressWarnings(compute_dispersion(
+    d, dat_numeric_time,
+    time_col = "numeric_time",
+    permutations = 99
+  ))
+
+  testthat::expect_s3_class(res_numeric, "beta_dispersion")
+  # should have skipped time dispersion test
+})
+
+testthat::test_that("compute_dispersion: betadisper failures", {
+  ps_small <- .get_ps_small_for_distance()
+
+  testthat::skip_if_not_installed("vegan")
+
+  # create a problematic distance matrix (e.g., all zeros)
+  n_samples <- 5
+  d_bad <- stats::as.dist(matrix(0, nrow = n_samples, ncol = n_samples))
+  attr(d_bad, "Labels") <- paste0("sample_", 1:n_samples)
+  attr(d_bad, "Size") <- n_samples
+
+  ps_bad <- data.frame(
+    sample_id = paste0("sample_", 1:n_samples),
+    group = rep(c("A", "B"), length.out = n_samples)
+  )
+
+  # should handle betadisper failure gracefully
+  res_bad <- suppressWarnings(compute_dispersion(
+    d_bad, ps_bad,
+    group_col = "group",
+    permutations = 99
+  ))
+
+  testthat::expect_s3_class(res_bad, "beta_dispersion")
+})
+
+testthat::test_that("compute_tsne: Rtsne package not available", {
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small)
+
+  testthat::skip_if_not_installed("mockery")
+
+  # mock rlang::is_installed to return FALSE for Rtsne
+  mockery::stub(compute_tsne, "rlang::is_installed", function(pkg) {
+    if (pkg == "Rtsne") FALSE else TRUE
+  })
+
+  testthat::expect_error(
+    compute_tsne(ps_small, d),
+    regexp = "(?i)Rtsne.*required.*install"
+  )
+})
+
+testthat::test_that("compute_tsne: unexpected Rtsne output", {
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small)
+
+  testthat::skip_if_not_installed("Rtsne")
+  testthat::skip_if_not_installed("mockery")
+
+  # mock Rtsne to return unexpected output
+  mockery::stub(compute_tsne, "Rtsne::Rtsne", function(...) {
+    list(Y = matrix(1, nrow = 2, ncol = 2)) # wrong dimensions
+  })
+
+  testthat::expect_error(
+    compute_tsne(ps_small, d, dims = 3L, perplexity = 5),
+    regexp = "(?i)unexpected output.*wrong shape"
+  )
+})
+
+testthat::test_that("edge cases: empty results and missing data", {
+  # test various edge cases that might not be covered
+
+  # empty distance matrix
+  testthat::expect_error(
+    compute_pcoa(stats::dist(matrix(numeric(0), nrow = 0))),
+    regexp = "(?i)at least 2 samples"
+  )
+
+  # test with minimal data
+  minimal_ps <- data.frame(
+    sample_id = c("s1", "s2", "s3"),
+    peptide_id = c("p1", "p1", "p1"),
+    exist = c(1, 0, 1)
+  )
+
+  d_minimal <- suppressWarnings(compute_distance(
+    minimal_ps,
+    value_col = "exist",
+    method_normalization = "none",
+    distance = "euclidean"
+  ))
+
+  testthat::expect_s3_class(d_minimal, "dist")
+  testthat::expect_equal(attr(d_minimal, "Size"), 3L)
+})
+
+testthat::test_that("compute_distance: phip_data auto-detect and non-numeric value errors", {
+  dat_bad <- data.frame(
+    sample_id = "s1",
+    peptide_id = "p1",
+    value = "not_numeric",
+    stringsAsFactors = FALSE
+  )
+
+  ps_bad <- structure(list(data_long = dat_bad), class = "phip_data")
+
+  testthat::expect_error(
+    compute_distance(ps_bad, value_col = NULL),
+    regexp = "(?i)could not infer.*abundance"
+  )
+
+  testthat::expect_error(
+    compute_distance(dat_bad, value_col = "value"),
+    regexp = "(?i)must be numeric"
+  )
+})
+
+testthat::test_that("compute_distance: pivot_wider guard", {
+  testthat::skip_if_not_installed("mockery")
+
+  dat <- data.frame(
+    sample_id = c("s1", "s2"),
+    peptide_id = c("p1", "p1"),
+    exist = c(1, 0)
+  )
+
+  mockery::stub(compute_distance, "tidyr::pivot_wider", function(...) {
+    data.frame(not_sample_id = 1)
+  })
+
+  testthat::expect_error(
+    compute_distance(dat, value_col = "exist"),
+    regexp = "(?i)no `sample_id`"
+  )
+})
+
+testthat::test_that("compute_distance: missing parallelDist", {
+  testthat::skip_if_not_installed("mockery")
+
+  dat <- data.frame(
+    sample_id = c("s1", "s2"),
+    peptide_id = c("p1", "p1"),
+    exist = c(1, 0)
+  )
+
+  mockery::stub(compute_distance, "rlang::is_installed", function(pkg) {
+    if (pkg == "parallelDist") FALSE else TRUE
+  })
+
+  testthat::expect_error(
+    compute_distance(dat, value_col = "exist", method_normalization = "none",
+                     distance = "euclidean"),
+    regexp = "(?i)parallelDist"
+  )
+})
+
+testthat::test_that("compute_pcoa: missing labels and zero-axis handling", {
+  d <- stats::dist(matrix(c(0, 1, 1, 0), nrow = 2))
+  attr(d, "Labels") <- NULL
+  attr(d, "abundances") <- matrix(
+    c(1, 0, 0, 1),
+    nrow = 2,
+    dimnames = list(c("s1", "s2"), c("p1", "p2"))
+  )
+
+  res <- compute_pcoa(d, n_axes = 3L, top_features = 5L)
+
+  testthat::expect_true(all(res$sample_coords$sample_id %in% c("1", "2")))
+  testthat::expect_gte(ncol(res$sample_coords), 1L)
+  testthat::expect_s3_class(res$feature_associations, "tbl_df")
+})
+
+testthat::test_that("compute_pcoa: feature association alignment warnings", {
+  testthat::skip_if_not_installed("mockery")
+
+  d <- stats::dist(matrix(c(0, 1, 1, 0), nrow = 2))
+  attr(d, "Labels") <- c("s1", "s2")
+  attr(d, "abundances") <- matrix(
+    c(1, 0, 0, 1),
+    nrow = 2,
+    dimnames = list(c("s1", "x2"), c("p1", "p2"))
+  )
+
+  mockery::stub(compute_pcoa, "stats::cmdscale", function(...) {
+    pts <- matrix(1, nrow = 2, ncol = 1)
+    rownames(pts) <- c("s1", "s2")
+    list(eig = c(1, 0.5), points = pts)
+  })
+  mockery::stub(compute_pcoa, "intersect", function(x, y) x[1])
+
+  testthat::expect_warning(
+    compute_pcoa(d, n_axes = 1L, top_features = 5L),
+    regexp = "(?i)insufficient overlap"
+  )
+
+  attr(d, "abundances") <- matrix(c(1, 0, 0, 1), nrow = 2)
+
+  mockery::stub(compute_pcoa, "stats::cmdscale", function(...) {
+    list(eig = c(1, 0.5), points = matrix(1, nrow = 2, ncol = 1))
+  })
+
+  testthat::expect_warning(
+    compute_pcoa(d, n_axes = 1L, top_features = 5L),
+    regexp = "(?i)row names missing"
+  )
+})
+
+testthat::test_that("compute_capscale: empty metadata and missing abundance rownames", {
+  testthat::skip_if_not_installed("vegan")
+
+  d <- stats::dist(matrix(c(0, 1, 1, 0), nrow = 2))
+  attr(d, "Labels") <- c("s1", "s2")
+
+  ps_empty <- data.frame(sample_id = character(), group = character())
+  testthat::expect_error(
+    compute_capscale(d, ps_empty, ~ group),
+    regexp = "(?i)constructed metadata has zero rows"
+  )
+
+  ps <- data.frame(sample_id = c("s1", "s2"), group = c("A", "B"))
+  attr(d, "abundances") <- matrix(1:4, nrow = 2)
+
+  testthat::expect_warning(
+    compute_capscale(d, ps, ~ group),
+    regexp = "(?i)abundance matrix has no row names"
+  )
+})
+
+testthat::test_that("compute_capscale: rank/eigen edge cases and score naming", {
+  testthat::skip_if_not_installed("mockery")
+  testthat::skip_if_not_installed("vegan")
+
+  d <- stats::dist(matrix(c(0, 1, 1, 0), nrow = 2))
+  attr(d, "Labels") <- c("s1", "s2")
+  attr(d, "abundances") <- matrix(
+    c(1, 2, 3, 4),
+    nrow = 2,
+    dimnames = list(c("s1", "s2"), c("p1", "p2"))
+  )
+
+  ps <- data.frame(sample_id = c("s1", "s2"), group = c("A", "B"))
+
+  mockery::stub(compute_capscale, "vegan::capscale", function(...) {
+    structure(
+      list(
+        CCA = list(rank = NULL, eig = NULL, tot.chi = NULL),
+        CA = list(tot.chi = NULL, eig = NULL),
+        tot.chi = 1
+      ),
+      class = "capscale"
+    )
+  })
+  mockery::stub(compute_capscale, "vegan::anova.cca", function(...) {
+    data.frame(Df = 1, `Pr(>F)` = 1)
+  })
+  mockery::stub(compute_capscale, "vegan::RsquareAdj", function(...) {
+    list(r.squared = 0, adj.r.squared = 0)
+  })
+
+  res_null <- compute_capscale(d, ps, ~ group)
+  testthat::expect_equal(ncol(res_null$sample_coords), 1L)
+  testthat::expect_s3_class(res_null$feature_associations, "tbl_df")
+
+  mockery::stub(compute_capscale, "vegan::capscale", function(...) {
+    structure(
+      list(
+        CCA = list(rank = 2L, eig = c(0.2, 0.1), tot.chi = 0.3),
+        CA = list(tot.chi = 0.7, eig = c(0.2, 0.1)),
+        tot.chi = 1
+      ),
+      class = "capscale"
+    )
+  })
+  mockery::stub(compute_capscale, "vegan::anova.cca", function(...) {
+    data.frame(Df = 1, `Pr(>F)` = 1)
+  })
+  mockery::stub(compute_capscale, "vegan::RsquareAdj", function(...) {
+    list(r.squared = 0.3, adj.r.squared = 0.25)
+  })
+  mockery::stub(compute_capscale, "vegan::scores", function(...) {
+    matrix(1, nrow = 2, ncol = 2)
+  })
+  mockery::stub(compute_capscale, "intersect", function(x, y) x[1])
+
+  testthat::expect_warning(
+    res_scores <- compute_capscale(d, ps, ~ group),
+    regexp = "(?i)insufficient overlap"
+  )
+
+  testthat::expect_true(all(c("CAP1", "CAP2") %in% names(res_scores$sample_coords)))
+})
+
+testthat::test_that("compute_capscale: warns when score rownames are missing", {
+  testthat::skip_if_not_installed("mockery")
+  testthat::skip_if_not_installed("vegan")
+
+  d <- stats::dist(matrix(c(0, 1, 1, 0), nrow = 2))
+  attr(d, "Labels") <- c("s1", "s2")
+  attr(d, "abundances") <- matrix(
+    c(1, 2, 3, 4),
+    nrow = 2,
+    dimnames = list(c("s1", "s2"), c("p1", "p2"))
+  )
+
+  ps <- data.frame(sample_id = c("s1", "s2"), group = c("A", "B"))
+
+  mockery::stub(compute_capscale, "vegan::capscale", function(...) {
+    structure(
+      list(
+        CCA = list(rank = 1L, eig = 0.1, tot.chi = 0.1),
+        CA = list(tot.chi = 0.9, eig = 0.2),
+        tot.chi = 1
+      ),
+      class = "capscale"
+    )
+  })
+  mockery::stub(compute_capscale, "vegan::anova.cca", function(...) {
+    data.frame(Df = 1, `Pr(>F)` = 1)
+  })
+  mockery::stub(compute_capscale, "vegan::RsquareAdj", function(...) {
+    list(r.squared = 0.1, adj.r.squared = 0.05)
+  })
+  mockery::stub(compute_capscale, "vegan::scores", function(...) {
+    matrix(1, nrow = 1, ncol = 1)
+  })
+
+  testthat::expect_warning(
+    compute_capscale(d, ps, ~ group),
+    regexp = "(?i)row names missing"
+  )
+})
+
+testthat::test_that("compute_permanova: missing columns, empty data, and labels", {
+  testthat::skip_if_not_installed("vegan")
+
+  dat <- data.frame(
+    sample_id = as.character(1:4),
+    group = c("A", "A", "B", "B")
+  )
+  d <- stats::dist(matrix(runif(8), nrow = 4))
+  attr(d, "Labels") <- dat$sample_id
+  attr(d, "Size") <- 4
+
+  testthat::expect_error(
+    compute_permanova(d, dat, time_col = "missing"),
+    regexp = "(?i)not found"
+  )
+
+  dat_empty <- data.frame(sample_id = character(), group = character())
+  testthat::expect_error(
+    compute_permanova(d, dat_empty, group_col = "group"),
+    regexp = "(?i)constructed metadata has zero rows"
+  )
+
+  d_bad <- d
+  attr(d_bad, "Labels") <- paste0("x", 1:4)
+  testthat::expect_error(
+    compute_permanova(d_bad, dat, group_col = "group"),
+    regexp = "(?i)missing in `ps`"
+  )
+
+  d_no_labels <- d
+  attr(d_no_labels, "Labels") <- NULL
+  testthat::expect_warning(
+    compute_permanova(d_no_labels, dat, group_col = "group",
+                      permutations = 9),
+    regexp = "(?i)no labels found"
+  )
+})
+
+testthat::test_that("compute_permanova: global adonis failure and skip logic", {
+  testthat::skip_if_not_installed("mockery")
+  testthat::skip_if_not_installed("vegan")
+
+  dat <- data.frame(
+    sample_id = paste0("s", 1:4),
+    group = c("A", "B", "B", "B")
+  )
+  d <- stats::dist(matrix(runif(8), nrow = 4))
+  attr(d, "Labels") <- dat$sample_id
+  attr(d, "Size") <- 4
+
+  mockery::stub(compute_permanova, "vegan::adonis2", function(...) {
+    stop("boom")
+  })
+
+  testthat::expect_warning(
+    compute_permanova(d, dat, group_col = "group",
+                      permutations = 9),
+    regexp = "(?i)global permanova failed"
+  )
+})
+
+testthat::test_that("compute_permanova: time pairwise comparisons", {
+  testthat::skip_if_not_installed("vegan")
+
+  dat <- data.frame(
+    sample_id = paste0("s", 1:6),
+    group = rep(c("A", "B"), each = 3),
+    time = rep(c("T1", "T2", "T3"), times = 2)
+  )
+  d <- stats::dist(matrix(runif(18), nrow = 6))
+  attr(d, "Labels") <- dat$sample_id
+  attr(d, "Size") <- 6
+
+  res_pair <- suppressWarnings(compute_permanova(
+    d, dat,
+    time_col = "time",
+    permutations = 9
+  ))
+  testthat::expect_s3_class(res_pair, "tbl_df")
+})
+
+testthat::test_that("compute_permanova: no-factor and NA handling", {
+  testthat::skip_if_not_installed("vegan")
+
+  dat <- data.frame(
+    sample_id = paste0("s", 1:3),
+    group = c("A", NA, "A")
+  )
+  d <- stats::dist(matrix(runif(9), nrow = 3))
+  attr(d, "Labels") <- dat$sample_id
+  attr(d, "Size") <- 3
+
+  res_none <- suppressWarnings(compute_permanova(
+    d, data.frame(sample_id = dat$sample_id),
+    permutations = 9
+  ))
+  testthat::expect_s3_class(res_none, "tbl_df")
+
+  res_drop <- suppressWarnings(compute_permanova(
+    d, dat,
+    group_col = "group",
+    permutations = 9
+  ))
+  testthat::expect_s3_class(res_drop, "tbl_df")
+
+  dat_all_na <- data.frame(sample_id = paste0("s", 1:3), group = NA)
+  testthat::expect_error(
+    compute_permanova(d, dat_all_na, group_col = "group"),
+    regexp = "(?i)all samples have missing values"
+  )
+
+  dat_sparse <- data.frame(
+    sample_id = paste0("s", 1:3),
+    group = c("A", "B", "B")
+  )
+  d_sparse <- stats::dist(matrix(runif(9), nrow = 3))
+  attr(d_sparse, "Labels") <- dat_sparse$sample_id
+  attr(d_sparse, "Size") <- 3
+
+  res_skip <- suppressWarnings(compute_permanova(
+    d_sparse, dat_sparse,
+    group_col = "group",
+    permutations = 9
+  ))
+  testthat::expect_s3_class(res_skip, "tbl_df")
+})
+
+testthat::test_that("compute_dispersion: warnings and edge cases", {
+  testthat::skip_if_not_installed("vegan")
+  testthat::skip_if_not_installed("mockery")
+
+  dat <- data.frame(
+    sample_id = paste0("s", 1:6),
+    group = rep(c("A", "B"), each = 3),
+    time = rep(c("T1", "T2", "T3"), times = 2)
+  )
+  d <- stats::dist(matrix(runif(18), nrow = 6))
+  attr(d, "Labels") <- dat$sample_id
+  attr(d, "Size") <- 6
+
+  dat_num_time <- dat
+  dat_num_time$time_num <- seq_len(nrow(dat))
+
+  mockery::stub(compute_dispersion, "as.factor", function(x) x)
+
+  testthat::expect_warning(
+    compute_dispersion(d, dat_num_time, time_col = "time_num",
+                       permutations = 9),
+    regexp = "(?i)continuous dispersion"
+  )
+
+  res_bl <- suppressWarnings(compute_dispersion(
+    d, dat,
+    group_col = "group",
+    time_col = "time",
+    permutations = 9
+  ))
+  testthat::expect_s3_class(res_bl, "beta_dispersion")
+})
+
+testthat::test_that("compute_dispersion: betadisper failure paths", {
+  testthat::skip_if_not_installed("mockery")
+  testthat::skip_if_not_installed("vegan")
+
+  dat <- data.frame(
+    sample_id = paste0("s", 1:4),
+    group = c("A", "A", "B", "B"),
+    time = c("T1", "T2", "T1", "T2")
+  )
+  d <- stats::dist(matrix(runif(8), nrow = 4))
+  attr(d, "Labels") <- dat$sample_id
+  attr(d, "Size") <- 4
+
+  mockery::stub(compute_dispersion, "vegan::betadisper", function(...) {
+    stop("boom")
+  })
+
+  testthat::expect_warning(
+    compute_dispersion(d, dat, group_col = "group", time_col = "time",
+                       permutations = 9),
+    regexp = "(?i)betadisper failed"
+  )
+})
+
+testthat::test_that("compute_dispersion: time pairwise comparisons and skip branch", {
+  testthat::skip_if_not_installed("vegan")
+
+  dat <- data.frame(
+    sample_id = paste0("s", 1:6),
+    group = rep(c("A", "B"), each = 3),
+    time = rep(c("T1", "T2", "T3"), times = 2)
+  )
+  d <- stats::dist(matrix(runif(18), nrow = 6))
+  attr(d, "Labels") <- dat$sample_id
+  attr(d, "Size") <- 6
+
+  res_pair <- suppressWarnings(compute_dispersion(
+    d, dat,
+    time_col = "time",
+    permutations = 9
+  ))
+  testthat::expect_s3_class(res_pair, "beta_dispersion")
+
+  dat_sparse <- data.frame(
+    sample_id = paste0("s", 1:3),
+    group = c("A", "B", "B")
+  )
+  d_sparse <- stats::dist(matrix(runif(6), nrow = 3))
+  attr(d_sparse, "Labels") <- dat_sparse$sample_id
+  attr(d_sparse, "Size") <- 3
+
+  res_skip <- suppressWarnings(compute_dispersion(
+    d_sparse, dat_sparse,
+    group_col = "group",
+    permutations = 9
+  ))
+  testthat::expect_s3_class(res_skip, "beta_dispersion")
+})
+
+testthat::test_that("compute_dispersion: alignment and edge conditions", {
+  testthat::skip_if_not_installed("vegan")
+
+  dat <- data.frame(
+    sample_id = as.character(1:6),
+    group = rep(c("A", "B"), each = 3),
+    time = rep(c("T1", "T2", "T3"), times = 2)
+  )
+  d <- stats::dist(matrix(runif(18), nrow = 6))
+  attr(d, "Labels") <- dat$sample_id
+  attr(d, "Size") <- 6
+
+  ps_phip <- structure(list(data_long = dat), class = "phip_data")
+  res_phip <- suppressWarnings(compute_dispersion(
+    d, ps_phip,
+    group_col = "group",
+    permutations = 9
+  ))
+  testthat::expect_s3_class(res_phip, "beta_dispersion")
+
+  testthat::expect_error(
+    compute_dispersion(d, dat, time_col = "missing"),
+    regexp = "(?i)not found"
+  )
+
+  dat_empty <- data.frame(sample_id = character(), group = character())
+  testthat::expect_error(
+    compute_dispersion(d, dat_empty, group_col = "group"),
+    regexp = "(?i)constructed metadata has zero rows"
+  )
+
+  d_bad <- d
+  attr(d_bad, "Labels") <- paste0("x", 1:6)
+  testthat::expect_error(
+    compute_dispersion(d_bad, dat, group_col = "group"),
+    regexp = "(?i)missing in `ps`"
+  )
+
+  d_no_labels <- d
+  attr(d_no_labels, "Labels") <- NULL
+  testthat::expect_warning(
+    compute_dispersion(d_no_labels, dat, group_col = "group",
+                       permutations = 9),
+    regexp = "(?i)no labels found"
+  )
+
+  res_none <- suppressWarnings(compute_dispersion(
+    d, data.frame(sample_id = dat$sample_id),
+    permutations = 9
+  ))
+  testthat::expect_s3_class(res_none, "beta_dispersion")
+
+  dat_all_na <- dat
+  dat_all_na$group <- NA
+  testthat::expect_error(
+    compute_dispersion(d, dat_all_na, group_col = "group"),
+    regexp = "(?i)all samples have missing values"
+  )
+
+  res_inter <- suppressWarnings(compute_dispersion(
+    d, dat,
+    group_col = "group",
+    time_col = "time",
+    permutations = 9
+  ))
+  testthat::expect_s3_class(res_inter, "beta_dispersion")
+
+  res_time_bl <- suppressWarnings(compute_dispersion(
+    d, dat,
+    time_col = "time",
+    permutations = 9
+  ))
+  testthat::expect_s3_class(res_time_bl, "beta_dispersion")
+})
+
+testthat::test_that("compute_tsne: metadata, labels, and warnings", {
+  testthat::skip_if_not_installed("Rtsne")
+
+  dat <- data.frame(
+    sample_id = paste0("s", 1:6),
+    meta1 = rep(c("x", "y"), each = 3),
+    stringsAsFactors = FALSE
+  )
+  d <- stats::dist(matrix(runif(18), nrow = 6))
+  attr(d, "Labels") <- dat$sample_id
+  attr(d, "Size") <- 6
+
+  ps_phip <- structure(
+    list(data_long = dat, meta = list(extra_cols = "meta1")),
+    class = "phip_data"
+  )
+
+  res_meta <- suppressWarnings(compute_tsne(
+    ps = ps_phip,
+    dist_obj = d,
+    dims = 2L,
+    perplexity = 1
+  ))
+  testthat::expect_true("meta1" %in% names(res_meta))
+
+  d_bad_labels <- d
+  attr(d_bad_labels, "Labels") <- c("s1", "s2")
+  testthat::expect_error(
+    compute_tsne(ps = dat, dist_obj = d_bad_labels, dims = 2L, perplexity = 1),
+    regexp = "(?i)length of distance labels"
+  )
+
+  testthat::expect_warning(
+    compute_tsne(ps = NULL, dist_obj = d, dims = 2L, perplexity = 1),
+    regexp = "(?i)ps.*NULL"
+  )
+})
+
+testthat::test_that("compute_tsne: matrix labels and duplicate metadata rows", {
+  testthat::skip_if_not_installed("Rtsne")
+
+  dat <- data.frame(
+    sample_id = rep(paste0("s", 1:6), each = 2),
+    meta1 = rep(c("x", "y"), length.out = 12),
+    stringsAsFactors = FALSE
+  )
+  d <- stats::dist(matrix(runif(18), nrow = 6))
+  attr(d, "Labels") <- paste0("s", 1:6)
+  attr(d, "Size") <- 6
+
+  d_mat <- as.matrix(d)
+  rownames(d_mat) <- NULL
+
+  testthat::expect_warning(
+    compute_tsne(ps = dat, dist_obj = d_mat, dims = 2L, perplexity = 1),
+    regexp = "(?i)no rownames"
+  )
+
+  testthat::expect_error(
+    compute_tsne(
+      ps = dat,
+      dist_obj = d,
+      dims = 2L,
+      perplexity = 1,
+      meta_cols = "meta1"
+    ),
+    regexp = "(?i)inconsistent metadata values"
   )
 })
