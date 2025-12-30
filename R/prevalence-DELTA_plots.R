@@ -358,9 +358,7 @@ deltaplot <- function(
 #' @param label_x_gap_frac Horizontal label offset as a fraction of the x-range.
 #' @param label_y_gap_frac Vertical label offset as a fraction of the y-range.
 #' @param plot_title,plot_subtitle Optional plot labels for the title/subtitle.
-#' @param add_jitter Logical; if \code{TRUE}, apply display-only jitter.
 #' @param point_jitter_width,point_jitter_height Jitter amounts. Defaults 0.005.
-#' @param jitter_seed Optional seed for jitter reproducibility.
 #'
 #' @return A plotly object.
 #'
@@ -432,11 +430,10 @@ deltaplot_interactive <- function(
     label_y_gap_frac  = 0.02,
     plot_title      = NULL,
     plot_subtitle   = NULL,
-    add_jitter          = TRUE,
     point_jitter_width  = 0.005,
-    point_jitter_height = 0.005,
-    jitter_seed         = NULL
+    point_jitter_height = 0.005
 ){
+  # ---- Input validation ------------------------------------------------------
   if (requireNamespace("chk", quietly = TRUE)) {
     chk::chk_data.frame(prev_tbl)
     if (!is.null(group_pair_values)) {
@@ -455,7 +452,6 @@ deltaplot_interactive <- function(
     chk::chk_numeric(arrow_length_frac)
     chk::chk_numeric(label_x_gap_frac)
     chk::chk_numeric(label_y_gap_frac)
-    chk::chk_logical(add_jitter)
     chk::chk_numeric(point_jitter_width)
     chk::chk_numeric(point_jitter_height)
   }
@@ -507,6 +503,8 @@ deltaplot_interactive <- function(
     condition = !is.numeric(point_jitter_height) || point_jitter_height < 0,
     error_message = "point_jitter_height must be a non-negative number."
   )
+
+  # ---- Required columns ------------------------------------------------------
   need <- c("group1","group2","prop1","prop2")
   miss <- setdiff(need, names(prev_tbl))
   if (length(miss)) {
@@ -517,7 +515,7 @@ deltaplot_interactive <- function(
   }
   d <- prev_tbl
 
-  # select group pair
+  # ---- Select exactly one (group1, group2) pair -----------------------------
   if (!is.null(group_pair_values)) {
     if (length(group_pair_values) != 2L) {
       .ph_abort("group_pair_values must be length-2 vector: c(g1, g2).")
@@ -544,7 +542,7 @@ deltaplot_interactive <- function(
     g1_lab <- group_labels[1]; g2_lab <- group_labels[2]
   }
 
-  # helper columns
+  # ---- Build helper columns --------------------------------------------------
   if (!("feature" %in% names(d))) {
     d$feature <- if ("peptide_id" %in% names(d)) as.character(d$peptide_id) else as.character(seq_len(nrow(d)))
   }
@@ -552,6 +550,7 @@ deltaplot_interactive <- function(
   if (!("percent2" %in% names(d))) d$percent2 <- d$prop2 * 100
   pick_or <- function(df, nm, default = NA_real_) if (nm %in% names(df)) df[[nm]] else default
 
+  # ---- Compute pooled and delta ----------------------------------------------
   w <- d |>
     dplyr::transmute(
       feature   = .data$feature,
@@ -570,16 +569,18 @@ deltaplot_interactive <- function(
     dplyr::mutate(pooled_clip = pmin(pmax(as.numeric(pooled), 1e-6), 1 - 1e-6))
   if (!nrow(w)) stop("No finite rows to plot.")
 
-  # jitter (display)
-  if (isTRUE(add_jitter)) {
-    if (!is.null(jitter_seed)) { old_seed <- .Random.seed; set.seed(jitter_seed); on.exit({ if (exists("old_seed")) .Random.seed <<- old_seed }, add=TRUE) }
+  # ---- Optional display jitter ----------------------------------------------
+  if (point_jitter_width > 0 || point_jitter_height > 0) {
     jx <- stats::runif(nrow(w), -point_jitter_width,  point_jitter_width)
     jy <- stats::runif(nrow(w), -point_jitter_height, point_jitter_height)
     x_jit <- pmin(pmax(w$pooled_clip + jx, 1e-6), 1 - 1e-6)
     y_jit <- w$delta + jy
-  } else { x_jit <- w$pooled_clip; y_jit <- w$delta }
+  } else {
+    x_jit <- w$pooled_clip
+    y_jit <- w$delta
+  }
 
-  # smooth (opcjonalnie)
+  # ---- Optional smooth -------------------------------------------------------
   smooth_df <- NULL
   if (isTRUE(add_smooth) && requireNamespace("mgcv", quietly = TRUE)) {
     fit <- mgcv::gam(delta ~ s(pooled_clip, k = smooth_k), data = w)
@@ -588,18 +589,18 @@ deltaplot_interactive <- function(
                             delta = stats::predict(fit, newdata = data.frame(pooled_clip = xs), type = "response"))
   }
 
-  # --- GEOMETRIA STRZAŁEK/ETYKIET ---
-  # osie w "data units"
-  xr <- c(0, 1)                               # pooled_clip zawsze [0,1]
+  # ---- Arrow and label geometry ---------------------------------------------
+  # axes in data units
+  xr <- c(0, 1)                               # pooled_clip always [0,1]
   yr <- range(w$delta, na.rm = TRUE)
-  if (!is.finite(diff(yr)) || diff(yr) == 0) yr <- c(-0.05, 0.05)  # awaryjnie
+  if (!is.finite(diff(yr)) || diff(yr) == 0) yr <- c(-0.05, 0.05)  # fallback range
   xspan <- diff(xr);  yspan <- diff(yr)
 
   arrow_x_frac <- max(0.002, min(0.995, arrow_x_frac))
   arrow_x   <- xr[1] + xspan * arrow_x_frac
   arrow_len <- max(1e-6, arrow_length_frac * yspan)
 
-  # etykiety: gwarantowanie nad/pod zerem, z minimalnym buforem eps
+  # keep labels above/below zero with a minimal epsilon buffer
   eps <- max(yspan * 0.005, 1e-6)
   label_x <- max(xr[1], arrow_x - label_x_gap_frac * xspan)
 
@@ -609,7 +610,7 @@ deltaplot_interactive <- function(
   y_down <- max(yr[1] + label_y_gap_frac * yspan,  0 - 0.6 * arrow_len)
   if (y_down >= 0) y_down <- max(0 - eps, yr[1] + label_y_gap_frac * yspan)
 
-  # hover
+  # ---- Hover text ------------------------------------------------------------
   fmt_pct <- function(x) sprintf("%.1f%%", x)
   fmt_p   <- function(p) ifelse(is.na(p), "NA", formatC(p, format="e", digits=2))
   hover_text <- sprintf(
@@ -627,6 +628,7 @@ deltaplot_interactive <- function(
     scales::percent(w$delta,       accuracy = 0.1)
   )
 
+  # ---- Build plotly figure ---------------------------------------------------
   plt <- plotly::plot_ly() |>
     plotly::add_trace(
       type="scatter", mode="markers",
@@ -660,23 +662,23 @@ deltaplot_interactive <- function(
       yaxis = list(title=sprintf("\u0394 prevalence (%s \u2212 %s)", g2_lab, g1_lab),
                    tickformat=".1%"),
       annotations = list(
-        # strzałka w górę
+        # arrow up
         list(x=arrow_x, y= arrow_len, xref="x", yref="y",
              ax=arrow_x, ay=0, axref="x", ayref="y",
              text="", showarrow=TRUE, arrowhead=2, arrowsize=0.6,
              arrowwidth=2, arrowcolor=arrow_color),
-        # strzałka w dół
+        # arrow down
         list(x=arrow_x, y=-arrow_len, xref="x", yref="y",
              ax=arrow_x, ay=0, axref="x", ayref="y",
              text="", showarrow=TRUE, arrowhead=2, arrowsize=0.6,
              arrowwidth=2, arrowcolor=arrow_color),
 
-        # etykieta nad zerem
+        # label above zero
         list(x=label_x, y=y_up, xref="x", yref="y",
              text=paste0("More in ", g2_lab), showarrow=FALSE,
              xanchor="right", font=list(color=arrow_color, size=12),
              bgcolor="rgba(255,255,255,0.65)", bordercolor=arrow_color, borderwidth=1),
-        # etykieta pod zerem
+        # label below zero
         list(x=label_x, y=y_down, xref="x", yref="y",
              text=paste0("More in ", g1_lab), showarrow=FALSE,
              xanchor="right", font=list(color=arrow_color, size=12),
