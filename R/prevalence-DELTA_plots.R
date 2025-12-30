@@ -97,7 +97,7 @@
 #' print(p)
 #' }
 #' @export
-deltaplot_prevalence <- function(
+deltaplot <- function(
     prev_tbl,
     group_pair_values = NULL,
     group_labels     = NULL,
@@ -258,28 +258,107 @@ deltaplot_prevalence <- function(
   p
 }
 
-#' @title Interactive Δ prevalence vs pooled prevalence (per peptide)
-#' @description Interactive plotly version of \code{deltaplot_prevalence()}.
-#' @param prev_tbl A data frame with columns \code{group1}, \code{group2},
-#'   \code{prop1}, \code{prop2} (and optional \code{feature}).
-#' @param group_pair_values Optional length-2 vector \code{c(g1, g2)} selecting a pair.
-#' @param group_labels Optional length-2 vector of display labels.
+#' @title Interactive Δ Prevalence vs Pooled Prevalence
+#'
+#' @description
+#' Build an interactive plotly chart showing the per-peptide shift in prevalence
+#' (\eqn{\Delta = group2 - group1}) as a function of pooled prevalence
+#' (\eqn{(group1 + group2)/2}). The input should be a tibble/data frame produced
+#' by \code{ph_compute_prevalence()} or equivalent with columns
+#' \code{group1}, \code{group2}, \code{prop1}, and \code{prop2}.
+#'
+#' @details
+#' The plot places each feature (peptide) as a point at:
+#' \itemize{
+#'   \item x-axis: pooled prevalence \code{(prop1 + prop2)/2}
+#'   \item y-axis: prevalence shift \code{(prop2 - prop1)}
+#' }
+#' Points are optionally jittered for display, and hover text includes the
+#' feature identifier plus prevalence (percent and proportion) and counts
+#' (\code{n1}, \code{N1}, \code{n2}, \code{N2}) when available in the input
+#' table. A dashed horizontal line marks \eqn{\Delta = 0}. Optional arrows and
+#' labels indicate the direction of increased prevalence for \code{group1} vs
+#' \code{group2}. If \code{add_smooth = TRUE}, a GAM smooth is overlaid to
+#' summarize the trend.
+#'
+#' @param prev_tbl Data frame with columns \code{group1}, \code{group2},
+#'   \code{prop1}, \code{prop2}. Optional \code{feature} is used for labels.
+#' @param group_pair_values Optional length-2 character vector
+#'   \code{c(group1, group2)}. Use this when \code{prev_tbl} contains multiple
+#'   group pairs.
+#' @param group_labels Optional length-2 character vector of display labels
+#'   \code{c(label_group1, label_group2)}. Defaults to \code{group1}/\code{group2}.
 #' @param point_alpha Point transparency. Default 0.6.
 #' @param point_size Point size. Default 6.
-#' @param add_smooth Add a GAM smooth curve. Default \code{TRUE}.
+#' @param add_smooth Add a GAM smooth curve (\code{mgcv}). Default \code{TRUE}.
 #' @param smooth_k Basis dimension \code{k} for the smooth. Default 5.
-#' @param arrow_color Color for arrows and labels. Default \code{"red"}.
+#' @param arrow_color Color for the directional arrows and labels. Default
+#'   \code{"red"}.
 #' @param arrow_x_frac Arrow X position as a fraction of the x-range. Default 0.97.
 #' @param arrow_length_frac Arrow length as a fraction of the y-range. Default 0.30.
 #' @param label_x_gap_frac Horizontal label offset as a fraction of the x-range.
 #' @param label_y_gap_frac Vertical label offset as a fraction of the y-range.
-#' @param plot_title,plot_subtitle Optional plot labels.
+#' @param plot_title,plot_subtitle Optional plot labels for the title/subtitle.
 #' @param add_jitter Logical; if \code{TRUE}, apply display-only jitter.
 #' @param point_jitter_width,point_jitter_height Jitter amounts. Defaults 0.005.
 #' @param jitter_seed Optional seed for jitter reproducibility.
+#'
 #' @return A plotly object.
+#'
+#' @examples
+#' \donttest{
+#' phip_path <- phip_example_path()
+#'
+#' ps <- phip_convert(
+#'   data_long_path    = phip_path,
+#'   backend           = "duckdb",
+#'   peptide_library   = TRUE,
+#'   subject_id        = "subject_id",
+#'   peptide_id        = "peptide_id",
+#'   sample_id         = "sample_id",
+#'   exist             = "exist",
+#'   timepoint         = "timepoint_factor",
+#'   fold_change       = "fold_change",
+#'   materialise_table = TRUE,
+#'   auto_expand       = TRUE,
+#'   n_cores           = 2
+#' )
+#'
+#' # small subset for speed
+#' keep_pep <- c("16627", "5243", "24799", "16196", "18003")
+#' dat_cols <- dplyr::tbl_vars(ps$data_long)
+#' tp_col <- "time"
+#'
+#' ps_small <- ps |>
+#'   dplyr::filter(
+#'     peptide_id %in% keep_pep,
+#'     !!rlang::sym(tp_col) == "T1"
+#'   ) |>
+#'   dplyr::collect()
+#'
+#' # pick the grouping column
+#' group_col <- "group"
+#'
+#' prev_res <- ph_prevalence_compare(
+#'   ps_small,
+#'   rank_cols  = "peptide_id",
+#'   group_cols = group_col,
+#'   collect    = TRUE
+#' )
+#' prev_tbl <- as.data.frame(prev_res)
+#' pair_tbl <- unique(prev_tbl[, c("group1", "group2")])
+#' group_pair <- c(pair_tbl$group1[1], pair_tbl$group2[1])
+#'
+#' p <- deltaplot_interactive(
+#'   prev_tbl,
+#'   group_pair_values = group_pair,
+#'   group_labels = group_pair
+#' )
+#'
+#' p
+#' }
 #' @export
-deltaplot_prevalence_interactive <- function(
+deltaplot_interactive <- function(
     prev_tbl,
     group_pair_values = NULL,
     group_labels     = NULL,
@@ -304,7 +383,7 @@ deltaplot_prevalence_interactive <- function(
   if (length(miss)) stop("deltaplot_prevalence_interactive(): missing: ", paste(miss, collapse=", "))
   d <- prev_tbl
 
-  # wybór pary
+  # select group pair
   if (!is.null(group_pair_values)) {
     stopifnot(length(group_pair_values) == 2L)
     d <- d[d$group1 == group_pair_values[1] &
@@ -319,7 +398,7 @@ deltaplot_prevalence_interactive <- function(
   if (is.null(group_labels)) { g1_lab <- as.character(g1_raw); g2_lab <- as.character(g2_raw)
   } else { stopifnot(length(group_labels) == 2L); g1_lab <- group_labels[1]; g2_lab <- group_labels[2] }
 
-  # kolumny pomocnicze
+  # helper columns
   if (!("feature" %in% names(d))) {
     d$feature <- if ("peptide_id" %in% names(d)) as.character(d$peptide_id) else as.character(seq_len(nrow(d)))
   }
