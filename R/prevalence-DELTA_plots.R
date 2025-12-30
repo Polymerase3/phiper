@@ -690,6 +690,134 @@ deltaplot_interactive <- function(
   plt
 }
 
+#' @title Prepare data for forest_delta plots
+#'
+#' @description Internal helper that filters a results table to a chosen rank,
+#'   applies an optional significance filter, selects top/bottom features by a
+#'   chosen statistic, and computes the color scaling used in forest plots.
+#'
+#' @param results_tbl Data frame/tibble with the required DELTA result columns.
+#' @param rank_of_interest Character scalar specifying the rank to plot.
+#' @param statistic_to_plot Which statistic to rank/plot: \code{"T"},
+#'   \code{"T_stand"}, or \code{"Z_from_p"}.
+#' @param n_neg_each Number of most negative features to show.
+#' @param n_pos_each Number of most positive features to show.
+#' @param filter_significant Column name to filter on, or \code{"none"}.
+#' @param sig_level Significance threshold used when filtering numeric columns.
+#' @return A list with \code{df_rk}, \code{df_plot}, \code{top_neg},
+#'   \code{top_pos}, \code{stat_title}, and \code{stat_title_short}.
+#' @keywords internal
+#' @noRd
+.ph_forestplot_prepare <- function(
+    results_tbl,
+    rank_of_interest,
+    statistic_to_plot,
+    n_neg_each,
+    n_pos_each,
+    filter_significant,
+    sig_level
+) {
+  df_rk <- dplyr::filter(results_tbl, .data$rank == rank_of_interest)
+
+  if (!identical(filter_significant, "none")) {
+    if (!filter_significant %in% colnames(df_rk)) {
+      .ph_abort(paste0("column '", filter_significant, "' not found"))
+    }
+    if (is.numeric(df_rk[[filter_significant]])) {
+      df_rk <- dplyr::filter(df_rk, .data[[filter_significant]] <= sig_level)
+    } else {
+      df_rk <- dplyr::filter(
+        df_rk,
+        .data[[filter_significant]] == "significant (BH, per rank)"
+      )
+    }
+  }
+
+  if (identical(statistic_to_plot, "T")) {
+    stat_title       <- "Stouffer T (raw)"
+    stat_title_short <- "Stouffer T"
+    stat_for_sort <- df_rk$T_obs
+  } else if (identical(statistic_to_plot, "T_stand")) {
+    stat_title       <- "Stouffer T (permutation-standardized)"
+    stat_title_short <- "T (standardized)"
+    if (!"T_obs_stand" %in% names(df_rk)) {
+      .ph_abort("Column `T_obs_stand` not found in `x`.")
+    }
+    stat_for_sort <- df_rk$T_obs_stand
+  } else {
+    stat_title       <- "Z from permutation p-values"
+    stat_title_short <- "Z_from_p"
+    if (!"Z_from_p" %in% names(df_rk)) {
+      .ph_abort("Column `Z_from_p` not found; pass ph_prevalence_shift() results or provide Z_from_p yourself.")
+    }
+    stat_for_sort <- df_rk$Z_from_p
+  }
+
+  if (nrow(df_rk) == 0L) {
+    return(list(
+      df_rk = df_rk,
+      df_plot = df_rk,
+      top_neg = df_rk,
+      top_pos = df_rk,
+      stat_title = stat_title,
+      stat_title_short = stat_title_short
+    ))
+  }
+
+  df_rk$stat_for_sort <- stat_for_sort
+  n_pos <- sum(df_rk$stat_for_sort > 0, na.rm = TRUE)
+  n_neg <- sum(df_rk$stat_for_sort < 0, na.rm = TRUE)
+
+  top_pos <- df_rk |>
+    dplyr::arrange(dplyr::desc(.data$stat_for_sort)) |>
+    dplyr::slice_head(n = min(n_pos_each, n_pos))
+
+  top_neg <- df_rk |>
+    dplyr::arrange(.data$stat_for_sort) |>
+    dplyr::slice_head(n = min(n_neg_each, n_neg))
+
+  df_plot <- dplyr::bind_rows(top_neg, top_pos) |>
+    dplyr::mutate(
+      species_label = .data$feature,
+      species_label = forcats::fct_reorder(.data$species_label, .data$stat_for_sort),
+      stat_val = .data$stat_for_sort
+    )
+
+  if (nrow(df_plot) == 0L) {
+    return(list(
+      df_rk = df_rk,
+      df_plot = df_plot,
+      top_neg = top_neg,
+      top_pos = top_pos,
+      stat_title = stat_title,
+      stat_title_short = stat_title_short
+    ))
+  }
+
+  vals    <- df_plot$stat_val
+  max_neg <- max(abs(vals[vals < 0]), na.rm = TRUE)
+  max_pos <- max(abs(vals[vals > 0]), na.rm = TRUE)
+  if (!is.finite(max_neg) || max_neg == 0) max_neg <- max(abs(vals), 1, na.rm = TRUE)
+  if (!is.finite(max_pos) || max_pos == 0) max_pos <- max(abs(vals), 1, na.rm = TRUE)
+
+  df_plot$stat_color_score <- dplyr::case_when(
+    vals < 0 ~ -abs(vals) / max_neg,
+    vals > 0 ~  vals      / max_pos,
+    TRUE     ~  0
+  )
+  gamma <- 0.85
+  df_plot$stat_color_score <- sign(df_plot$stat_color_score) * (abs(df_plot$stat_color_score))^gamma
+
+  list(
+    df_rk = df_rk,
+    df_plot = df_plot,
+    top_neg = top_neg,
+    top_pos = top_pos,
+    stat_title = stat_title,
+    stat_title_short = stat_title_short
+  )
+}
+
 #' @title Forest Plot of Top/Bottom Raw Stouffer T by Rank
 #'
 #' @description
@@ -830,27 +958,24 @@ forestplot <- function(
   # helper: pt -> ggplot size units
   .pt_to_gg <- function(pt) pt / 2.845
 
-  # ---- subset to rank --------------------------------------------------------
-  df_rk <- dplyr::filter(results_tbl, .data$rank == rank_of_interest)
+  prep <- .ph_forestplot_prepare(
+    results_tbl = results_tbl,
+    rank_of_interest = rank_of_interest,
+    statistic_to_plot = statistic_to_plot,
+    n_neg_each = n_neg_each,
+    n_pos_each = n_pos_each,
+    filter_significant = filter_significant,
+    sig_level = sig_level
+  )
 
-  # ---- optional significance filter -----------------------------------------
-  if (!identical(filter_significant, "none")) {
-    if (!filter_significant %in% colnames(df_rk)) {
-      .ph_abort(paste0("column '", filter_significant, "' not found"))
-    }
-    col_vals <- df_rk[[filter_significant]]
-    if (is.numeric(col_vals)) {
-      df_rk <- dplyr::filter(df_rk, .data[[filter_significant]] <= sig_level)
-    } else {
-      df_rk <- dplyr::filter(
-        df_rk,
-        .data[[filter_significant]] == "significant (BH, per rank)"
-      )
-    }
-  }
+  df_rk <- prep$df_rk
+  df_plot <- prep$df_plot
+  top_neg <- prep$top_neg
+  top_pos <- prep$top_pos
+  stat_title <- prep$stat_title
+  stat_title_short <- prep$stat_title_short
 
-  # ---- early return when no data --------------------------------------------
-  if (nrow(df_rk) == 0L) {
+  if (nrow(df_rk) == 0L || nrow(df_plot) == 0L) {
     return(list(
       data = df_rk,
       plot = .empty_placeholder_plot(
@@ -859,79 +984,9 @@ forestplot <- function(
     ))
   }
 
-  # ---- choose ranking/plotting statistic ------------------------------------
-  if (identical(statistic_to_plot, "T")) {
-    df_rk$stat_for_sort <- df_rk$T_obs
-    stat_title       <- "Stouffer T (raw)"
-    stat_title_short <- "Stouffer T"
-  } else if (identical(statistic_to_plot, "T_stand")) {
-    if (!"T_obs_stand" %in% names(df_rk)) {
-      .ph_abort("Column `T_obs_stand` not found in `x`.")
-    }
-    df_rk$stat_for_sort <- df_rk$T_obs_stand
-    stat_title       <- "Stouffer T (permutation-standardized)"
-    stat_title_short <- "T (standardized)"
-  } else {  # "Z_from_p"
-    if (!"Z_from_p" %in% names(df_rk)) {
-      .ph_abort("Column `Z_from_p` not found; pass ph_prevalence_shift() results or provide Z_from_p yourself.")
-    }
-    df_rk$stat_for_sort <- df_rk$Z_from_p
-    stat_title       <- "Z from permutation p-values"
-    stat_title_short <- "Z_from_p"
-  }
-
-
-  # ---- select top/bottom features -------------------------------------------
-  n_pos <- sum(df_rk$stat_for_sort > 0, na.rm = TRUE)
-  n_neg <- sum(df_rk$stat_for_sort < 0, na.rm = TRUE)
-
-  top_pos <- df_rk |>
-    dplyr::arrange(dplyr::desc(.data$stat_for_sort)) |>
-    dplyr::slice_head(n = min(n_pos_each, n_pos))
-
-  top_neg <- df_rk |>
-    dplyr::arrange(.data$stat_for_sort) |>
-    dplyr::slice_head(n = min(n_neg_each, n_neg))
-
-  df_plot <- dplyr::bind_rows(top_neg, top_pos) |>
-    dplyr::mutate(
-      species_label = .data$feature,
-      species_label = forcats::fct_reorder(.data$species_label, .data$stat_for_sort)
-    )
-
-  # ---- pick statistic for the x-axis ----------------------------------------
-  if (identical(statistic_to_plot, "T")) {
-    df_plot$stat_val <- df_plot$T_obs
-  } else if (identical(statistic_to_plot, "T_stand")) {
-    df_plot$stat_val <- df_plot$T_obs_stand
-  } else {  # "Z" or "Z_from_p"
-    df_plot$stat_val <- df_plot$Z_from_p
-  }
-
-
-  # ---- labels for subtitle ---------------------------------------------------
   g1  <- if (nrow(df_plot)) df_plot$group1[1] else ""
   g2  <- if (nrow(df_plot)) df_plot$group2[1] else ""
   des <- if (nrow(df_plot)) df_plot$design[1] else ""
-
-  # ---- color scaling ---------------------------------------------------------
-  vals    <- df_plot$stat_val
-  max_neg <- max(abs(vals[vals < 0]), na.rm = TRUE)
-  max_pos <- max(abs(vals[vals > 0]), na.rm = TRUE)
-  if (!is.finite(max_neg) || max_neg == 0) {
-    max_neg <- max(abs(vals), 1, na.rm = TRUE)
-  }
-  if (!is.finite(max_pos) || max_pos == 0) {
-    max_pos <- max(abs(vals), 1, na.rm = TRUE)
-  }
-
-  df_plot$T_col <- dplyr::case_when(
-    vals < 0 ~ -abs(vals) / max_neg,
-    vals > 0 ~  vals      / max_pos,
-    TRUE     ~  0
-  )
-  gamma <- 0.85
-  df_plot$T_col <- sign(df_plot$T_col) * (abs(df_plot$T_col))^gamma
 
   # ---- base ggplot -----------------------------------------------------------
   p <- ggplot2::ggplot(
@@ -950,7 +1005,7 @@ forestplot <- function(
       ggplot2::aes(
         x = 0, xend = .data$stat_val,
         y = .data$species_label, yend = .data$species_label,
-        color = .data$T_col
+        color = .data$stat_color_score
       ),
       linewidth   = seg_width,
       alpha       = 0.9,
@@ -969,7 +1024,7 @@ forestplot <- function(
 
   if (isTRUE(use_diverging_colors)) {
     p <- p + ggplot2::geom_point(
-      ggplot2::aes(color = .data$T_col),
+      ggplot2::aes(color = .data$stat_color_score),
       size        = point_size,
       show.legend = FALSE
     )
@@ -1208,47 +1263,22 @@ forestplot_interactive <- function(
     .ph_abort(paste("`results_tbl` is missing required columns:", paste(miss, collapse = ", ")))
   }
 
-  # ---- Subset to rank --------------------------------------------------------
-  df_rk <- dplyr::filter(results_tbl, .data$rank == rank_of_interest)
+  prep <- .ph_forestplot_prepare(
+    results_tbl = results_tbl,
+    rank_of_interest = rank_of_interest,
+    statistic_to_plot = statistic_to_plot,
+    n_neg_each = n_neg_each,
+    n_pos_each = n_pos_each,
+    filter_significant = filter_significant,
+    sig_level = sig_level
+  )
 
-  # ---- Optional significance filter -----------------------------------------
-  if (!identical(filter_significant, "none")) {
-    if (!filter_significant %in% colnames(df_rk)) {
-      .ph_abort(paste0("column '", filter_significant, "' not found"))
-    }
-    if (is.numeric(df_rk[[filter_significant]])) {
-      df_rk <- dplyr::filter(df_rk, .data[[filter_significant]] <= sig_level)
-    } else {
-      df_rk <- dplyr::filter(
-        df_rk,
-        .data[[filter_significant]] == "significant (BH, per rank)"
-      )
-    }
-  }
+  df_rk <- prep$df_rk
+  df_plot <- prep$df_plot
+  stat_title <- prep$stat_title
+  stat_title_short <- prep$stat_title_short
 
-  # ---- Choose ranking/plotting statistic ------------------------------------
-  if (identical(statistic_to_plot, "T")) {
-    stat_title       <- "Stouffer T (raw)"
-    stat_title_short <- "Stouffer T"
-    stat_for_sort <- df_rk$T_obs
-  } else if (identical(statistic_to_plot, "T_stand")) {
-    stat_title       <- "Stouffer T (permutation-standardized)"
-    stat_title_short <- "T (standardized)"
-    if (!"T_obs_stand" %in% names(df_rk)) {
-      .ph_abort("Column `T_obs_stand` not found in `x`.")
-    }
-    stat_for_sort <- df_rk$T_obs_stand
-  } else {  # "Z" or "Z_from_p"
-    stat_title       <- "Z from permutation p-values"
-    stat_title_short <- "Z_from_p"
-    if (!"Z_from_p" %in% names(df_rk)) {
-      .ph_abort("Column `Z_from_p` not found; pass ph_prevalence_shift() results or provide Z_from_p yourself.")
-    }
-    stat_for_sort <- df_rk$Z_from_p
-  }
-
-  # ---- Early return when no data --------------------------------------------
-  if (nrow(df_rk) == 0L) {
+  if (nrow(df_rk) == 0L || nrow(df_plot) == 0L) {
     plt <- plotly::plot_ly(type = "scatter", mode = "text") |>
       plotly::layout(
         title = list(
@@ -1270,51 +1300,9 @@ forestplot_interactive <- function(
     return(list(data = df_rk, plot = plt))
   }
 
-  # ---- Select top/bottom features -------------------------------------------
-  df_rk$stat_for_sort <- stat_for_sort
-  n_pos <- sum(df_rk$stat_for_sort > 0, na.rm = TRUE)
-  n_neg <- sum(df_rk$stat_for_sort < 0, na.rm = TRUE)
-
-  top_pos <- df_rk |>
-    dplyr::arrange(dplyr::desc(.data$stat_for_sort)) |>
-    dplyr::slice_head(n = min(n_pos_each, n_pos))
-
-  top_neg <- df_rk |>
-    dplyr::arrange(.data$stat_for_sort) |>
-    dplyr::slice_head(n = min(n_neg_each, n_neg))
-
-  df_plot <- dplyr::bind_rows(top_neg, top_pos) |>
-    dplyr::mutate(
-      species_label = .data$feature,
-      species_label = forcats::fct_reorder(.data$species_label, .data$stat_for_sort)
-    )
-
-  # ---- Pick statistic for the x-axis ----------------------------------------
-  df_plot$stat_val <- df_plot$stat_for_sort
-
-  # ---- Labels for title/subtitle --------------------------------------------
   g1  <- if (nrow(df_plot)) df_plot$group1[1] else ""
   g2  <- if (nrow(df_plot)) df_plot$group2[1] else ""
   des <- if (nrow(df_plot)) df_plot$design[1] else ""
-
-  # ---- Color scaling ---------------------------------------------------------
-  vals    <- df_plot$stat_val
-  max_neg <- max(abs(vals[vals < 0]), na.rm = TRUE)
-  max_pos <- max(abs(vals[vals > 0]), na.rm = TRUE)
-  if (!is.finite(max_neg) || max_neg == 0) {
-    max_neg <- max(abs(vals), 1, na.rm = TRUE)
-  }
-  if (!is.finite(max_pos) || max_pos == 0) {
-    max_pos <- max(abs(vals), 1, na.rm = TRUE)
-  }
-
-  df_plot$T_col <- dplyr::case_when(
-    vals < 0 ~ -abs(vals) / max_neg,
-    vals > 0 ~  vals      / max_pos,
-    TRUE     ~  0
-  )
-  gamma <- 0.85
-  df_plot$T_col <- sign(df_plot$T_col) * (abs(df_plot$T_col))^gamma
 
   # ---- Hover fields ----------------------------------------------------------
   if (!"n_peptides_used" %in% names(df_plot)) df_plot$n_peptides_used <- NA_integer_
@@ -1346,8 +1334,8 @@ forestplot_interactive <- function(
       ramp[idx]
     }
   })
-  seg_hex <- if (isTRUE(use_diverging_colors)) map_hex(df_plot$T_col) else rep("rgba(0,0,0,0.90)", nrow(df_plot))
-  pt_hex  <- if (isTRUE(use_diverging_colors)) map_hex(df_plot$T_col) else rep("rgba(0,0,0,1)",     nrow(df_plot))
+  seg_hex <- if (isTRUE(use_diverging_colors)) map_hex(df_plot$stat_color_score) else rep("rgba(0,0,0,0.90)", nrow(df_plot))
+  pt_hex  <- if (isTRUE(use_diverging_colors)) map_hex(df_plot$stat_color_score) else rep("rgba(0,0,0,1)",     nrow(df_plot))
 
   y_levels <- levels(df_plot$species_label)
   df_plot$species_chr <- as.character(df_plot$species_label)
