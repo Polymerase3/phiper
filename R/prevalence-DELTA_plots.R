@@ -101,7 +101,6 @@ deltaplot_prevalence <- function(
     prev_tbl,
     group_pair_values = NULL,
     group_labels     = NULL,
-    # Styling
     point_jitter_width  = 0.005,
     point_jitter_height = 0.005,
     point_alpha    = 0.25,
@@ -118,31 +117,40 @@ deltaplot_prevalence <- function(
 ) {
   # ---- Basic checks -----------------------------------------------------------
   d <- prev_tbl
+  .ph_log_info("Preparing delta prevalence plot.")
   need <- c("group1","group2","prop1","prop2")
   miss <- setdiff(need, names(d))
-  if (length(miss)) {
-    stop("deltaplot_prevalence(): missing columns from ph_compute_prevalence(): ",
-         paste(miss, collapse = ", "))
+  if (length(miss) > 0L) {
+    .ph_abort(paste0(
+      "deltaplot_prevalence(): missing columns from ph_compute_prevalence(): ",
+      paste(miss, collapse = ", ")
+    ))
   }
 
   # ---- Select exactly one (group1, group2) pair ------------------------------
   pairs <- unique(d[, c("group1","group2")])
   if (!is.null(group_pair_values)) {
     if (length(group_pair_values) != 2L) {
-      stop("group_pair_values must be length-2 vector: c(g1, g2).")
+      .ph_abort("group_pair_values must be length-2 vector: c(g1, g2).")
     }
     d <- d[d$group1 == group_pair_values[1] &
              d$group2 == group_pair_values[2], , drop = FALSE]
-    if (!nrow(d)) stop("No rows left after filtering to group_pair_values = c('",
-                       group_pair_values[1], "', '", group_pair_values[2], "').")
+    if (!nrow(d)) {
+      .ph_abort(paste0(
+        "No rows left after filtering to group_pair_values = c('",
+        group_pair_values[1], "', '", group_pair_values[2], "')."
+      ))
+    }
     g1_raw <- group_pair_values[1]
     g2_raw <- group_pair_values[2]
   } else {
     if (nrow(pairs) != 1L) {
-      stop("Multiple (group1, group2) pairs detected. ",
-           "Filter your tibble to one pair or pass group_pair_values = c(g1, g2). ",
-           "Found pairs: ",
-           paste0(utils::capture.output(print(pairs)), collapse = " "))
+      .ph_abort(paste0(
+        "Multiple (group1, group2) pairs detected. ",
+        "Filter your tibble to one pair or pass group_pair_values = c(g1, g2). ",
+        "Found pairs: ",
+        paste0(utils::capture.output(print(pairs)), collapse = " ")
+      ))
     }
     g1_raw <- pairs$group1[1]
     g2_raw <- pairs$group2[1]
@@ -154,16 +162,24 @@ deltaplot_prevalence <- function(
     g2_lab <- as.character(g2_raw)
   } else {
     if (length(group_labels) != 2L) {
-      stop("group_labels must be length-2 vector: c(label_g1, label_g2).")
+      .ph_abort("group_labels must be length-2 vector: c(label_g1, label_g2).")
     }
     g1_lab <- group_labels[1]
     g2_lab <- group_labels[2]
   }
 
   # ---- Compute pooled and delta ----------------------------------------------
+  id_val <- if ("feature" %in% names(d)) {
+    d$feature
+  } else if ("peptide_id" %in% names(d)) {
+    d$peptide_id
+  } else {
+    seq_len(nrow(d))
+  }
+
   w <- d |>
     dplyr::transmute(
-      id     = if ("feature" %in% names(.)) .data$feature else dplyr::row_number(),
+      id     = id_val,
       pooled = (prop1 + prop2) / 2,
       delta  =  prop2 - prop1
     ) |>
@@ -172,7 +188,13 @@ deltaplot_prevalence <- function(
       pooled_clip = pmin(pmax(as.numeric(pooled), 1e-6), 1 - 1e-6)
     )
 
-  if (!nrow(w)) stop("No finite rows to plot after pooled/delta computation.")
+  if (!nrow(w)) {
+    .ph_abort("No finite rows to plot after pooled/delta computation.")
+  }
+
+  if (isTRUE(add_smooth) && nrow(w) < smooth_k) {
+    .ph_warn("Too few points for the requested smooth_k; smooth may be unstable.")
+  }
 
   # Arrow near right edge of observed range
   arrow_x <- max(w$pooled_clip, na.rm = TRUE) * arrow_x_frac
