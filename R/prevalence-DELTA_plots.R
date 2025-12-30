@@ -757,6 +757,39 @@ deltaplot_interactive <- function(
 #' plotting: raw \code{T_obs}, permutation-standardized \code{T_obs_stand}, or
 #' \code{Z_from_p} (signed Z from permutation p-values). For calibrated inference
 #' or cross-figure comparability, prefer permutation Z-based results or T_stand.
+#'
+#' @examples
+#'
+#' # in this example we mock the output of ph_prevalence_shift with a simple
+#' # data.frame - it works the same
+#' set.seed(1)
+#' n <- 20
+#' results_tbl <- data.frame(
+#'   rank = rep("species", n),
+#'   feature = paste0("feat_", seq_len(n)),
+#'   group1 = "control",
+#'   group2 = "treated",
+#'   design = "case-control",
+#'   T_obs = rnorm(n, sd = 2),
+#'   p_perm = runif(n),
+#'   p_adj_rank = p.adjust(runif(n), method = "BH"),
+#'   category_rank_bh = ifelse(runif(n) < 0.2, "significant (BH, per rank)", "ns"),
+#'   T_obs_stand = rnorm(n),
+#'   Z_from_p = qnorm(1 - runif(n) / 2) * sign(rnorm(n))
+#' )
+#'
+#' out <- forest_delta(
+#'   results_tbl,
+#'   rank_of_interest = "species",
+#'   statistic_to_plot = "T",
+#'   n_neg_each = 5,
+#'   n_pos_each = 5,
+#'   left_label = "More in control",
+#'   right_label = "More in treated",
+#'   use_diverging_colors = TRUE
+#' )
+#'
+#' print(out$plot)
 #' @export
 forest_delta <- function(
     results_tbl,
@@ -783,21 +816,31 @@ forest_delta <- function(
     point_size    = 3.6,
     show_grid     = FALSE
 ) {
-  if (!is.data.frame(results_tbl)) stop("`results_tbl` must be a data.frame/tibble.")
+  # ---- input validation ------------------------------------------------------
+  if (!is.data.frame(results_tbl)) {
+    .ph_abort("`results_tbl` must be a data.frame/tibble.")
+  }
   statistic_to_plot <- match.arg(statistic_to_plot)
 
+  # ---- required columns ------------------------------------------------------
   need_cols <- c("rank","feature","group1","group2","design",
                  "T_obs","p_perm","p_adj_rank","category_rank_bh")
   miss <- setdiff(need_cols, colnames(results_tbl))
-  if (length(miss)) stop(paste("`results_tbl` is missing required columns:", paste(miss, collapse = ", ")))
+  if (length(miss)) {
+    .ph_abort(paste("`results_tbl` is missing required columns:", paste(miss, collapse = ", ")))
+  }
+
+  # ---- helpers ---------------------------------------------------------------
   # helper: pt -> ggplot size units
   .pt_to_gg <- function(pt) pt / 2.845
 
+  # ---- subset to rank --------------------------------------------------------
   df_rk <- dplyr::filter(results_tbl, .data$rank == rank_of_interest)
 
+  # ---- optional significance filter -----------------------------------------
   if (!identical(filter_significant, "none")) {
     if (!filter_significant %in% colnames(df_rk)) {
-      stop(paste0("column '", filter_significant, "' not found"))
+      .ph_abort(paste0("column '", filter_significant, "' not found"))
     }
     col_vals <- df_rk[[filter_significant]]
     if (is.numeric(col_vals)) {
@@ -810,6 +853,7 @@ forest_delta <- function(
     }
   }
 
+  # ---- early return when no data --------------------------------------------
   if (nrow(df_rk) == 0L) {
     return(list(
       data = df_rk,
@@ -819,21 +863,21 @@ forest_delta <- function(
     ))
   }
 
-  # choose statistic used for ranking and selection
+  # ---- choose ranking/plotting statistic ------------------------------------
   if (identical(statistic_to_plot, "T")) {
     df_rk$stat_for_sort <- df_rk$T_obs
     stat_title       <- "Stouffer T (raw)"
     stat_title_short <- "Stouffer T"
   } else if (identical(statistic_to_plot, "T_stand")) {
     if (!"T_obs_stand" %in% names(df_rk)) {
-      stop("Column `T_obs_stand` not found in `x`.")
+      .ph_abort("Column `T_obs_stand` not found in `x`.")
     }
     df_rk$stat_for_sort <- df_rk$T_obs_stand
     stat_title       <- "Stouffer T (permutation-standardized)"
     stat_title_short <- "T (standardized)"
   } else {  # "Z_from_p"
     if (!"Z_from_p" %in% names(df_rk)) {
-      stop("Column `Z_from_p` not found; pass ph_prevalence_shift() results or provide Z_from_p yourself.")
+      .ph_abort("Column `Z_from_p` not found; pass ph_prevalence_shift() results or provide Z_from_p yourself.")
     }
     df_rk$stat_for_sort <- df_rk$Z_from_p
     stat_title       <- "Z from permutation p-values"
@@ -841,7 +885,7 @@ forest_delta <- function(
   }
 
 
-  # selection based on chosen statistic
+  # ---- select top/bottom features -------------------------------------------
   n_pos <- sum(df_rk$stat_for_sort > 0, na.rm = TRUE)
   n_neg <- sum(df_rk$stat_for_sort < 0, na.rm = TRUE)
 
@@ -859,7 +903,7 @@ forest_delta <- function(
       species_label = forcats::fct_reorder(.data$species_label, .data$stat_for_sort)
     )
 
-  # this is what goes on the x-axis
+  # ---- pick statistic for the x-axis ----------------------------------------
   if (identical(statistic_to_plot, "T")) {
     df_plot$stat_val <- df_plot$T_obs
   } else if (identical(statistic_to_plot, "T_stand")) {
@@ -869,11 +913,12 @@ forest_delta <- function(
   }
 
 
+  # ---- labels for subtitle ---------------------------------------------------
   g1  <- if (nrow(df_plot)) df_plot$group1[1] else ""
   g2  <- if (nrow(df_plot)) df_plot$group2[1] else ""
   des <- if (nrow(df_plot)) df_plot$design[1] else ""
 
-  # color scaling based on plotted statistic
+  # ---- color scaling ---------------------------------------------------------
   vals    <- df_plot$stat_val
   max_neg <- max(abs(vals[vals < 0]), na.rm = TRUE)
   max_pos <- max(abs(vals[vals > 0]), na.rm = TRUE)
@@ -888,7 +933,7 @@ forest_delta <- function(
   gamma <- 0.85
   df_plot$T_col <- sign(df_plot$T_col) * (abs(df_plot$T_col))^gamma
 
-  # ---- base ggplot with global typography ----
+  # ---- base ggplot -----------------------------------------------------------
   p <- ggplot2::ggplot(
     df_plot,
     ggplot2::aes(x = .data$stat_val, y = .data$species_label)
@@ -954,6 +999,7 @@ forest_delta <- function(
       panel.grid.minor = if (isTRUE(show_grid)) ggplot2::element_line() else ggplot2::element_blank()
     )
 
+  # ---- optional diverging color scale ---------------------------------------
   if (isTRUE(use_diverging_colors)) {
     p <- p + ggplot2::scale_color_gradientn(
       colors = c("#1f4e79", "#6f94c2", "#eeeeee", "#e7a39c", "#8e1b10"),
@@ -962,7 +1008,7 @@ forest_delta <- function(
     )
   }
 
-  # ---- red arrows + labels (sizes tied to base_text_pt) ----
+  # ---- arrows and labels -----------------------------------------------------
   lvl_n  <- length(levels(df_plot$species_label))
   if (lvl_n == 0L) lvl_n <- length(unique(df_plot$species_label))
   y_top  <- lvl_n + y_pad
@@ -1090,18 +1136,22 @@ forest_delta_plotly <- function(
     point_size    = 11,
     statistic_to_plot = c("T", "T_stand", "Z_from_p")
 ) {
-  if (!is.data.frame(results_tbl)) stop("`results_tbl` must be a data.frame/tibble.")
+  if (!is.data.frame(results_tbl)) {
+    .ph_abort("`results_tbl` must be a data.frame/tibble.")
+  }
   statistic_to_plot <- match.arg(statistic_to_plot)
 
   need_cols <- c("rank","feature","group1","group2","design",
                  "T_obs","p_perm","p_adj_rank","category_rank_bh")
   miss <- setdiff(need_cols, colnames(results_tbl))
-  if (length(miss)) stop(paste("`results_tbl` is missing required columns:", paste(miss, collapse = ", ")))
+  if (length(miss)) {
+    .ph_abort(paste("`results_tbl` is missing required columns:", paste(miss, collapse = ", ")))
+  }
   df_rk <- dplyr::filter(results_tbl, .data$rank == rank_of_interest)
 
   if (!identical(filter_significant, "none")) {
     if (!filter_significant %in% colnames(df_rk)) {
-      stop(paste0("column '", filter_significant, "' not found"))
+      .ph_abort(paste0("column '", filter_significant, "' not found"))
     }
     if (is.numeric(df_rk[[filter_significant]])) {
       df_rk <- dplyr::filter(df_rk, .data[[filter_significant]] <= sig_level)
