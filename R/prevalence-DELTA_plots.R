@@ -1473,64 +1473,113 @@ forestplot_interactive <- function(
     ggplot2::theme(panel.background = ggplot2::element_rect(fill = "white", colour = NA))
 }
 
-# ==============================================================================
-# ECDF of per-peptide prevalence for two groups (static)
-# Input: tibble from ph_compute_prevalence() with group1, group2, prop1, prop2
-# Optional: feature, n1/N1/n2/N2, percent1/percent2
-# ==============================================================================
-#' @title ECDF of per-peptide prevalence for two groups (static)
-#' @description Plot ECDF curves for \code{prop1} and \code{prop2} from a
-#'   prevalence table.
+#' @title ECDF of Per-peptide Prevalences for Two Groups
+#'
+#' @description Plot empirical cumulative distribution functions (ECDFs) of
+#' per-peptide prevalence for two groups using a
+#' \code{ph_compute_prevalence()}-style table. The plot compares the cumulative
+#' distribution of prevalence values between the two groups and optionally
+#' annotates median shifts and a Kolmogorov-Smirnov (KS) test summary.
+#'
+#' @details
+#' Each group is represented by a step function showing the fraction of features
+#' with prevalence less than or equal to a given value. Vertical median lines
+#' can be added for each group, and the subtitle can include the KS statistic
+#' and p-value along with the median difference.
+#'
 #' @param prev_tbl Data frame with columns \code{group1}, \code{group2},
 #'   \code{prop1}, \code{prop2}. Optional \code{feature} columns are ignored.
-#' @param group_pair_values Optional length-2 vector \code{c(g1, g2)} selecting a pair.
-#' @param group_labels Optional length-2 vector of display labels.
-#' @param line_width Line width for ECDF steps.
-#' @param line_alpha Line alpha for ECDF steps.
-#' @param group1_color,group2_color Line colors for group1 and group2.
-#' @param show_median Logical; add median lines. Default \code{TRUE}.
-#' @param show_ks Logical; add KS test summary to subtitle. Default \code{TRUE}.
+#' @param group_pair_values Optional length-2 character vector
+#'   \code{c(group1, group2)}. Use this when \code{prev_tbl} contains multiple
+#'   group pairs.
+#' @param group_labels Optional length-2 character vector of display labels
+#'   \code{c(label_group1, label_group2)}. Defaults to \code{group1}/\code{group2}.
+#' @param line_width_pt Line width for ECDF steps (ggplot units). Default 1.0.
+#' @param line_alpha Line alpha for ECDF steps. Default 1.0.
+#' @param group1_line_color,group2_line_color Line colors for group1 and group2.
+#' @param show_median_lines Logical; add median lines. Default \code{TRUE}.
+#' @param show_ks_test Logical; add KS test summary to subtitle. Default \code{TRUE}.
 #' @param plot_title,plot_subtitle Optional plot labels.
 #' @param x_label,y_label Optional axis labels.
+#'
 #' @return A `ggplot` object.
 #' @export
-ecdf_prevalence <- function(
+ecdf_plot <- function(
     prev_tbl,
     group_pair_values = NULL,
     group_labels     = NULL,
-    # styling
-    line_width   = 1.0,
-    line_alpha   = 1.0,
-    group1_color = "#1f77b4",
-    group2_color = "#d62728",
-    show_median  = TRUE,
-    show_ks      = TRUE,
+    line_width_pt     = 1.0,
+    line_alpha        = 1.0,
+    group1_line_color = "#1f77b4",
+    group2_line_color = "#d62728",
+    show_median_lines = TRUE,
+    show_ks_test      = TRUE,
     plot_title   = NULL,
     plot_subtitle = NULL,
     x_label      = NULL,
     y_label      = NULL
 ) {
-  `%||%` <- function(a,b) if (!is.null(a)) a else b
+  # ---- input validation ------------------------------------------------------
+  if (requireNamespace("chk", quietly = TRUE)) {
+    chk::chk_data.frame(prev_tbl)
+    if (!is.null(group_pair_values)) {
+      chk::chk_character(group_pair_values)
+      chk::chk_length(group_pair_values, 2L)
+    }
+    if (!is.null(group_labels)) {
+      chk::chk_character(group_labels)
+      chk::chk_length(group_labels, 2L)
+    }
+    chk::chk_numeric(line_width_pt)
+    chk::chk_numeric(line_alpha)
+    chk::chk_logical(show_median_lines)
+    chk::chk_logical(show_ks_test)
+  }
+  .chk_cond(
+    condition = !is.data.frame(prev_tbl),
+    error_message = "prev_tbl must be a data.frame or tibble."
+  )
+  .chk_cond(
+    condition = !is.null(group_pair_values) && length(group_pair_values) != 2L,
+    error_message = "group_pair_values must be length-2 vector: c(g1, g2)."
+  )
+  .chk_cond(
+    condition = !is.null(group_labels) && length(group_labels) != 2L,
+    error_message = "group_labels must be length-2 vector."
+  )
+  .chk_cond(
+    condition = !is.numeric(line_width_pt) || line_width_pt <= 0,
+    error_message = "line_width_pt must be a positive number."
+  )
+  .chk_cond(
+    condition = !is.numeric(line_alpha) || line_alpha < 0 || line_alpha > 1,
+    error_message = "line_alpha must be between 0 and 1."
+  )
 
+  # ---- required columns ------------------------------------------------------
   d <- prev_tbl
   need <- c("group1","group2","prop1","prop2")
   miss <- setdiff(need, names(d))
-  if (length(miss)) stop("ecdf_prevalence(): missing columns: ", paste(miss, collapse = ", "))
+  if (length(miss)) {
+    .ph_abort("ecdf_prevalence(): missing columns: ", paste(miss, collapse = ", "))
+  }
 
-  # ---- select exactly one pair ----
+  # ---- select exactly one pair ----------------------------------------------
   if (!is.null(group_pair_values)) {
     if (length(group_pair_values) != 2L) {
-      stop("group_pair_values must be length-2 vector: c(g1, g2).")
+      .ph_abort("group_pair_values must be length-2 vector: c(g1, g2).")
     }
     d <- d[d$group1 == group_pair_values[1] &
              d$group2 == group_pair_values[2], , drop = FALSE]
-    if (!nrow(d)) stop("No rows for group_pair_values = c('",
-                       group_pair_values[1], "', '", group_pair_values[2], "').")
+    if (!nrow(d)) {
+      .ph_abort("No rows for group_pair_values = c('",
+                group_pair_values[1], "', '", group_pair_values[2], "').")
+    }
     g1_raw <- group_pair_values[1]; g2_raw <- group_pair_values[2]
   } else {
     pairs <- unique(d[, c("group1","group2")])
     if (nrow(pairs) != 1L) {
-      stop("Multiple (group1, group2) pairs detected. Pass group_pair_values = c(g1, g2).")
+      .ph_abort("Multiple (group1, group2) pairs detected. Pass group_pair_values = c(g1, g2).")
     }
     g1_raw <- pairs$group1[1]; g2_raw <- pairs$group2[1]
   }
@@ -1538,18 +1587,18 @@ ecdf_prevalence <- function(
   if (is.null(group_labels)) {
     g1_lab <- as.character(g1_raw); g2_lab <- as.character(g2_raw)
   } else {
-    if (length(group_labels) != 2L) stop("group_labels must be length-2 vector.")
+    if (length(group_labels) != 2L) .ph_abort("group_labels must be length-2 vector.")
     g1_lab <- group_labels[1]; g2_lab <- group_labels[2]
   }
 
-  # ---- data vectors ----
+  # ---- data vectors ----------------------------------------------------------
   x1 <- as.numeric(d$prop1)
   x2 <- as.numeric(d$prop2)
   x1 <- x1[is.finite(x1)]
   x2 <- x2[is.finite(x2)]
-  if (!length(x1) || !length(x2)) stop("No finite prop values to plot.")
+  if (!length(x1) || !length(x2)) .ph_abort("No finite prop values to plot.")
 
-  # helper to convert ecdf() to data.frame (step function)
+  # ---- helper functions ------------------------------------------------------
   ecdf_df <- function(x) {
     if (!length(x)) return(data.frame(x = numeric(0), y = numeric(0)))
     xs <- sort(unique(x))
@@ -1557,147 +1606,211 @@ ecdf_prevalence <- function(
     data.frame(x = xs, y = F(xs))
   }
 
+  # ---- compute ecdf tables ---------------------------------------------------
   df1 <- ecdf_df(x1); df1$group <- g1_lab
   df2 <- ecdf_df(x2); df2$group <- g2_lab
   ec  <- rbind(df1, df2)
 
+  # ---- summary statistics ----------------------------------------------------
   med1 <- stats::median(x1, na.rm = TRUE)
   med2 <- stats::median(x2, na.rm = TRUE)
   dmed <- med2 - med1
 
   ks_txt <- NULL
-  if (isTRUE(show_ks)) {
+  if (isTRUE(show_ks_test)) {
     ks <- try(suppressWarnings(stats::ks.test(x1, x2)), silent = TRUE)
     if (!inherits(ks, "try-error")) {
       ks_txt <- sprintf("KS D=%.3f  p=%s", unname(ks$statistic), formatC(ks$p.value, format = "e", digits = 2))
     }
   }
 
+  # ---- build plot ------------------------------------------------------------
   p <- ggplot2::ggplot(ec, ggplot2::aes(x, y, color = group)) +
-    ggplot2::geom_step(linewidth = line_width, alpha = line_alpha, direction = "hv") +
+    ggplot2::geom_step(linewidth = line_width_pt, alpha = line_alpha, direction = "hv") +
     ggplot2::scale_x_continuous(labels = scales::percent_format(accuracy = 1), limits = c(0,1)) +
     ggplot2::scale_y_continuous(labels = scales::percent_format(accuracy = 1), limits = c(0,1)) +
     ggplot2::labs(
       title    = plot_title %||% sprintf("ECDF of per-peptide prevalence (%s vs %s)", g2_lab, g1_lab),
-      subtitle = plot_subtitle %||% if (!is.null(ks_txt)) sprintf("%s | Δ median = %s", ks_txt, scales::percent(dmed, accuracy = 0.1)) else NULL,
+      subtitle = plot_subtitle %||% if (!is.null(ks_txt)) sprintf("%s | \u0394 median = %s", ks_txt, scales::percent(dmed, accuracy = 0.1)) else NULL,
       x        = x_label %||% "Prevalence",
       y        = y_label %||% "ECDF"
     ) +
-    ggplot2::scale_color_manual(values = setNames(c(group1_color, group2_color), c(g1_lab, g2_lab))) +
+    ggplot2::scale_color_manual(values = setNames(c(group1_line_color, group2_line_color), c(g1_lab, g2_lab))) +
     ggplot2::theme_classic(base_size = 14) +
     ggplot2::theme(legend.title = ggplot2::element_blank())
 
-  if (isTRUE(show_median)) {
+  if (isTRUE(show_median_lines)) {
     p <- p +
-      ggplot2::geom_vline(xintercept = med1, color = group1_color, linetype = 3) +
-      ggplot2::geom_vline(xintercept = med2, color = group2_color, linetype = 3)
+      ggplot2::geom_vline(xintercept = med1, color = group1_line_color, linetype = 3) +
+      ggplot2::geom_vline(xintercept = med2, color = group2_line_color, linetype = 3)
   }
 
   p
 }
 
-# ==============================================================================
-# ECDF of per-peptide prevalence for two groups (interactive, plotly)
-# Same input/semantics as ecdf_prevalence()
-# ==============================================================================
-#' @title ECDF of per-peptide prevalence for two groups (interactive)
-#' @description Plotly version of \code{ecdf_prevalence()}.
+
+#' @title ECDF of Per-peptide Prevalence for Two Groups
+#'
+#' @description
+#' Plotly version of \code{ecdf_prevalence()}, showing ECDF curves for two
+#' groups based on per-peptide prevalence values. The plot can annotate median
+#' shifts and an optional KS test summary.
+#'
+#' @details
+#' Each group is represented by a step curve showing the cumulative fraction of
+#' features with prevalence less than or equal to a given value. Vertical median
+#' lines can be added for each group, and the subtitle can include the KS
+#' statistic and p-value with the median difference.
+#'
 #' @param prev_tbl Data frame with columns \code{group1}, \code{group2},
 #'   \code{prop1}, \code{prop2}.
-#' @param group_pair_values Optional length-2 vector \code{c(g1, g2)} selecting a pair.
-#' @param group_labels Optional length-2 vector of display labels.
-#' @param line_width Line width for ECDF steps (plotly units).
-#' @param line_alpha Line alpha for ECDF steps.
-#' @param group1_color,group2_color Line colors for group1 and group2.
-#' @param show_median Logical; add median lines. Default \code{TRUE}.
-#' @param show_ks Logical; add KS test summary to subtitle. Default \code{TRUE}.
+#' @param group_pair_values Optional length-2 character vector
+#'   \code{c(group1, group2)}. Use this when \code{prev_tbl} contains multiple
+#'   group pairs.
+#' @param group_labels Optional length-2 character vector of display labels
+#'   \code{c(label_group1, label_group2)}. Defaults to \code{group1}/\code{group2}.
+#' @param line_width_px Line width for ECDF steps (plotly units). Default 2.0.
+#' @param line_alpha Line alpha for ECDF steps. Default 1.0.
+#' @param group1_line_color,group2_line_color Line colors for group1 and group2.
+#' @param show_median_lines Logical; add median lines. Default \code{TRUE}.
+#' @param show_ks_test Logical; add KS test summary to subtitle. Default \code{TRUE}.
 #' @param plot_title,plot_subtitle Optional plot labels.
+#'
 #' @return A plotly object.
 #' @export
-ecdf_prevalence_interactive <- function(
+ecdf_plot_interactive <- function(
     prev_tbl,
     group_pair_values = NULL,
     group_labels     = NULL,
     # styling
-    line_width   = 2.0,      # px
-    line_alpha   = 1.0,
-    group1_color = "#1f77b4",
-    group2_color = "#d62728",
-    show_median  = TRUE,
-    show_ks      = TRUE,
+    line_width_px     = 2.0,
+    line_alpha        = 1.0,
+    group1_line_color = "#1f77b4",
+    group2_line_color = "#d62728",
+    show_median_lines = TRUE,
+    show_ks_test      = TRUE,
     plot_title   = NULL,
     plot_subtitle = NULL
 ) {
-  `%||%` <- function(a,b) if (!is.null(a)) a else b
+  # ---- input validation ------------------------------------------------------
+  if (requireNamespace("chk", quietly = TRUE)) {
+    chk::chk_data.frame(prev_tbl)
+    if (!is.null(group_pair_values)) {
+      chk::chk_character(group_pair_values)
+      chk::chk_length(group_pair_values, 2L)
+    }
+    if (!is.null(group_labels)) {
+      chk::chk_character(group_labels)
+      chk::chk_length(group_labels, 2L)
+    }
+    chk::chk_numeric(line_width_px)
+    chk::chk_numeric(line_alpha)
+    chk::chk_logical(show_median_lines)
+    chk::chk_logical(show_ks_test)
+  }
+  .chk_cond(
+    condition = !is.data.frame(prev_tbl),
+    error_message = "prev_tbl must be a data.frame or tibble."
+  )
+  .chk_cond(
+    condition = !is.null(group_pair_values) && length(group_pair_values) != 2L,
+    error_message = "group_pair_values must be length-2 vector: c(g1, g2)."
+  )
+  .chk_cond(
+    condition = !is.null(group_labels) && length(group_labels) != 2L,
+    error_message = "group_labels must be length-2 vector."
+  )
+  .chk_cond(
+    condition = !is.numeric(line_width_px) || line_width_px <= 0,
+    error_message = "line_width_px must be a positive number."
+  )
+  .chk_cond(
+    condition = !is.numeric(line_alpha) || line_alpha < 0 || line_alpha > 1,
+    error_message = "line_alpha must be between 0 and 1."
+  )
 
+  # ---- required columns ------------------------------------------------------
   d <- prev_tbl
   need <- c("group1","group2","prop1","prop2")
   miss <- setdiff(need, names(d))
-  if (length(miss)) stop("ecdf_prevalence_interactive(): missing columns: ", paste(miss, collapse = ", "))
+  if (length(miss)) {
+    .ph_abort("ecdf_prevalence_interactive(): missing columns: ", paste(miss, collapse = ", "))
+  }
 
-  # ---- pair ----
+  # ---- select exactly one pair ----------------------------------------------
   if (!is.null(group_pair_values)) {
     if (length(group_pair_values) != 2L) {
-      stop("group_pair_values must be length-2 vector: c(g1, g2).")
+      .ph_abort("group_pair_values must be length-2 vector: c(g1, g2).")
     }
     d <- d[d$group1 == group_pair_values[1] &
              d$group2 == group_pair_values[2], , drop = FALSE]
-    if (!nrow(d)) stop("No rows for group_pair_values = c('",
-                       group_pair_values[1], "', '", group_pair_values[2], "').")
+    if (!nrow(d)) {
+      .ph_abort("No rows for group_pair_values = c('",
+                group_pair_values[1], "', '", group_pair_values[2], "').")
+    }
     g1_raw <- group_pair_values[1]; g2_raw <- group_pair_values[2]
   } else {
     pairs <- unique(d[, c("group1","group2")])
-    if (nrow(pairs) != 1L) stop("Multiple (group1, group2) pairs detected. Pass group_pair_values = c(g1, g2).")
+    if (nrow(pairs) != 1L) {
+      .ph_abort("Multiple (group1, group2) pairs detected. Pass group_pair_values = c(g1, g2).")
+    }
     g1_raw <- pairs$group1[1]; g2_raw <- pairs$group2[1]
   }
 
   if (is.null(group_labels)) {
     g1_lab <- as.character(g1_raw); g2_lab <- as.character(g2_raw)
   } else {
-    if (length(group_labels) != 2L) stop("group_labels must be length-2 vector.")
+    if (length(group_labels) != 2L) .ph_abort("group_labels must be length-2 vector.")
     g1_lab <- group_labels[1]; g2_lab <- group_labels[2]
   }
 
+  # ---- data vectors ----------------------------------------------------------
   x1 <- as.numeric(d$prop1); x1 <- x1[is.finite(x1)]
   x2 <- as.numeric(d$prop2); x2 <- x2[is.finite(x2)]
-  if (!length(x1) || !length(x2)) stop("No finite prop values to plot.")
+  if (!length(x1) || !length(x2)) .ph_abort("No finite prop values to plot.")
 
+  # ---- helper functions ------------------------------------------------------
   ecdf_df <- function(x) {
+    if (!length(x)) return(data.frame(x = numeric(0), y = numeric(0)))
     xs <- sort(unique(x))
     F  <- stats::ecdf(x)
     data.frame(x = xs, y = F(xs))
   }
 
-  df1 <- ecdf_df(x1)
-  df2 <- ecdf_df(x2)
+  # ---- compute ecdf tables ---------------------------------------------------
+  df1 <- ecdf_df(x1); df1$group <- g1_lab
+  df2 <- ecdf_df(x2); df2$group <- g2_lab
+
+  # ---- summary statistics ----------------------------------------------------
   med1 <- stats::median(x1, na.rm = TRUE)
   med2 <- stats::median(x2, na.rm = TRUE)
   dmed <- med2 - med1
 
   ks_txt <- NULL
-  if (isTRUE(show_ks)) {
+  if (isTRUE(show_ks_test)) {
     ks <- try(suppressWarnings(stats::ks.test(x1, x2)), silent = TRUE)
     if (!inherits(ks, "try-error")) {
       ks_txt <- sprintf("KS D=%.3f  p=%s", unname(ks$statistic), formatC(ks$p.value, format = "e", digits = 2))
     }
   }
 
-  # hover formatting
+  # ---- hover formatting ------------------------------------------------------
   fmt_pct <- function(x) scales::percent(x, accuracy = 0.1)
   hover1 <- sprintf("<b>%s</b><br>x: %s<br>F(x): %s", g1_lab, fmt_pct(df1$x), fmt_pct(df1$y))
   hover2 <- sprintf("<b>%s</b><br>x: %s<br>F(x): %s", g2_lab, fmt_pct(df2$x), fmt_pct(df2$y))
 
+  # ---- build plot ------------------------------------------------------------
   plt <- plotly::plot_ly() |>
     plotly::add_trace(
       type = "scatter", mode = "lines",
       x = df1$x, y = df1$y, text = hover1, hoverinfo = "text",
-      line = list(width = line_width, color = group1_color, shape = "hv", opacity = line_alpha),
+      line = list(width = line_width_px, color = group1_line_color, shape = "hv", opacity = line_alpha),
       name = g1_lab
     ) |>
     plotly::add_trace(
       type = "scatter", mode = "lines",
       x = df2$x, y = df2$y, text = hover2, hoverinfo = "text",
-      line = list(width = line_width, color = group2_color, shape = "hv", opacity = line_alpha),
+      line = list(width = line_width_px, color = group2_line_color, shape = "hv", opacity = line_alpha),
       name = g2_lab
     ) |>
     plotly::layout(
@@ -1716,13 +1829,13 @@ ecdf_prevalence_interactive <- function(
       margin = list(l = 60, r = 40, b = 60, t = 70)
     )
 
-  if (isTRUE(show_median)) {
+  if (isTRUE(show_median_lines)) {
     plt <- plt |>
       plotly::add_segments(x = med1, xend = med1, y = 0, yend = 1,
-                           line = list(dash = "dot", width = 1, color = group1_color),
+                           line = list(dash = "dot", width = 1, color = group1_line_color),
                            hoverinfo = "skip", showlegend = FALSE) |>
       plotly::add_segments(x = med2, xend = med2, y = 0, yend = 1,
-                           line = list(dash = "dot", width = 1, color = group2_color),
+                           line = list(dash = "dot", width = 1, color = group2_line_color),
                            hoverinfo = "skip", showlegend = FALSE)
   }
 
