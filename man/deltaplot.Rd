@@ -86,22 +86,7 @@ across pooled prevalence.
 \donttest{
 library(dplyr)
 library(rlang)
-phip_path <- phip_example_path()
-
-ps <- phip_convert(
-  data_long_path    = phip_path,
-  backend           = "duckdb",
-  peptide_library   = TRUE,
-  subject_id        = "subject_id",
-  peptide_id        = "peptide_id",
-  sample_id         = "sample_id",
-  exist             = "exist",
-  timepoint         = "timepoint_factor",
-  fold_change       = "fold_change",
-  materialise_table = TRUE,
-  auto_expand       = TRUE,
-  n_cores           = 2
-)
+ps <- phip_load_example_data()
 
 # small subset for speed
 keep_pep <- c("16627", "5243", "24799", "16196", "18003")
