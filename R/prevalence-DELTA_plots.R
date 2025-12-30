@@ -1,4 +1,4 @@
-#' @title Δ prevalence vs pooled prevalence (per peptide)
+#' @title Δ Prevalence vs Pooled Prevalence
 #'
 #' @description
 #' Build a static ggplot showing the per-peptide shift in prevalence
@@ -6,6 +6,18 @@
 #' (\eqn{(group1 + group2)/2}). The input should be a tibble/data frame produced
 #' by \code{ph_compute_prevalence()} or equivalent with columns
 #' \code{group1}, \code{group2}, \code{prop1}, and \code{prop2}.
+#'
+#' @details
+#' The plot places each feature (peptide) as a point at:
+#' \itemize{
+#'   \item x-axis: pooled prevalence \code{(prop1 + prop2)/2}
+#'   \item y-axis: prevalence shift \code{(prop2 - prop1)}
+#' }
+#' Points are optionally jittered for visibility. A dashed horizontal line marks
+#' \eqn{\Delta = 0}. Optional arrows and labels indicate the direction of
+#' increased prevalence for \code{group1} vs \code{group2}. If
+#' \code{add_smooth = TRUE}, a GAM smooth is overlaid to summarize the trend
+#' across pooled prevalence.
 #'
 #' @param prev_tbl Data frame with columns \code{group1}, \code{group2},
 #'   \code{prop1}, \code{prop2}. Optional \code{feature} is used for row
@@ -33,11 +45,57 @@
 #' @return A `ggplot` object.
 #'
 #' @examples
-#' \dontrun{
-#' prev_tbl <- make_prev_tbl(x_kid1, rank="is_flagellum", g1="T2", g2="T8", feature_value=TRUE)
-#' p <- deltaplot_prevalence(prev_tbl, group_pair_values = c("B","M12"))
-#' }
+#' \donttest{
+#' phip_path <- phip_example_path()
 #'
+#' ps <- phip_convert(
+#'   data_long_path    = phip_path,
+#'   backend           = "duckdb",
+#'   peptide_library   = TRUE,
+#'   subject_id        = "subject_id",
+#'   peptide_id        = "peptide_id",
+#'   sample_id         = "sample_id",
+#'   exist             = "exist",
+#'   timepoint         = "timepoint_factor",
+#'   fold_change       = "fold_change",
+#'   materialise_table = TRUE,
+#'   auto_expand       = TRUE,
+#'   n_cores           = 2
+#' )
+#'
+#' # small subset for speed
+#' keep_pep <- c("16627", "5243", "24799", "16196", "18003")
+#' dat_cols <- dplyr::tbl_vars(ps$data_long)
+#' tp_col <- "time"
+#'
+#' ps_small <- ps |>
+#'   dplyr::filter(
+#'     peptide_id %in% keep_pep,
+#'     !!rlang::sym(tp_col) == "T1"
+#'   ) |>
+#'   dplyr::collect()
+#'
+#' # pick the grouping column
+#' group_col <- "group"
+#'
+#' prev_res <- ph_prevalence_compare(
+#'   ps_small,
+#'   rank_cols  = "peptide_id",
+#'   group_cols = group_col,
+#'   collect    = TRUE
+#' )
+#' prev_tbl <- as.data.frame(prev_res)
+#' pair_tbl <- unique(prev_tbl[, c("group1", "group2")])
+#' group_pair <- c(pair_tbl$group1[1], pair_tbl$group2[1])
+#'
+#' p <- deltaplot_prevalence(
+#'   prev_tbl,
+#'   group_pair_values = group_pair,
+#'   group_labels = group_pair
+#' )
+#'
+#' print(p)
+#' }
 #' @export
 deltaplot_prevalence <- function(
     prev_tbl,
@@ -103,13 +161,13 @@ deltaplot_prevalence <- function(
   }
 
   # ---- Compute pooled and delta ----------------------------------------------
-  w <- d %>%
+  w <- d |>
     dplyr::transmute(
       id     = if ("feature" %in% names(.)) .data$feature else dplyr::row_number(),
       pooled = (prop1 + prop2) / 2,
       delta  =  prop2 - prop1
-    ) %>%
-    dplyr::filter(is.finite(pooled), is.finite(delta)) %>%
+    ) |>
+    dplyr::filter(is.finite(pooled), is.finite(delta)) |>
     dplyr::mutate(
       pooled_clip = pmin(pmax(as.numeric(pooled), 1e-6), 1 - 1e-6)
     )
@@ -178,12 +236,6 @@ deltaplot_prevalence <- function(
   p
 }
 
-# ==============================================================================
-# Interactive Δ prevalence vs pooled prevalence (per peptide)
-# Input: tibble from ph_compute_prevalence() with:
-#   group1, group2, prop1, prop2, (n1, N1, percent1), (n2, N2, percent2),
-#   optional: feature, p_adj_rank_wbh
-# ==============================================================================
 #' @title Interactive Δ prevalence vs pooled prevalence (per peptide)
 #' @description Interactive plotly version of \code{deltaplot_prevalence()}.
 #' @param prev_tbl A data frame with columns \code{group1}, \code{group2},
@@ -209,20 +261,17 @@ deltaplot_prevalence_interactive <- function(
     prev_tbl,
     group_pair_values = NULL,
     group_labels     = NULL,
-    # Styling
     point_alpha     = 0.6,
     point_size      = 6,
     add_smooth      = TRUE,
     smooth_k        = 5,
     arrow_color     = "red",
-    # stała geometria strzałek/etykiet
-    arrow_x_frac    = 0.97,  # 0..1 po osi X
-    arrow_length_frac = 0.30,  # 0..1 wysokości osi Y
-    label_x_gap_frac  = 0.03,  # ile osi X w lewo od strzałki
-    label_y_gap_frac  = 0.02,  # pionowy margines etykiet
+    arrow_x_frac    = 0.97,
+    arrow_length_frac = 0.30,
+    label_x_gap_frac  = 0.03,
+    label_y_gap_frac  = 0.02,
     plot_title      = NULL,
     plot_subtitle   = NULL,
-    # Jitter (display-only)
     add_jitter          = TRUE,
     point_jitter_width  = 0.005,
     point_jitter_height = 0.005,
@@ -256,7 +305,7 @@ deltaplot_prevalence_interactive <- function(
   if (!("percent2" %in% names(d))) d$percent2 <- d$prop2 * 100
   pick_or <- function(df, nm, default = NA_real_) if (nm %in% names(df)) df[[nm]] else default
 
-  w <- d %>%
+  w <- d |>
     dplyr::transmute(
       feature   = .data$feature,
       pooled    = (prop1 + prop2) / 2,
@@ -269,8 +318,8 @@ deltaplot_prevalence_interactive <- function(
         pick_or(d,"p_adj"),
         pick_or(d,"p_raw")
       )
-    ) %>%
-    dplyr::filter(is.finite(pooled), is.finite(delta)) %>%
+    ) |>
+    dplyr::filter(is.finite(pooled), is.finite(delta)) |>
     dplyr::mutate(pooled_clip = pmin(pmax(as.numeric(pooled), 1e-6), 1 - 1e-6))
   if (!nrow(w)) stop("No finite rows to plot.")
 
