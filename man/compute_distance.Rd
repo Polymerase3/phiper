@@ -24,10 +24,10 @@ given by \code{value_col}.
 
 \item{value_col}{character scalar. Name of the abundance column in
 \code{ps$data_long}. If \code{NULL}, the function tries (in order)
-\code{exist},  \code{counts_hit}, \code{counts_input}, \code{fold_change}.}
+\code{exist},  \code{counts_hits}, \code{counts_control}, \code{fold_change}.}
 
-\item{method_normalization}{character scalar. normalization applied to the
-abundance matrix before distance computation. one of:
+\item{method_normalization}{character scalar. Normalization applied to the
+abundance matrix before distance computation. One of:
 \itemize{
 \item \code{"auto"}: uses \code{"none"} for binary (0/1) data, otherwise
 uses \code{"relative"}.
@@ -37,10 +37,10 @@ uses \code{"relative"}.
 \item \code{"none"}: no normalization.
 }}
 
-\item{distance}{character scalar. distance method name. the string is
+\item{distance}{character scalar. Distance method name. The string is
 lowercased internally.
 
-supported methods depend on which packages are installed:
+Supported methods depend on which packages are installed:
 \itemize{
 \item fast path (if package 'parallelDist' is installed):
 \itemize{
@@ -64,7 +64,7 @@ vegan::vegdist(), partial match allowed:
 "aitchison", "robust.aitchison".
 }
 
-if 'parallelDist' is installed but the requested method is not in the fast
+If 'parallelDist' is installed but the requested method is not in the fast
 list above, the function falls back to vegan::vegdist().}
 
 \item{n_threads}{integer scalar. Number of cpu threads passed to
@@ -84,11 +84,10 @@ The normalized abundance matrix used for distance calculation is attached
 to the returned \code{dist} object as attribute \code{"abundances"}.
 
 Note: this function collects \code{ps$data_long} into memory and pivots to a
-wide matrix in r. This can be large for big cohorts and/or large peptide
+wide matrix in R. This can be large for big cohorts and/or large peptide
 sets.
 }
 \examples{
-\donttest{
 # build an example <phip_data> object from the package example dataset
 phip_path <- phip_example_path()
 
@@ -112,31 +111,24 @@ keep_pep <- c("16627", "5243", "24799", "16196", "18003")
 dat_cols <- dplyr::tbl_vars(ps$data_long)
 tp_col <- "time"
 
-ps_small <- ps \%>\%
+ps_small <- ps |>
   dplyr::filter(
     peptide_id \%in\% keep_pep,
     !!rlang::sym(tp_col) == "T1"
-  ) \%>\%
+  ) |>
   dplyr::collect()
 
 # compute distances (needs either 'parallelDist' or 'vegan')
-if (rlang::is_installed("parallelDist") || rlang::is_installed("vegan")) {
-  val_col <- if ("counts_hits" \%in\% dplyr::tbl_vars(ps_small)) {
-    "counts_hits"
-  } else {
-    "exist"
-  }
+val_col <-  "exist"
 
-  d <- compute_distance(
-    ps_small,
-    value_col = val_col,
-    method_normalization = "hellinger",
-    distance = "bray",
-    n_threads = 2L
-  )
+d <- compute_distance(
+  ps_small,
+  value_col = val_col,
+  method_normalization = "hellinger",
+  distance = "bray",
+  n_threads = 2L
+)
 
-  a <- attr(d, "abundances")
-  a[1:min(5, nrow(a)), 1:min(5, ncol(a)), drop = FALSE]
-}
-}
+a <- attr(d, "abundances")
+a[1:min(5, nrow(a)), 1:min(5, ncol(a)), drop = FALSE]
 }

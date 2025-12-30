@@ -2,7 +2,7 @@
 % Please edit documentation in R/binary_beta.R
 \name{compute_tsne}
 \alias{compute_tsne}
-\title{Compute t-SNE embeddings for samples}
+\title{Compute t-SNE Embeddings for Sample Distances}
 \usage{
 compute_tsne(
   ps,
@@ -18,94 +18,135 @@ compute_tsne(
 )
 }
 \arguments{
-\item{ps}{A \code{phip_data} object.}
+\item{ps}{A \code{phip_data} object or a table providing sample-level
+metadata. This table must contain \code{sample_id} and any columns
+specified in \code{meta_cols}.}
 
-\item{dist_obj}{A sample-wise distance object. Can be either:
+\item{dist_obj}{A sample distance object. Either:
 \itemize{
-\item a \code{\link{dist}} object (e.g. from \code{\link[=compute_distance]{compute_distance()}}), or
-\item a numeric, symmetric matrix with row/column names giving \code{sample_id}s.
+\item A \code{dist} object (e.g., from \code{compute_distance()}).
+\item A numeric, symmetric matrix with row/column names corresponding
+to \code{sample_id}s.
 }}
 
-\item{dims}{Integer number of t-SNE dimensions to compute (2 or 3).
-Defaults to \code{3L} so that both 2D and 3D plots can be generated from
-the same result.}
+\item{dims}{Integer scalar. Number of t-SNE dimensions to compute (2 or 3).
+Default is 3 to enable both 2D and 3D visualizations.}
 
-\item{perplexity}{Numeric perplexity parameter passed to \code{\link[Rtsne:Rtsne]{Rtsne::Rtsne()}}.
-Must be smaller than the number of samples; if it is too large, it is
-automatically reduced with a warning.}
+\item{perplexity}{Numeric scalar. Perplexity parameter for t-SNE. Must be
+smaller than the number of samples. If too large, it is automatically
+reduced with a warning.}
 
-\item{theta}{Speed/accuracy tradeoff for the Barnes-Hut approximation,
-passed to \code{\link[Rtsne:Rtsne]{Rtsne::Rtsne()}}. Defaults to \code{0.5}.}
+\item{theta}{Numeric scalar. Speed/accuracy tradeoff for Barnes-Hut
+approximation. Default is 0.5.}
 
-\item{max_iter}{Maximum number of iterations for t-SNE, passed to
-\code{\link[Rtsne:Rtsne]{Rtsne::Rtsne()}}. Defaults to \code{1000L}.}
+\item{max_iter}{Integer scalar. Maximum number of t-SNE iterations.
+Default is 1000.}
 
-\item{meta_cols}{Optional character vector of column names in
-\code{ps$data_long} to attach as sample-level metadata. If \code{NULL}
-(default), the function tries to use \code{ps$meta$extra_cols} and keeps
-the intersection with columns available in \code{ps$data_long}.}
+\item{meta_cols}{Character vector. Column names from \code{ps} to attach
+as metadata. If \code{NULL}, uses \code{ps$meta$extra_cols} when
+available.}
 
-\item{seed}{Optional integer random seed for reproducibility. If
-provided, the function temporarily sets the seed for the duration of
-the t-SNE computation and restores the previous RNG state afterwards.}
+\item{seed}{Integer scalar. Random seed for reproducibility. If provided,
+the seed is temporarily set and restored after computation.}
 
-\item{check_duplicates}{Logical; passed to \code{\link[Rtsne:Rtsne]{Rtsne::Rtsne()}}. For
-distance input, duplicates are not expected, so the default is
-\code{FALSE}.}
+\item{check_duplicates}{Logical scalar. Whether to check for duplicate
+points. Default is \code{FALSE} for distance input.}
 
-\item{...}{Additional arguments passed on to \code{\link[Rtsne:Rtsne]{Rtsne::Rtsne()}}.}
+\item{...}{Additional arguments passed to \code{Rtsne::Rtsne()}.}
 }
 \value{
-A tibble with class \code{c("phip_tsne", "tbl_df", "tbl", "data.frame")}
-containing at least:
-\describe{
-\item{sample_id}{Sample identifier (from distance labels or matrix row names).}
-\item{tSNE1, tSNE2}{t-SNE coordinates for the first two dimensions.}
-\item{tSNE3}{Third t-SNE dimension if \code{dims >= 3}, otherwise \code{NA}.}
+A tibble of class \code{c("phip_tsne", "tbl_df", "tbl", "data.frame")}
+with columns:
+\itemize{
+\item \code{sample_id}: Sample identifier from distance labels.
+\item \code{tSNE1}, \code{tSNE2}: First two t-SNE dimensions.
+\item \code{tSNE3}: Third dimension if \code{dims >= 3}, otherwise \code{NA}.
+\item Additional metadata columns as specified in \code{meta_cols}.
 }
-
-Additional columns specified in \code{meta_cols} are attached by a left join
-on \code{sample_id} (one unique row per \code{sample_id} is enforced).
 
 Attributes:
 \itemize{
-\item \code{"distance"}: the original \code{dist_obj} as supplied.
-\item \code{"tsne_params"}: a list of key t-SNE parameters and the original call.
-\item \code{"meta_cols"}: the character vector of metadata columns actually used.
+\item \code{"distance"}: The original \code{dist_obj}.
+\item \code{"tsne_params"}: List of t-SNE parameters and function call.
+\item \code{"meta_cols"}: Character vector of metadata columns used.
 }
 }
 \description{
-Runs t-distributed stochastic neighbour embedding (t-SNE) on a
-sample-wise distance matrix (typically returned by \code{\link[=compute_distance]{compute_distance()}})
-and returns a tibble with t-SNE coordinates and selected sample-level
-metadata.
-
-The function expects that rows/columns (or labels) of the distance
-object correspond to \code{sample_id}s present in \code{ps$data_long}.
+Performs t-distributed stochastic neighbor embedding (t-SNE)
+on a sample distance matrix to create low-dimensional embeddings for
+visualization. Returns t-SNE coordinates with optional sample metadata
+attached.
 }
 \details{
-This function runs t-SNE in \emph{distance mode} (\code{is_distance = TRUE}), using
-the supplied distance object directly. Distance computation itself is
-handled elsewhere, typically via \code{\link[=compute_distance]{compute_distance()}}.
+This function runs t-SNE in distance mode (\code{is_distance = TRUE}),
+using the supplied distance matrix directly. The distance computation
+should be performed separately using \code{compute_distance()}.
+
+t-SNE is a visualization method: it preserves local neighborhoods rather
+than global distances, axes are not directly interpretable, and embeddings
+can change with different seeds or perplexity settings.
+
+Samples with missing values in metadata columns are retained in the t-SNE
+result but will have \code{NA} values for those metadata columns.
 }
 \examples{
-\dontrun{
-# Assume ps is a <phip_data> and D is a distance from compute_distance():
-D <- compute_distance(ps, value_col = "fold_change")
+\donttest{
+# Build example phip_data object
+phip_path <- phip_example_path()
 
-tsne_res <- compute_tsne(
-  ps       = ps,
-  dist_obj = D,
-  dims     = 3L,
-  perplexity = 30,
-  meta_cols  = c("type_person", "sex", "age")
+ps <- phip_convert(
+  data_long_path    = phip_path,
+  backend           = "duckdb",
+  peptide_library   = TRUE,
+  subject_id        = "subject_id",
+  peptide_id        = "peptide_id",
+  sample_id         = "sample_id",
+  exist             = "exist",
+  timepoint         = "timepoint_factor",
+  fold_change       = "fold_change",
+  materialise_table = TRUE,
+  auto_expand       = TRUE,
+  n_cores           = 2
 )
 
-# 2D plot, coloured by type_person
-plot_tsne(tsne_res, view = "2d", colour = "type_person")
+# Small subset for speed
+keep_pep <- c("16627", "5243", "24799", "16196", "18003")
+dat_cols <- dplyr::tbl_vars(ps$data_long)
+tp_col <- "time"
 
-# 3D interactive plot (requires plotly)
-plot_tsne(tsne_res, view = "3d", colour = "type_person")
+ps_small <- ps |>
+  dplyr::filter(
+    peptide_id \%in\% keep_pep,
+    !!rlang::sym(tp_col) == "T1"
+  ) |>
+  dplyr::collect()
+
+# Compute distance matrix
+val_col <- if ("fold_change" \%in\% dplyr::tbl_vars(ps_small)) {
+  "fold_change"
+} else {
+  "exist"
 }
 
+d <- compute_distance(
+  ps_small,
+  value_col = val_col,
+  method_normalization = "hellinger",
+  distance = "bray",
+  n_threads = 2L
+)
+
+# Compute t-SNE embeddings
+tsne_res <- compute_tsne(
+  ps       = ps_small,
+  dist_obj = d,
+  dims     = 3L,
+  perplexity = 15,
+  meta_cols = c("subject_id", "timepoint"),
+  seed     = 42
+)
+
+# View results
+head(tsne_res)
+}
 }

@@ -2,14 +2,16 @@
 % Please edit documentation in R/binary_beta.R
 \name{compute_capscale}
 \alias{compute_capscale}
-\title{Constrained Ordination (db-RDA / CAP) on Distance Matrix}
+\title{Constrained Ordination (db-rda / cap) on Distance Matrix}
 \usage{
 compute_capscale(
   dist_obj,
   ps,
   formula,
   neg_correction = c("none", "lingoes", "cailliez"),
-  top_features = 30
+  top_features = 30L,
+  permutations = 999L,
+  feature_assoc = c("wa", "correlation", "regression", "none")
 )
 }
 \arguments{
@@ -18,21 +20,35 @@ The normalized abundance matrix used to compute the distances is expected
 to be attached as an attribute \code{"abundances"} (samples in rows,
 features in columns).}
 
-\item{ps}{A \code{phip_data} object providing sample-level metadata in
-\code{ps$data_long}. This table must contain \code{sample_id} and all
-variables referenced on the right-hand side of \code{formula}.}
+\item{ps}{A \code{phip_data} object or a table providing sample-level
+metadata. This table must contain \code{sample_id} and all variables
+referenced on the right-hand side of \code{formula}. Variable detection
+uses \code{all.names(terms(formula), functions = FALSE)}, so transformed
+terms like \code{log(age)} are supported as long as \code{age} exists.}
 
-\item{formula}{An R formula specifying the constraints (independent variables)
-for the ordination, e.g. \code{~ type_person + age}. Do not include a
+\item{formula}{An R formula specifying the constraints (independent
+variables) for the ordination, e.g. \code{~ sex + age}. Do not include a
 response on the left-hand side; the distance matrix is provided via
 \code{dist_obj}.}
 
-\item{neg_correction}{One of \code{"none"}, \code{"lingoes"}, \code{"cailliez"}.
-Method for negative eigenvalue correction. Default is \code{"none"}.
-This is passed to the \code{add} argument of \code{vegan::capscale()}.}
+\item{neg_correction}{One of \code{"none"}, \code{"lingoes"},
+\code{"cailliez"}. Method for negative eigenvalue correction. Default is
+\code{"none"}. Passed to the \code{add} argument of
+\code{vegan::capscale()}.}
 
-\item{top_features}{Integer number of top features to return in loadings
-(based on highest absolute scores on any constrained axis). Default is 30.}
+\item{top_features}{Integer scalar. Number of top features to return in
+associations (selected per constrained axis by absolute association, then
+unioned). Default is 30.}
+
+\item{permutations}{Integer scalar. Number of permutations for per-term
+permutation tests via \code{vegan::anova.cca(by = "term")}. Default is 999.}
+
+\item{feature_assoc}{character scalar. Type of feature-axis association to
+return. \code{"wa"} returns weighted-average feature scores (centroid of
+sample scores weighted by feature abundance). \code{"correlation"} returns
+feature-axis correlations. \code{"regression"} returns regression slopes
+for axis scores on feature abundance. \code{"none"} skips feature
+associations.}
 }
 \value{
 A list of class \code{"beta_capscale"} with elements:
@@ -41,31 +57,82 @@ A list of class \code{"beta_capscale"} with elements:
 \item{eigenvalues}{Numeric vector of eigenvalues of the constrained axes.}
 \item{variance_partition}{Tibble with total inertia and inertia partitioned
 into constrained and unconstrained components, with their proportion of total.}
-\item{feature_loadings}{Tibble of top feature loadings for constrained axes
-(possibly empty if the \code{"abundances"} attribute is missing or cannot be aligned).}
-\item{cap_model}{The full \code{vegan::capscale} model object for further
-inspection (e.g., \code{summary()}, \code{anova()}, etc.).}
+\item{feature_associations}{Tibble of top feature-axis associations for
+constrained axes (possibly empty if the \code{"abundances"} attribute is
+missing or cannot be aligned). To limit runtime/memory, associations are
+computed for at most 10 constrained axes.}
+\item{r2}{Numeric scalar. Unadjusted R-squared from \code{vegan::RsquareAdj()}.}
+\item{r2_adj}{Numeric scalar. Adjusted R-squared from \code{vegan::RsquareAdj()}.}
+\item{perm_terms}{Tibble of per-term permutation tests from
+\code{vegan::anova.cca(by = "term")}.}
+\item{cap_model}{The full \code{vegan::capscale} model object.}
 }
 \description{
-Performs distance-based redundancy analysis (constrained PCoA, a.k.a. CAP)
-on a distance matrix using \pkg{vegan}::\code{capscale}, with optional
-negative eigenvalue correction. Returns constrained sample scores, eigenvalues,
-variance partitioning, and feature loadings.
+Performs distance-based redundancy analysis (constrained pcoa,
+a.k.a. cap) on a distance matrix using \pkg{vegan}::\code{capscale}, with
+optional negative eigenvalue correction. Returns constrained sample scores,
+eigenvalues, variance partitioning, and feature associations.
 }
 \examples{
-\dontrun{
-  dist_bc <- compute_distance(ps, value_col = "counts_hit",
-                              method_normalization = "hellinger",
-                              distance = "bray")
+\donttest{
+phip_path <- phip_example_path()
 
-  cap_res <- compute_capscale(
-    dist_bc,
-    ps      = ps,
-    formula = ~ type_person + age
-  )
-  cap_res$variance_partition
-  cap_res$sample_coords
-  cap_res$feature_loadings
-  summary(cap_res$cap_model)
+ps <- phip_convert(
+  data_long_path    = phip_path,
+  backend           = "duckdb",
+  peptide_library   = TRUE,
+  subject_id        = "subject_id",
+  peptide_id        = "peptide_id",
+  sample_id         = "sample_id",
+  exist             = "exist",
+  timepoint         = "timepoint_factor",
+  fold_change       = "fold_change",
+  materialise_table = TRUE,
+  auto_expand       = TRUE,
+  n_cores           = 2
+)
+
+# small subset for speed: 5 peptides at time t1
+keep_pep <- c("16627", "5243", "24799", "16196", "18003")
+dat_cols <- dplyr::tbl_vars(ps$data_long)
+tp_col <- if ("time" \%in\% dat_cols) "time" else "timepoint_factor"
+
+ps_small <- ps |>
+  dplyr::filter(
+    peptide_id \%in\% keep_pep,
+    !!rlang::sym(tp_col) == "T1"
+  ) |>
+  dplyr::collect()
+
+val_col <- if ("fold_change" \%in\% dplyr::tbl_vars(ps_small)) {
+  "fold_change"
+} else {
+  "exist"
+}
+
+dist_bc <- compute_distance(
+  ps_small,
+  value_col = val_col,
+  method_normalization = "hellinger",
+  distance = "bray",
+  n_threads = 2L
+)
+
+# pick a simple constraint that exists in the example data (fallback order)
+dat <- ps_small
+cand <- c("group", "big_group", "type_person", "sex", "age")
+rhs_var <- cand[cand \%in\% dplyr::tbl_vars(dat)][1]
+
+cap_res <- compute_capscale(
+  dist_bc,
+  ps      = ps_small,
+  formula = stats::as.formula(paste0("~ ", rhs_var)),
+  neg_correction = "none",
+  top_features   = 30L
+)
+
+cap_res$variance_partition
+cap_res$sample_coords
+cap_res$feature_associations
 }
 }

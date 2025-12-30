@@ -94,11 +94,11 @@
 #' dat_cols <- dplyr::tbl_vars(ps$data_long)
 #' tp_col <- "time"
 #'
-#' ps_small <- ps %>%
+#' ps_small <- ps |>
 #'   dplyr::filter(
 #'     peptide_id %in% keep_pep,
 #'     !!rlang::sym(tp_col) == "T1"
-#'   ) %>%
+#'   ) |>
 #'   dplyr::collect()
 #'
 #' # compute distances (needs either 'parallelDist' or 'vegan')
@@ -328,6 +328,7 @@ if (!"sample_id" %in% names(wide_df)) {
 }
 
 #' @title Principal Components Analysis (PCoA) on a Distance Matrix
+#'
 #' @description Performs PCoA on a distance matrix (typically from
 #' \code{compute_distance()}), optionally correcting for negative eigenvalues,
 #' and returns coordinates, eigenvalues, variance explained, and feature-axis
@@ -413,11 +414,11 @@ if (!"sample_id" %in% names(wide_df)) {
 #' dat_cols <- dplyr::tbl_vars(ps$data_long)
 #' tp_col <- "time"
 #'
-#' ps_small <- ps %>%
+#' ps_small <- ps |>
 #'   dplyr::filter(
 #'     peptide_id %in% keep_pep,
 #'     !!rlang::sym(tp_col) == "T1"
-#'   ) %>%
+#'   ) |>
 #'   dplyr::collect()
 #'
 #' # compute distances (needs either 'parallelDist' or 'vegan')
@@ -1268,11 +1269,11 @@ compute_capscale <- function(dist_obj,
 #' dat_cols <- dplyr::tbl_vars(ps$data_long)
 #' tp_col <- "time"
 #'
-#' ps_small <- ps %>%
+#' ps_small <- ps |>
 #'   dplyr::filter(
 #'     peptide_id %in% keep_pep,
 #'     !!rlang::sym(tp_col) == "T1"
-#'   ) %>%
+#'   ) |>
 #'   dplyr::collect()
 #'
 #' # compute distance matrix
@@ -1765,11 +1766,11 @@ compute_permanova <- function(dist_obj,
 #' dat_cols <- dplyr::tbl_vars(ps$data_long)
 #' tp_col <- "time"
 #'
-#' ps_small <- ps %>%
+#' ps_small <- ps |>
 #'   dplyr::filter(
 #'     peptide_id %in% keep_pep,
 #'     !!rlang::sym(tp_col) == "T1"
-#'   ) %>%
+#'   ) |>
 #'   dplyr::collect()
 #'
 #' # compute distance matrix
@@ -2231,11 +2232,11 @@ compute_dispersion <- function(dist_obj,
 #' dat_cols <- dplyr::tbl_vars(ps$data_long)
 #' tp_col <- "time"
 #'
-#' ps_small <- ps %>%
+#' ps_small <- ps |>
 #'   dplyr::filter(
 #'     peptide_id %in% keep_pep,
 #'     !!rlang::sym(tp_col) == "T1"
-#'   ) %>%
+#'   ) |>
 #'   dplyr::collect()
 #'
 #' # Compute distance matrix

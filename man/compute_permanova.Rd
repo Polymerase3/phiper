@@ -11,57 +11,51 @@ compute_permanova(
   time_col = NULL,
   subject_col = "subject_id",
   permutations = 999,
-  contrasts = "none",
-  baseline_level = NULL
+  p_adjust = "none"
 )
 }
 \arguments{
 \item{dist_obj}{A \code{dist} object of distances between samples
 (e.g., output of \code{compute_distance()}).}
 
-\item{ps}{A \code{phip_data} object providing sample-level metadata in
-\code{ps$data_long}. This table must contain \code{sample_id} and the
+\item{ps}{A \code{phip_data} object or a table providing sample-level
+metadata. This table must contain \code{sample_id} and the
 columns specified in \code{group_col}, \code{time_col}, and optionally
 \code{subject_col}.}
 
-\item{group_col}{Name of the grouping column in \code{ps$data_long}
+\item{group_col}{Name of the grouping column in \code{ps}
 (between-subject factor). Use \code{NULL} if no group factor.}
 
-\item{time_col}{Name of the time factor column in \code{ps$data_long}
+\item{time_col}{Name of the time factor column in \code{ps}
 (within-subject factor for longitudinal data). Use \code{NULL} if not
 applicable. This should be a \emph{categorical} factor for this function
 (continuous time not supported).}
 
-\item{subject_col}{Name of the subject identifier column in \code{ps$data_long}
+\item{subject_col}{Name of the subject identifier column in \code{ps}
 (for repeated measures). Default \code{"subject_id"}. If this column is
 present and \code{time_col} is provided, permutations will be stratified by
-subject.}
+subject. This is a simplification and does not implement a full
+repeated-measures permutation design (see Details).}
 
 \item{permutations}{Number of permutations for significance testing
 (default 999).}
 
-\item{contrasts}{Character vector specifying which post-hoc contrasts to perform.
-Options: \code{"none"} (default) for no post-hoc tests,
-\code{"pairwise"} for all pairwise comparisons,
-\code{"each_vs_rest"} for each level vs. the rest,
-and \code{"baseline"} for a specific baseline comparison.}
-
-\item{baseline_level}{If \code{contrasts} includes \code{"baseline"},
-specify the factor level to use as baseline. For a time factor, if
-\code{baseline_level} is \code{NULL}, the first level of \code{time_col}
-will be used as baseline.}
+\item{p_adjust}{P-value adjustment method applied within each contrast scope.
+Use \code{"none"} for raw p-values. Passed to \code{stats::p.adjust()}.}
 }
 \value{
 A tibble with columns:
-\item{scope}{The scope of the test (e.g., \code{"global"}, \code{"group_pairwise"},
-\code{"time_pairwise"}, \code{"each_vs_rest"}, \code{"baseline"}).}
+\item{scope}{The scope of the test (e.g., \code{"global"},
+\code{"group_pairwise"}, \code{"time_pairwise"}).}
 \item{contrast}{Description of the contrast (e.g., \code{"<global>"} for overall test,
-\code{"A vs B"} for pairwise group comparisons, \code{"X vs other"} for each-vs-rest, etc.).}
+\code{"A vs B"} for pairwise group or time comparisons).}
 \item{term}{The term being tested. For global tests, this will be the factor name (or interaction).
 For post-hoc tests, it may be \code{"group"} or \code{"time"} indicating which factor is being contrasted.}
 \item{F_stat}{F statistic of the PERMANOVA test (for global tests and some contrasts where applicable).}
 \item{R2}{R-squared (variance explained) for the term (global tests).}
 \item{p_value}{Permutation p-value for the test.}
+\item{p_adjust}{Adjusted p-value (within scope); equals \code{p_value} when
+\code{p_adjust = "none"}.}
 \item{n_perm}{Number of permutations used.}
 }
 \description{
@@ -77,27 +71,72 @@ when used for stratification, subject) are dropped \emph{before} fitting the
 model, and the distance matrix is subset to the remaining samples so that
 distances and metadata are always aligned.
 
-Post-hoc contrasts (\code{"pairwise"}, \code{"each_vs_rest"}, \code{"baseline"})
-follow the same logic as described in the detailed comments in the source,
-using \code{adonis2} with appropriate subsetting and, where applicable,
-subject stratification.
+Pairwise post-hoc tests are always performed for \code{group_col} and
+\code{time_col} (when present and with >1 level), using \code{adonis2} with
+appropriate subsetting and, where applicable, subject stratification.
+Stratification via \code{strata = subject} is a simplified approach and does
+not replace a full repeated-measures permutation design (e.g., via
+\code{permute::how()}), especially for multi-level time with missing
+timepoints.
+
+P-values are optionally adjusted within each contrast scope (e.g.,
+\code{"group_pairwise"}, \code{"time_pairwise"}) using
+\code{stats::p.adjust()}.
 }
 \examples{
-\dontrun{
-  permanova_res <- compute_permanova(
-    dist_bc,
-    ps        = ps,
-    group_col = "type_person",
-    time_col  = "timepoint"
-  )
+\donttest{
+phip_path <- phip_example_path()
 
-  permanova_res2 <- compute_permanova(
-    dist_bc,
-    ps        = ps,
-    group_col = "type_person",
-    time_col  = "timepoint",
-    contrasts = c("pairwise", "baseline"),
-    baseline_level = "T0"
-  )
+ps <- phip_convert(
+  data_long_path    = phip_path,
+  backend           = "duckdb",
+  peptide_library   = TRUE,
+  subject_id        = "subject_id",
+  peptide_id        = "peptide_id",
+  sample_id         = "sample_id",
+  exist             = "exist",
+  timepoint         = "timepoint_factor",
+  fold_change       = "fold_change",
+  materialise_table = TRUE,
+  auto_expand       = TRUE,
+  n_cores           = 2
+)
+
+# small subset for speed
+keep_pep <- c("16627", "5243", "24799", "16196", "18003")
+dat_cols <- dplyr::tbl_vars(ps$data_long)
+tp_col <- "time"
+
+ps_small <- ps |>
+  dplyr::filter(
+    peptide_id \%in\% keep_pep,
+    !!rlang::sym(tp_col) == "T1"
+  ) |>
+  dplyr::collect()
+
+# compute distance matrix
+val_col <- "exist"
+
+dist_bc <- compute_distance(
+  ps_small,
+  value_col = val_col,
+  distance = "jaccard",
+  n_threads = 2L
+)
+
+permanova_res <- compute_permanova(
+  dist_bc,
+  ps        = ps_small,
+  group_col = "group",
+  time_col  = "time"
+)
+
+permanova_res2 <- compute_permanova(
+  dist_bc,
+  ps        = ps_small,
+  group_col = "group",
+  time_col  = "time",
+  p_adjust  = "BH"
+)
 }
 }

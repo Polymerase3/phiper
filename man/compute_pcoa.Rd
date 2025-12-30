@@ -2,72 +2,128 @@
 % Please edit documentation in R/binary_beta.R
 \name{compute_pcoa}
 \alias{compute_pcoa}
-\title{Principal Coordinates Analysis (PCoA) on a Distance Matrix}
+\title{Principal Components Analysis (PCoA) on a Distance Matrix}
 \usage{
 compute_pcoa(
   dist_obj,
   neg_correction = c("none", "lingoes", "cailliez"),
-  n_axes = 5,
-  top_features = 30
+  n_axes = 5L,
+  top_features = 30L,
+  feature_assoc = c("wa", "correlation", "regression", "none")
 )
 }
 \arguments{
-\item{dist_obj}{A \code{dist} object returned by \code{compute_distance()}.
-The normalized abundance matrix used to compute the distances is expected
-to be attached as an attribute \code{"abundances"} (a numeric matrix with
-samples in rows and features in columns).}
+\item{dist_obj}{a \code{dist} object (for example returned by
+\code{compute_distance()}). The normalized abundance matrix used to compute
+the distances is attached as attribute \code{"abundances"} (numeric
+matrix with samples in rows and features in columns). If missing, feature
+associations are skipped.}
 
-\item{neg_correction}{Method for adjusting negative eigenvalues (if any).
-One of \code{"none"}, \code{"lingoes"}, or \code{"cailliez"}.
-Default is \code{"none"} (no correction). If set to \code{"lingoes"}
-or \code{"cailliez"}, the \pkg{vegan} package is required.}
+\item{neg_correction}{character scalar. Method for adjusting negative
+eigenvalues (if any). One of \code{"none"}, \code{"lingoes"}, or
+\code{"cailliez"}. Default is \code{"none"}.}
 
-\item{n_axes}{Number of principal coordinate axes to return in the
-sample scores. Default is 5.}
+\item{n_axes}{integer scalar. Number of PCoA axes to return in the sample
+scores. Must be > 0. Internally, \code{k = min(n_axes, n_samples - 1)}.}
 
-\item{top_features}{Integer number of top features to return in loadings
-(based on highest absolute scores on any axis). Default is 30.}
+\item{top_features}{integer scalar. Number of features to keep per axis when
+reporting associations. Features are selected by taking the union of the
+top \code{top_features} features (by absolute association) for each
+returned axis. Must be > 0.}
+
+\item{feature_assoc}{character scalar. Type of feature-axis association to
+return. \code{"wa"} returns weighted-average feature scores (centroid of
+sample scores weighted by feature abundance). \code{"correlation"} returns
+feature-axis correlations. \code{"regression"} returns regression slopes
+for axis scores on feature abundance. \code{"none"} skips feature
+associations.}
 }
 \value{
-A list of class \code{"beta_pcoa"} with elements:
-\item{sample_coords}{A tibble with sample coordinates on the first
-\code{n_axes} PCoA axes. Includes \code{sample_id} and one column per axis
-(\code{PCoA1}, \code{PCoA2}, ...).}
-\item{eigenvalues}{Numeric vector of all eigenvalues from the PCoA.}
-\item{var_explained}{A one-row tibble summarizing the percentage of
-variation explained by the first \code{n_axes} axes and the remainder
-as \code{\%Other}. Percentages are computed from the sum of positive
-eigenvalues.}
-\item{feature_loadings}{A tibble of top feature loadings for the first
-\code{n_axes} axes. Each row is a feature, with columns for each axis
-showing the feature's loading. Only the top \code{top_features} features
-(by absolute loading on at least one axis) are included. Empty if the
-\code{"abundances"} attribute is missing or cannot be aligned.}
+a list of class \code{"beta_pcoa"} with elements:
+\itemize{
+\item \code{sample_coords}: tibble with \code{sample_id} and columns
+\code{PCoA1}, \code{PCoA2}, ... up to \code{n_axes} (or fewer if
+\code{n_samples - 1} is smaller).
+\item \code{eigenvalues}: numeric vector of eigenvalues from the PCoA.
+\item \code{var_explained}: one-row tibble with percent variance explained
+by the returned axes and \code{%Other}. percentages are computed from the
+    sum of positive eigenvalues.
+  \item \code{eigen_diagnostics}: one-row tibble with eigenvalue diagnostics:
+    \code{sum_negative}, \code{sum_positive}, their ratio, the minimum
+    eigenvalue, and the number and fraction of negative eigenvalues.
+  \item \code{correction_infos}: one-row tibble describing any negative
+    eigenvalue correction applied, including \code{corrected},
+    \code{correction_method}, \code{correction_add}, and
+    \code{correction_note}.
+  \item \code{feature_associations}: tibble of feature-axis associations for
+    the returned axes (empty if \code{"abundances"} is missing, cannot be
+    aligned, or \code{feature_assoc = "none"}).
+}
 }
 \description{
-Performs PCoA on a distance matrix (typically from \code{compute_distance()}),
-optionally correcting for negative eigenvalues, and returns coordinates,
-eigenvalues, variance explained, and feature loadings.
+Performs PCoA on a distance matrix (typically from
+\code{compute_distance()}), optionally correcting for negative eigenvalues,
+and returns coordinates, eigenvalues, variance explained, and feature-axis
+associations.
 }
 \details{
-Negative eigenvalues indicate that the distances are not perfectly
-Euclidean. If \code{neg_correction} is \code{"lingoes"} or \code{"cailliez"},
-a correction is applied before PCoA using \code{vegan::wcmdscale()}.
-The variance explained is computed using only positive eigenvalues.
+Negative eigenvalues indicate that the distances are not perfectly euclidean.
+If \code{neg_correction} is \code{"lingoes"} or \code{"cailliez"}, a
+correction is applied via \code{vegan::wcmdscale(add = ...)}.
 
-Feature loadings are computed as weighted averages of sample scores,
-where weights are the feature abundances across samples (the normalized
-abundance matrix attached as an attribute to \code{dist_obj}).
+Feature associations are post-hoc summaries of how features relate to PCoA
+axes. Weighted-average scores (\code{feature_assoc = "wa"}) compute
+\code{t(X) \%*\% U / colSums(X)}, where \code{X} is the abundance matrix and
+\code{U} are the sample coordinates. Correlation and regression associations
+are computed between feature abundances and axis scores and are not "true"
+PCA loadings unless distances are Euclidean and derived compatibly.
 }
 \examples{
-\dontrun{
-  dist_bc <- compute_distance(ps, value_col = "counts_hit",
-                              method_normalization = "hellinger",
-                              distance = "bray")
+\donttest{
+# compute a distance matrix with an attached abundance matrix
+# build an example <phip_data> object from the package example dataset
+phip_path <- phip_example_path()
 
-  pcoa_res <- compute_pcoa(dist_bc, neg_correction = "none", n_axes = 3)
+ps <- phip_convert(
+  data_long_path    = phip_path,
+  backend           = "duckdb",
+  peptide_library   = TRUE,
+  subject_id        = "subject_id",
+  peptide_id        = "peptide_id",
+  sample_id         = "sample_id",
+  exist             = "exist",
+  timepoint         = "timepoint_factor",
+  fold_change       = "fold_change",
+  materialise_table = TRUE,
+  auto_expand       = TRUE,
+  n_cores           = 2
+)
+
+# small subset for speed: 5 peptides at time t1
+keep_pep <- c("16627", "5243", "24799", "16196", "18003")
+dat_cols <- dplyr::tbl_vars(ps$data_long)
+tp_col <- "time"
+
+ps_small <- ps |>
+  dplyr::filter(
+    peptide_id \%in\% keep_pep,
+    !!rlang::sym(tp_col) == "T1"
+  ) |>
+  dplyr::collect()
+
+# compute distances (needs either 'parallelDist' or 'vegan')
+  val_col <- "exist"
+
+  d <- compute_distance(
+    ps_small,
+    value_col = val_col,
+    distance = "jaccard",
+    n_threads = 2L
+  )
+
+  pcoa_res <- compute_pcoa(d, neg_correction = "none", n_axes = 3L)
   pcoa_res$sample_coords
   pcoa_res$var_explained
-  pcoa_res$feature_loadings
+  pcoa_res$feature_associations
 }
 }

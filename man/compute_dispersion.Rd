@@ -11,22 +11,21 @@ compute_dispersion(
   time_col = NULL,
   subject_col = "subject_id",
   permutations = 999,
-  contrasts = "none",
-  baseline_level = NULL
+  p_adjust = "none"
 )
 }
 \arguments{
 \item{dist_obj}{A \code{dist} object of sample distances (e.g. from
 \code{compute_distance()}).}
 
-\item{ps}{A \code{phip_data} object providing sample-level metadata in
-\code{ps$data_long}. This table must contain \code{sample_id} and the
+\item{ps}{A \code{phip_data} object or a table providing sample-level
+metadata. This table must contain \code{sample_id} and the
 columns specified in \code{group_col} and/or \code{time_col}.}
 
-\item{group_col}{Name of the group factor column in \code{ps$data_long}
+\item{group_col}{Name of the group factor column in \code{ps}
 (between-subjects). Use \code{NULL} if no group factor.}
 
-\item{time_col}{Name of the time factor column in \code{ps$data_long}
+\item{time_col}{Name of the time factor column in \code{ps}
 (within-subjects, categorical only). Use \code{NULL} if not applicable.}
 
 \item{subject_col}{Name of subject identifier column (for reference only;
@@ -36,13 +35,8 @@ consistency). Default \code{"subject_id"}.}
 \item{permutations}{Number of permutations for significance testing in
 \code{vegan::permutest}. Default 999.}
 
-\item{contrasts}{Which dispersion contrasts to perform. Options:
-\code{"none"} (default), \code{"pairwise"}, \code{"each_vs_rest"},
-\code{"baseline"}. Interpretation analogiczna do \code{compute_permanova},
-ale zastosowana do dyspersji.}
-
-\item{baseline_level}{If \code{contrasts} includes \code{"baseline"},
-specify the baseline level of group or time to compare against others.}
+\item{p_adjust}{P-value adjustment method applied within each contrast scope.
+Use \code{"none"} for raw p-values. Passed to \code{stats::p.adjust()}.}
 }
 \value{
 A list of class \code{"beta_dispersion"} with:
@@ -52,24 +46,65 @@ a given scope), \code{scope} (e.g. \code{"group"}, \code{"time"},
 \code{"group:time"}), \code{contrast} (e.g. \code{"<global>"},
 \code{"A vs B"}).}
 \item{tests}{Tibble of dispersion test results. Columns: \code{scope},
-\code{contrast}, \code{term = "dispersion"}, \code{p_value}, \code{n_perm}.}
+\code{contrast}, \code{term = "dispersion"}, \code{p_value},
+\code{p_adjust} (equals \code{p_value} when \code{p_adjust = "none"}),
+\code{n_perm}.}
 }
 \description{
 Computes distances of samples to group centroids (using
 \code{vegan::betadisper}) and tests for differences in dispersion among
-groups or time levels. Optionally performs pairwise and other post-hoc
-tests on dispersion.
+groups or time levels. Pairwise post-hoc tests are always performed when
+\code{group_col} or \code{time_col} has >1 level.
 }
 \examples{
-\dontrun{
-  dispersion_res <- compute_dispersion(
-    dist_bc,
-    ps        = ps,
-    group_col = "type_person",
-    time_col  = "timepoint",
-    contrasts = "pairwise"
-  )
-  dispersion_res$tests
-  head(dispersion_res$distances)
+\donttest{
+phip_path <- phip_example_path()
+
+ps <- phip_convert(
+  data_long_path    = phip_path,
+  backend           = "duckdb",
+  peptide_library   = TRUE,
+  subject_id        = "subject_id",
+  peptide_id        = "peptide_id",
+  sample_id         = "sample_id",
+  exist             = "exist",
+  timepoint         = "timepoint_factor",
+  fold_change       = "fold_change",
+  materialise_table = TRUE,
+  auto_expand       = TRUE,
+  n_cores           = 2
+)
+
+# small subset for speed
+keep_pep <- c("16627", "5243", "24799", "16196", "18003")
+dat_cols <- dplyr::tbl_vars(ps$data_long)
+tp_col <- "time"
+
+ps_small <- ps |>
+  dplyr::filter(
+    peptide_id \%in\% keep_pep,
+    !!rlang::sym(tp_col) == "T1"
+  ) |>
+  dplyr::collect()
+
+# compute distance matrix
+val_col <- "exist"
+
+dist_bc <- compute_distance(
+  ps_small,
+  value_col = val_col,
+  distance = "jaccard",
+  n_threads = 2L
+)
+
+dispersion_res <- compute_dispersion(
+  dist_bc,
+  ps        = ps_small,
+  group_col = "group",
+  time_col  = "time",
+  p_adjust  = "BH"
+)
+dispersion_res$tests
+head(dispersion_res$distances)
 }
 }
