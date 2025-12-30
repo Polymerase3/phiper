@@ -2199,6 +2199,10 @@ compute_dispersion <- function(dist_obj,
 #' using the supplied distance matrix directly. The distance computation
 #' should be performed separately using \code{compute_distance()}.
 #'
+#' t-SNE is a visualization method: it preserves local neighborhoods rather
+#' than global distances, axes are not directly interpretable, and embeddings
+#' can change with different seeds or perplexity settings.
+#'
 #' Samples with missing values in metadata columns are retained in the t-SNE
 #' result but will have \code{NA} values for those metadata columns.
 #'
@@ -2277,21 +2281,18 @@ compute_tsne <- function(ps,
   # input validation (chk)
   # ----------------------------------------------------------------------------
   if (missing(dist_obj)) {
-    .ph_abort("Argument `dist_obj` is required. Run `compute_distance()` first.",
-              step = "compute_tsne")
+    .ph_abort("Argument `dist_obj` is required. Run `compute_distance()` first.")
   }
 
   if (!inherits(dist_obj, "dist") && !is.matrix(dist_obj)) {
     .ph_abort(
-      "Argument `dist_obj` must be either a <dist> object or a numeric matrix.",
-      step = "compute_tsne"
+      "Argument `dist_obj` must be either a <dist> object or a numeric matrix."
     )
   }
 
   chk::chk_count(dims)
   if (!dims %in% c(2L, 3L)) {
-    .ph_abort("Argument `dims` must be either 2 or 3.",
-              step = "compute_tsne")
+    .ph_abort("Argument `dims` must be either 2 or 3.")
   }
 
   chk::chk_number(perplexity)
@@ -2309,8 +2310,7 @@ compute_tsne <- function(ps,
 
   if (!rlang::is_installed("Rtsne")) {
     .ph_abort(
-      "Package 'Rtsne' is required to compute t-SNE. Please install it.",
-      step = "compute_tsne"
+      "Package 'Rtsne' is required to compute t-SNE. Please install it."
     )
   }
 
@@ -2329,49 +2329,42 @@ compute_tsne <- function(ps,
     if (is.null(labels)) {
       labels <- as.character(seq_len(n_samples))
       .ph_warn(
-        "Distance object has no labels; using integer indices as `sample_id`.",
-        step = "compute_tsne"
+        "Distance object has no labels; using integer indices as `sample_id`."
       )
     }
   } else {
     # matrix input validation
     if (!is.numeric(dist_obj)) {
-      .ph_abort("If `dist_obj` is a matrix, it must be numeric.",
-                step = "compute_tsne")
+      .ph_abort("If `dist_obj` is a matrix, it must be numeric.")
     }
     if (nrow(dist_obj) != ncol(dist_obj)) {
-      .ph_abort("Distance matrix must be square (same number of rows and columns).",
-                step = "compute_tsne")
+      .ph_abort("Distance matrix must be square (same number of rows and columns).")
     }
     n_samples <- nrow(dist_obj)
     labels <- rownames(dist_obj)
     if (is.null(labels)) {
       labels <- as.character(seq_len(n_samples))
       .ph_warn(
-        "Distance matrix has no rownames; using integer indices as `sample_id`.",
-        step = "compute_tsne"
+        "Distance matrix has no rownames; using integer indices as `sample_id`."
       )
     }
   }
 
   if (n_samples < 3L) {
     .ph_abort(
-      "t-SNE requires at least 3 samples.",
-      step = "compute_tsne"
+      "t-SNE requires at least 3 samples."
     )
   }
 
   if (length(labels) != n_samples) {
     .ph_abort(
-      "Length of distance labels does not match the number of samples.",
-      step = "compute_tsne"
+      "Length of distance labels does not match the number of samples."
     )
   }
 
   if (anyDuplicated(labels)) {
     .ph_abort(
-      "Distance labels (sample IDs) must be unique.",
-      step = "compute_tsne"
+      "Distance labels (sample IDs) must be unique."
     )
   }
 
@@ -2384,8 +2377,7 @@ compute_tsne <- function(ps,
       paste0(
         "Perplexity (", perplexity, ") must be smaller than the number of samples (",
         n_samples, ")."
-      ),
-      step = "compute_tsne"
+      )
     )
   }
   if (perplexity > max_perplexity) {
@@ -2393,8 +2385,7 @@ compute_tsne <- function(ps,
       paste0(
         "Perplexity (", perplexity, ") is high for n = ", n_samples,
         "; reducing to ", max_perplexity, "."
-      ),
-      step = "compute_tsne"
+      )
     )
     perplexity <- max_perplexity
   }
@@ -2407,14 +2398,12 @@ compute_tsne <- function(ps,
   if (!is.null(dat)) {
     dat_cols <- dplyr::tbl_vars(dat)
     if (!"sample_id" %in% dat_cols) {
-      .ph_abort("`ps` must contain a `sample_id` column.",
-                step = "compute_tsne")
+      .ph_abort("`ps` must contain a `sample_id` column.")
     }
   } else {
     dat_cols <- character()
     .ph_warn(
-      "`ps` is NULL or has no data; no metadata columns can be attached.",
-      step = "compute_tsne"
+      "`ps` is NULL or has no data; no metadata columns can be attached."
     )
   }
 
@@ -2435,8 +2424,7 @@ compute_tsne <- function(ps,
           "The following `meta_cols` are not present in `ps` and ",
           "will be ignored: ",
           paste(missing_cols, collapse = ", ")
-        ),
-        step = "compute_tsne"
+        )
       )
       meta_cols <- intersect(meta_cols, dat_cols)
     }
@@ -2448,8 +2436,7 @@ compute_tsne <- function(ps,
   .ph_log_info(
     paste0("Running t-SNE with dims = ", dims,
            ", perplexity = ", perplexity,
-           " on ", n_samples, " samples (distance input)."),
-    step = "compute_tsne"
+           " on ", n_samples, " samples (distance input).")
   )
 
   run_tsne <- function() {
@@ -2488,8 +2475,7 @@ compute_tsne <- function(ps,
 
   if (!is.matrix(coords) || nrow(coords) != n_samples || ncol(coords) != dims) {
     .ph_abort(
-      "Unexpected output from Rtsne::Rtsne(): coordinate matrix has wrong shape.",
-      step = "compute_tsne"
+      "Unexpected output from Rtsne::Rtsne(): coordinate matrix has wrong shape."
     )
   }
 
@@ -2511,36 +2497,53 @@ compute_tsne <- function(ps,
       paste0(
         "Attaching metadata columns to t-SNE result: ",
         paste(meta_cols, collapse = ", ")
-      ),
-      step = "compute_tsne"
+      )
     )
 
-    meta_tbl <- dat |>
+    meta_raw <- dat |>
       dplyr::select(sample_id, dplyr::all_of(meta_cols)) |>
-      dplyr::distinct() |>
       dplyr::collect()
 
-    if (anyDuplicated(meta_tbl$sample_id)) {
-      .ph_warn(
-        paste0(
-          "Metadata rows are not unique per `sample_id`. ",
-          "Keeping the first row per sample."
+    meta_checks <- meta_raw |>
+      dplyr::group_by(sample_id) |>
+      dplyr::summarise(
+        dplyr::across(
+          dplyr::all_of(meta_cols),
+          ~ dplyr::n_distinct(.x[!is.na(.x)]),
+          .names = "n_{.col}"
         ),
-        step = "compute_tsne"
+        .groups = "drop"
       )
 
-      meta_tbl <- meta_tbl |>
-        dplyr::group_by(sample_id) |>
-        dplyr::slice(1L) |>
-        dplyr::ungroup()
+    conflict_rows <- meta_checks |>
+      dplyr::filter(dplyr::if_any(dplyr::starts_with("n_"), ~ .x > 1L))
+
+    if (nrow(conflict_rows) > 0L) {
+      conflict_cols <- names(meta_checks)[-1]
+      conflict_cols <- conflict_cols[
+        vapply(meta_checks[conflict_cols], function(x) any(x > 1L), logical(1))
+      ]
+      conflict_cols <- sub("^n_", "", conflict_cols)
+      sample_preview <- paste(head(conflict_rows$sample_id, 5L), collapse = ", ")
+
+      .ph_abort(
+        paste0(
+          "inconsistent metadata values per `sample_id` for: ",
+          paste(conflict_cols, collapse = ", "),
+          ". examples: ", sample_preview,
+          ". resolve duplicates before running compute_tsne()."
+        )
+      )
     }
+
+    meta_tbl <- meta_raw |>
+      dplyr::distinct(sample_id, .keep_all = TRUE)
 
     tsne_df <- tsne_df |>
       dplyr::left_join(meta_tbl, by = "sample_id")
   }
 
-  .ph_log_info("t-SNE embedding computation finished.",
-               step = "compute_tsne")
+  .ph_log_info("t-SNE embedding computation finished.")
 
   # ----------------------------------------------------------------------------
   # attach attributes and class
