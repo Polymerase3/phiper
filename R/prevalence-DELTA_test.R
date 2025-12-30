@@ -145,9 +145,9 @@
 #' call `set.seed()` before `ph_prevalence_shift()` to obtain reproducible
 #' results; each contrast draws its own seed from the global RNG state.
 #'
-#' @param x A `phip_data` object (recommended; must carry a `peptide_library`
-#'   when `rank_cols` includes non-`"peptide_id"`) or a data frame with the
-#'   necessary columns.
+#' @param x A `phip_data` object (recommended to attach a `peptide_library`
+#'   when `rank_cols` includes non-`"peptide_id"` and not providing
+#' `peptide_library` argument) or a data frame with the necessary columns.
 #' @param rank_cols Character vector of rank columns (e.g. `"peptide_id"`,
 #'   `"species"`, ...). For non-peptide ranks, annotations are joined from a
 #'   peptide library (see Details).
