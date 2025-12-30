@@ -110,7 +110,9 @@
 #' - There must be **at most one positive** per
 #'   (`subject_id`, `peptide_id`, `group_col`, `group_value`); paired designs
 #'   can have up to two positives across the two group levels. Violations
-#'   trigger an error.
+#'   trigger an error. Example (group levels A/B): for a single subject and
+#'   peptide, you may have A=1 and B=0 (or A=0 and B=1, or A=1 and B=1), but you
+#'   cannot have two rows both with A=1 (or two rows both with B=1).
 #' - Non-peptide ranks specified in `rank_cols` must be resolvable from a
 #'   peptide library (see `peptide_library` below).
 #'
@@ -119,8 +121,8 @@
 #' When `rank_cols` includes non-`"peptide_id"` ranks, a peptide library is
 #' required. It is resolved in the following order:
 #'
-#' 1. `x$peptide_library` if `x` is a `phip_data` with an attached library.
-#' 2. The explicit `peptide_library` argument.
+#' 1. The explicit `peptide_library` argument.
+#' 2. `x$peptide_library` if `x` is a `phip_data` with an attached library.
 #' 3. `phiper::get_peptide_meta()` if available (i.e. `phiper` is installed and
 #'    exports this function).
 #'
@@ -407,10 +409,10 @@ ph_prevalence_shift <- function(
     }
 
     lib_src <- NULL
-    if (inherits(x, "phip_data") && !is.null(x$peptide_library)) {
-      lib_src <- x$peptide_library
-    } else if (!is.null(peptide_library)) {
+    if (!is.null(peptide_library)) {
       lib_src <- peptide_library
+    } else if (inherits(x, "phip_data") && !is.null(x$peptide_library)) {
+      lib_src <- x$peptide_library
     } else if (rlang::is_installed("phiper") &&
       "get_peptide_meta" %in% getNamespaceExports("phiper")) {
       # auto-fetch from phiper if available
