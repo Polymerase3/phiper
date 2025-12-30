@@ -152,14 +152,14 @@ compute_distance <- function(ps,
     candidates <- c("exist", "counts_hits", "counts_control", "fold_change")
     hit <- candidates[candidates %in% dat_cols]
     if (length(hit) == 0L) {
-    .ph_abort(
-      paste0(
-        "could not infer an abundance column in `ps`. ",
-        "tried: ", paste(candidates, collapse = ", "),
-        ". please specify `value_col` explicitly."
-      ),
-    )
-  }
+      .ph_abort(
+        paste0(
+          "could not infer an abundance column in `ps`. ",
+          "tried: ", paste(candidates, collapse = ", "),
+          ". please specify `value_col` explicitly."
+        )
+      )
+    }
   value_col <- hit[1L]
   .ph_log_info(
     paste0("auto-detected `value_col = \"", value_col, "\"` from `ps`.")
