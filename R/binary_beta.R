@@ -1203,29 +1203,25 @@ compute_capscale <- function(dist_obj,
 #' @param subject_col Name of the subject identifier column in \code{ps}
 #'   (for repeated measures). Default \code{"subject_id"}. If this column is
 #'   present and \code{time_col} is provided, permutations will be stratified by
-#'   subject.
+#'   subject. This is a simplification and does not implement a full
+#'   repeated-measures permutation design (see Details).
 #' @param permutations Number of permutations for significance testing
 #'   (default 999).
-#' @param contrasts Character vector specifying which post-hoc contrasts to perform.
-#'   Options: \code{"none"} (default) for no post-hoc tests,
-#'   \code{"pairwise"} for all pairwise comparisons,
-#'   \code{"each_vs_rest"} for each level vs. the rest,
-#'   and \code{"baseline"} for a specific baseline comparison.
-#' @param baseline_level If \code{contrasts} includes \code{"baseline"},
-#'   specify the factor level to use as baseline. For a time factor, if
-#'   \code{baseline_level} is \code{NULL}, the first level of \code{time_col}
-#'   will be used as baseline.
+#' @param p_adjust P-value adjustment method applied within each contrast scope.
+#'   Use \code{"none"} for raw p-values. Passed to \code{stats::p.adjust()}.
 #'
 #' @return A tibble with columns:
-#' \item{scope}{The scope of the test (e.g., \code{"global"}, \code{"group_pairwise"},
-#'   \code{"time_pairwise"}, \code{"each_vs_rest"}, \code{"baseline"}).}
+#' \item{scope}{The scope of the test (e.g., \code{"global"},
+#'   \code{"group_pairwise"}, \code{"time_pairwise"}).}
 #' \item{contrast}{Description of the contrast (e.g., \code{"<global>"} for overall test,
-#'   \code{"A vs B"} for pairwise group comparisons, \code{"X vs other"} for each-vs-rest, etc.).}
+#'   \code{"A vs B"} for pairwise group or time comparisons).}
 #' \item{term}{The term being tested. For global tests, this will be the factor name (or interaction).
 #'   For post-hoc tests, it may be \code{"group"} or \code{"time"} indicating which factor is being contrasted.}
 #' \item{F_stat}{F statistic of the PERMANOVA test (for global tests and some contrasts where applicable).}
 #' \item{R2}{R-squared (variance explained) for the term (global tests).}
 #' \item{p_value}{Permutation p-value for the test.}
+#' \item{p_adjust}{Adjusted p-value (within scope); equals \code{p_value} when
+#'   \code{p_adjust = "none"}.}
 #' \item{n_perm}{Number of permutations used.}
 #'
 #' @details
@@ -1236,28 +1232,73 @@ compute_capscale <- function(dist_obj,
 #' model, and the distance matrix is subset to the remaining samples so that
 #' distances and metadata are always aligned.
 #'
-#' Post-hoc contrasts (\code{"pairwise"}, \code{"each_vs_rest"}, \code{"baseline"})
-#' follow the same logic as described in the detailed comments in the source,
-#' using \code{adonis2} with appropriate subsetting and, where applicable,
-#' subject stratification.
+#' Pairwise post-hoc tests are always performed for \code{group_col} and
+#' \code{time_col} (when present and with >1 level), using \code{adonis2} with
+#' appropriate subsetting and, where applicable, subject stratification.
+#' Stratification via \code{strata = subject} is a simplified approach and does
+#' not replace a full repeated-measures permutation design (e.g., via
+#' \code{permute::how()}), especially for multi-level time with missing
+#' timepoints.
+#'
+#' P-values are optionally adjusted within each contrast scope (e.g.,
+#' \code{"group_pairwise"}, \code{"time_pairwise"}) using
+#' \code{stats::p.adjust()}.
 #'
 #' @examples
-#' \dontrun{
-#'   permanova_res <- compute_permanova(
-#'     dist_bc,
-#'     ps        = ps,
-#'     group_col = "type_person",
-#'     time_col  = "timepoint"
-#'   )
+#' \donttest{
+#' phip_path <- phip_example_path()
 #'
-#'   permanova_res2 <- compute_permanova(
-#'     dist_bc,
-#'     ps        = ps,
-#'     group_col = "type_person",
-#'     time_col  = "timepoint",
-#'     contrasts = c("pairwise", "baseline"),
-#'     baseline_level = "T0"
-#'   )
+#' ps <- phip_convert(
+#'   data_long_path    = phip_path,
+#'   backend           = "duckdb",
+#'   peptide_library   = TRUE,
+#'   subject_id        = "subject_id",
+#'   peptide_id        = "peptide_id",
+#'   sample_id         = "sample_id",
+#'   exist             = "exist",
+#'   timepoint         = "timepoint_factor",
+#'   fold_change       = "fold_change",
+#'   materialise_table = TRUE,
+#'   auto_expand       = TRUE,
+#'   n_cores           = 2
+#' )
+#'
+#' # small subset for speed
+#' keep_pep <- c("16627", "5243", "24799", "16196", "18003")
+#' dat_cols <- dplyr::tbl_vars(ps$data_long)
+#' tp_col <- "time"
+#'
+#' ps_small <- ps %>%
+#'   dplyr::filter(
+#'     peptide_id %in% keep_pep,
+#'     !!rlang::sym(tp_col) == "T1"
+#'   ) %>%
+#'   dplyr::collect()
+#'
+#' # compute distance matrix
+#' val_col <- "exist"
+#'
+#' dist_bc <- compute_distance(
+#'   ps_small,
+#'   value_col = val_col,
+#'   distance = "jaccard",
+#'   n_threads = 2L
+#' )
+#'
+#' permanova_res <- compute_permanova(
+#'   dist_bc,
+#'   ps        = ps_small,
+#'   group_col = "group",
+#'   time_col  = "time"
+#' )
+#'
+#' permanova_res2 <- compute_permanova(
+#'   dist_bc,
+#'   ps        = ps_small,
+#'   group_col = "group",
+#'   time_col  = "time",
+#'   p_adjust  = "BH"
+#' )
 #' }
 #' @export
 compute_permanova <- function(dist_obj,
@@ -1266,8 +1307,7 @@ compute_permanova <- function(dist_obj,
                               time_col = NULL,
                               subject_col = "subject_id",
                               permutations = 999,
-                              contrasts = "none",
-                              baseline_level = NULL) {
+                              p_adjust = "none") {
   # ----------------------------------------------------------------------------
   # input validation (chk)
   # ----------------------------------------------------------------------------
@@ -1277,8 +1317,16 @@ compute_permanova <- function(dist_obj,
   chk::chk_string(subject_col)
   chk::chk_count(permutations)
   chk::chk_gt(permutations, 0)
-  chk::chk_character(contrasts)
-  if (!is.null(baseline_level)) chk::chk_string(baseline_level)
+  chk::chk_string(p_adjust)
+  if (!p_adjust %in% c("none", stats::p.adjust.methods)) {
+    .ph_abort(
+      paste0(
+        "`p_adjust` must be one of: ",
+        paste(c("none", stats::p.adjust.methods), collapse = ", "),
+        "."
+      )
+    )
+  }
 
   # if ps is <phip_data>, overwrite ps with ps$data_long;
   # otherwise treat ps as data_long
@@ -1300,6 +1348,7 @@ compute_permanova <- function(dist_obj,
       F_stat  = F_stat,
       R2      = R2,
       p_value = p_value,
+      p_adjust = p_value,
       n_perm  = permutations
     )
   }
@@ -1307,6 +1356,7 @@ compute_permanova <- function(dist_obj,
   # ---------------------------------------------------------------------------
   # start from distances + labels
   # ---------------------------------------------------------------------------
+  .ph_log_info("preparing distance labels and metadata.")
   d_full  <- dist_obj
   labels_full <- attr(d_full, "Labels")
   n_full  <- attr(d_full, "Size")
@@ -1316,14 +1366,12 @@ compute_permanova <- function(dist_obj,
   # ---------------------------------------------------------------------------
   dat <- ps
   if (is.null(dat)) {
-    .ph_abort("`ps` is missing. Cannot construct metadata.",
-              step = "compute_permanova")
+    .ph_abort("`ps` is missing. Cannot construct metadata.")
   }
 
   dat_cols <- dplyr::tbl_vars(dat)
   if (!"sample_id" %in% dat_cols) {
-    .ph_abort("`ps` must contain a `sample_id` column.",
-              step = "compute_permanova")
+    .ph_abort("`ps` must contain a `sample_id` column.")
   }
 
   has_group   <- !is.null(group_col)   && group_col   %in% dat_cols
@@ -1333,13 +1381,11 @@ compute_permanova <- function(dist_obj,
   if (!is.null(group_col) && !has_group) {
     .ph_abort(
       paste0("Column `", group_col, "` not found in `ps`."),
-      step = "compute_permanova"
     )
   }
   if (!is.null(time_col) && !has_time) {
     .ph_abort(
       paste0("Column `", time_col, "` not found in `ps`."),
-      step = "compute_permanova"
     )
   }
 
@@ -1352,10 +1398,7 @@ compute_permanova <- function(dist_obj,
   cols_needed <- unique(cols_needed)
 
   # build metadata from ps
-  .ph_log_info(
-    "building metadata from `ps`.",
-    step = "compute_permanova"
-  )
+  .ph_log_info("building metadata from `ps`.")
 
   meta_all <- dat |>
     dplyr::select(dplyr::all_of(cols_needed)) |>
@@ -1365,8 +1408,7 @@ compute_permanova <- function(dist_obj,
 
   if (nrow(meta_all) == 0L) {
     .ph_abort(
-      "constructed metadata has zero rows. check that `ps` is not empty.",
-      step = "compute_permanova"
+      "constructed metadata has zero rows. check that `ps` is not empty."
     )
   }
   rownames(meta_all) <- meta_all$sample_id
@@ -1380,8 +1422,7 @@ compute_permanova <- function(dist_obj,
         paste0(
           "the following samples from `dist_obj` are missing in `ps`: ",
           paste(missing_samples, collapse = ", ")
-        ),
-        step = "compute_permanova"
+        )
       )
     }
     meta_sub <- meta_all[idx_align, , drop = FALSE]
@@ -1392,8 +1433,7 @@ compute_permanova <- function(dist_obj,
     n_full <- length(labels_full)
     .ph_warn(
       "no labels found in `dist_obj`; assuming metadata row order matches
-      the distance order.",
-      step = "compute_permanova"
+      the distance order."
     )
   }
 
@@ -1408,6 +1448,7 @@ compute_permanova <- function(dist_obj,
   # ---------------------------------------------------------------------------
   # drop samples with na in constrained variables (+ subject if used)
   # ---------------------------------------------------------------------------
+  .ph_log_info("filtering samples with missing grouping variables.")
   vars_for_na <- c(
     if (has_group) group_col else character(0L),
     if (has_time)  time_col  else character(0L),
@@ -1425,21 +1466,20 @@ compute_permanova <- function(dist_obj,
     dropped <- sum(!keep)
     .ph_log_info(
       paste0("dropping ", dropped,
-             " samples with missing values in constrained/strata variables."),
-      step = "compute_permanova"
+             " samples with missing values in constrained/strata variables.")
     )
   }
 
   meta_df <- meta_sub[keep, , drop = FALSE]
   if (nrow(meta_df) == 0L) {
     .ph_abort(
-      "all samples have missing values in constrained/strata variables; cannot run permanova.",
-      step = "compute_permanova"
+      "all samples have missing values in constrained/strata variables; cannot run permanova."
     )
   }
   keep_labels <- rownames(meta_df)
 
   # subset distance matrix to complete-case samples
+  .ph_log_info("subsetting distance matrix to complete cases.")
   mat_d_full <- as.matrix(d_full)
   mat_d_sub  <- mat_d_full[keep_labels, keep_labels, drop = FALSE]
   d <- stats::as.dist(mat_d_sub)
@@ -1453,6 +1493,7 @@ compute_permanova <- function(dist_obj,
   # ---------------------------------------------------------------------------
   # global permanova
   # ---------------------------------------------------------------------------
+  .ph_log_info("preparing global permanova model.")
   rhs_terms <- character(0L)
   if (has_group) rhs_terms <- c(rhs_terms, group_col)
   if (has_time)  rhs_terms <- c(rhs_terms, time_col)
@@ -1462,8 +1503,7 @@ compute_permanova <- function(dist_obj,
 
   if (length(rhs_terms) == 0L) {
     .ph_log_info(
-      "global permanova skipped (insufficient number of factor levels).",
-      step = "compute_permanova"
+      "global permanova skipped (insufficient number of factor levels)."
     )
   } else {
     formula_str <- paste("d_resp ~", paste(rhs_terms, collapse = " + "))
@@ -1485,7 +1525,6 @@ compute_permanova <- function(dist_obj,
 
     .ph_log_info(
       "running global permanova",
-      step = "compute_permanova",
       bullets = c(
         paste("model:", formula_str),
         if (!is.null(strata_var)) "permutations stratified by subject"
@@ -1505,8 +1544,7 @@ compute_permanova <- function(dist_obj,
     )
 
     if (inherits(adonis_res, "try-error")) {
-      .ph_warn("global permanova failed; no global results.",
-               step = "compute_permanova")
+      .ph_warn("global permanova failed; no global results.")
     } else {
       res_df <- as.data.frame(adonis_res)
       res_df$term <- rownames(res_df)
@@ -1533,23 +1571,9 @@ compute_permanova <- function(dist_obj,
   }
 
   # ---------------------------------------------------------------------------
-  # post-hoc contrasts (pairwise / each_vs_rest / baseline)
+  # post-hoc contrasts (pairwise)
   # ---------------------------------------------------------------------------
-  contrasts <- tolower(unique(contrasts))
-  contrasts[contrasts == "group_vs_rest"] <- "each_vs_rest"
-
-  # determine baseline if needed
-  bl <- NULL
-  if ("baseline" %in% contrasts && !is.null(baseline_level)) {
-    bl <- baseline_level
-  }
-  if ("baseline" %in% contrasts && is.null(baseline_level) && has_time) {
-    bl <- sort(unique(meta_df[[time_col]]))[1]
-    .ph_log_info(
-      paste("baseline_level not provided; using", bl, "as baseline for time."),
-      step = "compute_permanova"
-    )
-  }
+  .ph_log_info("running pairwise permanova contrasts.")
 
   # helper: run two-level adonis on subset idx of current meta_df/d
   run_two_level_adonis <- function(idx, fac, covar = NULL, strata = NULL,
@@ -1557,8 +1581,7 @@ compute_permanova <- function(dist_obj,
     if (length(unique(fac)) < 2L || min(table(fac)) < 2L) {
       .ph_log_info(
         paste("skipping test", contrast_label,
-              "- not enough samples in one or both groups."),
-        step = "compute_permanova"
+              "- not enough samples in one or both groups.")
       )
       return(NULL)
     }
@@ -1596,183 +1619,66 @@ compute_permanova <- function(dist_obj,
     }
   }
 
-  # pairwise
-  if ("pairwise" %in% contrasts) {
-    # pairwise group comparisons
-    if (has_group) {
-      groups <- na.omit(unique(meta_df[[group_col]]))
-      if (length(groups) > 1L) {
-        pairs <- utils::combn(groups, 2, simplify = FALSE)
-        for (p in pairs) {
-          sel <- which(meta_df[[group_col]] %in% p)
-
-          strata_use <- NULL
-          if (has_subject && subject_col %in% names(meta_df)) {
-            sub_sel <- meta_df[sel, subject_col]
-            # if any subject appears in both groups -> stratify
-            multi <- any(tapply(meta_df[sel, group_col], sub_sel,
-                                function(x) length(unique(x)) > 1L))
-            if (multi) strata_use <- sub_sel
-          }
-
-          fac_pair   <- factor(meta_df[sel, group_col], levels = p)
-          covar_term <- if (has_time) time_col else NULL
-
-          run_two_level_adonis(
-            idx            = sel,
-            fac            = fac_pair,
-            covar          = covar_term,
-            strata         = strata_use,
-            scope_label    = "group_pairwise",
-            contrast_label = paste(p, collapse = " vs "),
-            term_label     = group_col
-          )
-        }
-      }
-    }
-
-    # pairwise time comparisons
-    if (has_time) {
-      times <- na.omit(unique(meta_df[[time_col]]))
-      if (length(times) > 1L) {
-        pairs <- utils::combn(times, 2, simplify = FALSE)
-        for (p in pairs) {
-          sel <- which(meta_df[[time_col]] %in% p)
-
-          strata_use <- NULL
-          if (has_subject && subject_col %in% names(meta_df)) {
-            sub_sel <- meta_df[sel, subject_col]
-            if (any(table(sub_sel) > 1L)) {
-              strata_use <- sub_sel
-            }
-          }
-
-          fac_pair   <- factor(meta_df[sel, time_col], levels = p)
-          covar_term <- if (has_group) group_col else NULL
-
-          run_two_level_adonis(
-            idx            = sel,
-            fac            = fac_pair,
-            covar          = covar_term,
-            strata         = strata_use,
-            scope_label    = "time_pairwise",
-            contrast_label = paste(p, collapse = " vs "),
-            term_label     = time_col
-          )
-        }
-      }
-    }
-  }
-
-  # each_vs_rest
-  if ("each_vs_rest" %in% contrasts) {
-    # each group vs rest
-    if (has_group && length(unique(meta_df[[group_col]])) > 1L) {
-      for (lvl in unique(meta_df[[group_col]])) {
-        fac_vec <- factor(
-          ifelse(meta_df[[group_col]] == lvl, lvl, "other"),
-          levels = c(lvl, "other")
-        )
-        if (length(unique(fac_vec)) < 2L || min(table(fac_vec)) < 2L) next
-        sel <- which(!is.na(fac_vec))
-        covar_term <- if (has_time) time_col else NULL
-
-        run_two_level_adonis(
-          idx            = sel,
-          fac            = fac_vec[sel],
-          covar          = covar_term,
-          strata         = NULL,
-          scope_label    = "each_vs_rest",
-          contrast_label = paste(lvl, "vs other"),
-          term_label     = group_col
-        )
-      }
-    }
-
-    # each time vs rest
-    if (has_time && length(unique(meta_df[[time_col]])) > 1L) {
-      for (lvl in unique(meta_df[[time_col]])) {
-        fac_vec <- factor(
-          ifelse(meta_df[[time_col]] == lvl, lvl, "other"),
-          levels = c(lvl, "other")
-        )
-        if (length(unique(fac_vec)) < 2L || min(table(fac_vec)) < 2L) next
-        sel <- which(!is.na(fac_vec))
+  # pairwise group comparisons
+  if (has_group) {
+    groups <- na.omit(unique(meta_df[[group_col]]))
+    if (length(groups) > 1L) {
+      pairs <- utils::combn(groups, 2, simplify = FALSE)
+      for (p in pairs) {
+        sel <- which(meta_df[[group_col]] %in% p)
 
         strata_use <- NULL
         if (has_subject && subject_col %in% names(meta_df)) {
           sub_sel <- meta_df[sel, subject_col]
-          if (any(table(sub_sel) > 1L)) strata_use <- sub_sel
+          # if any subject appears in both groups -> stratify
+          multi <- any(tapply(meta_df[sel, group_col], sub_sel,
+                              function(x) length(unique(x)) > 1L))
+          if (multi) strata_use <- sub_sel
         }
 
-        covar_term <- if (has_group) group_col else NULL
+        fac_pair   <- factor(meta_df[sel, group_col], levels = p)
+        covar_term <- if (has_time) time_col else NULL
 
         run_two_level_adonis(
           idx            = sel,
-          fac            = fac_vec[sel],
+          fac            = fac_pair,
           covar          = covar_term,
           strata         = strata_use,
-          scope_label    = "each_vs_rest",
-          contrast_label = paste(lvl, "vs other"),
-          term_label     = time_col
+          scope_label    = "group_pairwise",
+          contrast_label = paste(p, collapse = " vs "),
+          term_label     = group_col
         )
       }
     }
   }
 
-  # baseline
-  if ("baseline" %in% contrasts) {
-    if (is.null(bl)) {
-      .ph_warn(
-        "Baseline contrast requested but `baseline_level` not properly specified; skipping baseline tests.",
-        step = "compute_permanova"
-      )
-    } else {
-      # baseline for time
-      if (has_time && bl %in% meta_df[[time_col]]) {
-        fac_vec <- factor(
-          ifelse(meta_df[[time_col]] == bl, bl, "not_baseline"),
-          levels = c(bl, "not_baseline")
-        )
-        sel <- which(!is.na(fac_vec))
+  # pairwise time comparisons
+  if (has_time) {
+    times <- na.omit(unique(meta_df[[time_col]]))
+    if (length(times) > 1L) {
+      pairs <- utils::combn(times, 2, simplify = FALSE)
+      for (p in pairs) {
+        sel <- which(meta_df[[time_col]] %in% p)
 
         strata_use <- NULL
         if (has_subject && subject_col %in% names(meta_df)) {
           sub_sel <- meta_df[sel, subject_col]
-          if (any(table(sub_sel) > 1L)) strata_use <- sub_sel
+          if (any(table(sub_sel) > 1L)) {
+            strata_use <- sub_sel
+          }
         }
 
+        fac_pair   <- factor(meta_df[sel, time_col], levels = p)
         covar_term <- if (has_group) group_col else NULL
 
         run_two_level_adonis(
           idx            = sel,
-          fac            = fac_vec[sel],
+          fac            = fac_pair,
           covar          = covar_term,
           strata         = strata_use,
-          scope_label    = "baseline",
-          contrast_label = paste(bl, "vs others"),
+          scope_label    = "time_pairwise",
+          contrast_label = paste(p, collapse = " vs "),
           term_label     = time_col
-        )
-      }
-
-      # baseline for group
-      if (has_group && bl %in% meta_df[[group_col]]) {
-        fac_vec <- factor(
-          ifelse(meta_df[[group_col]] == bl, bl, "not_baseline"),
-          levels = c(bl, "not_baseline")
-        )
-        sel <- which(!is.na(fac_vec))
-
-        covar_term <- if (has_time) time_col else NULL
-
-        run_two_level_adonis(
-          idx            = sel,
-          fac            = fac_vec[sel],
-          covar          = covar_term,
-          strata         = NULL,
-          scope_label    = "baseline",
-          contrast_label = paste(bl, "vs others"),
-          term_label     = group_col
         )
       }
     }
@@ -1787,14 +1693,25 @@ compute_permanova <- function(dist_obj,
     tibble::tibble()
   }
 
+  if (nrow(result_df) > 0L) {
+    if (!identical(p_adjust, "none")) {
+      result_df <- result_df |>
+        dplyr::group_by(.data$scope) |>
+        dplyr::mutate(
+          p_adjust = stats::p.adjust(.data$p_value, method = .env$p_adjust)
+        ) |>
+        dplyr::ungroup()
+    }
+  }
+
   result_df
 }
 
 #' @title Test Homogeneity of Dispersion (Beta Dispersion)
 #' @description Computes distances of samples to group centroids (using
 #'   \code{vegan::betadisper}) and tests for differences in dispersion among
-#'   groups or time levels. Optionally performs pairwise and other post-hoc
-#'   tests on dispersion.
+#'   groups or time levels. Pairwise post-hoc tests are always performed when
+#'   \code{group_col} or \code{time_col} has >1 level.
 #'
 #' @param dist_obj A \code{dist} object of sample distances (e.g. from
 #'   \code{compute_distance()}).
@@ -1810,12 +1727,8 @@ compute_permanova <- function(dist_obj,
 #'   consistency). Default \code{"subject_id"}.
 #' @param permutations Number of permutations for significance testing in
 #'   \code{vegan::permutest}. Default 999.
-#' @param contrasts Which dispersion contrasts to perform. Options:
-#'   \code{"none"} (default), \code{"pairwise"}, \code{"each_vs_rest"},
-#'   \code{"baseline"}. Interpretation analogous to \code{compute_permanova},
-#'   but applied to dispersion.
-#' @param baseline_level If \code{contrasts} includes \code{"baseline"},
-#'   specify the baseline level of group or time to compare against others.
+#' @param p_adjust P-value adjustment method applied within each contrast scope.
+#'   Use \code{"none"} for raw p-values. Passed to \code{stats::p.adjust()}.
 #'
 #' @return A list of class \code{"beta_dispersion"} with:
 #' \item{distances}{Tibble of per-sample distances to centroid. Columns:
@@ -1824,19 +1737,60 @@ compute_permanova <- function(dist_obj,
 #'   \code{"group:time"}), \code{contrast} (e.g. \code{"<global>"},
 #'   \code{"A vs B"}).}
 #' \item{tests}{Tibble of dispersion test results. Columns: \code{scope},
-#'   \code{contrast}, \code{term = "dispersion"}, \code{p_value}, \code{n_perm}.}
+#'   \code{contrast}, \code{term = "dispersion"}, \code{p_value},
+#'   \code{p_adjust} (equals \code{p_value} when \code{p_adjust = "none"}),
+#'   \code{n_perm}.}
 #'
 #' @examples
-#' \dontrun{
-#'   dispersion_res <- compute_dispersion(
-#'     dist_bc,
-#'     ps        = ps,
-#'     group_col = "type_person",
-#'     time_col  = "timepoint",
-#'     contrasts = "pairwise"
-#'   )
-#'   dispersion_res$tests
-#'   head(dispersion_res$distances)
+#' \donttest{
+#' phip_path <- phip_example_path()
+#'
+#' ps <- phip_convert(
+#'   data_long_path    = phip_path,
+#'   backend           = "duckdb",
+#'   peptide_library   = TRUE,
+#'   subject_id        = "subject_id",
+#'   peptide_id        = "peptide_id",
+#'   sample_id         = "sample_id",
+#'   exist             = "exist",
+#'   timepoint         = "timepoint_factor",
+#'   fold_change       = "fold_change",
+#'   materialise_table = TRUE,
+#'   auto_expand       = TRUE,
+#'   n_cores           = 2
+#' )
+#'
+#' # small subset for speed
+#' keep_pep <- c("16627", "5243", "24799", "16196", "18003")
+#' dat_cols <- dplyr::tbl_vars(ps$data_long)
+#' tp_col <- "time"
+#'
+#' ps_small <- ps %>%
+#'   dplyr::filter(
+#'     peptide_id %in% keep_pep,
+#'     !!rlang::sym(tp_col) == "T1"
+#'   ) %>%
+#'   dplyr::collect()
+#'
+#' # compute distance matrix
+#' val_col <- "exist"
+#'
+#' dist_bc <- compute_distance(
+#'   ps_small,
+#'   value_col = val_col,
+#'   distance = "jaccard",
+#'   n_threads = 2L
+#' )
+#'
+#' dispersion_res <- compute_dispersion(
+#'   dist_bc,
+#'   ps        = ps_small,
+#'   group_col = "group",
+#'   time_col  = "time",
+#'   p_adjust  = "BH"
+#' )
+#' dispersion_res$tests
+#' head(dispersion_res$distances)
 #' }
 #' @export
 compute_dispersion <- function(dist_obj,
@@ -1845,8 +1799,7 @@ compute_dispersion <- function(dist_obj,
                                time_col = NULL,
                                subject_col = "subject_id",
                                permutations = 999,
-                               contrasts = "none",
-                               baseline_level = NULL) {
+                               p_adjust = "none") {
   # ----------------------------------------------------------------------------
   # input validation (chk)
   # ----------------------------------------------------------------------------
@@ -1856,8 +1809,16 @@ compute_dispersion <- function(dist_obj,
   chk::chk_string(subject_col)
   chk::chk_count(permutations)
   chk::chk_gt(permutations, 0)
-  chk::chk_character(contrasts)
-  if (!is.null(baseline_level)) chk::chk_string(baseline_level)
+  chk::chk_string(p_adjust)
+  if (!p_adjust %in% c("none", stats::p.adjust.methods)) {
+    .ph_abort(
+      paste0(
+        "`p_adjust` must be one of: ",
+        paste(c("none", stats::p.adjust.methods), collapse = ", "),
+        "."
+      )
+    )
+  }
 
   # if ps is <phip_data>, overwrite ps with ps$data_long;
   # otherwise treat ps as data_long
@@ -1869,19 +1830,18 @@ compute_dispersion <- function(dist_obj,
   # ---------------------------------------------------------------------------
   # prepare metadata from ps and align to dist labels
   # ---------------------------------------------------------------------------
+  .ph_log_info("preparing distance labels and metadata.")
   d_full      <- dist_obj
   labels_full <- attr(d_full, "Labels")
 
   dat <- ps
   if (is.null(dat)) {
-    .ph_abort("`ps` is missing. Cannot construct metadata.",
-              step = "compute_dispersion")
+    .ph_abort("`ps` is missing. Cannot construct metadata.")
   }
 
   dat_cols <- dplyr::tbl_vars(dat)
   if (!"sample_id" %in% dat_cols) {
-    .ph_abort("`ps` must contain a `sample_id` column.",
-              step = "compute_dispersion")
+    .ph_abort("`ps` must contain a `sample_id` column.")
   }
 
   has_group <- !is.null(group_col) && group_col %in% dat_cols
@@ -1889,14 +1849,12 @@ compute_dispersion <- function(dist_obj,
 
   if (!is.null(group_col) && !has_group) {
     .ph_abort(
-      paste0("Column `", group_col, "` not found in `ps`."),
-      step = "compute_dispersion"
+      paste0("Column `", group_col, "` not found in `ps`.")
     )
   }
   if (!is.null(time_col) && !has_time) {
     .ph_abort(
-      paste0("Column `", time_col, "` not found in `ps`."),
-      step = "compute_dispersion"
+      paste0("Column `", time_col, "` not found in `ps`.")
     )
   }
 
@@ -1908,10 +1866,7 @@ compute_dispersion <- function(dist_obj,
   cols_needed <- unique(cols_needed)
 
   # build metadata from ps
-  .ph_log_info(
-    "building metadata from `ps`.",
-    step = "compute_dispersion"
-  )
+  .ph_log_info("building metadata from `ps`.")
 
   meta_all <- dat |>
     dplyr::select(dplyr::all_of(cols_needed)) |>
@@ -1921,8 +1876,7 @@ compute_dispersion <- function(dist_obj,
 
   if (nrow(meta_all) == 0L) {
     .ph_abort(
-      "constructed metadata has zero rows. check that `ps` is not empty.",
-      step = "compute_dispersion"
+      "constructed metadata has zero rows. check that `ps` is not empty."
     )
   }
   rownames(meta_all) <- meta_all$sample_id
@@ -1936,8 +1890,7 @@ compute_dispersion <- function(dist_obj,
         paste0(
           "the following samples from `dist_obj` are missing in `ps`: ",
           paste(missing_samples, collapse = ", ")
-        ),
-        step = "compute_dispersion"
+        )
       )
     }
     meta_sub <- meta_all[idx_align, , drop = FALSE]
@@ -1946,8 +1899,7 @@ compute_dispersion <- function(dist_obj,
     meta_sub   <- meta_all
     labels_full <- rownames(meta_sub)
     .ph_warn(
-      "no labels found in `dist_obj`; assuming metadata row order matches the distance order.",
-      step = "compute_dispersion"
+      "no labels found in `dist_obj`; assuming metadata row order matches the distance order."
     )
   }
 
@@ -1962,6 +1914,7 @@ compute_dispersion <- function(dist_obj,
   # ---------------------------------------------------------------------------
   # drop samples with na in group/time and subset distance matrix
   # ---------------------------------------------------------------------------
+  .ph_log_info("filtering samples with missing grouping variables.")
   vars_for_na <- c(
     if (has_group) group_col else character(0L),
     if (has_time)  time_col  else character(0L)
@@ -1978,16 +1931,14 @@ compute_dispersion <- function(dist_obj,
     dropped <- sum(!keep)
     .ph_log_info(
       paste0("dropping ", dropped,
-             " samples with missing values in dispersion grouping variables."),
-      step = "compute_dispersion"
+             " samples with missing values in dispersion grouping variables.")
     )
   }
 
   meta_df <- meta_sub[keep, , drop = FALSE]
   if (nrow(meta_df) == 0L) {
     .ph_abort(
-      "all samples have missing values in grouping variables; cannot run dispersion tests.",
-      step = "compute_dispersion"
+      "all samples have missing values in grouping variables; cannot run dispersion tests."
     )
   }
   keep_labels <- rownames(meta_df)
@@ -2024,6 +1975,7 @@ compute_dispersion <- function(dist_obj,
       contrast = contrast_val,
       term     = "dispersion",
       p_value  = p_val,
+      p_adjust = p_val,
       n_perm   = permutations
     )
   }
@@ -2031,13 +1983,13 @@ compute_dispersion <- function(dist_obj,
   # ---------------------------------------------------------------------------
   # global dispersion tests (group, time, group:time)
   # ---------------------------------------------------------------------------
+  .ph_log_info("computing global dispersion tests.")
   if (has_group) {
     fac <- factor(meta_df[[group_col]])
     bd <- try(vegan::betadisper(d, fac), silent = TRUE)
     if (inherits(bd, "try-error")) {
       .ph_warn(
         "betadisper failed for group factor; skipping group dispersion test.",
-        step = "compute_dispersion"
       )
     } else {
       add_distance_rows(
@@ -2060,7 +2012,6 @@ compute_dispersion <- function(dist_obj,
       if (inherits(bd, "try-error")) {
         .ph_warn(
           "betadisper failed for time factor; skipping time dispersion test.",
-          step = "compute_dispersion"
         )
       } else {
         add_distance_rows(
@@ -2076,8 +2027,7 @@ compute_dispersion <- function(dist_obj,
       }
     } else {
       .ph_warn(
-        "`time_col` is numeric; continuous dispersion by time not supported. skipping time dispersion test.",
-        step = "compute_dispersion"
+        "`time_col` is numeric; continuous dispersion by time not supported. skipping time dispersion test."
       )
     }
   }
@@ -2110,7 +2060,6 @@ compute_dispersion <- function(dist_obj,
     if (length(unique(fac_vec)) < 2L || min(table(fac_vec)) < 2L) {
       .ph_log_info(
         paste("skipping dispersion test for", contrast_lab, "- not enough data."),
-        step = "compute_dispersion"
       )
       return(NULL)
     }
@@ -2132,96 +2081,30 @@ compute_dispersion <- function(dist_obj,
   }
 
   # ---------------------------------------------------------------------------
-  # post-hoc contrasts
+  # post-hoc contrasts (pairwise)
   # ---------------------------------------------------------------------------
-  contrasts <- tolower(unique(contrasts))
-  contrasts[contrasts == "group_vs_rest"] <- "each_vs_rest"
-
-  # pairwise
-  if ("pairwise" %in% contrasts) {
-    # groups
-    if (has_group) {
-      grps <- na.omit(unique(meta_df[[group_col]]))
-      if (length(grps) > 1L) {
-        for (pair in utils::combn(grps, 2, simplify = FALSE)) {
-          sel <- which(meta_df[[group_col]] %in% pair)
-          fac <- factor(meta_df[sel, group_col], levels = pair)
-          run_disp_test(sel, fac_vec = fac, scope_lab = "group",
-                        contrast_lab = paste(pair, collapse = " vs "))
-        }
-      }
-    }
-    # time
-    if (has_time && !is.numeric(meta_df[[time_col]])) {
-      times <- na.omit(unique(meta_df[[time_col]]))
-      if (length(times) > 1L) {
-        for (pair in utils::combn(times, 2, simplify = FALSE)) {
-          sel <- which(meta_df[[time_col]] %in% pair)
-          fac <- factor(meta_df[sel, time_col], levels = pair)
-          run_disp_test(sel, fac_vec = fac, scope_lab = "time",
-                        contrast_lab = paste(pair, collapse = " vs "))
-        }
+  .ph_log_info("running pairwise dispersion contrasts.")
+  # groups
+  if (has_group) {
+    grps <- na.omit(unique(meta_df[[group_col]]))
+    if (length(grps) > 1L) {
+      for (pair in utils::combn(grps, 2, simplify = FALSE)) {
+        sel <- which(meta_df[[group_col]] %in% pair)
+        fac <- factor(meta_df[sel, group_col], levels = pair)
+        run_disp_test(sel, fac_vec = fac, scope_lab = "group",
+                      contrast_lab = paste(pair, collapse = " vs "))
       }
     }
   }
-
-  # each vs rest
-  if ("each_vs_rest" %in% contrasts) {
-    if (has_group && length(unique(meta_df[[group_col]])) > 1L) {
-      for (lvl in unique(meta_df[[group_col]])) {
-        fac_vec <- factor(
-          ifelse(meta_df[[group_col]] == lvl, lvl, "other"),
-          levels = c(lvl, "other")
-        )
-        sel <- which(!is.na(fac_vec))
-        run_disp_test(sel, fac_vec = fac_vec[sel], scope_lab = "group",
-                      contrast_lab = paste(lvl, "vs rest"))
-      }
-    }
-    if (has_time && !is.numeric(meta_df[[time_col]]) &&
-        length(unique(meta_df[[time_col]])) > 1L) {
-      for (lvl in unique(meta_df[[time_col]])) {
-        fac_vec <- factor(
-          ifelse(meta_df[[time_col]] == lvl, lvl, "other"),
-          levels = c(lvl, "other")
-        )
-        sel <- which(!is.na(fac_vec))
-        run_disp_test(sel, fac_vec = fac_vec[sel], scope_lab = "time",
-                      contrast_lab = paste(lvl, "vs rest"))
-      }
-    }
-  }
-
-  # baseline
-  if ("baseline" %in% contrasts) {
-    if (is.null(baseline_level)) {
-      .ph_warn(
-        "Baseline contrast requested but no `baseline_level` provided; skipping.",
-        step = "compute_dispersion"
-      )
-    } else {
-      # baseline for group
-      if (has_group && baseline_level %in% meta_df[[group_col]]) {
-        fac_vec <- factor(
-          ifelse(meta_df[[group_col]] == baseline_level,
-                 baseline_level, "other"),
-          levels = c(baseline_level, "other")
-        )
-        sel <- which(!is.na(fac_vec))
-        run_disp_test(sel, fac_vec = fac_vec[sel], scope_lab = "group",
-                      contrast_lab = paste(baseline_level, "vs others"))
-      }
-      # baseline for time
-      if (has_time && !is.numeric(meta_df[[time_col]]) &&
-          baseline_level %in% meta_df[[time_col]]) {
-        fac_vec <- factor(
-          ifelse(meta_df[[time_col]] == baseline_level,
-                 baseline_level, "other"),
-          levels = c(baseline_level, "other")
-        )
-        sel <- which(!is.na(fac_vec))
-        run_disp_test(sel, fac_vec = fac_vec[sel], scope_lab = "time",
-                      contrast_lab = paste(baseline_level, "vs others"))
+  # time
+  if (has_time && !is.numeric(meta_df[[time_col]])) {
+    times <- na.omit(unique(meta_df[[time_col]]))
+    if (length(times) > 1L) {
+      for (pair in utils::combn(times, 2, simplify = FALSE)) {
+        sel <- which(meta_df[[time_col]] %in% pair)
+        fac <- factor(meta_df[sel, time_col], levels = pair)
+        run_disp_test(sel, fac_vec = fac, scope_lab = "time",
+                      contrast_lab = paste(pair, collapse = " vs "))
       }
     }
   }
@@ -2239,6 +2122,17 @@ compute_dispersion <- function(dist_obj,
     dplyr::bind_rows(tests_list)
   } else {
     tibble::tibble()
+  }
+
+  if (nrow(tests_tbl) > 0L) {
+    if (!identical(p_adjust, "none")) {
+      tests_tbl <- tests_tbl |>
+        dplyr::group_by(.data$scope) |>
+        dplyr::mutate(
+          p_adjust = stats::p.adjust(.data$p_value, method = .env$p_adjust)
+        ) |>
+        dplyr::ungroup()
+    }
   }
 
   result <- list(
@@ -2558,39 +2452,36 @@ compute_tsne <- function(ps,
     step = "compute_tsne"
   )
 
-  # temporary RNG seed control
-  if (!is.null(seed)) {
-    old_seed <- .Random.seed
-    on.exit({
-      if (exists("old_seed", inherits = FALSE)) {
-        .Random.seed <<- old_seed
-      }
-    }, add = TRUE)
-    set.seed(seed)
+  run_tsne <- function() {
+    if (inherits(dist_obj, "dist")) {
+      Rtsne::Rtsne(
+        dist_obj,
+        is_distance      = TRUE,
+        dims             = dims,
+        perplexity       = perplexity,
+        theta            = theta,
+        max_iter         = max_iter,
+        check_duplicates = check_duplicates,
+        ...
+      )
+    } else {
+      Rtsne::Rtsne(
+        as.matrix(dist_obj),
+        is_distance      = TRUE,
+        dims             = dims,
+        perplexity       = perplexity,
+        theta            = theta,
+        max_iter         = max_iter,
+        check_duplicates = check_duplicates,
+        ...
+      )
+    }
   }
 
-  tsne_fit <- if (inherits(dist_obj, "dist")) {
-    Rtsne::Rtsne(
-      dist_obj,
-      is_distance      = TRUE,
-      dims             = dims,
-      perplexity       = perplexity,
-      theta            = theta,
-      max_iter         = max_iter,
-      check_duplicates = check_duplicates,
-      ...
-    )
+  tsne_fit <- if (!is.null(seed)) {
+    withr::with_seed(seed, run_tsne())
   } else {
-    Rtsne::Rtsne(
-      as.matrix(dist_obj),
-      is_distance      = TRUE,
-      dims             = dims,
-      perplexity       = perplexity,
-      theta            = theta,
-      max_iter         = max_iter,
-      check_duplicates = check_duplicates,
-      ...
-    )
+    run_tsne()
   }
 
   coords <- tsne_fit$Y
