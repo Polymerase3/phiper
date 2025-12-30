@@ -697,37 +697,42 @@ deltaplot_interactive <- function(
 #' Forest plot of top/bottom raw Stouffer T by rank (with arrows)
 #'
 #' @description
-#' Builds a forest plot for the most extreme DELTA/Stouffer results within a
-#' chosen rank using the **raw** `T_obs` (no division by any SD). Rows can be
-#' optionally filtered by a significance column (e.g., `p_adj_rank`, `padj_wbh`)
-#' with a user-specified threshold.
+#' Builds a forest plot highlighting the most extreme positive and negative
+#' DELTA/Stouffer statistics within a chosen rank. The plot shows the top
+#' \code{n_pos_each} features on the positive side and the top \code{n_neg_each}
+#' features on the negative side, ordered by the selected statistic
+#' (\code{statistic_to_plot}). This provides a compact summary of which features
+#' shift most strongly between the two groups for a given rank.
 #'
-#' @param results_tbl A data frame/tibble with at least:
-#'   `rank, feature, group1, group2, design, T_obs, p_perm, p_adj_rank, category_rank_bh`.
-#' @param rank_of_interest Character scalar, e.g. `"species"`.
-#' @param n_each Integer; how many items from negative and positive tails (default 15).
-#' @param use_diverging_colors Logical; if `TRUE`, lines/points are shaded blue (left, T<0) to
-#'   red (right, T>0) with higher contrast; otherwise monochrome.
-#' @param filter_significant character; name of the column to filter on, or `"none"` to disable filtering.
-#'   if the named column is numeric, rows are kept where `col <= sig_level`.
-#'   if the named column is non-numeric (e.g., `category_rank_bh`), rows are kept where
-#'   `col == "significant (BH, per rank)"`. default: `"none"`.
-#' @param sig_level numeric; significance threshold used when `filter_significant` is a numeric column (default 0.05).
-#' @param add_signed_z_from_p Logical; if `TRUE`, computes a signed Z from
-#'   permutation p (`sign(T_obs) * qnorm(1 - p_perm/2)`) and returns it in data.
+#' @param results_tbl Data frame/tibble with at least:
+#'   \code{rank, feature, group1, group2, design, T_obs, p_perm, p_adj_rank, category_rank_bh}.
+#' @param rank_of_interest Character scalar specifying the rank to plot (e.g., \code{"species"}).
+#' @param statistic_to_plot Which statistic to rank/plot: \code{"T"} (raw \code{T_obs}),
+#'   \code{"T_stand"} (permutation-standardized), or \code{"Z_from_p"} (signed Z from permutation p).
+#' @param n_neg_each Number of most negative features to show. Default 15.
+#' @param n_pos_each Number of most positive features to show. Default 15.
+#' @param filter_significant Column name to filter on, or \code{"none"} to disable filtering.
+#'   If the column is numeric, keep rows where \code{col <= sig_level}; if character,
+#'   keep rows where \code{col == "significant (BH, per rank)"}.
+#' @param sig_level Significance threshold used when \code{filter_significant} is numeric. Default 0.05.
 #' @param left_label Text for the left arrow/side label.
 #' @param right_label Text for the right arrow/side label.
-#' @param arrow_length_frac Fraction of max |T_obs| used as half-length of arrows.
+#' @param arrow_length_frac Fraction of max \eqn{|T|} used as half-length of arrows.
 #' @param label_x_gap_frac Horizontal gap for arrow labels beyond arrow tips
-#'   (fraction of max |T_obs|).
-#' @param y_pad Vertical padding above the top category for arrows/labels (in y units).
-#' @param label_y_offset Additional vertical offset for arrow-end labels (in y units).
-#' @param label_vjust Passed to `annotate("text", vjust=...)` (default -0.30).
+#'   (fraction of max \eqn{|T|}).
+#' @param y_pad Vertical padding above the top category for arrows/labels (y-axis units).
+#' @param label_y_offset Additional vertical offset for arrow-end labels (y-axis units).
+#' @param label_vjust Vertical justification for arrow labels (passed to \code{annotate()}).
 #' @param arrow_color Arrow/label color.
 #' @param arrow_linewidth Arrow line width.
 #' @param arrow_head_length_mm Arrow head length in mm.
-#' @param statistic_to_plot Which statistic to plot: \code{"T"},
-#'   \code{"T_stand"}, or \code{"Z_from_p"}.
+#' @param use_diverging_colors Logical; if \code{TRUE}, lines/points are shaded blue (negative)
+#'   to red (positive) with higher contrast; otherwise monochrome.
+#' @param base_text_pt Base text size in points for the plot.
+#' @param font_family Font family for plot text.
+#' @param seg_width Segment line width for the horizontal bars.
+#' @param point_size Point size for feature markers.
+#' @param show_grid Logical; show major/minor grid lines.
 #'
 #' @return A list with:
 #' \itemize{
@@ -736,21 +741,31 @@ deltaplot_interactive <- function(
 #' }
 #'
 #' @details
-#' - `T_obs` here is plotted **as is** (raw Stouffer statistic from your shift).
-#' - For calibrated inference or cross-figure comparability, prefer permutation
-#'   p-values (optionally expose `add_signed_z_from_p=TRUE` for reporting).
+#' The y-axis lists feature names (sorted by the chosen statistic), and the
+#' x-axis shows the signed effect size for each feature. Each feature is drawn
+#' as a horizontal segment from zero to its statistic value, with a point at the
+#' end of the segment. A dashed vertical line marks zero to separate negative
+#' from positive shifts. The subtitle reports the contrast (group1 vs group2) and
+#' how many negative/positive features are shown.
+#'
+#' If \code{use_diverging_colors = TRUE}, segments/points are colored by
+#' magnitude on a blue-to-red scale (negative to positive), otherwise a single
+#' color is used. The arrow annotations at the top label the direction of
+#' enrichment for each group and help interpret the sign of the statistic.
+#'
+#' \code{statistic_to_plot} controls the statistic used for both ranking and
+#' plotting: raw \code{T_obs}, permutation-standardized \code{T_obs_stand}, or
+#' \code{Z_from_p} (signed Z from permutation p-values). For calibrated inference
+#' or cross-figure comparability, prefer permutation Z-based results or T_stand.
 #' @export
 forest_delta <- function(
     results_tbl,
     rank_of_interest,
-    n_each = NULL,
+    statistic_to_plot = c("T", "T_stand", "Z_from_p"),
     n_neg_each = 15,
     n_pos_each = 15,
-    use_diverging_colors = FALSE,
     filter_significant = "none",
     sig_level = 0.05,
-    add_signed_z_from_p = FALSE,
-    # arrow/label params
     left_label    = "More in group1",
     right_label   = "More in group2",
     arrow_length_frac = 0.35,
@@ -761,13 +776,12 @@ forest_delta <- function(
     arrow_color   = "red",
     arrow_linewidth = 0.6,
     arrow_head_length_mm = 3.0,
-    # global typography & aesthetics
+    use_diverging_colors = FALSE,
     base_text_pt  = 12,
     font_family   = "Montserrat",
     seg_width     = 1.2,
     point_size    = 3.6,
-    show_grid     = FALSE,
-    statistic_to_plot = c("T", "T_stand", "Z_from_p")
+    show_grid     = FALSE
 ) {
   if (!is.data.frame(results_tbl)) stop("`results_tbl` must be a data.frame/tibble.")
   statistic_to_plot <- match.arg(statistic_to_plot)
@@ -776,8 +790,6 @@ forest_delta <- function(
                  "T_obs","p_perm","p_adj_rank","category_rank_bh")
   miss <- setdiff(need_cols, colnames(results_tbl))
   if (length(miss)) stop(paste("`results_tbl` is missing required columns:", paste(miss, collapse = ", ")))
-  if (!is.null(n_each)) { n_neg_each <- n_pos_each <- as.integer(n_each) }
-
   # helper: pt -> ggplot size units
   .pt_to_gg <- function(pt) pt / 2.845
 
@@ -1031,13 +1043,10 @@ forest_delta <- function(
 #' @param results_tbl A data frame/tibble with required columns documented in
 #'   \code{forest_delta()}.
 #' @param rank_of_interest Character scalar, e.g. \code{"species"}.
-#' @param n_each Integer; how many items from negative and positive tails.
-#' @param n_neg_each,n_pos_each Integers; per-tail counts when \code{n_each} is
-#'   \code{NULL}.
+#' @param n_neg_each,n_pos_each Integers; per-tail counts.
 #' @param use_diverging_colors Logical; if \code{TRUE}, apply a blue-to-red gradient.
 #' @param filter_significant Column name to filter on, or \code{"none"}.
 #' @param sig_level Threshold for numeric significance columns. Default 0.05.
-#' @param add_signed_z_from_p Logical; include signed Z in output data.
 #' @param left_label,right_label Arrow-end labels.
 #' @param arrow_length_frac Fraction of max |T_obs| for arrow half-length.
 #' @param label_x_gap_frac Horizontal label gap (fraction of max |T_obs|).
@@ -1059,13 +1068,11 @@ forest_delta <- function(
 forest_delta_plotly <- function(
     results_tbl,
     rank_of_interest,
-    n_each = NULL,
     n_neg_each = 15,
     n_pos_each = 15,
     use_diverging_colors = FALSE,
     filter_significant = "none",
     sig_level = 0.05,
-    add_signed_z_from_p = FALSE,
     left_label    = "More in group1",
     right_label   = "More in group2",
     arrow_length_frac = 0.35,
@@ -1090,8 +1097,6 @@ forest_delta_plotly <- function(
                  "T_obs","p_perm","p_adj_rank","category_rank_bh")
   miss <- setdiff(need_cols, colnames(results_tbl))
   if (length(miss)) stop(paste("`results_tbl` is missing required columns:", paste(miss, collapse = ", ")))
-  if (!is.null(n_each)) { n_neg_each <- n_pos_each <- as.integer(n_each) }
-
   df_rk <- dplyr::filter(results_tbl, .data$rank == rank_of_interest)
 
   if (!identical(filter_significant, "none")) {
