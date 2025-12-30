@@ -918,8 +918,12 @@ forestplot <- function(
   vals    <- df_plot$stat_val
   max_neg <- max(abs(vals[vals < 0]), na.rm = TRUE)
   max_pos <- max(abs(vals[vals > 0]), na.rm = TRUE)
-  if (!is.finite(max_neg) || max_neg == 0) max_neg <- max(abs(vals), 1, na.rm = TRUE)
-  if (!is.finite(max_pos) || max_pos == 0) max_pos <- max(abs(vals), 1, na.rm = TRUE)
+  if (!is.finite(max_neg) || max_neg == 0) {
+    max_neg <- max(abs(vals), 1, na.rm = TRUE)
+  }
+  if (!is.finite(max_pos) || max_pos == 0) {
+    max_pos <- max(abs(vals), 1, na.rm = TRUE)
+  }
 
   df_plot$T_col <- dplyr::case_when(
     vals < 0 ~ -abs(vals) / max_neg,
@@ -939,41 +943,41 @@ forestplot <- function(
       linetype   = "dashed",
       linewidth  = 0.4,
       alpha      = 0.6
-    ) +
-    {
-      if (isTRUE(use_diverging_colors)) {
-        ggplot2::geom_segment(
-          ggplot2::aes(
-            x = 0, xend = .data$stat_val,
-            y = .data$species_label, yend = .data$species_label,
-            color = .data$T_col
-          ),
-          linewidth   = seg_width,
-          alpha       = 0.9,
-          show.legend = FALSE
-        )
-      } else {
-        ggplot2::geom_segment(
-          ggplot2::aes(
-            x = 0, xend = .data$stat_val,
-            y = .data$species_label, yend = .data$species_label
-          ),
-          linewidth = seg_width,
-          alpha     = 0.85
-        )
-      }
-    } +
-    {
-      if (isTRUE(use_diverging_colors)) {
-        ggplot2::geom_point(
-          ggplot2::aes(color = .data$T_col),
-          size        = point_size,
-          show.legend = FALSE
-        )
-      } else {
-        ggplot2::geom_point(size = point_size)
-      }
-    } +
+    )
+
+  if (isTRUE(use_diverging_colors)) {
+    p <- p + ggplot2::geom_segment(
+      ggplot2::aes(
+        x = 0, xend = .data$stat_val,
+        y = .data$species_label, yend = .data$species_label,
+        color = .data$T_col
+      ),
+      linewidth   = seg_width,
+      alpha       = 0.9,
+      show.legend = FALSE
+    )
+  } else {
+    p <- p + ggplot2::geom_segment(
+      ggplot2::aes(
+        x = 0, xend = .data$stat_val,
+        y = .data$species_label, yend = .data$species_label
+      ),
+      linewidth = seg_width,
+      alpha     = 0.85
+    )
+  }
+
+  if (isTRUE(use_diverging_colors)) {
+    p <- p + ggplot2::geom_point(
+      ggplot2::aes(color = .data$T_col),
+      size        = point_size,
+      show.legend = FALSE
+    )
+  } else {
+    p <- p + ggplot2::geom_point(size = point_size)
+  }
+
+  p <- p +
     ggplot2::labs(
       title = sprintf("Top/Bottom %s - rank: %s", stat_title_short, rank_of_interest),
       subtitle = sprintf(
@@ -1297,8 +1301,12 @@ forestplot_interactive <- function(
   vals    <- df_plot$stat_val
   max_neg <- max(abs(vals[vals < 0]), na.rm = TRUE)
   max_pos <- max(abs(vals[vals > 0]), na.rm = TRUE)
-  if (!is.finite(max_neg) || max_neg == 0) max_neg <- max(abs(vals), 1, na.rm = TRUE)
-  if (!is.finite(max_pos) || max_pos == 0) max_pos <- max(abs(vals), 1, na.rm = TRUE)
+  if (!is.finite(max_neg) || max_neg == 0) {
+    max_neg <- max(abs(vals), 1, na.rm = TRUE)
+  }
+  if (!is.finite(max_pos) || max_pos == 0) {
+    max_pos <- max(abs(vals), 1, na.rm = TRUE)
+  }
 
   df_plot$T_col <- dplyr::case_when(
     vals < 0 ~ -abs(vals) / max_neg,
