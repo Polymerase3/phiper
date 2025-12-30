@@ -118,6 +118,65 @@ deltaplot <- function(
   # ---- Basic checks -----------------------------------------------------------
   d <- prev_tbl
   .ph_log_info("Preparing delta prevalence plot.")
+  if (requireNamespace("chk", quietly = TRUE)) {
+    chk::chk_data.frame(d)
+    if (!is.null(group_pair_values)) {
+      chk::chk_character(group_pair_values)
+      chk::chk_length(group_pair_values, 2L)
+    }
+    if (!is.null(group_labels)) {
+      chk::chk_character(group_labels)
+      chk::chk_length(group_labels, 2L)
+    }
+    chk::chk_numeric(point_jitter_width)
+    chk::chk_numeric(point_jitter_height)
+    chk::chk_numeric(point_alpha)
+    chk::chk_numeric(point_size)
+    chk::chk_logical(add_smooth)
+    chk::chk_numeric(smooth_k)
+    chk::chk_numeric(arrow_head_length_mm)
+    chk::chk_numeric(arrow_x_frac)
+  }
+  .chk_cond(
+    condition = !is.data.frame(d),
+    error_message = "prev_tbl must be a data.frame or tibble."
+  )
+  .chk_cond(
+    condition = !is.null(group_pair_values) && length(group_pair_values) != 2L,
+    error_message = "group_pair_values must be length-2 vector: c(g1, g2)."
+  )
+  .chk_cond(
+    condition = !is.null(group_labels) && length(group_labels) != 2L,
+    error_message = "group_labels must be length-2 vector: c(label_g1, label_g2)."
+  )
+  .chk_cond(
+    condition = !is.numeric(point_jitter_width) || point_jitter_width < 0,
+    error_message = "point_jitter_width must be a non-negative number."
+  )
+  .chk_cond(
+    condition = !is.numeric(point_jitter_height) || point_jitter_height < 0,
+    error_message = "point_jitter_height must be a non-negative number."
+  )
+  .chk_cond(
+    condition = !is.numeric(point_alpha) || point_alpha < 0 || point_alpha > 1,
+    error_message = "point_alpha must be between 0 and 1."
+  )
+  .chk_cond(
+    condition = !is.numeric(point_size) || point_size <= 0,
+    error_message = "point_size must be a positive number."
+  )
+  .chk_cond(
+    condition = !is.numeric(smooth_k) || smooth_k < 1,
+    error_message = "smooth_k must be a positive number."
+  )
+  .chk_cond(
+    condition = !is.numeric(arrow_head_length_mm) || arrow_head_length_mm <= 0,
+    error_message = "arrow_head_length_mm must be a positive number."
+  )
+  .chk_cond(
+    condition = !is.numeric(arrow_x_frac) || arrow_x_frac <= 0 || arrow_x_frac > 1,
+    error_message = "arrow_x_frac must be in (0, 1]."
+  )
   need <- c("group1","group2","prop1","prop2")
   miss <- setdiff(need, names(d))
   if (length(miss) > 0L) {
@@ -378,25 +437,112 @@ deltaplot_interactive <- function(
     point_jitter_height = 0.005,
     jitter_seed         = NULL
 ){
+  if (requireNamespace("chk", quietly = TRUE)) {
+    chk::chk_data.frame(prev_tbl)
+    if (!is.null(group_pair_values)) {
+      chk::chk_character(group_pair_values)
+      chk::chk_length(group_pair_values, 2L)
+    }
+    if (!is.null(group_labels)) {
+      chk::chk_character(group_labels)
+      chk::chk_length(group_labels, 2L)
+    }
+    chk::chk_numeric(point_alpha)
+    chk::chk_numeric(point_size)
+    chk::chk_logical(add_smooth)
+    chk::chk_numeric(smooth_k)
+    chk::chk_numeric(arrow_x_frac)
+    chk::chk_numeric(arrow_length_frac)
+    chk::chk_numeric(label_x_gap_frac)
+    chk::chk_numeric(label_y_gap_frac)
+    chk::chk_logical(add_jitter)
+    chk::chk_numeric(point_jitter_width)
+    chk::chk_numeric(point_jitter_height)
+  }
+  .chk_cond(
+    condition = !is.data.frame(prev_tbl),
+    error_message = "prev_tbl must be a data.frame or tibble."
+  )
+  .chk_cond(
+    condition = !is.null(group_pair_values) && length(group_pair_values) != 2L,
+    error_message = "group_pair_values must be length-2 vector: c(g1, g2)."
+  )
+  .chk_cond(
+    condition = !is.null(group_labels) && length(group_labels) != 2L,
+    error_message = "group_labels must be length-2 vector: c(label_g1, label_g2)."
+  )
+  .chk_cond(
+    condition = !is.numeric(point_alpha) || point_alpha < 0 || point_alpha > 1,
+    error_message = "point_alpha must be between 0 and 1."
+  )
+  .chk_cond(
+    condition = !is.numeric(point_size) || point_size <= 0,
+    error_message = "point_size must be a positive number."
+  )
+  .chk_cond(
+    condition = !is.numeric(smooth_k) || smooth_k < 1,
+    error_message = "smooth_k must be a positive number."
+  )
+  .chk_cond(
+    condition = !is.numeric(arrow_x_frac) || arrow_x_frac <= 0 || arrow_x_frac > 1,
+    error_message = "arrow_x_frac must be in (0, 1]."
+  )
+  .chk_cond(
+    condition = !is.numeric(arrow_length_frac) || arrow_length_frac <= 0 || arrow_length_frac > 1,
+    error_message = "arrow_length_frac must be in (0, 1]."
+  )
+  .chk_cond(
+    condition = !is.numeric(label_x_gap_frac) || label_x_gap_frac < 0 || label_x_gap_frac > 1,
+    error_message = "label_x_gap_frac must be between 0 and 1."
+  )
+  .chk_cond(
+    condition = !is.numeric(label_y_gap_frac) || label_y_gap_frac < 0 || label_y_gap_frac > 1,
+    error_message = "label_y_gap_frac must be between 0 and 1."
+  )
+  .chk_cond(
+    condition = !is.numeric(point_jitter_width) || point_jitter_width < 0,
+    error_message = "point_jitter_width must be a non-negative number."
+  )
+  .chk_cond(
+    condition = !is.numeric(point_jitter_height) || point_jitter_height < 0,
+    error_message = "point_jitter_height must be a non-negative number."
+  )
   need <- c("group1","group2","prop1","prop2")
   miss <- setdiff(need, names(prev_tbl))
-  if (length(miss)) stop("deltaplot_prevalence_interactive(): missing: ", paste(miss, collapse=", "))
+  if (length(miss)) {
+    .ph_abort(paste0(
+      "deltaplot_prevalence_interactive(): missing: ",
+      paste(miss, collapse = ", ")
+    ))
+  }
   d <- prev_tbl
 
   # select group pair
   if (!is.null(group_pair_values)) {
-    stopifnot(length(group_pair_values) == 2L)
+    if (length(group_pair_values) != 2L) {
+      .ph_abort("group_pair_values must be length-2 vector: c(g1, g2).")
+    }
     d <- d[d$group1 == group_pair_values[1] &
              d$group2 == group_pair_values[2], , drop = FALSE]
-    if (!nrow(d)) stop("No rows after filtering to group_pair_values.")
+    if (!nrow(d)) {
+      .ph_abort("No rows after filtering to group_pair_values.")
+    }
     g1_raw <- group_pair_values[1]; g2_raw <- group_pair_values[2]
   } else {
     pairs <- unique(d[, c("group1","group2")])
-    if (nrow(pairs) != 1L) stop("Multiple (group1,group2) pairs – pass group_pair_values.")
+    if (nrow(pairs) != 1L) {
+      .ph_abort("Multiple (group1,group2) pairs – pass group_pair_values.")
+    }
     g1_raw <- pairs$group1[1]; g2_raw <- pairs$group2[1]
   }
-  if (is.null(group_labels)) { g1_lab <- as.character(g1_raw); g2_lab <- as.character(g2_raw)
-  } else { stopifnot(length(group_labels) == 2L); g1_lab <- group_labels[1]; g2_lab <- group_labels[2] }
+  if (is.null(group_labels)) {
+    g1_lab <- as.character(g1_raw); g2_lab <- as.character(g2_raw)
+  } else {
+    if (length(group_labels) != 2L) {
+      .ph_abort("group_labels must be length-2 vector: c(label_g1, label_g2).")
+    }
+    g1_lab <- group_labels[1]; g2_lab <- group_labels[2]
+  }
 
   # helper columns
   if (!("feature" %in% names(d))) {
