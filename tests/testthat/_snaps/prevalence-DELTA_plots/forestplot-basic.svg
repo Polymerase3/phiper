@@ -1,0 +1,63 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' data-engine-version='2.0' width='720.00pt' height='576.00pt' viewBox='0 0 720.00 576.00'>
+<defs>
+  <style type='text/css'><![CDATA[
+    .svglite line, .svglite polyline, .svglite polygon, .svglite path, .svglite rect, .svglite circle {
+      fill: none;
+      stroke: #000000;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-miterlimit: 10.00;
+    }
+  ]]></style>
+</defs>
+<rect width='100%' height='100%' style='stroke: none; fill: #FFFFFF;'/>
+<defs>
+  <clipPath id='cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA='>
+    <rect x='0.00' y='0.00' width='720.00' height='576.00' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA=)'>
+<rect x='0.00' y='0.00' width='720.00' height='576.00' style='stroke-width: 1.36; stroke: none;' />
+<rect x='38.95' y='76.82' width='666.88' height='454.82' style='stroke-width: 1.36; stroke: none;' />
+<line x1='372.39' y1='531.64' x2='372.39' y2='76.82' style='stroke-width: 0.85; stroke: #000000; stroke-opacity: 0.60; stroke-dasharray: 4.55,4.55; stroke-linecap: butt;' />
+<line x1='372.39' y1='513.45' x2='69.26' y2='513.45' style='stroke-width: 2.56; stroke: #000000; stroke-opacity: 0.85; stroke-linecap: butt;' />
+<line x1='372.39' y1='392.16' x2='136.62' y2='392.16' style='stroke-width: 2.56; stroke: #000000; stroke-opacity: 0.85; stroke-linecap: butt;' />
+<line x1='372.39' y1='149.59' x2='675.51' y2='149.59' style='stroke-width: 2.56; stroke: #000000; stroke-opacity: 0.85; stroke-linecap: butt;' />
+<line x1='372.39' y1='270.88' x2='608.15' y2='270.88' style='stroke-width: 2.56; stroke: #000000; stroke-opacity: 0.85; stroke-linecap: butt;' />
+<circle cx='69.26' cy='513.45' r='4.29' style='stroke-width: 0.90; fill: #000000;' />
+<circle cx='136.62' cy='392.16' r='4.29' style='stroke-width: 0.90; fill: #000000;' />
+<circle cx='675.51' cy='149.59' r='4.29' style='stroke-width: 0.90; fill: #000000;' />
+<circle cx='608.15' cy='270.88' r='4.29' style='stroke-width: 0.90; fill: #000000;' />
+<line x1='372.39' y1='76.82' x2='266.29' y2='76.82' style='stroke-width: 1.28; stroke: #FF0000; stroke-linecap: butt;' />
+<polygon points='273.66,72.57 266.29,76.82 273.66,81.08 ' style='stroke-width: 1.28; stroke: #FF0000; stroke-linecap: butt; fill: #FF0000;' />
+<text x='248.11' y='74.22' text-anchor='end' style='font-size: 12.60px; font-weight: bold; fill: #FF0000; font-family: sans;' textLength='84.76px' lengthAdjust='spacingAndGlyphs'>More in group1</text>
+<line x1='372.39' y1='76.82' x2='478.48' y2='76.82' style='stroke-width: 1.28; stroke: #FF0000; stroke-linecap: butt;' />
+<polygon points='471.12,81.08 478.48,76.82 471.12,72.57 ' style='stroke-width: 1.28; stroke: #FF0000; stroke-linecap: butt; fill: #FF0000;' />
+<text x='496.67' y='74.22' style='font-size: 12.60px; font-weight: bold; fill: #FF0000; font-family: sans;' textLength='84.76px' lengthAdjust='spacingAndGlyphs'>More in group2</text>
+<rect x='38.95' y='76.82' width='666.88' height='454.82' style='stroke-width: 1.36; stroke: none;' />
+<polyline points='38.95,531.64 38.95,76.82 ' style='stroke-width: 0.85; stroke-linecap: butt;' />
+<text x='29.19' y='517.16' text-anchor='end' style='font-size: 10.80px; font-family: sans;' textLength='9.01px' lengthAdjust='spacingAndGlyphs'>f1</text>
+<text x='29.19' y='395.88' text-anchor='end' style='font-size: 10.80px; font-family: sans;' textLength='9.01px' lengthAdjust='spacingAndGlyphs'>f2</text>
+<text x='29.19' y='274.59' text-anchor='end' style='font-size: 10.80px; font-family: sans;' textLength='9.01px' lengthAdjust='spacingAndGlyphs'>f9</text>
+<text x='29.19' y='153.31' text-anchor='end' style='font-size: 10.80px; font-family: sans;' textLength='15.01px' lengthAdjust='spacingAndGlyphs'>f10</text>
+<polyline points='35.46,513.45 38.95,513.45 ' style='stroke-width: 0.64; stroke-linecap: butt;' />
+<polyline points='35.46,392.16 38.95,392.16 ' style='stroke-width: 0.64; stroke-linecap: butt;' />
+<polyline points='35.46,270.88 38.95,270.88 ' style='stroke-width: 0.64; stroke-linecap: butt;' />
+<polyline points='35.46,149.59 38.95,149.59 ' style='stroke-width: 0.64; stroke-linecap: butt;' />
+<polyline points='38.95,531.64 705.83,531.64 ' style='stroke-width: 0.85; stroke-linecap: butt;' />
+<polyline points='69.26,535.13 69.26,531.64 ' style='stroke-width: 0.64; stroke-linecap: butt;' />
+<polyline points='220.83,535.13 220.83,531.64 ' style='stroke-width: 0.64; stroke-linecap: butt;' />
+<polyline points='372.39,535.13 372.39,531.64 ' style='stroke-width: 0.64; stroke-linecap: butt;' />
+<polyline points='523.95,535.13 523.95,531.64 ' style='stroke-width: 0.64; stroke-linecap: butt;' />
+<polyline points='675.51,535.13 675.51,531.64 ' style='stroke-width: 0.64; stroke-linecap: butt;' />
+<text x='69.26' y='548.84' text-anchor='middle' style='font-size: 10.80px; font-family: sans;' textLength='9.60px' lengthAdjust='spacingAndGlyphs'>-2</text>
+<text x='220.83' y='548.84' text-anchor='middle' style='font-size: 10.80px; font-family: sans;' textLength='9.60px' lengthAdjust='spacingAndGlyphs'>-1</text>
+<text x='372.39' y='548.84' text-anchor='middle' style='font-size: 10.80px; font-family: sans;' textLength='6.01px' lengthAdjust='spacingAndGlyphs'>0</text>
+<text x='523.95' y='548.84' text-anchor='middle' style='font-size: 10.80px; font-family: sans;' textLength='6.01px' lengthAdjust='spacingAndGlyphs'>1</text>
+<text x='675.51' y='548.84' text-anchor='middle' style='font-size: 10.80px; font-family: sans;' textLength='6.01px' lengthAdjust='spacingAndGlyphs'>2</text>
+<text x='372.39' y='562.33' text-anchor='middle' style='font-size: 12.00px; font-weight: bold; font-family: sans;' textLength='83.35px' lengthAdjust='spacingAndGlyphs'>Stouffer T (raw)</text>
+<text x='372.39' y='67.67' text-anchor='middle' style='font-size: 11.40px; font-family: sans;' textLength='335.58px' lengthAdjust='spacingAndGlyphs'>Contrast: More in group1 vs More in group2; shown: 2 neg + 2 pos</text>
+<text x='372.39' y='39.28' text-anchor='middle' style='font-size: 13.80px; font-weight: bold; font-family: sans;' textLength='229.36px' lengthAdjust='spacingAndGlyphs'>Top/Bottom Stouffer T - rank: species</text>
+</g>
+</svg>

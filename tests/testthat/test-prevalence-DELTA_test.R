@@ -327,7 +327,7 @@ test_that("ph_prevalence_shift returns NA T_obs_stand when permutation
       "n_subjects_paired","n_peptides_used","m_eff",
       "T_obs","T_obs_stand","Z_from_p","p_perm","b",
       "p_adj_rank",
-      "mean_delta","frac_delta_pos","mean_delta_w","frac_delta_pos_w",
+      "max_delta","frac_delta_pos","frac_delta_pos_w",
       "category_rank_bh")
   )
 })
