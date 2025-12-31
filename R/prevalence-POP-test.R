@@ -616,7 +616,7 @@ ph_prevalence_compare <- function(x,
 
         # get column names safely for both df and tbl_sql
         lib_cols <- if (inherits(lib_handle, "tbl_sql")) {
-          colnames(dplyr::collect(dplyr::slice_head(lib_handle, n = 0)))
+          colnames(dplyr::collect(head(lib_handle, 0)))
         } else {
           colnames(lib_handle)
         }
@@ -1079,7 +1079,7 @@ ph_prevalence_compare <- function(x,
           # store whatever was provided as library (optional)
           meta$peptide_library      <- lib_handle
           meta$peptide_library_cols <- tryCatch({
-            if (inherits(lib_handle, "tbl_sql")) colnames(dplyr::collect(dplyr::slice_head(lib_handle, n = 0)))
+            if (inherits(lib_handle, "tbl_sql")) colnames(dplyr::collect(head(lib_handle, 0)))
             else colnames(lib_handle)
           }, error = function(...) NULL)
 
@@ -1103,7 +1103,7 @@ ph_prevalence_compare <- function(x,
           )
           meta$peptide_library      <- lib_handle
           meta$peptide_library_cols <- tryCatch({
-            if (inherits(lib_handle, "tbl_sql")) colnames(dplyr::collect(dplyr::slice_head(lib_handle, n = 0)))
+            if (inherits(lib_handle, "tbl_sql")) colnames(dplyr::collect(head(lib_handle, 0)))
             else colnames(lib_handle)
           }, error = function(...) NULL)
           lazy_tbl <- dplyr::tbl(con, register_name)
@@ -1379,7 +1379,7 @@ ph_prevalence_compare <- function(x,
       )
       meta$peptide_library      <- lib_handle
       meta$peptide_library_cols <- tryCatch({
-        if (inherits(lib_handle, "tbl_sql")) colnames(dplyr::collect(dplyr::slice_head(lib_handle, n = 0)))
+        if (inherits(lib_handle, "tbl_sql")) colnames(dplyr::collect(head(lib_handle, 0)))
         else colnames(lib_handle)
       }, error = function(...) NULL)
 

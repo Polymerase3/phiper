@@ -9,15 +9,16 @@ Authors@R: c(
     comment = c(ORCID = "0000-0001-6470-4830")
   ),
   person(
-    "Thomas", "Vogl",
-    email = "thomas.vogl@meduniwien.ac.at",
-    role = c("ctb", "cph", "fnd"),
-    comment = c(ORCID = "0000-0002-3892-1740")
+    "Alon", "Alexander",
+    email = "a.alexander@umcg.nl",
+    role = c("ctb", "cph")
   ),
   person(
-    "Carlos", "Reyna-Blanco",
-    email = "carlos.reynablanco@meduniwien.ac.at",
-    role = c("ctb", "cph"))
+    "Thomas", "Vogl",
+    email = "thomas.vogl@meduniwien.ac.at",
+    role = c("cph", "fnd"),
+    comment = c(ORCID = "0000-0002-3892-1740")
+  )
   )
 Description: Provides an end-to-end toolkit for Phage ImmunoPrecipitation-
     sequencing (PhIP-seq) data. Functions import raw peptide-sample count
@@ -36,12 +37,12 @@ SystemRequirements: C++17
 LinkingTo: Rcpp, RcppParallel
 Suggests: 
     arrow,
-    DBI,
     dbplyr,
     duckdb,
     mockery,
     rprojroot,
     testthat (>= 3.0.0),
+    vdiffr,
     yaml,
     withr,
     ggpubr,
@@ -52,7 +53,9 @@ Imports:
     cli,
     colorspace,
     data.table,
+    DBI,
     dplyr,
+    foreach,
     fs,
     ggh4x,
     knitr,
@@ -64,7 +67,7 @@ Imports:
     Rcpp,
     RcppParallel,
     doParallel,
-    foreach,
     forcats,
     utils,
-    Rtsne
+    Rtsne,
+    plotly

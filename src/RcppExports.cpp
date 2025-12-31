@@ -22,34 +22,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// perm_bitset_T_parallel
-Rcpp::List perm_bitset_T_parallel(bool paired, Rcpp::List hits_by_peptide_unpaired, int N_unpaired, Rcpp::IntegerVector g1_idx_unpaired, int nA, int nB, Rcpp::List hits_g1_paired, Rcpp::List hits_g2_paired, int P, int B, double eps, double den_mult, double min_max_prev, double winsor_z, std::string stat_mode, std::string weight_mode, int seed, int grain);
-RcppExport SEXP _phiper_perm_bitset_T_parallel(SEXP pairedSEXP, SEXP hits_by_peptide_unpairedSEXP, SEXP N_unpairedSEXP, SEXP g1_idx_unpairedSEXP, SEXP nASEXP, SEXP nBSEXP, SEXP hits_g1_pairedSEXP, SEXP hits_g2_pairedSEXP, SEXP PSEXP, SEXP BSEXP, SEXP epsSEXP, SEXP den_multSEXP, SEXP min_max_prevSEXP, SEXP winsor_zSEXP, SEXP stat_modeSEXP, SEXP weight_modeSEXP, SEXP seedSEXP, SEXP grainSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< bool >::type paired(pairedSEXP);
-    Rcpp::traits::input_parameter< Rcpp::List >::type hits_by_peptide_unpaired(hits_by_peptide_unpairedSEXP);
-    Rcpp::traits::input_parameter< int >::type N_unpaired(N_unpairedSEXP);
-    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type g1_idx_unpaired(g1_idx_unpairedSEXP);
-    Rcpp::traits::input_parameter< int >::type nA(nASEXP);
-    Rcpp::traits::input_parameter< int >::type nB(nBSEXP);
-    Rcpp::traits::input_parameter< Rcpp::List >::type hits_g1_paired(hits_g1_pairedSEXP);
-    Rcpp::traits::input_parameter< Rcpp::List >::type hits_g2_paired(hits_g2_pairedSEXP);
-    Rcpp::traits::input_parameter< int >::type P(PSEXP);
-    Rcpp::traits::input_parameter< int >::type B(BSEXP);
-    Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
-    Rcpp::traits::input_parameter< double >::type den_mult(den_multSEXP);
-    Rcpp::traits::input_parameter< double >::type min_max_prev(min_max_prevSEXP);
-    Rcpp::traits::input_parameter< double >::type winsor_z(winsor_zSEXP);
-    Rcpp::traits::input_parameter< std::string >::type stat_mode(stat_modeSEXP);
-    Rcpp::traits::input_parameter< std::string >::type weight_mode(weight_modeSEXP);
-    Rcpp::traits::input_parameter< int >::type seed(seedSEXP);
-    Rcpp::traits::input_parameter< int >::type grain(grainSEXP);
-    rcpp_result_gen = Rcpp::wrap(perm_bitset_T_parallel(paired, hits_by_peptide_unpaired, N_unpaired, g1_idx_unpaired, nA, nB, hits_g1_paired, hits_g2_paired, P, B, eps, den_mult, min_max_prev, winsor_z, stat_mode, weight_mode, seed, grain));
-    return rcpp_result_gen;
-END_RCPP
-}
 // cpp_shift_contrast
 Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw, const int n_words, const Rcpp::IntegerVector& pep_cols, const Rcpp::IntegerVector& g1_rows, const Rcpp::IntegerVector& g2_rows, const Rcpp::List& hits_g1_paired, const Rcpp::List& hits_g2_paired, const int P, const int B, const int seed, const double smooth_eps_num, const double smooth_eps_den, const double min_max_prev, const std::string& weight_mode, const std::string& stat_mode, const std::string& prev_strat, const double winsor_z, const std::string& design);
 RcppExport SEXP _phiper_cpp_shift_contrast(SEXP bitset_rawSEXP, SEXP n_wordsSEXP, SEXP pep_colsSEXP, SEXP g1_rowsSEXP, SEXP g2_rowsSEXP, SEXP hits_g1_pairedSEXP, SEXP hits_g2_pairedSEXP, SEXP PSEXP, SEXP BSEXP, SEXP seedSEXP, SEXP smooth_eps_numSEXP, SEXP smooth_eps_denSEXP, SEXP min_max_prevSEXP, SEXP weight_modeSEXP, SEXP stat_modeSEXP, SEXP prev_stratSEXP, SEXP winsor_zSEXP, SEXP designSEXP) {
@@ -81,7 +53,6 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_phiper_build_bitset_unpaired", (DL_FUNC) &_phiper_build_bitset_unpaired, 2},
-    {"_phiper_perm_bitset_T_parallel", (DL_FUNC) &_phiper_perm_bitset_T_parallel, 18},
     {"_phiper_cpp_shift_contrast", (DL_FUNC) &_phiper_cpp_shift_contrast, 18},
     {NULL, NULL, 0}
 };

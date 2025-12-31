@@ -7,4 +7,7 @@
 ^local-etl$
 ^local-data$
 ^local-cache$
+^codemeta\.json$
+^README\.Rmd$
 ^dev$
+^.pr_agent.toml$
