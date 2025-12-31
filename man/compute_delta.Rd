@@ -284,22 +284,12 @@ results; each contrast draws its own seed from the global RNG state.
 # Load example PhIP-Seq data shipped with the package
 pd <- phip_load_example_data()
 
-# Minimal global shift test across groups (unpaired)
-set.seed(1)
-res <- compute_delta(
-  pd,
-  rank_cols = "peptide_id",
-  group_cols = "group",
-  B_permutations = 100
-)
-res
-
 # Small unpaired subset with a mock peptide library
-pd_filt <- pd \%>\%
+pd_filt <- pd |>
   dplyr::filter(
     peptide_id \%in\% c("16627", "5243", "24799", "16196", "18003"),
     timepoint == "T1"
-  ) \%>\%
+  ) |>
   dplyr::collect()
 
 mock_peplib <- data.frame(

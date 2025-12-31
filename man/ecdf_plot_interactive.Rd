@@ -64,7 +64,7 @@ ps <- phip_load_example_data()
 
 # small subset for speed
 keep_pep <- c("16627", "5243", "24799", "16196", "18003")
-tp_col <- "time"
+tp_col <- "timepoint"
 
 ps_small <- ps |>
   dplyr::filter(

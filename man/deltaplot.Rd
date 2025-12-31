@@ -96,7 +96,7 @@ tp_col <- "time"
 ps_small <- ps |>
   dplyr::filter(
     peptide_id \%in\% keep_pep,
-    !!rlang::sym(tp_col) == "T1"
+    timepoint == "T1"
   ) |>
   dplyr::collect()
 
