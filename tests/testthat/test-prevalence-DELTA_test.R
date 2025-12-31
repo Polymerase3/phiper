@@ -5,11 +5,11 @@ test_that("compute_delta works for unpaired design (mock species)", {
   ps <- phip_load_example_data()
 
   # small unpaired subset: one species, two groups at T1
-  ps_filt <- ps %>%
+  ps_filt <- ps |>
     dplyr::filter(
       peptide_id %in% c("16627", "5243", "24799", "16196", "18003"),
-      time == "T1"
-    ) %>%
+      timepoint == "T1"
+    ) |>
     dplyr::collect()
 
   mock_peplib <- data.frame(
@@ -71,11 +71,11 @@ test_that("compute_delta handles paired design via paired_by and returns
   ps <- phip_load_example_data()
 
   # subset: one mock species, group A, two timepoints
-  ps_filt2 <- ps %>%
+  ps_filt2 <- ps |>
     dplyr::filter(
       peptide_id %in% c("2269", "21399", "7789", "13588", "10180"),
       group == "A"
-    ) %>%
+    ) |>
     dplyr::collect()
 
   mock_peplib <- data.frame(
@@ -85,38 +85,38 @@ test_that("compute_delta handles paired design via paired_by and returns
   )
 
   # identify true T1-T2 pairs
-  pair_ids <- ps_filt2 %>%
-    dplyr::filter(time %in% c("T1", "T2")) %>%
-    dplyr::distinct(subject_id, time) %>%
+  pair_ids <- ps_filt2 |>
+    dplyr::filter(timepoint %in% c("T1", "T2")) |>
+    dplyr::distinct(subject_id, timepoint) |>
     tidyr::pivot_wider(
-      names_from  = time,
-      values_from = time,
+      names_from  = timepoint,
+      values_from = timepoint,
       values_fn   = length,
       values_fill = 0
-    ) %>%
-    dplyr::filter(T1 > 0, T2 > 0) %>%
+    ) |>
+    dplyr::filter(T1 > 0, T2 > 0) |>
     dplyr::pull(subject_id)
 
   expect_gt(length(pair_ids), 0L)
 
   # inject artificial variability by flipping exist for a subset of rows
   set.seed(123)
-  candidates <- ps_filt2 %>%
+  candidates <- ps_filt2 |>
     dplyr::filter(
       subject_id %in% pair_ids,
-      time %in% c("T1", "T2")
+      timepoint %in% c("T1", "T2")
     )
 
   n_flip   <- min(15L, nrow(candidates))
   flip_ids <- sample(candidates$sample_id, size = n_flip)
 
-  ps_filt2_flipped <- ps_filt2 %>%
+  ps_filt2_flipped <- ps_filt2 |>
     dplyr::mutate(
       flipped    = sample_id %in% flip_ids,
       exist      = ifelse(flipped, 1L - exist, exist),
       counts_hits= ifelse(flipped & exist == 0L, 0, counts_hits),
       fold_change= ifelse(flipped & exist == 0L, 0, fold_change)
-    ) %>%
+    ) |>
     dplyr::select(-flipped)
 
   res <- compute_delta(
@@ -124,7 +124,7 @@ test_that("compute_delta handles paired design via paired_by and returns
     paired_by          = "subject_id",
     exist_col          = "exist",
     rank_cols          = "species",
-    group_cols         = "time",
+    group_cols         = "timepoint",
     peptide_library    = mock_peplib,
     B_permutations     = 500L,
     smooth_eps_num     = 0.5,
@@ -200,11 +200,11 @@ test_that("compute_delta gives consistent direction for T_obs,
   # reuse unpaired example, smaller B for speed
   ps <- phip_load_example_data()
 
-  ps_filt <- ps %>%
+  ps_filt <- ps |>
     dplyr::filter(
       peptide_id %in% c("16627", "5243", "24799", "16196", "18003"),
-      time == "T1"
-    ) %>%
+      timepoint == "T1"
+    ) |>
     dplyr::collect()
 
   mock_peplib <- data.frame(
@@ -271,7 +271,6 @@ test_that("compute_delta returns NA T_obs_stand when permutation
 
   # all permutations give the same T => variance zero
   expect_s3_class(res, "tbl_df")
-  expect_equal(nrow(res), 0L)
   expect_setequal(
     colnames(res),
     c("rank","feature","group_col","group1","group2","design",
@@ -279,7 +278,7 @@ test_that("compute_delta returns NA T_obs_stand when permutation
       "T_obs","T_obs_stand","Z_from_p","p_perm","b",
       "p_adj_rank",
       "max_delta","frac_delta_pos","frac_delta_pos_w",
-      "category_rank_bh")
+      "category_rank_bh", "fold_change_none", "cross_prev_none")
   )
 })
 
@@ -580,15 +579,15 @@ test_that("compute_delta computes fold_change summaries correctly for
   )
 
   # expected per peptide_id
-  expected <- toy_fc %>%
-    dplyr::group_by(peptide_id) %>%
+  expected <- toy_fc |>
+    dplyr::group_by(peptide_id) |>
     dplyr::summarise(
       fc_sum    = sum(fold_change),
       fc_mean   = mean(fold_change),
       fc_max    = max(fold_change),
       fc_median = stats::median(fold_change),
       .groups   = "drop"
-    ) %>%
+    ) |>
     dplyr::arrange(peptide_id)
 
   run_fc <- function(mode) {
@@ -611,7 +610,7 @@ test_that("compute_delta computes fold_change summaries correctly for
       log                = FALSE,
       fold_change        = mode,
       cross_prev         = "none"
-    ) %>%
+    ) |>
       dplyr::arrange(feature)
   }
 
@@ -637,12 +636,12 @@ test_that("compute_delta computes cross_prev summaries correctly for all
     exist      = c(1L,    0L,    1L,    1L)
   )
 
-  toy_lib <- toy_cp %>%
+  toy_lib <- toy_cp |>
     dplyr::distinct(peptide_id, species)
 
   # per-peptide prevalence across g1 ∪ g2 (here all subjects/rows)
-  prev_per_pep <- toy_cp %>%
-    dplyr::group_by(peptide_id) %>%
+  prev_per_pep <- toy_cp |>
+    dplyr::group_by(peptide_id) |>
     dplyr::summarise(
       prev = mean(exist > 0, na.rm = TRUE),
       .groups = "drop"
@@ -761,7 +760,7 @@ test_that("compute_delta supports prevalence-stratified combination
     exist      = c(1L,    0L,    1L,    1L)
   )
 
-  toy_lib <- toy_dec %>%
+  toy_lib <- toy_dec |>
     dplyr::distinct(peptide_id, species)
 
   set.seed(1)
@@ -863,7 +862,7 @@ test_that("compute_delta returns NA stats when no peptides pass
   )
 
   expect_s3_class(res, "tbl_df")
-  expect_equal(nrow(res), 0L)
+  expect_equal(nrow(res), 1L)
 })
 
 test_that("compute_delta uses global RNG reproducibly and advances .Random.seed deterministically", {
