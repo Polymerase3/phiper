@@ -198,9 +198,9 @@
   invisible(con)
 }
 
-#' Build a **memory-backed** `phip_data` object (no DuckDB / Arrow)
+#' @title Build a **memory-backed** `phip_data` object (no DuckDB / Arrow)
 #'
-#' Reads up to four wide matrices (`exist`, `fold_change`, `input`, `hit`)
+#' @description Reads up to four wide matrices (`exist`, `fold_change`, `input`, `hit`)
 #' directly into R, pivots each to long format with **data.table::melt()**
 #' (faster than `stats::reshape()`), left-joins the available matrices on
 #' `(sample_id, peptide_id)`, attaches the cleaned sample metadata produced by

@@ -5,10 +5,6 @@ build_bitset_unpaired <- function(hits_by_peptide, N) {
     .Call(`_phiper_build_bitset_unpaired`, hits_by_peptide, N)
 }
 
-perm_bitset_T_parallel <- function(paired, hits_by_peptide_unpaired, N_unpaired, g1_idx_unpaired, nA, nB, hits_g1_paired, hits_g2_paired, P, B, eps, den_mult, min_max_prev, winsor_z, stat_mode, weight_mode, seed, grain = 512L) {
-    .Call(`_phiper_perm_bitset_T_parallel`, paired, hits_by_peptide_unpaired, N_unpaired, g1_idx_unpaired, nA, nB, hits_g1_paired, hits_g2_paired, P, B, eps, den_mult, min_max_prev, winsor_z, stat_mode, weight_mode, seed, grain)
-}
-
 cpp_shift_contrast <- function(bitset_raw, n_words, pep_cols, g1_rows, g2_rows, hits_g1_paired, hits_g2_paired, P, B, seed, smooth_eps_num, smooth_eps_den, min_max_prev, weight_mode, stat_mode, prev_strat, winsor_z, design) {
     .Call(`_phiper_cpp_shift_contrast`, bitset_raw, n_words, pep_cols, g1_rows, g2_rows, hits_g1_paired, hits_g2_paired, P, B, seed, smooth_eps_num, smooth_eps_den, min_max_prev, weight_mode, stat_mode, prev_strat, winsor_z, design)
 }

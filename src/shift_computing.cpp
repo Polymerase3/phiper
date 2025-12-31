@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <limits>
+
 
 using namespace Rcpp;
 
@@ -180,8 +182,8 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
  * @param B, seed, smooth_eps_num, smooth_eps_den, min_max_prev, winsor_z numeric.
  * @param weight_mode, stat_mode, prev_strat, design strings.
  *
- * @return List with fields: n_peptides_used, m_eff, T_obs, b, p_perm,
- *         mean_delta, frac_delta_pos, mean_delta_w, frac_delta_pos_w.
+ * @return List with fields: n_peptides_used, m_eff, T_obs, T_null_sd, b, p_perm,
+ *         max_delta, frac_delta_pos, frac_delta_pos_w.
  */
 // [[Rcpp::export]]
 Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
@@ -240,11 +242,11 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         _["n_peptides_used"]  = 0L,
         _["m_eff"]            = NA_REAL,
         _["T_obs"]            = NA_REAL,
+        _["T_null_sd"]        = NA_REAL,
         _["b"]                = 0L,
         _["p_perm"]           = NA_REAL,
-        _["mean_delta"]       = NA_REAL,
+        _["max_delta"]       = NA_REAL,
         _["frac_delta_pos"]   = NA_REAL,
-        _["mean_delta_w"]     = NA_REAL,
         _["frac_delta_pos_w"] = NA_REAL
       );
     }
@@ -257,15 +259,17 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     CombineOut obs = combine_T_internal(p1, p2, n1, n2, winsor_z, weight_mode, stat_mode, prev_strat);
 
     // Moments
-    double mean_delta = 0.0, frac_pos = 0.0, mean_delta_w = 0.0, frac_pos_w = 0.0;
+    double max_delta = 0.0;  // max absolute delta
+    double frac_pos = 0.0, frac_pos_w = 0.0;
     for (int i = 0; i < mu; ++i) {
-      mean_delta += obs.delta[i];
-      if (obs.delta[i] > 0) frac_pos += 1.0;
-      mean_delta_w += obs.w_norm[i] * obs.delta[i];
-      frac_pos_w   += obs.w_norm[i] * (obs.delta[i] > 0 ? 1.0 : 0.0);
+      const double d = obs.delta[i];
+      const double ad = std::fabs(d);
+
+      if (ad > max_delta) max_delta = ad;
+      if (d > 0) frac_pos += 1.0;
+      frac_pos_w += obs.w_norm[i] * (d > 0 ? 1.0 : 0.0);
     }
-    mean_delta   /= (double)mu;
-    frac_pos     /= (double)mu;
+    frac_pos /= (double)mu;
 
     // m_eff = 1 / sum(w_norm^2)
     double sum_w2 = 0.0;
@@ -278,6 +282,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
 
     int b_hits = 0;
     std::vector<uint64_t> Fmask(n_words_p, 0ULL); // flip mask
+    double sum_T = 0.0, sum_T2 = 0.0;
 
     for (int b = 0; b < B; ++b) {
       // Build flip mask F over P subjects
@@ -319,20 +324,31 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         std::vector<double> n1b(p1b.size(), (double)P), n2b(p2b.size(), (double)P);
         Tb = combine_T_internal(p1b, p2b, n1b, n2b, winsor_z, weight_mode, stat_mode, prev_strat).T_obs;
       }
+
+      sum_T  += Tb;
+      sum_T2 += Tb * Tb;
+
       if (std::fabs(Tb) >= std::fabs(obs.T_obs)) ++b_hits;
     }
 
     const double p_perm = (1.0 + (double)b_hits) / (1.0 + (double)B);
 
+    double T_null_sd = NA_REAL;
+    if (B > 0) {
+      const double mean_T = sum_T / static_cast<double>(B);
+      double var_T = (sum_T2 / static_cast<double>(B)) - mean_T * mean_T;
+      if (var_T > 0.0) T_null_sd = std::sqrt(var_T);
+    }
+
     return Rcpp::List::create(
       _["n_peptides_used"]  = mu,
       _["m_eff"]            = m_eff,
       _["T_obs"]            = obs.T_obs,
+      _["T_null_sd"]        = T_null_sd,
       _["b"]                = b_hits,
       _["p_perm"]           = p_perm,
-      _["mean_delta"]       = mean_delta,
+      _["max_delta"]        = max_delta,
       _["frac_delta_pos"]   = frac_pos,
-      _["mean_delta_w"]     = mean_delta_w,
       _["frac_delta_pos_w"] = frac_pos_w
     );
   }
@@ -361,11 +377,11 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         _["n_peptides_used"] = 0L,
         _["m_eff"] = NA_REAL,
         _["T_obs"] = NA_REAL,
+        _["T_null_sd"] = NA_REAL,
         _["b"] = NA_INTEGER,
         _["p_perm"] = NA_REAL,
-        _["mean_delta"] = NA_REAL,
+        _["max_delta"] = NA_REAL,
         _["frac_delta_pos"] = NA_REAL,
-        _["mean_delta_w"] = NA_REAL,
         _["frac_delta_pos_w"] = NA_REAL
       );
     }
@@ -391,11 +407,11 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         _["n_peptides_used"]  = 0L,
         _["m_eff"]            = NA_REAL,
         _["T_obs"]            = NA_REAL,
+        _["T_null_sd"]        = NA_REAL,
         _["b"]                = 0L,
         _["p_perm"]           = NA_REAL,
-        _["mean_delta"]       = NA_REAL,
+        _["max_delta"]        = NA_REAL,
         _["frac_delta_pos"]   = NA_REAL,
-        _["mean_delta_w"]     = NA_REAL,
         _["frac_delta_pos_w"] = NA_REAL
       );
     }
@@ -404,15 +420,17 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     CombineOut obs = combine_T_internal(p1, p2, n1, n2, winsor_z, weight_mode, stat_mode, prev_strat);
 
     // Moments
-    double mean_delta = 0.0, frac_pos = 0.0, mean_delta_w = 0.0, frac_pos_w = 0.0;
+    double max_delta = 0.0;  // max absolute delta
+    double frac_pos = 0.0, frac_pos_w = 0.0;
     for (int i = 0; i < mu; ++i) {
-      mean_delta += obs.delta[i];
-      if (obs.delta[i] > 0) frac_pos += 1.0;
-      mean_delta_w += obs.w_norm[i] * obs.delta[i];
-      frac_pos_w   += obs.w_norm[i] * (obs.delta[i] > 0 ? 1.0 : 0.0);
+      const double d = obs.delta[i];
+      const double ad = std::fabs(d);
+
+      if (ad > max_delta) max_delta = ad;
+      if (d > 0) frac_pos += 1.0;
+      frac_pos_w += obs.w_norm[i] * (d > 0 ? 1.0 : 0.0);
     }
-    mean_delta   /= (double)mu;
-    frac_pos     /= (double)mu;
+    frac_pos /= (double)mu;
 
     // m_eff = 1 / sum(w_norm^2)
     double sum_w2 = 0.0;
@@ -430,6 +448,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     int b_hits = 0;
     std::vector<int> choose_idx(nA);
     std::vector<uint64_t> mask_A(n_words), mask_B(n_words);
+    double sum_T = 0.0, sum_T2 = 0.0;
 
     for (int b = 0; b < B; ++b) {
       // random split: sample nA indices for group A
@@ -481,20 +500,32 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         n2b.assign(p2b.size(), (double)nB);
         Tb = combine_T_internal(p1b, p2b, n1b, n2b, winsor_z, weight_mode, stat_mode, prev_strat).T_obs;
       }
+
+      sum_T  += Tb;
+      sum_T2 += Tb * Tb;
+
       if (std::fabs(Tb) >= std::fabs(obs.T_obs)) ++b_hits;
     }
 
     const double p_perm = (1.0 + (double)b_hits) / (1.0 + (double)B);
 
+    double T_null_sd = NA_REAL;
+    if (B > 0) {
+      const double Bd = (double)B;
+      const double mean_T = sum_T / Bd;
+      double var_T = (sum_T2 / Bd) - mean_T * mean_T;
+      if (var_T > 0.0) T_null_sd = std::sqrt(var_T);
+    }
+
     return Rcpp::List::create(
       _["n_peptides_used"]  = mu,
       _["m_eff"]            = m_eff,
       _["T_obs"]            = obs.T_obs,
+      _["T_null_sd"]        = T_null_sd,
       _["b"]                = b_hits,
       _["p_perm"]           = p_perm,
-      _["mean_delta"]       = mean_delta,
+      _["max_delta"]        = max_delta,
       _["frac_delta_pos"]   = frac_pos,
-      _["mean_delta_w"]     = mean_delta_w,
       _["frac_delta_pos_w"] = frac_pos_w
     );
   }

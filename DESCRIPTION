@@ -42,6 +42,7 @@ Suggests:
     mockery,
     rprojroot,
     testthat (>= 3.0.0),
+    vdiffr,
     yaml,
     withr,
     ggpubr
@@ -62,8 +63,9 @@ Imports:
     tibble,
     tidyr,
     vegan,
-    Rcpp, 
+    Rcpp,
     RcppParallel,
     doParallel,
     forcats,
-    utils
+    utils,
+    plotly
