@@ -53,16 +53,19 @@ associations.}
 \value{
 A list of class \code{"beta_capscale"} with elements:
 \item{sample_coords}{Tibble of sample scores on constrained axes
-(\code{CAP1}, \code{CAP2}, ...). Contains \code{sample_id} and coordinates.}
+(\code{CAP1}, \code{CAP2}, ...). Contains \code{sample_id} and
+coordinates.}
 \item{eigenvalues}{Numeric vector of eigenvalues of the constrained axes.}
 \item{variance_partition}{Tibble with total inertia and inertia partitioned
-into constrained and unconstrained components, with their proportion of total.}
+into constrained and unconstrained components, with their proportion of
+total.}
 \item{feature_associations}{Tibble of top feature-axis associations for
 constrained axes (possibly empty if the \code{"abundances"} attribute is
 missing or cannot be aligned). To limit runtime/memory, associations are
 computed for at most 10 constrained axes.}
-\item{r2}{Numeric scalar. Unadjusted R-squared from \code{vegan::RsquareAdj()}.}
-\item{r2_adj}{Numeric scalar. Adjusted R-squared from \code{vegan::RsquareAdj()}.}
+\item{r2}{Numeric scalar. Unadjusted R-squared from
+\code{vegan::RsquareAdj()}.} \item{r2_adj}{Numeric scalar. Adjusted
+R-squared from \code{vegan::RsquareAdj()}.}
 \item{perm_terms}{Tibble of per-term permutation tests from
 \code{vegan::anova.cca(by = "term")}.}
 \item{cap_model}{The full \code{vegan::capscale} model object.}
@@ -125,10 +128,10 @@ rhs_var <- cand[cand \%in\% dplyr::tbl_vars(dat)][1]
 
 cap_res <- compute_capscale(
   dist_bc,
-  ps      = ps_small,
+  ps = ps_small,
   formula = stats::as.formula(paste0("~ ", rhs_var)),
   neg_correction = "none",
-  top_features   = 30L
+  top_features = 30L
 )
 
 cap_res$variance_partition

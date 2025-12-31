@@ -119,7 +119,7 @@ ps_small <- ps |>
   dplyr::collect()
 
 # compute distances (needs either 'parallelDist' or 'vegan')
-val_col <-  "exist"
+val_col <- "exist"
 
 d <- compute_distance(
   ps_small,

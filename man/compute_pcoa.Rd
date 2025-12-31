@@ -112,18 +112,18 @@ ps_small <- ps |>
   dplyr::collect()
 
 # compute distances (needs either 'parallelDist' or 'vegan')
-  val_col <- "exist"
+val_col <- "exist"
 
-  d <- compute_distance(
-    ps_small,
-    value_col = val_col,
-    distance = "jaccard",
-    n_threads = 2L
-  )
+d <- compute_distance(
+  ps_small,
+  value_col = val_col,
+  distance = "jaccard",
+  n_threads = 2L
+)
 
-  pcoa_res <- compute_pcoa(d, neg_correction = "none", n_axes = 3L)
-  pcoa_res$sample_coords
-  pcoa_res$var_explained
-  pcoa_res$feature_associations
+pcoa_res <- compute_pcoa(d, neg_correction = "none", n_axes = 3L)
+pcoa_res$sample_coords
+pcoa_res$var_explained
+pcoa_res$feature_associations
 }
 }

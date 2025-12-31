@@ -47,25 +47,30 @@ Use \code{"none"} for raw p-values. Passed to \code{stats::p.adjust()}.}
 A tibble with columns:
 \item{scope}{The scope of the test (e.g., \code{"global"},
 \code{"group_pairwise"}, \code{"time_pairwise"}).}
-\item{contrast}{Description of the contrast (e.g., \code{"<global>"} for overall test,
+\item{contrast}{Description of the contrast (e.g., \code{"<global>"} for
+overall test,
 \code{"A vs B"} for pairwise group or time comparisons).}
-\item{term}{The term being tested. For global tests, this will be the factor name (or interaction).
-For post-hoc tests, it may be \code{"group"} or \code{"time"} indicating which factor is being contrasted.}
-\item{F_stat}{F statistic of the PERMANOVA test (for global tests and some contrasts where applicable).}
-\item{R2}{R-squared (variance explained) for the term (global tests).}
-\item{p_value}{Permutation p-value for the test.}
+\item{term}{The term being tested. For global tests, this will be the factor
+name (or interaction).
+For post-hoc tests, it may be \code{"group"} or \code{"time"} indicating
+which factor is being contrasted.}
+\item{F_stat}{F statistic of the PERMANOVA test (for global tests and some
+contrasts where applicable).} \item{R2}{R-squared (variance explained) for
+the term (global tests).} \item{p_value}{Permutation p-value for the test.}
 \item{p_adjust}{Adjusted p-value (within scope); equals \code{p_value} when
 \code{p_adjust = "none"}.}
 \item{n_perm}{Number of permutations used.}
 }
 \description{
-Performs PERMANOVA (adonis2) on a distance matrix for overall group/time effects,
-and optionally conducts post-hoc pairwise or contrast tests (e.g., between each pair of groups, etc.).
-Supports stratified permutations for repeated measures.
+Performs PERMANOVA (adonis2) on a distance matrix for overall
+group/time effects, and optionally conducts post-hoc pairwise or contrast
+tests (e.g., between each pair of groups, etc.). Supports stratified
+permutations for repeated measures.
 }
 \details{
 Global PERMANOVA uses a model with main effects of \code{group_col} and
-\code{time_col} and their interaction (if both are provided and have >1 level).
+\code{time_col} and their interaction (if both are provided and have >1
+level).
 Samples with missing values in the constrained variables (group/time and,
 when used for stratification, subject) are dropped \emph{before} fitting the
 model, and the distance matrix is subset to the remaining samples so that

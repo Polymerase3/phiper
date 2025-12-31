@@ -55,12 +55,14 @@ points. Default is \code{FALSE} for distance input.}
 \item{...}{Additional arguments passed to \code{Rtsne::Rtsne()}.}
 }
 \value{
-A tibble of class \code{c("phip_tsne", "tbl_df", "tbl", "data.frame")}
+A tibble of class \code{c("phip_tsne", "tbl_df", "tbl",
+"data.frame")}
 with columns:
 \itemize{
 \item \code{sample_id}: Sample identifier from distance labels.
 \item \code{tSNE1}, \code{tSNE2}: First two t-SNE dimensions.
-\item \code{tSNE3}: Third dimension if \code{dims >= 3}, otherwise \code{NA}.
+\item \code{tSNE3}: Third dimension if \code{dims >= 3}, otherwise
+\code{NA}.
 \item Additional metadata columns as specified in \code{meta_cols}.
 }
 
@@ -138,12 +140,12 @@ d <- compute_distance(
 
 # Compute t-SNE embeddings
 tsne_res <- compute_tsne(
-  ps       = ps_small,
+  ps = ps_small,
   dist_obj = d,
-  dims     = 3L,
+  dims = 3L,
   perplexity = 15,
   meta_cols = c("subject_id", "timepoint"),
-  seed     = 42
+  seed = 42
 )
 
 # View results
