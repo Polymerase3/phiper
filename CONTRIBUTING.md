@@ -29,6 +29,15 @@ See our guide on [how to create a great issue](https://code-review.tidyverse.org
 
 *  For user-facing changes, add a bullet to the top of `NEWS.md` (i.e. just below the first header). Follow the style described in <https://style.tidyverse.org/news.html>.
 
+### Versioning (pre-1.0.0)
+
+We follow semver with pre-1.0.0 rules:
+
+*   **Breaking changes** (API changes or behavior changes that require user updates) => **minor** bump (e.g. `0.1.0` -> `0.2.0`).
+*   **Non-breaking changes** (features, fixes, refactors, docs) => **patch** bump (e.g. `0.2.3` -> `0.2.4`).
+
+Each PR should include the appropriate version bump in `DESCRIPTION` and a matching entry in `NEWS.md`.
+
 ### Code style
 
 *   New code should follow the tidyverse [style guide](https://style.tidyverse.org). 
