@@ -1770,6 +1770,7 @@ testthat::test_that("compute_distance: phip_data auto-detect and non-numeric val
 
 testthat::test_that("compute_distance: pivot_wider guard", {
   testthat::skip_if_not_installed("mockery")
+  testthat::skip_if_not_installed("dbplyr")
 
   dat <- data.frame(
     sample_id = c("s1", "s2"),
@@ -1777,8 +1778,8 @@ testthat::test_that("compute_distance: pivot_wider guard", {
     exist = c(1, 0)
   )
 
-  mockery::stub(compute_distance, "tidyr::pivot_wider", function(...) {
-    data.frame(not_sample_id = 1)
+  mockery::stub(compute_distance, "dbplyr::dbplyr_pivot_wider_spec", function(...) {
+    tibble::tibble(not_sample_id = 1)
   })
 
   testthat::expect_error(

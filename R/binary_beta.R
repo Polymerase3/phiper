@@ -196,16 +196,14 @@ compute_distance <- function(ps,
   # ----------------------------------------------------------------------------
   .ph_log_info("building pivot spec (sample_id x peptide_id).")
 
-  sample_vals <- dat |>
-    dplyr::distinct(sample_id) |>
+  id_levels <- dat |>
+    dplyr::distinct(sample_id, peptide_id) |>
     dplyr::collect()
 
-  peptide_vals <- dat |>
-    dplyr::distinct(peptide_id) |>
-    dplyr::collect()
+  id_levels[[value_col]] <- 0
 
   # basic sanity checks on collected ids
-  if (anyNA(sample_vals$sample_id) || anyNA(peptide_vals$peptide_id)) {
+  if (anyNA(id_levels$sample_id) || anyNA(id_levels$peptide_id)) {
     .ph_abort(
       "`ps` contains missing values in `sample_id` and/or
       `peptide_id`."
@@ -225,8 +223,8 @@ compute_distance <- function(ps,
   }
 
   pivot_spec <- tidyr::build_wider_spec(
-    data = tibble::tibble(sample_id = sample_vals$sample_id),
-    names_from = peptide_vals$peptide_id,
+    data = id_levels,
+    names_from = peptide_id,
     values_from = !!value_sym
   )
 
