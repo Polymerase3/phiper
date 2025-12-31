@@ -1,263 +1,224 @@
-# phiper
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
 
 <!-- badges: start -->
 
-[![Codecov test coverage](https://codecov.io/gh/Polymerase3/phiper/graph/badge.svg)](https://app.codecov.io/gh/Polymerase3/phiper) 
+[![Codecov test
+coverage](https://codecov.io/gh/Polymerase3/phiper/graph/badge.svg)](https://app.codecov.io/gh/Polymerase3/phiper)
 [![R-CMD-check](https://github.com/Polymerase3/phiper/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Polymerase3/phiper/actions/workflows/R-CMD-check.yaml)
-[![style](https://github.com/Polymerase3/phiper/actions/workflows/style.yaml/badge.svg)](https://github.com/Polymerase3/phiper/actions/workflows/style.yaml)
-[![document](https://github.com/Polymerase3/phiper/actions/workflows/document.yaml/badge.svg)](https://github.com/Polymerase3/phiper/actions/workflows/document.yaml)
+[![pkgcheck](https://github.com/Polymerase3/phiper/workflows/pkgcheck/badge.svg)](https://github.com/Polymerase3/phiper/actions?query=workflow%3Apkgcheck)
+[![Project Status:
+Active/Unstable](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+[![Lifecycle:
+experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 
 <!-- badges: end -->
 
+# phiper
+
+The `phiper` package provides a scalable, reproducible toolkit for
+validating and analyzing PhIP-Seq data in cross-sectional and
+longitudinal studies.
+
 ## Installation
 
-You can install the development version of phiper from [GitHub](https://github.com/) with:
+You can install the development version of `phiper` from GitHub with
+either `pak` or `devtools`:
 
 ``` r
 # install.packages("pak")
 pak::pak("Polymerase3/phiper")
 
+# or, using devtools:
 # install.packages("devtools")
 devtools::install_github("Polymerase3/phiper")
 ```
 
-## `phiper` Workflow
-
-`phiper` provides a clean, simple, and sustainable end-to-end pipeline - from raw CSVs to ready-to-analyze objects. The package supports two parallel import paths:
-
-1. **Standard workflow** (recommended)
-   - Input: **one** long-format, tidy CSV file.
-   - Import function: `phip_convert()` --> to be implemented
-
-2. **Legacy workflow** (maintained for backwards compatibility)
-   - Input: **three or four** separate CSV files (or a `config.yaml`).
-   - Import function: `phip_convert_legacy()`
-
-Both functions:
-
-  - **Validate** inputs with `validate_phip_data()` (ensuring required columns, data integrity, unique keys, and more).
-  - **Construct** the S3 object using `new_phip_data()` constructor.
-
-Optionally, users can:
-
-  - **Define pairwise comparisons** via `define_comparisons()` (to be implemented) or by supplying a comparison CSV.
-  - **Register custom peptide libraries** with `register_library()` (to be implemented).
-
-Once the `phip_data` object is created, you can:
-
-  - Run **cross-sectional** analyses (binary presence/absence, fold-change, raw counts).
-  - Run **longitudinal** analyses (same outcomes over time points).
-  - Explore data interactively with built-in plotting and summarization tools.
-
-Below is a flowchart illustrating the `phiper` workflow:
-
-![](man/figures/workflow_transparent_upscaled.png)
-
-## `phip_data` - one object to rule them all
-
-`phip_data` is the cornerstone of **phiper**.\
-It is an S3 class that bundles together every piece of information you need for a PhIP-Seq analysis - raw or processed readouts, experimental design, current peptide‐library annotations maintained by the Vogl Lab, and even the strategy (backend) that is used to keep the data on disk or in memory.\
-Because everything is stored in a single, well-validated object you can pipe it straight into downstream analyses, share it with collaborators, and reload it later without guessing which spreadsheet goes with which metadata file.
-
-------------------------------------------------------------------------
-
-### Anatomy of a `phip_data` object
-
-| slot | what it holds | details & tips |
-|----------------|---------------------------|-----------------------------|
-| **`data_long`** | *Tidy* counts, binary hits or fold_changes for every peptide x sample pair | Must follow the principles  Wickham’s “Tidy Data”: one observation per row and one variable per column. Behind the scenes you can choose three interchangeable backends:<br>• **`duckdb`** (default) - blazing-fast, zero‑config SQL engine that works entirely in a temporary file. Ideal for millions of rows.<br>• **`arrow`** - columnar storage; especially good when you plan to move the data between R and Python.<br>• **`memory`** - a plain `data.frame`; fine for ≤ 250 k rows where start‑up overhead matters more than throughput. |
-| **`comparisons`** | Named, two-way contrasts you intend to run | Each row describes one comparison (`group1` vs `group2` for a `variable`, e.g. a time‑point or phenotype). Constructors and helpers will land in a future release. |
-| **`backend`** | Single string (`"duckdb"`, `"arrow"`, `"memory"`) | You can switch backends with `switch_backend()` without touching the analysis code that follows. |
-| **`peptide_library`** | Reference table containing one row per `peptide_id` | Updated automatically when the lab publishes a new library; custom libraries can be registered with `register_library()` (coming soon). |
-| **`meta`** | Parsed metadata about `data_long` | Flags whether the data are longitudinal, which outcome columns are present, which extra columns were supplied, whether the peptide × sample grid is complete, etc. |
-
-------------------------------------------------------------------------
-
-### Validation - what the internal checker enforces
-
-When you create a `phip_data` object the helper **`validate_phip_data()`** is called automatically.\
-It aborts on hard errors, warns on recoverable issues, and records a few diagnostics in `meta`.\
-Below is the rule book distilled from the source code:
-
-| # | rule | status |
-|---|------|:-----:|
-| **1. Mandatory columns** |• *Longitudinal* data (`subject_id` **and** `timepoint`) **must** contain `subject_id`, `timepoint`, `sample_id`, `peptide_id`.<br>• *Cross‑sectional* data **must** contain `subject_id`, `peptide_id`. | ❌ |
-| **2. Outcome columns**    | At least one of the following must exist: `present` (binary), `fold_change`, or both `counts_control` **and** `counts_hit`. | ❌ |
-| **3. Reserved-name collisions** | Extra (user‑supplied) columns listed in `meta$extra_cols` may **not** reuse reserved names (`subject_id`, `sample_id`, `timepoint`, `peptide_id`, `present`, `fold_change`, `counts_control`, `counts_hit`). | ❌ |
-| **4. Atomic columns only** | No list-columns; every column must be atomic. | ❌ |
-| **5. Uniqueness** | Each key combination must be unique:<br>• Longitudinal → (`subject_id`, `timepoint`, `peptide_id`) maps to exactly one `sample_id`.<br>• Cross‑sectional → (`subject_id`, `peptide_id`) appears at most once. | ❌ |
-| **6. Value ranges** | • `present` ∈ {0, 1, NA}.<br>• `fold_change` must be finite (no `Inf`, `‑Inf`, `NA`).<br>• `counts_control` and `counts_hit` must be ≥ 0. | ❌ |
-| **7. Sparsity checks** | • Warn if `present` is \> 50 % `NA`.<br>• Warn if both count columns are 0 in \> 50 % of rows. | ⚠️ |
-| **8. Peptide-ID coverage** | Every `peptide_id` in `data_long` should exist in `peptide_library`; missing IDs trigger a warning (first missing ID mentioned). | ⚠️ |
-| **9. Comparisons table** | • Only columns allowed: `comparison`, `group1`, `group2`, `variable`.<br>• `group1`/`group2` labels must be found in the data (either in `timepoint` or `group`, depending on layout). | ❌ |
-| **10. Complete grid** |Expected rows = *n* peptides × *n* samples.<br>If rows are missing the function warns and, when `auto_expand = TRUE` (default), automatically fills the gaps with `NA`s and sets `meta$full_cross = FALSE`. | ⚠️ |
-
-> **Tip:** you rarely have to call `validate_phip_data()` yourself; constructors such as `new_phip_data()` do it for you and will refuse to return an invalid object.
-
-------------------------------------------------------------------------
-
-## So how does my data have to look like?
-
-### 1. Presence/Absence matrix (`exist.csv`)
-You need **at least two** CSVs for the legacy workflow. The first is a peptide × sample table of binary flags (0/1).
-
-- **First column**: `peptide_id` (one row per peptide)  
-- **Subsequent columns**: one column **per sample** (or sample × timepoint in longitudinal setups)  
-- **Cell values**: 0 = peptide not detected; 1 = peptide detected  
-
-Below is an example subset (first 6 peptides × first 6 samples):
-
-| peptide_id | sample_1 | sample_2 | sample_3 | sample_4 | sample_5 | sample_6 |
-|------------|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|
-| pep_1      |     1    |     0    |     0    |     1    |     1    |     0    |
-| pep_2      |     0    |     0    |     0    |     1    |     0    |     0    |
-| pep_3      |     0    |     0    |     0    |     0    |     1    |     1    |
-| pep_4      |     0    |     1    |     0    |     1    |     1    |     0    |
-| pep_5      |     0    |     0    |     0    |     0    |     0    |     1    |
-| pep_6      |     1    |     1    |     1    |     0    |     0    |     0    |
-
-> **Note:** Only binary presence/absence data are supported in the legacy import. Future releases will support fold-changes and raw counts.
-
----
-
-### 2. Sample metadata (`metadata.csv`)
-The second CSV contains metadata about each sample.
-
-- **First column**: `sample_id` (must exactly match the sample columns in your presence/absence matrix)  
-- **Additional columns**: any extra descriptors you wish to attach (e.g. `age`, `sex`, `batch`)  
-
-If you want these extra columns in your final `phip_data` object, pass their names to the `extra_cols` argument in `phip_convert_legacy()`.
-
-Example (first 6 samples):
-
-| sample_id | mother_P12 | mother_P28 | mother_B | Sex | Age |
-|-----------|:----------:|:----------:|:--------:|:---:|:---:|
-| sample_1  |     0      |     0      |    1     |  0  | 61  |
-| sample_2  |     1      |     0      |    0     |  1  | 62  |
-| sample_3  |     0      |     1      |    0     |  0  | 33  |
-| sample_4  |     1      |     0      |    0     |  0  | 24  |
-| sample_5  |     0      |     1      |    0     |  0  | 46  |
-| sample_6  |     1      |     0      |    0     |  0  | 48  |
-
-> **Tip:** Consistent `sample_id` values are critical. Any mismatch will trigger a validation error.
-
----
-
-### 3. Comparisons definition (optional)
-To define pairwise contrasts, provide a third CSV or call `define_comparisons()`.
-
-- The file uses a fixed three-variable structure with column names: `comparison`, `group1`, and `group2`.  
-- Only **one** variable (e.g. treatment status, timepoint) can be compared at a time.  
-- In the legacy workflow, group membership is specified via dummy-coding in your `metadata.csv`; each sample must belong to exactly one group so the groups are mutually exclusive.  
-
-Example (`comparisons.csv`):
-
-| comparison                    | group1       | group2       |
-|:-----------------------------:|:------------:|:------------:|
-| mother_P12_vs_mother_P28      | mother_P12   | mother_P28   |
-| mother_P28_vs_mother_B        | mother_P28   | mother_B     |
-| mother_P12_vs_mother_B        | mother_P12   | mother_B     |
-
-> **Remember:** Group definitions must be mutually exclusive and cover all samples you wish to compare, and must be specified in your metadata file via dummy-coded columns.  
-
-
-### 4. Longitudinal sample-to-individual mapping table (optional)
-
-When your data are longitudinal, you must supply a separate **sample2ind** CSV that maps each individual (subject) to their samples at each timepoint. Format it as a Markdown table:
-
-| ind_id | mother_B | mother_P12 | mother_P28 |
-|--------|----------|------------|------------|
-| ind_1  | sample_1 | sample_2   | sample_3   |
-| ind_2  | NA       | sample_4   | sample_5   |
-| ind_3  | NA       | sample_6   | NA         |
-| ind_4  | sample_9 | sample_8   | sample_7   |
-| ind_5  | sample_12| sample_10  | sample_11  |
-| ind_6  | sample_13| sample_14  | NA         |
-| ind_7  | NA       | sample_15  | sample_16  |
-| ind_8  | sample_19| sample_17  | sample_18  |
-
-## FAQ
-
-### *What are the **mandatory** columns in the legacy workflow?*
-| Scenario            | Required columns                                                             |
-|---------------------|------------------------------------------------------------------------------|
-| **Cross‑sectional** | `subject_id`, `peptide_id`                                                   |
-| **Longitudinal**    | `subject_id`, `sample_id`, `timepoint`, `peptide_id`                         |
-
-Outcome columns (`present`, `fold_change`, `counts_control`, `counts_hit`) are optional
-but at least one of them must be present.
-
-### *Which backend should I pick?*
-| Backend   | Best for                                   | Limitations                                   |
-|-----------|--------------------------------------------|-----------------------------------------------|
-| `duckdb`  | \> 1 M rows; fast SQL joins, aggregations | File lives on disk (tempdir by default)       |
-| `arrow`   | Sharing with Python / Apache ecosystem     | Cannot use SQL directly in R console          |
-| `memory`  | Small explorations, Shiny prototypes       | RAM‑bound, slower joins                       |
-
-Switch any time with `switch_backend(pd, "duckdb")`, etc.
-
-### *Where is the DuckDB file stored? Can I move it?*
-By default in a temporary directory. Use  `switch_backend(pd, "duckdb", file = "mypath/phip.sqlite")`  (to be implemented) to place or relocate the database.
-
-### *Why insist on a long/tidy layout?** 
-Because it unlocks the tidyverse grammar (`dplyr`, `ggplot2`, `tidyr`, …) and lets you swap storage engines without rewriting analysis code.
-
-### **Can I mix outcome types?**  
-Yes, e.g. store raw counts *and* a computed `present` flag. The validator checks each column independently.
-
-
----
-
-## Validation Errors
-
-### *“Missing mandatory columns”*
-A required column is absent or misspelled.
-
-### *“Duplicate keys detected”*
-Each `(subject_id, peptide_id [, timepoint])` must be unique. Check for accidental replicates (e.g. technical duplicates) and de‑duplicate or aggregate.
-
-### *“Unknown peptide_id”*
-Your data reference peptides not present in the current Vogl Lab library. Either update the library (`update_peptide_library()`) or register a custom one with `register_library(csv_path)`.
-
----
-
-## Comparisons & Experimental Design
-
-### *How do I define case-control contrasts?*
-Create a data frame with columns `comparison`, `group1`, `group2`, `variable`
-and pass it to `define_comparisons()`, or supply a CSV to
-`phip_convert(..., comparisons_csv = "comparisons.csv")`.
-
-### *I get “groups not mutually exclusive.” What does it mean?*
-Every sample must belong to **exactly one** of `group1` or `group2`
-for the chosen `variable`. Check your metadata dummy variables.
-
----
-
-## Longitudinal Specifics
-
-### *Do I always need a `sample2ind` table?*
-Only when `subject_id` ≠ `sample_id`. If each sample row already carries a unique
-subject/timepoint combination, `phiper` derives the mapping automatically.
-
-### *Uneven follow‑up: missing time‑point rows*
-Keep `auto_expand = TRUE`. Gaps are filled with `NA`,
-and `meta$full_cross` is set to `FALSE` so downstream models understand the grid is incomplete.
-
----
-
-## Package Lifecycle & Support
-
-### *Is phiper actively maintained?*
-Yes, under the Vogl Lab umbrella. Minor releases roughly monthly, patches as needed.
-Watch the GitHub repo for changelogs.
-
-### *How do I cite phiper?*
-Call `citation("phiper")` from R to get the latest BibTeX entry.
-
-### *Where do I report a bug?*
-Open a GitHub issue with a **reprex** (`reprex::reprex()`).  For sensitive data email the maintainer.
-
----
-
-If you hit a limitation or have ideas for a new backend, open an issue on GitHub - PRs are warmly welcome.  
+## Usage
+
+For testing, exploration, and minimal examples we provide the
+`phip_mixture` dataset. It is a simulated PhIP-Seq–like antibody
+repertoire for two groups (A, B) and two time points (T1, T2), with
+per-subject, per-peptide presence/absence (`exist`) plus corresponding
+read counts and fold changes. The dataset is generated from a simple
+mixture of rare and common peptide prevalences with Poisson-distributed
+counts and is intended solely for testing and illustrative examples,
+without any biological interpretation.
+
+### Importing the data
+
+Because the data are relatively large, they are stored in a `.parquet`
+file. You can obtain the file path with:
+
+``` r
+library(phiper)
+library(dplyr)
+library(ggplot2)
+
+phip_path <- phip_example_path()
+```
+
+You can then import the data with:
+
+``` r
+ps <- phip_convert(
+  data_long_path    = phip_path,
+  backend           = "duckdb",
+  peptide_library   = TRUE,
+  subject_id        = "subject_id",
+  peptide_id        = "peptide_id",
+  sample_id         = "sample_id",
+  exist             = "exist",
+  timepoint         = "timepoint_factor",
+  fold_change       = "fold_change",
+  materialise_table = TRUE,
+  auto_expand       = FALSE,
+  n_cores           = 5
+)
+```
+
+You can inspect the data:
+
+``` r
+ps$data_long %>%
+  head(5) %>%
+  collect()
+#> # A tibble: 5 × 9
+#>   sample_id subject_id group time  peptide_id exist counts_control counts_hits
+#>   <chr>     <chr>      <chr> <chr> <chr>      <int>          <int>       <int>
+#> 1 A_T1_1    1          A     T1    10003          1              5        1031
+#> 2 A_T1_1    1          A     T1    10017          1             37         494
+#> 3 A_T1_1    1          A     T1    10023          1             11        3015
+#> 4 A_T1_1    1          A     T1    10062          1              0        3499
+#> 5 B_T1_1    1          B     T1    10087          1              1        1245
+#> # ℹ 1 more variable: fold_change <dbl>
+```
+
+You can also inspect the current version of the peptide library
+maintained by the Vogl lab:
+
+``` r
+get_peptide_library(ps) %>%
+  head(5) %>%
+  collect()
+#> # A tibble: 5 × 30
+#>   peptide_id aa_seq    pos len_seq Fullname Description is_IEDB_or_cntrl is_auto
+#>   <chr>      <chr>   <dbl>   <dbl> <chr>    <chr>       <lgl>            <lgl>  
+#> 1 agilent_1  AAAAAA…  2728    2997 Chromod… Chromodoma… TRUE             TRUE   
+#> 2 agilent_2  AAAAYA…    88     445 integra… Uncharacte… TRUE             FALSE  
+#> 3 agilent_3  AAADRS…   264     548 hypothe… Possible c… TRUE             FALSE  
+#> 4 agilent_4  AAAIAW…  1276    3432 envelop… Genome pol… TRUE             FALSE  
+#> 5 agilent_5  AAALRK…  1188    1935 Myosin-… Myosin-7    TRUE             FALSE  
+#> # ℹ 22 more variables: is_infect <lgl>, is_EBV <lgl>, is_toxin <lgl>,
+#> #   is_PNP <lgl>, is_EM <lgl>, is_MPA <lgl>, is_patho <lgl>, is_probio <lgl>,
+#> #   is_IgA <lgl>, is_flagellum <lgl>, signalp6_slow <lgl>,
+#> #   is_topgraph_new <lgl>, is_allergens <lgl>, domain <chr>, kingdom <chr>,
+#> #   phylum <chr>, class <chr>, order <chr>, family <chr>, genus <chr>,
+#> #   species <chr>, common <chr>
+```
+
+### Plotting peptide counts
+
+You can easily plot peptide counts using the `plot_enrichment_counts()`
+function:
+
+``` r
+plot_enrichment_counts(
+  ps,
+  group_cols        = c("group", "time"),
+  group_interaction = TRUE,
+  interaction_only  = TRUE,
+  annotation_size   = 3
+)
+#> [15:47:57] INFO  Plotting enrichment counts (<phip_data>)
+#>                  -> group_cols: 'group', 'time'
+#> [15:47:57] INFO  building enrichment count plot
+#>                  -> grouping variable: '..phip_interaction..'
+#> [15:47:57] OK    plot built
+#> [15:47:57] OK    building enrichment count plot - done
+#>                  -> elapsed: 0.151s
+#> [15:47:57] OK    Plotting enrichment counts (<phip_data>) - done
+#>                  -> elapsed: 0.155s
+```
+
+<img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" />
+
+### Alpha diversity
+
+You can also compute and visualize alpha diversity for different groups
+or subgroups of interest. `phiper` is organized into analysis modules:
+for each module you typically get a computation function (for example,
+`compute_alpha_diversity()`) and one or more plotting functions (for
+example, `plot_alpha_diversity()`). This pattern repeats across the
+analysis modules.
+
+For alpha diversity specifically:
+
+``` r
+alpha <- compute_alpha_diversity(
+  ps,
+  group_cols        = c("group", "time"),
+  carry_cols        = "subject_id",
+  group_interaction = TRUE,
+  interaction_only  = TRUE
+)
+#> [15:47:58] INFO  Peptide library attached on main connection
+#>                    - available columns: peptide_id, aa_seq, pos, len_seq,
+#>                      Fullname, Description, is_IEDB_or_cntrl, is_auto …(+22)
+#> [15:47:58] INFO  Computing alpha diversity (<phip_data>)
+#>                  -> group_cols: 'group', 'time'; ranks: 'peptide_id'
+#> [15:47:58] OK    Computing alpha diversity (<phip_data>) - done
+#>                  -> elapsed: 0.116s
+
+head(alpha)
+#> $`group * time`
+#> # A tibble: 80 × 7
+#>    rank       sample_id phip_interaction subject_id richness simpson_diversity
+#>    <chr>      <chr>     <chr>            <chr>         <int>             <dbl>
+#>  1 peptide_id B_T1_13   B * T1           13              141             0.993
+#>  2 peptide_id A_T2_13   A * T2           13              333             0.997
+#>  3 peptide_id B_T2_13   B * T2           13              282             0.996
+#>  4 peptide_id B_T2_22   B * T2           22              317             0.997
+#>  5 peptide_id B_T2_23   B * T2           23              303             0.997
+#>  6 peptide_id B_T1_3    B * T1           3               174             0.994
+#>  7 peptide_id B_T2_5    B * T2           5               283             0.996
+#>  8 peptide_id A_T1_6    A * T1           6               187             0.995
+#>  9 peptide_id B_T1_7    B * T1           7               169             0.994
+#> 10 peptide_id A_T2_8    A * T2           8               310             0.997
+#> # ℹ 70 more rows
+#> # ℹ 1 more variable: shannon_diversity <dbl>
+```
+
+You can then plot the results:
+
+``` r
+plot_alpha_diversity(
+  alpha,
+  metric    = "richness",
+  group_col = "phip_interaction"
+) +
+  ylim(100, 400) +
+  theme(
+    axis.text.x = element_text(
+      angle = 45,
+      vjust = 1,
+      hjust = 1
+    )
+  )
+#> [15:47:58] INFO  plotting alpha diversity (precomputed)
+#>                  -> metric: richness
+#> [15:47:58] OK    plotting alpha diversity (precomputed) - done
+#>                  -> elapsed: 0.073s
+```
+
+<img src="man/figures/README-unnamed-chunk-9-1.png" width="100%" />
+
+## Contributing
+
+Bug reports, feature requests, and questions are welcome. Please open an
+issue on the GitHub tracker:
+
+- <https://github.com/Polymerase3/phiper/issues>
+
+If you’d like to contribute, please read
+[CONTRIBUTING.md](CONTRIBUTING.md).
