@@ -47,8 +47,9 @@ jobs:
             exit 1
           fi
 
-          first_header="$(awk 'BEGIN{FS=" "}; /^# / {print $2; exit}' NEWS.md || true)"
-          if [ "$first_header" != "$head_ver" ]; then
+
+          first_ver="$(awk 'BEGIN{FS=" "}; /^# / {print $3; exit}' NEWS.md || true)"
+          if [ "$first_ver" != "$head_ver" ]; then
             echo "ERROR: NEWS.md first header should match version $head_ver."
             exit 1
           fi
