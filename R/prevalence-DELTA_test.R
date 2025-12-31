@@ -232,22 +232,12 @@
 #' # Load example PhIP-Seq data shipped with the package
 #' pd <- phip_load_example_data()
 #'
-#' # Minimal global shift test across groups (unpaired)
-#' set.seed(1)
-#' res <- compute_delta(
-#'   pd,
-#'   rank_cols = "peptide_id",
-#'   group_cols = "group",
-#'   B_permutations = 100
-#' )
-#' res
-#'
 #' # Small unpaired subset with a mock peptide library
-#' pd_filt <- pd %>%
+#' pd_filt <- pd |>
 #'   dplyr::filter(
 #'     peptide_id %in% c("16627", "5243", "24799", "16196", "18003"),
 #'     timepoint == "T1"
-#'   ) %>%
+#'   ) |>
 #'   dplyr::collect()
 #'
 #' mock_peplib <- data.frame(
@@ -538,7 +528,7 @@ compute_delta <- function(
         next
       } else {
         keep_vals <- as.character(vals)
-        rank_map_long <- rank_map_long %>%
+        rank_map_long <- rank_map_long |>
           dplyr::filter(!(rank == rk) | feature %in% keep_vals)
       }
     }
@@ -548,16 +538,19 @@ compute_delta <- function(
   rf_counts <- rank_map_long |>
     dplyr::count(rank, feature, name = "n_peptides")
 
-  # (c) levels per group_col from subjects_meta
-  lvl <- subjects_meta |>
+  # (c) levels per group_col across all rows (not per-subject)
+  # Using subjects_meta can drop within-subject levels (e.g., timepoints),
+  # which yields zero contrasts and an empty result.
+  lvl <- df_long |>
     tidyr::pivot_longer(tidyselect::all_of(group_cols),
       names_to = "group_col", values_to = "group_value"
     ) |>
-    dplyr::distinct(group_col, group_value)
+    dplyr::distinct(group_col, group_value) |>
+    dplyr::collect()
 
   # (d) all ordered pairs per group_col (no many-to-many warning)
-  all_pairs <- lvl %>%
-    dplyr::group_by(group_col) %>%
+  all_pairs <- lvl |>
+    dplyr::group_by(group_col) |>
     dplyr::reframe({
       vals <- sort(unique(group_value))
       if (length(vals) >= 2L) {
@@ -1088,17 +1081,17 @@ compute_delta <- function(
   }
 
   # Ensure numeric types we rely on
-  res <- res %>%
+  res <- res |>
     dplyr::mutate(
       p_perm = as.numeric(p_perm),
       m_eff  = as.numeric(m_eff)
     )
 
   # ---- p.adjust + final select/arrange ---------------------------------------
-  res <- res %>%
-    dplyr::group_by(rank) %>%
-    dplyr::mutate(p_adj_rank = p.adjust(p_perm, method = "BH")) %>%
-    dplyr::ungroup() %>%
+  res <- res |>
+    dplyr::group_by(rank) |>
+    dplyr::mutate(p_adj_rank = p.adjust(p_perm, method = "BH")) |>
+    dplyr::ungroup() |>
     dplyr::mutate(
       category_rank_bh = dplyr::case_when(
         !is.na(p_adj_rank) & p_adj_rank < 0.05 ~ "significant (BH, per rank)",
@@ -1106,7 +1099,7 @@ compute_delta <- function(
         TRUE ~ "not significant"
       ),
       n_subjects_paired = dplyr::coalesce(.data$n_subjects_paired, NA_integer_)
-    ) %>%
+    ) |>
     dplyr::select(
       rank, feature, group_col, group1, group2, design,
       n_subjects_paired, n_peptides_used, m_eff,
@@ -1116,7 +1109,7 @@ compute_delta <- function(
       dplyr::any_of(paste0("fold_change_", fold_change)),
       dplyr::any_of(paste0("cross_prev_", cross_prev)),
       category_rank_bh
-    ) %>%
+    ) |>
     dplyr::arrange(rank, feature, group_col, group1, group2)
 
   return(res)
