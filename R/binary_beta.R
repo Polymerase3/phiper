@@ -192,17 +192,20 @@ compute_distance <- function(ps,
   value_sym <- rlang::sym(value_col)
 
   # ----------------------------------------------------------------------------
-  # 2) collect only needed columns and pivot in r
+  # 2) build pivot spec and pivot in dbplyr
   # ----------------------------------------------------------------------------
-  .ph_log_info("collecting long table (sample_id, peptide_id, value).")
+  .ph_log_info("building pivot spec (sample_id x peptide_id).")
 
-  dat_small <- dat |>
-    dplyr::select(sample_id, peptide_id, !!value_sym) |>
+  sample_vals <- dat |>
+    dplyr::distinct(sample_id) |>
     dplyr::collect()
 
-  # basic sanity checks on collected data
-  # when ps is <phip_data>, its already validated
-  if (anyNA(dat_small$sample_id) || anyNA(dat_small$peptide_id)) {
+  peptide_vals <- dat |>
+    dplyr::distinct(peptide_id) |>
+    dplyr::collect()
+
+  # basic sanity checks on collected ids
+  if (anyNA(sample_vals$sample_id) || anyNA(peptide_vals$peptide_id)) {
     .ph_abort(
       "`ps` contains missing values in `sample_id` and/or
       `peptide_id`."
@@ -210,34 +213,42 @@ compute_distance <- function(ps,
   }
 
   # duplicates will break pivot_wider (or create list-cols); require uniqueness
-  if (anyDuplicated(dat_small[, c("sample_id", "peptide_id")]) > 0L) {
+  dup_check <- dat |>
+    dplyr::count(sample_id, peptide_id, name = "n") |>
+    dplyr::filter(.data$n > 1L) |>
+    dplyr::collect()
+
+  if (nrow(dup_check) > 0L) {
     .ph_abort(
       "found duplicated (sample_id, peptide_id) pairs in `ps`."
     )
   }
 
-  # replace nas with 0 in abundance column
-  dat_small[[value_col]][is.na(dat_small[[value_col]])] <- 0
+  pivot_spec <- tidyr::build_wider_spec(
+    data = tibble::tibble(sample_id = sample_vals$sample_id),
+    names_from = peptide_vals$peptide_id,
+    values_from = !!value_sym
+  )
 
-  # ensure abundance is numeric
-  if (!is.numeric(dat_small[[value_col]])) {
-    .ph_abort(
-      paste0("`", value_col, "` must be numeric after collect().")
-    )
-  }
+  .ph_log_info("pivoting to wide abundance matrix in db.")
 
-  .ph_log_info("pivoting to wide abundance matrix in r.")
-
-  wide_df <- dat_small |>
-    tidyr::pivot_wider(
-      id_cols     = sample_id,
-      names_from  = peptide_id,
-      values_from = !!value_sym,
-      values_fill = 0
-    )
+  wide_df <- dbplyr::dbplyr_pivot_wider_spec(
+    data = dat,
+    spec = pivot_spec,
+    id_cols = sample_id,
+    values_fill = 0
+  ) |>
+    dplyr::collect()
 
   if (!"sample_id" %in% names(wide_df)) {
     .ph_abort("failed to construct wide abundance table (no `sample_id`).")
+  }
+
+  value_cols <- setdiff(names(wide_df), "sample_id")
+  if (!all(vapply(wide_df[value_cols], is.numeric, logical(1)))) {
+    .ph_abort(
+      paste0("`", value_col, "` must be numeric after collect().")
+    )
   }
 
   mat <- wide_df |>
