@@ -59,7 +59,7 @@
 #' ps_small <- ps |>
 #'   dplyr::filter(
 #'     peptide_id %in% keep_pep,
-#'     !!rlang::sym(tp_col) == "T1"
+#'     timepoint == "T1"
 #'   ) |>
 #'   dplyr::collect()
 #'
@@ -397,7 +397,7 @@ deltaplot <- function(
 #' # small subset for speed
 #' keep_pep <- c("16627", "5243", "24799", "16196", "18003")
 #' dat_cols <- dplyr::tbl_vars(ps$data_long)
-#' tp_col <- "time"
+#' tp_col <- "timepoint"
 #'
 #' ps_small <- ps |>
 #'   dplyr::filter(
@@ -1687,7 +1687,7 @@ forestplot_interactive <- function(
 #'
 #' # small subset for speed
 #' keep_pep <- c("16627", "5243", "24799", "16196", "18003")
-#' tp_col <- "time"
+#' tp_col <- "timepoint"
 #'
 #' ps_small <- ps |>
 #'   dplyr::filter(
@@ -1954,7 +1954,7 @@ ecdf_plot <- function(
 #'
 #' # small subset for speed
 #' keep_pep <- c("16627", "5243", "24799", "16196", "18003")
-#' tp_col <- "time"
+#' tp_col <- "timepoint"
 #'
 #' ps_small <- ps |>
 #'   dplyr::filter(
