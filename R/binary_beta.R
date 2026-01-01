@@ -326,23 +326,40 @@ compute_distance <- function(ps,
     "binary", "maximum", "cosine"
   )
 
+  veg_methods <- c(
+    "manhattan", "euclidean", "canberra", "clark", "bray", "kulczynski",
+    "jaccard", "gower", "altgower", "morisita", "horn", "mountford", "raup",
+    "binomial", "chao", "cao", "mahalanobis", "chisq", "chord", "hellinger",
+    "aitchison", "robust.aitchison"
+  )
+
   use_pd <- dist_method %in% pd_methods
+  is_veg_method <- !is.na(pmatch(dist_method, veg_methods))
 
-  if (use_pd) {
-    if (!rlang::is_installed("parallelDist")) {
-      .ph_abort(
-        paste0(
-          "`distance = \"", distance, "\"` requires the suggested package
-        'parallelDist'. ",
-          "Please install 'parallelDist' or choose a vegan::vegdist() method."
-        )
-      )
-    }
-
+  if (use_pd && rlang::is_installed("parallelDist")) {
     dist_obj <- parallelDist::parDist(
       norm_mat,
       method  = dist_method,
       threads = n_threads
+    )
+  } else if (is_veg_method) {
+    if (use_pd) {
+      .ph_log_info(
+        paste0(
+          "parallelDist not installed; using vegan::vegdist for method ",
+          dist_method,
+          "."
+        )
+      )
+    }
+    dist_obj <- vegan::vegdist(norm_mat, method = dist_method)
+  } else if (use_pd) {
+    .ph_abort(
+      paste0(
+        "`distance = \"", distance, "\"` requires the suggested package ",
+        "'parallelDist'. Please install 'parallelDist' or choose a ",
+        "vegan::vegdist() method."
+      )
     )
   } else {
     dist_obj <- vegan::vegdist(norm_mat, method = dist_method)
