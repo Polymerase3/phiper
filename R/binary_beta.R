@@ -394,7 +394,7 @@ compute_distance <- function(ps,
 #'   top \code{top_features} features (by absolute association) for each
 #'   returned axis. Must be > 0.
 #' @param feature_assoc character scalar. Type of feature-axis association to
-#'   return. \code{"wa"} returns weighted-average feature scores (centroid of
+#'   return. \code{"weighted_average"} returns weighted-average feature scores (centroid of
 #'   sample scores weighted by feature abundance). \code{"correlation"} returns
 #'   feature-axis correlations. \code{"regression"} returns regression slopes
 #'   for axis scores on feature abundance. \code{"none"} skips feature
@@ -427,7 +427,7 @@ compute_distance <- function(ps,
 #' correction is applied via \code{vegan::wcmdscale(add = ...)}.
 #'
 #' Feature associations are post-hoc summaries of how features relate to PCoA
-#' axes. Weighted-average scores (\code{feature_assoc = "wa"}) compute
+#' axes. Weighted-average scores (\code{feature_assoc = "weighted_average"}) compute
 #' \code{t(X) %*% U / colSums(X)}, where \code{X} is the abundance matrix and
 #' \code{U} are the sample coordinates. Correlation and regression associations
 #' are computed between feature abundances and axis scores and are not "true"
@@ -472,7 +472,7 @@ compute_pcoa <- function(dist_obj,
                          n_axes = 5L,
                          top_features = 30L,
                          feature_assoc = c(
-                           "wa", "correlation",
+                           "weighted_average", "correlation",
                            "regression", "none"
                          )) {
   # ----------------------------------------------------------------------------
@@ -676,7 +676,7 @@ compute_pcoa <- function(dist_obj,
         U <- coords[common_ids, ax_idx, drop = FALSE]
         Xsub <- X[common_ids, , drop = FALSE]
 
-        if (identical(feature_assoc, "wa")) {
+        if (identical(feature_assoc, "weighted_average")) {
           w <- colSums(Xsub, na.rm = TRUE)
           keep_feats <- which(w > 0)
           if (length(keep_feats) > 0L) {
@@ -784,7 +784,7 @@ compute_pcoa <- function(dist_obj,
 #' @param permutations Integer scalar. Number of permutations for per-term
 #'   permutation tests via \code{vegan::anova.cca(by = "term")}. Default is 999.
 #' @param feature_assoc character scalar. Type of feature-axis association to
-#'   return. \code{"wa"} returns weighted-average feature scores (centroid of
+#'   return. \code{"weighted_average"} returns weighted-average feature scores (centroid of
 #'   sample scores weighted by feature abundance). \code{"correlation"} returns
 #'   feature-axis correlations. \code{"regression"} returns regression slopes
 #'   for axis scores on feature abundance. \code{"none"} skips feature
@@ -868,7 +868,7 @@ compute_capscale <- function(dist_obj,
                              top_features = 30L,
                              permutations = 999L,
                              feature_assoc = c(
-                               "wa", "correlation",
+                               "weighted_average", "correlation",
                                "regression", "none"
                              )) {
   # ----------------------------------------------------------------------------
@@ -1179,7 +1179,7 @@ compute_capscale <- function(dist_obj,
           U <- pts[common_ids, ax_idx, drop = FALSE]
           Xsub <- X_sub[common_ids, , drop = FALSE]
 
-          if (identical(feature_assoc, "wa")) {
+          if (identical(feature_assoc, "weighted_average")) {
             w <- colSums(Xsub, na.rm = TRUE)
             keep_feats <- which(w > 0)
             if (length(keep_feats) > 0L) {
