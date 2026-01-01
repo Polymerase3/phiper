@@ -7,9 +7,9 @@
 #' The normalized abundance matrix used for distance calculation is attached
 #' to the returned \code{dist} object as attribute \code{"abundances"}.
 #'
-#' Note: this function collects \code{ps$data_long} into memory and pivots to a
-#' wide matrix in R. This can be large for big cohorts and/or large peptide
-#' sets.
+#' Note: this function pivots to a wide matrix in the database (via dbplyr)
+#' and then collects the result into memory. This can be large for big cohorts
+#' and/or large peptide sets.
 #'
 #' @param ps input data. either:
 #'   \itemize{
