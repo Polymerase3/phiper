@@ -124,6 +124,7 @@ compute_distance <- function(ps,
                              ),
                              distance = "bray",
                              n_threads = 1L) {
+
   # ----------------------------------------------------------------------------
   # input validation (chk)
   # ----------------------------------------------------------------------------
@@ -267,36 +268,40 @@ compute_distance <- function(ps,
     )
   )
 
-  # ---------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
   # 3) normalization
-  # ---------------------------------------------------------------------------
-  if (identical(method_normalization, "auto")) {
-    vals <- mat[!is.na(mat)]
-    is_binary_data <- length(vals) > 0L && all(vals == 0 | vals == 1)
-    method_normalization <- if (is_binary_data) "none" else "relative"
-    .ph_log_info(
-      paste0("auto normalization selected -> using ", method_normalization)
+  # ----------------------------------------------------------------------------
+  normalize_abundance <- function(mat, method_normalization) {
+    if (identical(method_normalization, "auto")) {
+      vals <- mat[!is.na(mat)]
+      is_binary_data <- length(vals) > 0L && all(vals == 0 | vals == 1)
+      method_normalization <- if (is_binary_data) "none" else "relative"
+      .ph_log_info(
+        paste0("auto normalization selected -> using ", method_normalization)
+      )
+    }
+
+    switch(method_normalization,
+           "none" = mat,
+           "relative" = {
+             rs <- rowSums(mat, na.rm = TRUE)
+             rs[rs == 0] <- 1
+             mat / rs
+           },
+           "hellinger" = {
+             rs <- rowSums(mat, na.rm = TRUE)
+             rs[rs == 0] <- 1
+             sqrt(mat / rs)
+           },
+           "log" = log1p(mat)
     )
   }
 
-  norm_mat <- switch(method_normalization,
-    "none" = mat,
-    "relative" = {
-      rs <- rowSums(mat, na.rm = TRUE)
-      rs[rs == 0] <- 1
-      mat / rs
-    },
-    "hellinger" = {
-      rs <- rowSums(mat, na.rm = TRUE)
-      rs[rs == 0] <- 1
-      sqrt(mat / rs)
-    },
-    "log" = log1p(mat)
-  )
+  norm_mat <- normalize_abundance(mat, method_normalization)
 
-  # ---------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
   # 4) distance computation
-  # ---------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
   if (dist_method == "chebyshev") dist_method <- "maximum"
 
   .ph_log_info(
