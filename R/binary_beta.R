@@ -308,64 +308,78 @@ compute_distance <- function(ps,
   # ----------------------------------------------------------------------------
   # 4) distance computation
   # ----------------------------------------------------------------------------
-  if (dist_method == "chebyshev") {
-    .ph_log_info(
-      "Distance method 'chebyshev' mapped to 'maximum' for parallelDist."
-    )
-    dist_method <- "maximum"
-  }
-
-  .ph_log_info(
-    paste0("computing distance: ", dist_method)
-  )
-
-  dist_obj <- NULL
-
-  pd_methods <- c(
-    "bray", "euclidean", "minkowski", "manhattan", "canberra",
-    "binary", "maximum", "cosine"
-  )
-
-  veg_methods <- c(
-    "manhattan", "euclidean", "canberra", "clark", "bray", "kulczynski",
-    "jaccard", "gower", "altgower", "morisita", "horn", "mountford", "raup",
-    "binomial", "chao", "cao", "mahalanobis", "chisq", "chord", "hellinger",
-    "aitchison", "robust.aitchison"
-  )
-
-  use_pd <- dist_method %in% pd_methods
-  is_veg_method <- !is.na(pmatch(dist_method, veg_methods))
-
-  if (use_pd && rlang::is_installed("parallelDist")) {
-    dist_obj <- parallelDist::parDist(
-      norm_mat,
-      method  = dist_method,
-      threads = n_threads
-    )
-  } else if (is_veg_method) {
-    if (use_pd) {
+  .ph_compute_distance <- function(norm_mat,
+                                   dist_method,
+                                   distance,
+                                   n_threads) {
+    if (dist_method == "chebyshev") {
       .ph_log_info(
+        "Distance method 'chebyshev' mapped to 'maximum' for parallelDist."
+      )
+      dist_method <- "maximum"
+    }
+
+    .ph_log_info(
+      paste0("computing distance: ", dist_method)
+    )
+
+    dist_obj <- NULL
+
+    pd_methods <- c(
+      "bray", "euclidean", "minkowski", "manhattan", "canberra",
+      "binary", "maximum", "cosine"
+    )
+
+    veg_methods <- c(
+      "manhattan", "euclidean", "canberra", "clark", "bray", "kulczynski",
+      "jaccard", "gower", "altgower", "morisita", "horn", "mountford", "raup",
+      "binomial", "chao", "cao", "mahalanobis", "chisq", "chord", "hellinger",
+      "aitchison", "robust.aitchison"
+    )
+
+    use_pd <- dist_method %in% pd_methods
+    is_veg_method <- !is.na(pmatch(dist_method, veg_methods))
+
+    if (use_pd && rlang::is_installed("parallelDist")) {
+      dist_obj <- parallelDist::parDist(
+        norm_mat,
+        method  = dist_method,
+        threads = n_threads
+      )
+    } else if (is_veg_method) {
+      if (use_pd) {
+        .ph_log_info(
+          paste0(
+            "parallelDist not installed; using vegan::vegdist for method ",
+            dist_method,
+            "."
+          )
+        )
+      }
+      dist_obj <- vegan::vegdist(norm_mat, method = dist_method)
+    } else if (use_pd) {
+      .ph_abort(
         paste0(
-          "parallelDist not installed; using vegan::vegdist for method ",
-          dist_method,
-          "."
+          "`distance = \"", distance, "\"` requires the suggested package ",
+          "'parallelDist'. Please install 'parallelDist' or choose a ",
+          "vegan::vegdist() method."
         )
       )
+    } else {
+      dist_obj <- vegan::vegdist(norm_mat, method = dist_method)
     }
-    dist_obj <- vegan::vegdist(norm_mat, method = dist_method)
-  } else if (use_pd) {
-    .ph_abort(
-      paste0(
-        "`distance = \"", distance, "\"` requires the suggested package ",
-        "'parallelDist'. Please install 'parallelDist' or choose a ",
-        "vegan::vegdist() method."
-      )
-    )
-  } else {
-    dist_obj <- vegan::vegdist(norm_mat, method = dist_method)
+
+    .ph_log_info("distance matrix computation complete.")
+
+    dist_obj
   }
 
-  .ph_log_info("distance matrix computation complete.")
+  dist_obj <- .ph_compute_distance(
+    norm_mat = norm_mat,
+    dist_method = dist_method,
+    distance = distance,
+    n_threads = n_threads
+  )
 
   # attach normalized abundance matrix as attribute
   attr(dist_obj, "abundances") <- norm_mat
