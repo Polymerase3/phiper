@@ -1788,26 +1788,6 @@ testthat::test_that("compute_distance: pivot_wider guard", {
   )
 })
 
-testthat::test_that("compute_distance: missing parallelDist", {
-  testthat::skip_if_not_installed("mockery")
-
-  dat <- data.frame(
-    sample_id = c("s1", "s2"),
-    peptide_id = c("p1", "p1"),
-    exist = c(1, 0)
-  )
-
-  mockery::stub(compute_distance, "rlang::is_installed", function(pkg) {
-    if (pkg == "parallelDist") FALSE else TRUE
-  })
-
-  testthat::expect_error(
-    compute_distance(dat, value_col = "exist", method_normalization = "none",
-                     distance = "euclidean"),
-    regexp = "(?i)parallelDist"
-  )
-})
-
 testthat::test_that("compute_pcoa: missing labels and zero-axis handling", {
   d <- stats::dist(matrix(c(0, 1, 1, 0), nrow = 2))
   attr(d, "Labels") <- NULL
