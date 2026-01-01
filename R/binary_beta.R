@@ -128,7 +128,9 @@ compute_distance <- function(ps,
   # ----------------------------------------------------------------------------
   # input validation (chk)
   # ----------------------------------------------------------------------------
-  if (!is.null(value_col)) chk::chk_string(value_col)
+  if (!is.null(value_col)) {
+    chk::chk_string(value_col)
+  }
   chk::chk_character(method_normalization)
   chk::chk_string(distance)
   chk::chk_count(n_threads)
@@ -275,7 +277,11 @@ compute_distance <- function(ps,
     if (identical(method_normalization, "auto")) {
       vals <- mat[!is.na(mat)]
       is_binary_data <- length(vals) > 0L && all(vals == 0 | vals == 1)
-      method_normalization <- if (is_binary_data) "none" else "relative"
+      method_normalization <- if (is_binary_data) {
+        "none"
+      } else {
+        "relative"
+      }
       .ph_log_info(
         paste0("auto normalization selected -> using ", method_normalization)
       )
@@ -302,7 +308,12 @@ compute_distance <- function(ps,
   # ----------------------------------------------------------------------------
   # 4) distance computation
   # ----------------------------------------------------------------------------
-  if (dist_method == "chebyshev") dist_method <- "maximum"
+  if (dist_method == "chebyshev") {
+    .ph_log_info(
+      "Distance method 'chebyshev' mapped to 'maximum' for parallelDist."
+    )
+    dist_method <- "maximum"
+  }
 
   .ph_log_info(
     paste0("computing distance: ", dist_method)
@@ -525,7 +536,9 @@ compute_pcoa <- function(dist_obj,
   }
 
   eig_vals <- pcoa_fit$eig
-  if (is.null(eig_vals)) eig_vals <- numeric(0L)
+  if (is.null(eig_vals)) {
+    eig_vals <- numeric(0L)
+  }
   eig_vals <- as.numeric(eig_vals)
 
   coords <- as.matrix(pcoa_fit$points)
@@ -585,10 +598,22 @@ compute_pcoa <- function(dist_obj,
     c(as.list(round(pct_axes, 3)), `%Other` = round(pct_other, 3))
   )
 
-  min_eig <- if (length(eig_vals) > 0L) min(eig_vals, na.rm = TRUE) else NA_real_
+  min_eig <- if (length(eig_vals) > 0L) {
+    min(eig_vals, na.rm = TRUE)
+  } else {
+    NA_real_
+  }
   n_neg <- sum(eig_vals < 0, na.rm = TRUE)
-  frac_neg <- if (length(eig_vals) > 0L) n_neg / length(eig_vals) else NA_real_
-  ratio_neg_pos <- if (sum_pos > 0) sum_neg / sum_pos else NA_real_
+  frac_neg <- if (length(eig_vals) > 0L) {
+    n_neg / length(eig_vals)
+  } else {
+    NA_real_
+  }
+  ratio_neg_pos <- if (sum_pos > 0) {
+    sum_neg / sum_pos
+  } else {
+    NA_real_
+  }
 
   eigen_diagnostics <- tibble::as_tibble_row(list(
     sum_negative = sum_neg,
@@ -805,7 +830,11 @@ compute_pcoa <- function(dist_obj,
 #' # small subset for speed: 5 peptides at time t1
 #' keep_pep <- c("16627", "5243", "24799", "16196", "18003")
 #' dat_cols <- dplyr::tbl_vars(ps$data_long)
-#' tp_col <- if ("time" %in% dat_cols) "time" else "timepoint_factor"
+#' tp_col <- if ("time" %in% dat_cols) {
+#' "time"
+#' } else {
+#' "timepoint_factor"
+#' }
 #'
 #' ps_small <- ps |>
 #'   dplyr::filter(
@@ -884,7 +913,11 @@ compute_capscale <- function(dist_obj,
   # ---------------------------------------------------------------------------
   # 2) metadata from ps + variable checks + alignment + na handling
   # ---------------------------------------------------------------------------
-  dat <- if ("phip_data" %in% class(ps)) ps$data_long else ps
+  dat <- if ("phip_data" %in% class(ps)) {
+    ps$data_long
+  } else {
+    ps
+  }
   if (is.null(dat)) {
     .ph_abort("`ps` is missing. cannot construct metadata.")
   }
@@ -1025,13 +1058,19 @@ compute_capscale <- function(dist_obj,
   cap_env$d_resp <- d_resp
   environment(cap_formula) <- cap_env
 
-  add_arg <- if (identical(neg_correction, "none")) FALSE else neg_correction
+  add_arg <- if (identical(neg_correction, "none")) {
+    FALSE
+  } else {
+    neg_correction
+  }
 
   .ph_log_info(
     "fitting constrained ordination (cap/db-rda)",
     bullets = c(
       paste0("formula: ", paste(deparse(formula), collapse = " ")),
-      if (!identical(add_arg, FALSE)) paste0("neg_correction: ", add_arg)
+      if (!identical(add_arg, FALSE)) {
+        paste0("neg_correction: ", add_arg)
+      }
     )
   )
 
@@ -1045,7 +1084,9 @@ compute_capscale <- function(dist_obj,
   # ----------------------------------------------------------------------------
   .ph_log_info("extracting constrained sample scores.")
   rank_constrained <- cap_fit$CCA$rank
-  if (is.null(rank_constrained)) rank_constrained <- 0L
+  if (is.null(rank_constrained)) {
+    rank_constrained <- 0L
+  }
 
   if (rank_constrained > 0L) {
     site_scores <- vegan::scores(
@@ -1075,14 +1116,20 @@ compute_capscale <- function(dist_obj,
   # ----------------------------------------------------------------------------
   .ph_log_info("computing variance partitioning and permutation tests.")
   eig_constrained <- cap_fit$CCA$eig
-  if (is.null(eig_constrained)) eig_constrained <- numeric()
+  if (is.null(eig_constrained)) {
+    eig_constrained <- numeric()
+  }
 
   tot_inertia <- cap_fit$tot.chi
   cons_inertia <- cap_fit$CCA$tot.chi
-  if (is.null(cons_inertia)) cons_inertia <- sum(cap_fit$CCA$eig %||% 0)
+  if (is.null(cons_inertia)) {
+    cons_inertia <- sum(cap_fit$CCA$eig %||% 0)
+  }
 
   uncon_inertia <- cap_fit$CA$tot.chi
-  if (is.null(uncon_inertia)) uncon_inertia <- sum(cap_fit$CA$eig %||% 0)
+  if (is.null(uncon_inertia)) {
+    uncon_inertia <- sum(cap_fit$CA$eig %||% 0)
+  }
 
   variance_partition <- tibble::tibble(
     component = c("Total", "Constrained", "Unconstrained"),
@@ -1362,8 +1409,12 @@ compute_permanova <- function(dist_obj,
   # input validation (chk)
   # ----------------------------------------------------------------------------
   chk::chk_s3_class(dist_obj, "dist")
-  if (!is.null(group_col)) chk::chk_string(group_col)
-  if (!is.null(time_col)) chk::chk_string(time_col)
+  if (!is.null(group_col)) {
+    chk::chk_string(group_col)
+  }
+  if (!is.null(time_col)) {
+    chk::chk_string(time_col)
+  }
   chk::chk_string(subject_col)
   chk::chk_count(permutations)
   chk::chk_gt(permutations, 0)
@@ -1441,9 +1492,21 @@ compute_permanova <- function(dist_obj,
 
   cols_needed <- c(
     "sample_id",
-    if (has_group) group_col else character(0L),
-    if (has_time) time_col else character(0L),
-    if (has_subject) subject_col else character(0L)
+    if (has_group) {
+      group_col
+    } else {
+      character(0L)
+    },
+    if (has_time) {
+      time_col
+    } else {
+      character(0L)
+    },
+    if (has_subject) {
+      subject_col
+    } else {
+      character(0L)
+    }
   )
   cols_needed <- unique(cols_needed)
 
@@ -1500,9 +1563,21 @@ compute_permanova <- function(dist_obj,
   # ----------------------------------------------------------------------------
   .ph_log_info("filtering samples with missing grouping variables.")
   vars_for_na <- c(
-    if (has_group) group_col else character(0L),
-    if (has_time) time_col else character(0L),
-    if (has_time && has_subject) subject_col else character(0L)
+    if (has_group) {
+      group_col
+    } else {
+      character(0L)
+    },
+    if (has_time) {
+      time_col
+    } else {
+      character(0L)
+    },
+    if (has_time && has_subject) {
+      subject_col
+    } else {
+      character(0L)
+    }
   )
   vars_for_na <- unique(vars_for_na)
 
@@ -1548,8 +1623,12 @@ compute_permanova <- function(dist_obj,
   # ----------------------------------------------------------------------------
   .ph_log_info("preparing global permanova model.")
   rhs_terms <- character(0L)
-  if (has_group) rhs_terms <- c(rhs_terms, group_col)
-  if (has_time) rhs_terms <- c(rhs_terms, time_col)
+  if (has_group) {
+    rhs_terms <- c(rhs_terms, group_col)
+  }
+  if (has_time) {
+    rhs_terms <- c(rhs_terms, time_col)
+  }
   if (has_group && has_time) {
     rhs_terms <- c(rhs_terms, paste(group_col, "*", time_col))
   }
@@ -1580,7 +1659,9 @@ compute_permanova <- function(dist_obj,
       "running global permanova",
       bullets = c(
         paste("model:", formula_str),
-        if (!is.null(strata_var)) "permutations stratified by subject"
+        if (!is.null(strata_var)) {
+          "permutations stratified by subject"
+        }
       )
     )
 
@@ -1603,8 +1684,16 @@ compute_permanova <- function(dist_obj,
       res_df$term <- rownames(res_df)
       # check terms: group, time, and interaction
       for (term in c(
-        if (!is.null(group_col)) group_col else NULL,
-        if (!is.null(time_col)) time_col else NULL,
+        if (!is.null(group_col)) {
+          group_col
+        } else {
+          NULL
+        },
+        if (!is.null(time_col)) {
+          time_col
+        } else {
+          NULL
+        },
         if (!is.null(group_col) && !is.null(time_col)) {
           paste(group_col, ":", time_col, sep = "")
         } else {
@@ -1648,7 +1737,9 @@ compute_permanova <- function(dist_obj,
     rownames(df_sub) <- labels_sub
 
     form_rhs <- "fac"
-    if (!is.null(covar)) form_rhs <- paste(form_rhs, "+", covar)
+    if (!is.null(covar)) {
+      form_rhs <- paste(form_rhs, "+", covar)
+    }
 
     fml <- stats::as.formula(paste("d_sub ~", form_rhs))
     d_mat <- as.matrix(d)
@@ -1659,7 +1750,11 @@ compute_permanova <- function(dist_obj,
       data = cbind(df_sub, fac = fac),
       permutations = permutations,
       strata = strata,
-      by = if (!is.null(covar)) "margin" else NULL
+      by = if (!is.null(covar)) {
+        "margin"
+      } else {
+        NULL
+      }
     )
 
     res <- as.data.frame(ad)
@@ -1693,11 +1788,17 @@ compute_permanova <- function(dist_obj,
             meta_df[sel, group_col], sub_sel,
             function(x) length(unique(x)) > 1L
           ))
-          if (multi) strata_use <- sub_sel
+          if (multi) {
+            strata_use <- sub_sel
+          }
         }
 
         fac_pair <- factor(meta_df[sel, group_col], levels = p)
-        covar_term <- if (has_time) time_col else NULL
+        covar_term <- if (has_time) {
+          time_col
+        } else {
+          NULL
+        }
 
         run_two_level_adonis(
           idx            = sel,
@@ -1729,7 +1830,11 @@ compute_permanova <- function(dist_obj,
         }
 
         fac_pair <- factor(meta_df[sel, time_col], levels = p)
-        covar_term <- if (has_group) group_col else NULL
+        covar_term <- if (has_group) {
+          group_col
+        } else {
+          NULL
+        }
 
         run_two_level_adonis(
           idx            = sel,
@@ -1864,8 +1969,12 @@ compute_dispersion <- function(dist_obj,
   # input validation (chk)
   # ----------------------------------------------------------------------------
   chk::chk_s3_class(dist_obj, "dist")
-  if (!is.null(group_col)) chk::chk_string(group_col)
-  if (!is.null(time_col)) chk::chk_string(time_col)
+  if (!is.null(group_col)) {
+    chk::chk_string(group_col)
+  }
+  if (!is.null(time_col)) {
+    chk::chk_string(time_col)
+  }
   chk::chk_string(subject_col)
   chk::chk_count(permutations)
   chk::chk_gt(permutations, 0)
@@ -1920,8 +2029,16 @@ compute_dispersion <- function(dist_obj,
 
   cols_needed <- c(
     "sample_id",
-    if (has_group) group_col else character(0L),
-    if (has_time) time_col else character(0L)
+    if (has_group) {
+      group_col
+    } else {
+      character(0L)
+    },
+    if (has_time) {
+      time_col
+    } else {
+      character(0L)
+    }
   )
   cols_needed <- unique(cols_needed)
 
@@ -1977,8 +2094,16 @@ compute_dispersion <- function(dist_obj,
   # ----------------------------------------------------------------------------
   .ph_log_info("filtering samples with missing grouping variables.")
   vars_for_na <- c(
-    if (has_group) group_col else character(0L),
-    if (has_time) time_col else character(0L)
+    if (has_group) {
+      group_col
+    } else {
+      character(0L)
+    },
+    if (has_time) {
+      time_col
+    } else {
+      character(0L)
+    }
   )
   vars_for_na <- unique(vars_for_na)
 
@@ -2381,8 +2506,12 @@ compute_tsne <- function(ps,
   chk::chk_count(max_iter)
   chk::chk_gt(max_iter, 0)
 
-  if (!is.null(meta_cols)) chk::chk_character(meta_cols)
-  if (!is.null(seed)) chk::chk_count(seed)
+  if (!is.null(meta_cols)) {
+    chk::chk_character(meta_cols)
+  }
+  if (!is.null(seed)) {
+    chk::chk_count(seed)
+  }
   chk::chk_flag(check_duplicates)
 
   if (!rlang::is_installed("Rtsne")) {
@@ -2471,7 +2600,11 @@ compute_tsne <- function(ps,
   # ----------------------------------------------------------------------------
   # prepare metadata from ps
   # ----------------------------------------------------------------------------
-  dat <- if (inherits(ps, "phip_data")) ps$data_long else ps
+  dat <- if (inherits(ps, "phip_data")) {
+    ps$data_long
+  } else {
+    ps
+  }
 
   if (!is.null(dat)) {
     dat_cols <- dplyr::tbl_vars(dat)
@@ -2566,8 +2699,16 @@ compute_tsne <- function(ps,
   tsne_df <- tibble::tibble(
     sample_id = labels,
     tSNE1     = coords[, 1],
-    tSNE2     = if (dims >= 2L) coords[, 2L] else NA_real_,
-    tSNE3     = if (dims >= 3L) coords[, 3L] else NA_real_
+    tSNE2     = if (dims >= 2L) {
+      coords[, 2L]
+    } else {
+      NA_real_
+    },
+    tSNE3     = if (dims >= 3L) {
+      coords[, 3L]
+    } else {
+      NA_real_
+    }
   )
 
   # ----------------------------------------------------------------------------
