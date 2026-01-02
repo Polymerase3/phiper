@@ -108,10 +108,8 @@ deltaplot <- function(
   d <- prev_tbl
   .ph_log_info("Preparing delta prevalence plot.")
   if (requireNamespace("chk", quietly = TRUE)) {
-    if (exists("chk_data.frame", asNamespace("chk"), inherits = FALSE)) {
-      chk::chk_data.frame(d)
-    } else if (exists("chk_df", asNamespace("chk"), inherits = FALSE)) {
-      chk::chk_df(d)
+    if (exists("chk_data", asNamespace("chk"), inherits = FALSE)) {
+      chk::chk_data(d)
     }
     if (!is.null(group_pair_values)) {
       chk::chk_character(group_pair_values)
@@ -449,10 +447,8 @@ deltaplot_interactive <- function(
 ) {
   # ---- Input validation ------------------------------------------------------
   if (requireNamespace("chk", quietly = TRUE)) {
-    if (exists("chk_data.frame", asNamespace("chk"), inherits = FALSE)) {
-      chk::chk_data.frame(prev_tbl)
-    } else if (exists("chk_df", asNamespace("chk"), inherits = FALSE)) {
-      chk::chk_df(prev_tbl)
+    if (exists("chk_data", asNamespace("chk"), inherits = FALSE)) {
+      chk::chk_data(prev_tbl)
     }
     if (!is.null(group_pair_values)) {
       chk::chk_character(group_pair_values)
@@ -1736,10 +1732,8 @@ ecdf_plot <- function(
 ) {
   # ---- input validation ------------------------------------------------------
   if (requireNamespace("chk", quietly = TRUE)) {
-    if (exists("chk_data.frame", asNamespace("chk"), inherits = FALSE)) {
-      chk::chk_data.frame(prev_tbl)
-    } else if (exists("chk_df", asNamespace("chk"), inherits = FALSE)) {
-      chk::chk_df(prev_tbl)
+    if (exists("chk_data", asNamespace("chk"), inherits = FALSE)) {
+      chk::chk_data(prev_tbl)
     }
     if (!is.null(group_pair_values)) {
       chk::chk_character(group_pair_values)
@@ -2002,10 +1996,8 @@ ecdf_plot_interactive <- function(
 ) {
   # ---- input validation ------------------------------------------------------
   if (requireNamespace("chk", quietly = TRUE)) {
-    if (exists("chk_data.frame", asNamespace("chk"), inherits = FALSE)) {
-      chk::chk_data.frame(prev_tbl)
-    } else if (exists("chk_df", asNamespace("chk"), inherits = FALSE)) {
-      chk::chk_df(prev_tbl)
+    if (exists("chk_data", asNamespace("chk"), inherits = FALSE)) {
+      chk::chk_data(prev_tbl)
     }
     if (!is.null(group_pair_values)) {
       chk::chk_character(group_pair_values)
