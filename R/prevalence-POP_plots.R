@@ -881,7 +881,7 @@ volcano_interactive <- function(df,
       n = max(3L, length(levels(dd[[prep$color_var]]))),
       palette = "Dark 3"
     )
-    pal <- setNames(pal[seq_along(levels(dd[[prep$color_var]]))],
+    pal <- stats::setNames(pal[seq_along(levels(dd[[prep$color_var]]))],
                     levels(dd[[prep$color_var]]))
     col_vec <- pal[as.character(dd[[prep$color_var]])]
   } else {

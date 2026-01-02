@@ -140,7 +140,7 @@ results_tbl <- data.frame(
   design = "case-control",
   T_obs = rnorm(n, sd = 2),
   p_perm = runif(n),
-  p_adj_rank = p.adjust(runif(n), method = "BH"),
+  p_adj_rank = stats::p.adjust(runif(n), method = "BH"),
   category_rank_bh = ifelse(runif(n) < 0.2, "significant (BH, per rank)",
     "ns"
   ),

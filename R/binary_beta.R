@@ -1696,7 +1696,7 @@ compute_permanova <- function(dist_obj,
 
   # pairwise group comparisons
   if (has_group) {
-    groups <- na.omit(unique(meta_df[[group_col]]))
+    groups <- stats::na.omit(unique(meta_df[[group_col]]))
     if (length(groups) > 1L) {
       pairs <- utils::combn(groups, 2, simplify = FALSE)
       for (p in pairs) {
@@ -1738,7 +1738,7 @@ compute_permanova <- function(dist_obj,
 
   # pairwise time comparisons
   if (has_time) {
-    times <- na.omit(unique(meta_df[[time_col]]))
+    times <- stats::na.omit(unique(meta_df[[time_col]]))
     if (length(times) > 1L) {
       pairs <- utils::combn(times, 2, simplify = FALSE)
       for (p in pairs) {
@@ -2190,7 +2190,7 @@ compute_dispersion <- function(dist_obj,
   .ph_log_info("running pairwise dispersion contrasts.")
   # groups
   if (has_group) {
-    grps <- na.omit(unique(meta_df[[group_col]]))
+    grps <- stats::na.omit(unique(meta_df[[group_col]]))
     if (length(grps) > 1L) {
       for (pair in utils::combn(grps, 2, simplify = FALSE)) {
         sel <- which(meta_df[[group_col]] %in% pair)
@@ -2204,7 +2204,7 @@ compute_dispersion <- function(dist_obj,
   }
   # time
   if (has_time && !is.numeric(meta_df[[time_col]])) {
-    times <- na.omit(unique(meta_df[[time_col]]))
+    times <- stats::na.omit(unique(meta_df[[time_col]]))
     if (length(times) > 1L) {
       for (pair in utils::combn(times, 2, simplify = FALSE)) {
         sel <- which(meta_df[[time_col]] %in% pair)

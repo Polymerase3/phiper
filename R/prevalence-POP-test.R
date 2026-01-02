@@ -76,7 +76,7 @@ summary.ph_prev_result <- function(object, ...) {
 
   pool_by_rank <- meta$pool_by_rank %||% tibble::tibble(rank = character(), POOL = integer())
   pairs_by_universe <- meta$pairs_by_universe %||% tibble::tibble(group_col = character(), k_levels = integer(), n_pairs = integer())
-  m_by_rank <- meta$m_by_rank %||% setNames(integer(0), character(0))
+  m_by_rank <- meta$m_by_rank %||% stats::setNames(integer(0), character(0))
 
   # compute pairs_total (sum across universes) and overview per rank
   pairs_total <- if (nrow(pairs_by_universe)) sum(pairs_by_universe$n_pairs, na.rm = TRUE) else 0L
@@ -998,7 +998,7 @@ ph_prevalence_compare <- function(x,
                 p_adj_rank = {
                   ok <- !is.na(p_raw)
                   out <- rep(NA_real_, length(p_raw))
-                  if (any(ok)) out[ok] <- p.adjust(p_raw[ok], method = "BH")
+                  if (any(ok)) out[ok] <- stats::p.adjust(p_raw[ok], method = "BH")
                   out
                 },
                 passed_rank_bh = !is.na(p_adj_rank) & p_adj_rank < 0.05,
@@ -1288,7 +1288,7 @@ ph_prevalence_compare <- function(x,
             p_adj_rank = {
               ok <- !is.na(p_raw)
               out <- rep(NA_real_, length(p_raw))
-              if (any(ok)) out[ok] <- p.adjust(p_raw[ok], method = "BH")
+              if (any(ok)) out[ok] <- stats::p.adjust(p_raw[ok], method = "BH")
               out
             },
             passed_rank_bh = !is.na(p_adj_rank) & p_adj_rank < 0.05,

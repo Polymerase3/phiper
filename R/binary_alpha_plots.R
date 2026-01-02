@@ -399,7 +399,7 @@ plot_alpha_diversity <- function(
         dplyr::group_by(!!gsym) |>
         dplyr::summarise(sample_count = dplyr::n(), .groups = "drop")
 
-      default_lab <- setNames(
+      default_lab <- stats::setNames(
         paste0(as.character(df_counts[[group_col]]), "\n(n = ", df_counts$sample_count, ")"),
         as.character(df_counts[[group_col]])
       )
@@ -645,7 +645,7 @@ plot_alpha_diversity_interactive <- function(
         }
 
         pos    <- seq_along(group_levels)
-        pos_of <- setNames(pos, group_levels)
+        pos_of <- stats::setNames(pos, group_levels)
         base_x <- unname(pos_of[gvals_raw])
 
         if (!is.null(x_labels) && !is.null(names(x_labels))) {
@@ -654,7 +654,7 @@ plot_alpha_diversity_interactive <- function(
           counts <- df_panel |>
             dplyr::group_by(.data[[group_col]]) |>
             dplyr::summarise(n = dplyr::n(), .groups = "drop")
-          n_map <- setNames(counts$n, as.character(counts[[group_col]]))
+          n_map <- stats::setNames(counts$n, as.character(counts[[group_col]]))
           ticktext <- unname(vapply(group_levels, function(lev) sprintf("%s<br>(n = %s)", lev, n_map[[lev]] %||% "NA"), ""))
         }
 

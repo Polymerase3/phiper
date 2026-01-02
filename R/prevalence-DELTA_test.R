@@ -668,7 +668,7 @@ compute_delta <- function(
     dplyr::left_join(subj_row_map, by = "subject_id")
 
   # peptide column index map (within bitset columns 1..m)
-  pep_col_map <- setNames(seq_along(peptides_order), peptides_order)
+  pep_col_map <- stats::setNames(seq_along(peptides_order), peptides_order)
 
   get_pep_cols <- function(rk, ft) {
     pid <- rank_map_long |>
@@ -699,7 +699,7 @@ compute_delta <- function(
       return(NULL)
     }
 
-    id_map <- setNames(seq_along(pair_ids), pair_ids)
+    id_map <- stats::setNames(seq_along(pair_ids), pair_ids)
 
     # G1: block-level presence
     g1_hits <- df_long |>
@@ -858,7 +858,7 @@ compute_delta <- function(
           # dbplyr->DuckDB supports median; if not, collect minimal vector
           fc_try <- try(
             dplyr::summarise(fc_tbl,
-              v = median(.data$fold_change,
+              v = stats::median(.data$fold_change,
                 na.rm = TRUE
               )
             ),
@@ -907,7 +907,7 @@ compute_delta <- function(
       if (cross_prev == "median") {
         cp_try <- try(
           dplyr::summarise(cp_tbl,
-            v = median(.data$prev, na.rm = TRUE)
+            v = stats::median(.data$prev, na.rm = TRUE)
           ),
           silent = TRUE
         )
@@ -1090,7 +1090,7 @@ compute_delta <- function(
   # ---- p.adjust + final select/arrange ---------------------------------------
   res <- res |>
     dplyr::group_by(rank) |>
-    dplyr::mutate(p_adj_rank = p.adjust(p_perm, method = "BH")) |>
+    dplyr::mutate(p_adj_rank = stats::p.adjust(p_perm, method = "BH")) |>
     dplyr::ungroup() |>
     dplyr::mutate(
       category_rank_bh = dplyr::case_when(
