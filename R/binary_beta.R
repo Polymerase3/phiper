@@ -544,7 +544,7 @@ compute_pcoa <- function(dist_obj,
   # 3) sample coordinates (first n_axes, or fewer)
   # ----------------------------------------------------------------------------
   .ph_log_info("extracting sample coordinates.")
-  k_use <- min(n_axes, ncol(coords))
+  k_use <- min(k_cmd, ncol(coords))
   coords_k <- if (k_use > 0L) {
     coords[, seq_len(k_use), drop = FALSE]
   } else {
