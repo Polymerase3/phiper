@@ -318,8 +318,8 @@ validate_phip_data <- function(x,
             bullets = c("add_exist = TRUE", "exist_col = \"exist\"")
           )
 
-          tbl_expanded <- expand_phip_data(
-            tbl,
+          x <- expand_phip_data(
+            x,
             key_col = "sample_id",
             id_col = "peptide_id",
             add_exist = TRUE, # keep binary column
@@ -334,13 +334,6 @@ validate_phip_data <- function(x,
             )
           )
 
-          x$data_long <- register_phip_data_tbl(
-            tbl_expanded,
-            con = x$meta$con,
-            name = "data_long",
-            materialise_table = x$meta$materialise_table
-          )
-          x$meta$full_cross <- TRUE
           .ph_log_ok("Auto-expansion complete; grid is now full")
         } else {
           .ph_warn(
