@@ -1354,9 +1354,9 @@ compute_permanova <- function(dist_obj,
   # prepare result collector
   # ----------------------------------------------------------------------------
   results_list <- list()
-  add_result <- function(scope, contrast, term = NA, p_value = NA,
-                         F_stat = NA, R2 = NA) {
-    results_list[[length(results_list) + 1]] <<- tibble::tibble(
+  add_result <- function(results_list, scope, contrast, term = NA,
+                         p_value = NA, F_stat = NA, R2 = NA) {
+    results_list[[length(results_list) + 1]] <- tibble::tibble(
       scope = scope,
       contrast = contrast,
       term = term,
@@ -1366,6 +1366,7 @@ compute_permanova <- function(dist_obj,
       p_adjust = p_value,
       n_perm = permutations
     )
+    results_list
   }
 
   # ----------------------------------------------------------------------------
@@ -1398,9 +1399,9 @@ compute_permanova <- function(dist_obj,
     )
   }
 
-  has_group <- !is.null(group_col) && group_col %in% dat_cols
-  has_time <- !is.null(time_col) && time_col %in% dat_cols
-  has_subject <- !is.null(subject_col) && subject_col %in% dat_cols
+  has_group <- !is.null(group_col) && (group_col %in% dat_cols)
+  has_time <- !is.null(time_col) && (time_col %in% dat_cols)
+  has_subject <- !is.null(subject_col) && (subject_col %in% dat_cols)
 
   if (!is.null(group_col) && !has_group) {
     .ph_abort(
@@ -1625,7 +1626,8 @@ compute_permanova <- function(dist_obj,
       )) {
         if (!is.null(term) && term %in% res_df$term) {
           row <- res_df[res_df$term == term, , drop = FALSE]
-          add_result(
+          results_list <- add_result(
+            results_list,
             "global",
             "<global>",
             term    = term,
@@ -1644,8 +1646,9 @@ compute_permanova <- function(dist_obj,
   .ph_log_info("running pairwise permanova contrasts.")
 
   # helper: run two-level adonis on subset idx of current meta_df/d
-  run_two_level_adonis <- function(idx, fac, covar = NULL, strata = NULL,
-                                   scope_label, contrast_label, term_label) {
+  run_two_level_adonis <- function(results_list, idx, fac, covar = NULL,
+                                   strata = NULL, scope_label,
+                                   contrast_label, term_label) {
     if (length(unique(fac)) < 2L || min(table(fac)) < 2L) {
       .ph_log_info(
         paste(
@@ -1653,7 +1656,7 @@ compute_permanova <- function(dist_obj,
           "- not enough samples in one or both groups."
         )
       )
-      return(NULL)
+      return(results_list)
     }
     df_sub <- meta_df[idx, , drop = FALSE]
     labels_sub <- labels[idx]
@@ -1684,7 +1687,8 @@ compute_permanova <- function(dist_obj,
     res$term <- rownames(res)
     if ("fac" %in% res$term) {
       row <- res[res$term == "fac", , drop = FALSE]
-      add_result(
+      results_list <- add_result(
+        results_list,
         scope_label,
         contrast_label,
         term    = term_label,
@@ -1693,6 +1697,7 @@ compute_permanova <- function(dist_obj,
         p_value = row$`Pr(>F)`[1]
       )
     }
+    results_list
   }
 
   # pairwise group comparisons
@@ -1723,14 +1728,15 @@ compute_permanova <- function(dist_obj,
           NULL
         }
 
-        run_two_level_adonis(
-          idx            = sel,
-          fac            = fac_pair,
-          covar          = covar_term,
-          strata         = strata_use,
-          scope_label    = "group_pairwise",
+        results_list <- run_two_level_adonis(
+          results_list  = results_list,
+          idx           = sel,
+          fac           = fac_pair,
+          covar         = covar_term,
+          strata        = strata_use,
+          scope_label   = "group_pairwise",
           contrast_label = paste(p, collapse = " vs "),
-          term_label     = group_col
+          term_label    = group_col
         )
       }
     }
@@ -1759,14 +1765,15 @@ compute_permanova <- function(dist_obj,
           NULL
         }
 
-        run_two_level_adonis(
-          idx            = sel,
-          fac            = fac_pair,
-          covar          = covar_term,
-          strata         = strata_use,
-          scope_label    = "time_pairwise",
+        results_list <- run_two_level_adonis(
+          results_list  = results_list,
+          idx           = sel,
+          fac           = fac_pair,
+          covar         = covar_term,
+          strata        = strata_use,
+          scope_label   = "time_pairwise",
           contrast_label = paste(p, collapse = " vs "),
-          term_label     = time_col
+          term_label    = time_col
         )
       }
     }
