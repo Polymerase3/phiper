@@ -462,7 +462,7 @@ add_quotes <- function(x,
 #'   evaluated against `dirname(config_yaml)` (!!!) when YAML is used, otherwise
 #'   against the directory that contains the first supplied data matrix (!!!)),
 #'   and returns a fully populated list of file locations and options ready for
-#'   backend builders. Only cheap, load-blocking checks are done here:
+#'   downstream conversion. Only cheap, load-blocking checks are done here:
 #'
 #' * `input_file` and `hit_file` must be supplied together or both omitted.
 #'
@@ -480,14 +480,12 @@ add_quotes <- function(x,
 #' @param extra_cols Character vector of extra metadata columns to keep; may be
 #'   `NULL`.
 #' @param output_dir Ignored (soft-deprecated).
-#' @param backend Desired backend string (`"duckdb"`, `"arrow"`, `"memory"`);
-#'   may come from YAML or explicit arg.
 #' @param config_yaml Optional path to a YAML file whose keys mirror the
 #'   function arguments; relative paths inside the YAML are resolved against the
 #'   YAML’s own directory.
 #'
-#' @return A named list with absolute paths, `backend`, `extra_cols`, and
-#'   `base_dir`; suitable for downstream helper functions.
+#' @return A named list with absolute paths, `extra_cols`, and `base_dir`;
+#'   suitable for downstream helper functions.
 #'
 #' @keywords internal
 
@@ -502,7 +500,6 @@ add_quotes <- function(x,
     comparisons_file = NULL,
     output_dir = NULL, # deprecated
     data_long_path = NULL,
-    backend = NULL,
     peptide_library = TRUE,
     n_cores = NULL,
     materialise_table = NULL,
@@ -640,11 +637,6 @@ add_quotes <- function(x,
                            optional = !samples_required,
                            absolutize = TRUE
     ),
-    backend = fetch(
-      backend,
-      "backend",
-      chk::chk_string
-    ),
     peptide_library = peptide_library,
     n_cores = n_cores,
     materialise_table = materialise_table,
@@ -760,7 +752,6 @@ phip_load_example_data <- function(name = c("phip_mixture")) {
   name <- match.arg(name)
   phip_convert(
     data_long_path = phip_example_path(name),
-    backend = "duckdb",
     peptide_library = TRUE,
     subject_id = "subject_id",
     peptide_id = "peptide_id",
@@ -773,4 +764,3 @@ phip_load_example_data <- function(name = c("phip_mixture")) {
     n_cores = 5
   )
 }
-
