@@ -1407,6 +1407,10 @@ ph_prevalence_compare <- function(x,
 
 #' Generic writer for phiper result objects
 #'
+#' @param x Result object to write.
+#' @param path Output file path.
+#' @param ... Additional arguments passed to methods.
+#'
 #' @export
 write_result <- function(x, path, ...) {
   UseMethod("write_result")

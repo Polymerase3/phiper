@@ -21,6 +21,33 @@ volcano_interactive(
     "#1b9e77", `significant post fdr correction` = "#e31a1c")
 )
 }
+\arguments{
+\item{df}{A \code{ph_prev_result} object or a data frame with prevalence results.}
+
+\item{pair}{optional group pair (character length-2).}
+
+\item{rank}{optional single rank (character) to keep.}
+
+\item{universe}{optional \code{group_col} value or regex (if \code{universe_regex = TRUE}).}
+
+\item{features}{optional character vector or regex patterns (if \code{features_regex = TRUE}).}
+
+\item{features_regex}{logical; treat \code{features} as regex patterns.}
+
+\item{universe_regex}{logical; treat \code{universe} as regex pattern(s).}
+
+\item{color_by}{optional peptide-level meta column name to color by.}
+
+\item{color_title}{optional legend title for \code{color_by}.}
+
+\item{fc_cut}{Numeric; absolute log2 fold-change cutoff.}
+
+\item{p_cut}{Numeric; p-value cutoff.}
+
+\item{p_mode}{One of \code{c("raw","bh","wbh")} controlling which p-values to use.}
+
+\item{significant_colors}{Named vector of colors for significance categories.}
+}
 \description{
 Interactive volcano plot (log2 ratio vs -log10 p)
 }

@@ -56,6 +56,10 @@ if \code{paired=TRUE} also \code{subject_id}. If \code{rank_cols} include non-pe
 NOTE: can also be a character scalar naming the column that links related samples
 (e.g. "subject_id" or "dyade"). If so, only samples present in both groups
 for that identifier will be used for paired McNemar tests.}
+
+\item{peptide_library}{Optional peptide metadata table used to map
+non-peptide rank columns. If \code{NULL}, the function will use
+\code{x$peptide_library}.}
 }
 \value{
 An object of class \code{ph_prev_result}, i.e., a tibble (or lazy table if

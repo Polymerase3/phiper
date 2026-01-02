@@ -18,8 +18,21 @@ scatter_interactive(
   prefer_flags = TRUE,
   color_by = NULL,
   color_title = NULL,
+  peplib = NULL,
+  category_colors = c(`significant (wBH, per rank)` = "#009E73", `nominal only` =
+    "#E69F00", `not significant` = "#0072B2", `other/NA` = "#999999"),
+  show_background = FALSE,
+  background_df = NULL,
+  background_name = "background peptides",
+  background_color = "#808080",
+  background_size = 6,
+  background_alpha = 0.3,
+  background_max_n = 3000,
+  background_seed = 1L,
   point_size = 7,
   point_alpha = 0.85,
+  point_line_width = 0.7,
+  point_line_color = "rgba(0,0,0,0.6)",
   jitter_width_pp = 0,
   jitter_height_pp = 0,
   font_family = NULL,
@@ -58,6 +71,43 @@ to \code{pair[1]} and \code{pair[2]}.}
 \item{color_by}{optional peptide-level meta column name to color by.}
 
 \item{color_title}{optional legend title for \code{color_by}.}
+
+\item{peplib}{Optional peptide metadata table used to color points by
+\code{color_by} when not present in \code{df}.}
+
+\item{category_colors}{Optional named vector mapping categories to colors.}
+
+\item{show_background}{Logical; plot background peptides if provided.}
+
+\item{background_df}{Optional data frame of background points.}
+
+\item{background_name}{Character; legend name for background points.}
+
+\item{background_color}{Character; color for background points.}
+
+\item{background_size}{Numeric; size for background points.}
+
+\item{background_alpha}{Numeric in (0,1); opacity for background points.}
+
+\item{background_max_n}{Integer; maximum number of background points to plot.}
+
+\item{background_seed}{Integer; RNG seed for background downsampling.}
+
+\item{point_size}{Numeric; marker size for points.}
+
+\item{point_alpha}{Numeric in (0,1); marker opacity.}
+
+\item{point_line_width}{Numeric; outline width for points.}
+
+\item{point_line_color}{Character; outline color for points.}
+
+\item{jitter_width_pp}{Numeric; jitter width in percentage points.}
+
+\item{jitter_height_pp}{Numeric; jitter height in percentage points.}
+
+\item{font_family}{Character; font family for plot text.}
+
+\item{font_size}{Numeric; font size for plot text.}
 }
 \value{
 a \code{plotly} object.

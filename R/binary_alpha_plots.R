@@ -243,7 +243,7 @@ plot_enrichment_counts <- function(phip_data,
 #'   default is taken from `attr(x, "interaction_sep")` if present, otherwise `" * "`.
 #' @param jitter_width Numeric; horizontal jitter width for points.
 #' @param point_size Numeric; size of jittered points.
-#' @param point_alpha Numeric in [0,1]; alpha for jittered points.
+#' @param point_alpha Numeric in (0,1); alpha for jittered points.
 #' @param text_size Numeric; base text size for plot labels.
 #' @param font_family Character; font family for plot text.
 #' @param show_grids Logical; whether to show panel grid lines.
@@ -477,7 +477,7 @@ plot_alpha_diversity <- function(
 #' @param quartile_method one of c("exclusive","inclusive","linear"); passed to plotly box (default "exclusive" ~ ggplot).
 #' @param jitter_width Numeric; horizontal jitter width for points.
 #' @param point_size Numeric; size of jittered points.
-#' @param point_alpha Numeric in [0,1]; alpha for jittered points.
+#' @param point_alpha Numeric in (0,1); alpha for jittered points.
 #' @param text_size Numeric; base text size for plot labels.
 #' @param font_family Character; font family for plot text.
 #' @param show_grids Logical; whether to show panel grid lines.

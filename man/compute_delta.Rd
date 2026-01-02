@@ -44,6 +44,9 @@ universes; pairwise group contrasts are constructed within each
 
 \item{exist_col}{Name of the 0/1 presence column. Default \code{"exist"}.}
 
+\item{paired_by}{Optional single column name identifying paired samples
+(e.g. subject ID). When provided, paired tests are used where applicable.}
+
 \item{interaction}{Logical; reserved for future use (currently ignored). If
 \code{TRUE}, an interaction of the first two \code{group_cols} may be used as an
 additional \code{group_col} in future versions.}

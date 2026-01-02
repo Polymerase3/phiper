@@ -12,6 +12,26 @@
 #'   informative coloring.
 #' - If `color_by` is provided, it joins peptide metadata (like interactive).
 #'
+#' @param df A `ph_prev_result` object or a data frame with prevalence results.
+#' @param pair optional group pair (character length-2).
+#' @param rank optional single rank (character) to keep.
+#' @param universe optional `group_col` value or regex (if `universe_regex = TRUE`).
+#' @param features optional character vector or regex patterns (if `features_regex = TRUE`).
+#' @param features_regex logical; treat `features` as regex patterns.
+#' @param universe_regex logical; treat `universe` as regex pattern(s).
+#' @param xlab,ylab axis labels; if missing and `pair` is provided, they default
+#'   to `pair[1]` and `pair[2]`.
+#' @param alpha numeric in (0,1]; used only for nominal labels.
+#' @param prefer_flags logical; reserved for future use (kept for back-compat).
+#' @param color_by optional peptide-level meta column name to color by.
+#' @param color_title optional legend title for `color_by`.
+#' @param point_size Numeric; marker size for points.
+#' @param point_alpha Numeric in (0,1); marker opacity.
+#' @param jitter_width_pp Numeric; jitter width in percentage points.
+#' @param jitter_height_pp Numeric; jitter height in percentage points.
+#' @param font_family Character; font family for plot text.
+#' @param font_size Numeric; font size for plot text.
+#'
 #' @return A ggplot object.
 #' @export
 scatter_static <- function(df,
@@ -310,8 +330,21 @@ scatter_static <- function(df,
 #' @param prefer_flags logical; reserved for future use (kept for back-compat).
 #' @param color_by optional peptide-level meta column name to color by.
 #' @param color_title optional legend title for `color_by`.
+#' @param peplib Optional peptide metadata table used to color points by
+#'   `color_by` when not present in `df`.
+#' @param category_colors Optional named vector mapping categories to colors.
+#' @param show_background Logical; plot background peptides if provided.
+#' @param background_df Optional data frame of background points.
+#' @param background_name Character; legend name for background points.
+#' @param background_color Character; color for background points.
+#' @param background_size Numeric; size for background points.
+#' @param background_alpha Numeric in (0,1); opacity for background points.
+#' @param background_max_n Integer; maximum number of background points to plot.
+#' @param background_seed Integer; RNG seed for background downsampling.
+#' @param point_line_width Numeric; outline width for points.
+#' @param point_line_color Character; outline color for points.
 #' @param point_size Numeric; marker size for points.
-#' @param point_alpha Numeric in [0,1]; marker opacity.
+#' @param point_alpha Numeric in (0,1); marker opacity.
 #' @param jitter_width_pp Numeric; jitter width in percentage points.
 #' @param jitter_height_pp Numeric; jitter height in percentage points.
 #' @param font_family Character; font family for plot text.
@@ -958,6 +991,20 @@ scatter_interactive <- function(df,
 # Static volcano (ggplot2)
 # ------------------------------------------------------------------------------
 #' Static volcano plot (log2 ratio vs -log10 p)
+#'
+#' @param df A `ph_prev_result` object or a data frame with prevalence results.
+#' @param pair optional group pair (character length-2).
+#' @param rank optional single rank (character) to keep.
+#' @param universe optional `group_col` value or regex (if `universe_regex = TRUE`).
+#' @param features optional character vector or regex patterns (if `features_regex = TRUE`).
+#' @param features_regex logical; treat `features` as regex patterns.
+#' @param universe_regex logical; treat `universe` as regex pattern(s).
+#' @param color_by optional peptide-level meta column name to color by.
+#' @param color_title optional legend title for `color_by`.
+#' @param fc_cut Numeric; absolute log2 fold-change cutoff.
+#' @param p_cut Numeric; p-value cutoff.
+#' @param p_mode One of `c("raw","bh","wbh")` controlling which p-values to use.
+#' @param significant_colors Named vector of colors for significance categories.
 #' @export
 volcano_static <- function(df,
                            pair = NULL,
@@ -1015,6 +1062,8 @@ volcano_static <- function(df,
 # Interactive volcano (plotly)
 # ------------------------------------------------------------------------------
 #' Interactive volcano plot (log2 ratio vs -log10 p)
+#'
+#' @inheritParams volcano_static
 #' @export
 volcano_interactive <- function(df,
                                 pair = NULL,

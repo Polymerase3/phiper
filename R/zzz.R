@@ -90,6 +90,7 @@ utils::globalVariables(c(
   "nlog10p",
   "p1_val",
   "p2_val",
+  "padj_bh",
   "p_adj_rank",
   "p_adj_rank_wbh",
   "p_perm",

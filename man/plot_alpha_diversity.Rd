@@ -58,6 +58,26 @@ with \code{group_interaction = TRUE}.}
 
 \item{interaction_sep}{character; separator used to join interaction labels.
 default is taken from \code{attr(x, "interaction_sep")} if present, otherwise \code{" * "}.}
+
+\item{jitter_width}{Numeric; horizontal jitter width for points.}
+
+\item{point_size}{Numeric; size of jittered points.}
+
+\item{point_alpha}{Numeric in (0,1); alpha for jittered points.}
+
+\item{text_size}{Numeric; base text size for plot labels.}
+
+\item{font_family}{Character; font family for plot text.}
+
+\item{show_grids}{Logical; whether to show panel grid lines.}
+
+\item{x_order}{Optional character vector specifying the x-axis order.}
+
+\item{x_labels}{Optional named character vector mapping x-axis labels.}
+
+\item{y_range}{Optional numeric length-2 vector for y-axis limits.}
+
+\item{x_tickangle}{Numeric; x-axis label angle in degrees.}
 }
 \value{
 a \code{ggplot} object.

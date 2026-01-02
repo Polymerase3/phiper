@@ -6,6 +6,13 @@
 \usage{
 write_result(x, path, ...)
 }
+\arguments{
+\item{x}{Result object to write.}
+
+\item{path}{Output file path.}
+
+\item{...}{Additional arguments passed to methods.}
+}
 \description{
 Generic writer for phiper result objects
 }
