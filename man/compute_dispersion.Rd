@@ -58,27 +58,12 @@ groups or time levels. Pairwise post-hoc tests are always performed when
 }
 \examples{
 \donttest{
-phip_path <- phip_example_path()
-
-ps <- phip_convert(
-  data_long_path    = phip_path,
-  backend           = "duckdb",
-  peptide_library   = TRUE,
-  subject_id        = "subject_id",
-  peptide_id        = "peptide_id",
-  sample_id         = "sample_id",
-  exist             = "exist",
-  timepoint         = "timepoint_factor",
-  fold_change       = "fold_change",
-  materialise_table = TRUE,
-  auto_expand       = TRUE,
-  n_cores           = 2
-)
+ps <- phip_load_example_data()
 
 # small subset for speed
 keep_pep <- c("16627", "5243", "24799", "16196", "18003")
 dat_cols <- dplyr::tbl_vars(ps$data_long)
-tp_col <- "time"
+tp_col <- "timepoint"
 
 ps_small <- ps |>
   dplyr::filter(
@@ -88,7 +73,7 @@ ps_small <- ps |>
   dplyr::collect()
 
 # compute distance matrix
-val_col <- "exist"
+val_col <- "fold_change"
 
 dist_bc <- compute_distance(
   ps_small,
@@ -101,7 +86,7 @@ dispersion_res <- compute_dispersion(
   dist_bc,
   ps        = ps_small,
   group_col = "group",
-  time_col  = "time",
+  time_col  = "timepoint",
   p_adjust  = "BH"
 )
 dispersion_res$tests

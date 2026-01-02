@@ -9,7 +9,7 @@ compute_pcoa(
   neg_correction = c("none", "lingoes", "cailliez"),
   n_axes = 5L,
   top_features = 30L,
-  feature_assoc = c("wa", "correlation", "regression", "none")
+  feature_assoc = c("weighted_average", "correlation", "regression", "none")
 )
 }
 \arguments{
@@ -32,7 +32,7 @@ top \code{top_features} features (by absolute association) for each
 returned axis. Must be > 0.}
 
 \item{feature_assoc}{character scalar. Type of feature-axis association to
-return. \code{"wa"} returns weighted-average feature scores (centroid of
+return. \code{"weighted_average"} returns weighted-average feature scores (centroid of
 sample scores weighted by feature abundance). \code{"correlation"} returns
 feature-axis correlations. \code{"regression"} returns regression slopes
 for axis scores on feature abundance. \code{"none"} skips feature
@@ -72,7 +72,7 @@ If \code{neg_correction} is \code{"lingoes"} or \code{"cailliez"}, a
 correction is applied via \code{vegan::wcmdscale(add = ...)}.
 
 Feature associations are post-hoc summaries of how features relate to PCoA
-axes. Weighted-average scores (\code{feature_assoc = "wa"}) compute
+axes. Weighted-average scores (\code{feature_assoc = "weighted_average"}) compute
 \code{t(X) \%*\% U / colSums(X)}, where \code{X} is the abundance matrix and
 \code{U} are the sample coordinates. Correlation and regression associations
 are computed between feature abundances and axis scores and are not "true"
@@ -82,22 +82,7 @@ PCA loadings unless distances are Euclidean and derived compatibly.
 \donttest{
 # compute a distance matrix with an attached abundance matrix
 # build an example <phip_data> object from the package example dataset
-phip_path <- phip_example_path()
-
-ps <- phip_convert(
-  data_long_path    = phip_path,
-  backend           = "duckdb",
-  peptide_library   = TRUE,
-  subject_id        = "subject_id",
-  peptide_id        = "peptide_id",
-  sample_id         = "sample_id",
-  exist             = "exist",
-  timepoint         = "timepoint_factor",
-  fold_change       = "fold_change",
-  materialise_table = TRUE,
-  auto_expand       = TRUE,
-  n_cores           = 2
-)
+ps <- phip_load_example_data()
 
 # small subset for speed: 5 peptides at time t1
 keep_pep <- c("16627", "5243", "24799", "16196", "18003")

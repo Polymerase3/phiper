@@ -9,7 +9,7 @@ compute_permanova(
   ps,
   group_col = NULL,
   time_col = NULL,
-  subject_col = "subject_id",
+  subject_col = NULL,
   permutations = 999,
   p_adjust = "none"
 )
@@ -32,10 +32,10 @@ applicable. This should be a \emph{categorical} factor for this function
 (continuous time not supported).}
 
 \item{subject_col}{Name of the subject identifier column in \code{ps}
-(for repeated measures). Default \code{"subject_id"}. If this column is
-present and \code{time_col} is provided, permutations will be stratified by
-subject. This is a simplification and does not implement a full
-repeated-measures permutation design (see Details).}
+(for repeated measures). Default \code{NULL}. If provided and this column
+is present and \code{time_col} is provided, permutations will be
+stratified by subject. This is a simplification and does not implement a
+full repeated-measures permutation design (see Details).}
 
 \item{permutations}{Number of permutations for significance testing
 (default 999).}
@@ -90,27 +90,12 @@ P-values are optionally adjusted within each contrast scope (e.g.,
 }
 \examples{
 \donttest{
-phip_path <- phip_example_path()
-
-ps <- phip_convert(
-  data_long_path    = phip_path,
-  backend           = "duckdb",
-  peptide_library   = TRUE,
-  subject_id        = "subject_id",
-  peptide_id        = "peptide_id",
-  sample_id         = "sample_id",
-  exist             = "exist",
-  timepoint         = "timepoint_factor",
-  fold_change       = "fold_change",
-  materialise_table = TRUE,
-  auto_expand       = TRUE,
-  n_cores           = 2
-)
+ps <- phip_load_example_data()
 
 # small subset for speed
 keep_pep <- c("16627", "5243", "24799", "16196", "18003")
 dat_cols <- dplyr::tbl_vars(ps$data_long)
-tp_col <- "time"
+tp_col <- "timepoint"
 
 ps_small <- ps |>
   dplyr::filter(
@@ -120,7 +105,7 @@ ps_small <- ps |>
   dplyr::collect()
 
 # compute distance matrix
-val_col <- "exist"
+val_col <- "fold_change"
 
 dist_bc <- compute_distance(
   ps_small,
@@ -133,14 +118,14 @@ permanova_res <- compute_permanova(
   dist_bc,
   ps        = ps_small,
   group_col = "group",
-  time_col  = "time"
+  time_col  = "timepoint"
 )
 
 permanova_res2 <- compute_permanova(
   dist_bc,
   ps        = ps_small,
   group_col = "group",
-  time_col  = "time",
+  time_col  = "timepoint",
   p_adjust  = "BH"
 )
 }

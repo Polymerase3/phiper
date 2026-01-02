@@ -94,27 +94,12 @@ result but will have \code{NA} values for those metadata columns.
 \examples{
 \donttest{
 # Build example phip_data object
-phip_path <- phip_example_path()
-
-ps <- phip_convert(
-  data_long_path    = phip_path,
-  backend           = "duckdb",
-  peptide_library   = TRUE,
-  subject_id        = "subject_id",
-  peptide_id        = "peptide_id",
-  sample_id         = "sample_id",
-  exist             = "exist",
-  timepoint         = "timepoint_factor",
-  fold_change       = "fold_change",
-  materialise_table = TRUE,
-  auto_expand       = TRUE,
-  n_cores           = 2
-)
+ps <- phip_load_example_data()
 
 # Small subset for speed
 keep_pep <- c("16627", "5243", "24799", "16196", "18003")
 dat_cols <- dplyr::tbl_vars(ps$data_long)
-tp_col <- "time"
+tp_col <- "timepoint"
 
 ps_small <- ps |>
   dplyr::filter(
@@ -124,11 +109,7 @@ ps_small <- ps |>
   dplyr::collect()
 
 # Compute distance matrix
-val_col <- if ("fold_change" \%in\% dplyr::tbl_vars(ps_small)) {
-  "fold_change"
-} else {
-  "exist"
-}
+val_col <- "fold_change"
 
 d <- compute_distance(
   ps_small,

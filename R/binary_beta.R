@@ -828,10 +828,7 @@ compute_pcoa <- function(dist_obj,
 #' # small subset for speed: 5 peptides at time t1
 #' keep_pep <- c("16627", "5243", "24799", "16196", "18003")
 #' dat_cols <- dplyr::tbl_vars(ps$data_long)
-#' tp_col <- if ("time" %in% dat_cols) {
-#' "time"
-#' } else {
-#' "timepoint_factor"
+#' tp_col <- "timepoint_factor"
 #' }
 #'
 #' ps_small <- ps |>
@@ -841,11 +838,7 @@ compute_pcoa <- function(dist_obj,
 #'   ) |>
 #'   dplyr::collect()
 #'
-#' val_col <- if ("fold_change" %in% dplyr::tbl_vars(ps_small)) {
-#'   "fold_change"
-#' } else {
-#'   "exist"
-#' }
+#' val_col <- "fold_change"
 #'
 #' dist_bc <- compute_distance(
 #'   ps_small,
@@ -1275,7 +1268,7 @@ compute_capscale <- function(dist_obj,
 #' # small subset for speed
 #' keep_pep <- c("16627", "5243", "24799", "16196", "18003")
 #' dat_cols <- dplyr::tbl_vars(ps$data_long)
-#' tp_col <- "time"
+#' tp_col <- "timepoint"
 #'
 #' ps_small <- ps |>
 #'   dplyr::filter(
@@ -1285,7 +1278,7 @@ compute_capscale <- function(dist_obj,
 #'   dplyr::collect()
 #'
 #' # compute distance matrix
-#' val_col <- "exist"
+#' val_col <- "fold_change"
 #'
 #' dist_bc <- compute_distance(
 #'   ps_small,
@@ -1298,14 +1291,14 @@ compute_capscale <- function(dist_obj,
 #'   dist_bc,
 #'   ps        = ps_small,
 #'   group_col = "group",
-#'   time_col  = "time"
+#'   time_col  = "timepoint"
 #' )
 #'
 #' permanova_res2 <- compute_permanova(
 #'   dist_bc,
 #'   ps        = ps_small,
 #'   group_col = "group",
-#'   time_col  = "time",
+#'   time_col  = "timepoint",
 #'   p_adjust  = "BH"
 #' )
 #' }
@@ -1843,7 +1836,7 @@ compute_permanova <- function(dist_obj,
 #' # small subset for speed
 #' keep_pep <- c("16627", "5243", "24799", "16196", "18003")
 #' dat_cols <- dplyr::tbl_vars(ps$data_long)
-#' tp_col <- "time"
+#' tp_col <- "timepoint"
 #'
 #' ps_small <- ps |>
 #'   dplyr::filter(
@@ -1853,7 +1846,7 @@ compute_permanova <- function(dist_obj,
 #'   dplyr::collect()
 #'
 #' # compute distance matrix
-#' val_col <- "exist"
+#' val_col <- "fold_change"
 #'
 #' dist_bc <- compute_distance(
 #'   ps_small,
@@ -1866,7 +1859,7 @@ compute_permanova <- function(dist_obj,
 #'   dist_bc,
 #'   ps        = ps_small,
 #'   group_col = "group",
-#'   time_col  = "time",
+#'   time_col  = "timepoint",
 #'   p_adjust  = "BH"
 #' )
 #' dispersion_res$tests
@@ -2330,7 +2323,7 @@ compute_dispersion <- function(dist_obj,
 #' # Small subset for speed
 #' keep_pep <- c("16627", "5243", "24799", "16196", "18003")
 #' dat_cols <- dplyr::tbl_vars(ps$data_long)
-#' tp_col <- "time"
+#' tp_col <- "timepoint"
 #'
 #' ps_small <- ps |>
 #'   dplyr::filter(
@@ -2340,11 +2333,7 @@ compute_dispersion <- function(dist_obj,
 #'   dplyr::collect()
 #'
 #' # Compute distance matrix
-#' val_col <- if ("fold_change" %in% dplyr::tbl_vars(ps_small)) {
-#'   "fold_change"
-#' } else {
-#'   "exist"
-#' }
+#' val_col <- "fold_change"
 #'
 #' d <- compute_distance(
 #'   ps_small,

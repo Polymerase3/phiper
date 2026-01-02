@@ -11,7 +11,7 @@ compute_capscale(
   neg_correction = c("none", "lingoes", "cailliez"),
   top_features = 30L,
   permutations = 999L,
-  feature_assoc = c("wa", "correlation", "regression", "none")
+  feature_assoc = c("weighted_average", "correlation", "regression", "none")
 )
 }
 \arguments{
@@ -44,7 +44,7 @@ unioned). Default is 30.}
 permutation tests via \code{vegan::anova.cca(by = "term")}. Default is 999.}
 
 \item{feature_assoc}{character scalar. Type of feature-axis association to
-return. \code{"wa"} returns weighted-average feature scores (centroid of
+return. \code{"weighted_average"} returns weighted-average feature scores (centroid of
 sample scores weighted by feature abundance). \code{"correlation"} returns
 feature-axis correlations. \code{"regression"} returns regression slopes
 for axis scores on feature abundance. \code{"none"} skips feature
@@ -75,67 +75,4 @@ Performs distance-based redundancy analysis (constrained pcoa,
 a.k.a. cap) on a distance matrix using \pkg{vegan}::\code{capscale}, with
 optional negative eigenvalue correction. Returns constrained sample scores,
 eigenvalues, variance partitioning, and feature associations.
-}
-\examples{
-\donttest{
-phip_path <- phip_example_path()
-
-ps <- phip_convert(
-  data_long_path    = phip_path,
-  backend           = "duckdb",
-  peptide_library   = TRUE,
-  subject_id        = "subject_id",
-  peptide_id        = "peptide_id",
-  sample_id         = "sample_id",
-  exist             = "exist",
-  timepoint         = "timepoint_factor",
-  fold_change       = "fold_change",
-  materialise_table = TRUE,
-  auto_expand       = TRUE,
-  n_cores           = 2
-)
-
-# small subset for speed: 5 peptides at time t1
-keep_pep <- c("16627", "5243", "24799", "16196", "18003")
-dat_cols <- dplyr::tbl_vars(ps$data_long)
-tp_col <- if ("time" \%in\% dat_cols) "time" else "timepoint_factor"
-
-ps_small <- ps |>
-  dplyr::filter(
-    peptide_id \%in\% keep_pep,
-    !!rlang::sym(tp_col) == "T1"
-  ) |>
-  dplyr::collect()
-
-val_col <- if ("fold_change" \%in\% dplyr::tbl_vars(ps_small)) {
-  "fold_change"
-} else {
-  "exist"
-}
-
-dist_bc <- compute_distance(
-  ps_small,
-  value_col = val_col,
-  method_normalization = "hellinger",
-  distance = "bray",
-  n_threads = 2L
-)
-
-# pick a simple constraint that exists in the example data (fallback order)
-dat <- ps_small
-cand <- c("group", "big_group", "type_person", "sex", "age")
-rhs_var <- cand[cand \%in\% dplyr::tbl_vars(dat)][1]
-
-cap_res <- compute_capscale(
-  dist_bc,
-  ps = ps_small,
-  formula = stats::as.formula(paste0("~ ", rhs_var)),
-  neg_correction = "none",
-  top_features = 30L
-)
-
-cap_res$variance_partition
-cap_res$sample_coords
-cap_res$feature_associations
-}
 }
