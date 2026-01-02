@@ -151,7 +151,7 @@ phip_convert <- function(
   # 4. create the phip_data object (DuckDB)
   # ------------------------------------------------------------------
   # using the helper to keep the backend setup consistent
-  con <- .standard_read_duckdb_backend(cfg, colname_map)
+  con <- .ph_standard_read_duckdb_backend(cfg, colname_map)
 
   ## duckdb-specific code
   long <- dplyr::tbl(con, "raw_combined")
@@ -201,7 +201,7 @@ phip_convert <- function(
 #'   existed previously) for downstream queries.
 #'
 #' @keywords internal
-.standard_read_duckdb_backend <- function(cfg, colmap) {
+.ph_standard_read_duckdb_backend <- function(cfg, colmap) {
   rlang::check_installed(c("duckdb", "DBI", "dbplyr"),
                          reason = "duckdb backend"
   )
@@ -292,7 +292,7 @@ phip_convert <- function(
   }
 
   ## -- 4. Standardise column names inside DuckDB ------------------------------
-  .rename_to_standard_inplace(
+  .ph_rename_to_standard_inplace(
     con = con,
     tbl = "raw_combined",
     colname_map = colmap
@@ -338,7 +338,7 @@ phip_convert <- function(
 
 #' @title Rename columns to PHIPER standard names in-place
 #'
-#' @description `.rename_to_standard_inplace()` renames columns in a DuckDB
+#' @description `.ph_rename_to_standard_inplace()` renames columns in a DuckDB
 #' table or view to the standard PHIPER schema using a mapping of standard
 #' names to source columns. For views, it recreates the view with aliased
 #' columns; for tables, it issues `ALTER TABLE ... RENAME COLUMN` statements.
@@ -358,7 +358,7 @@ phip_convert <- function(
 #' - If no matching columns are found, the function emits a message and exits.
 #'
 #' @keywords internal
-.rename_to_standard_inplace <- function(tbl, con, colname_map) {
+.ph_rename_to_standard_inplace <- function(tbl, con, colname_map) {
   ## --- checks -------------------------------------------------------------
   stopifnot(is.character(tbl) && length(tbl) == 1L)
   stopifnot(DBI::dbIsValid(con))
@@ -474,4 +474,3 @@ phip_convert <- function(
 
   invisible(tbl)
 }
-
