@@ -133,7 +133,7 @@ phip_convert_legacy <- function(
   # ------------------------------------------------------------------
   # 3. prepare the metadata
   # ------------------------------------------------------------------
-  meta_list <- .legacy_prepare_metadata(
+  meta_list <- .ph_legacy_prepare_metadata(
     cfg$samples_file,
     cfg$comparisons_file,
     cfg$timepoints_file,
@@ -143,7 +143,7 @@ phip_convert_legacy <- function(
   # ------------------------------------------------------------------
   # 4. create the phip_data object (DuckDB)
   # ------------------------------------------------------------------
-  con <- .read_duckdb_backend(cfg, meta_list)
+  con <- .ph_legacy_read_duckdb_backend(cfg, meta_list)
 
   ## duckdb-specific code
   long <- dplyr::tbl(con, "final_long")
@@ -162,17 +162,28 @@ phip_convert_legacy <- function(
   )
 }
 
-# ---------------------------------------------------------------------------
-#  Internal helper: build counts_final in an in-memory DuckDB connection
-# ---------------------------------------------------------------------------
-#  * No rows are collected to R.
-#  * The caller receives a ready-to-use DBI connection with
-#      counts_final   – long table (peptide × sample) + metadata
-#      samples2/3     – cleaned sample metadata
-#  * Caller is responsible for DBI::dbDisconnect().
-# ---------------------------------------------------------------------------
-.read_duckdb_backend <- function(cfg,
-                                 meta) {
+#' @title Build legacy tables in DuckDB for conversion
+#'
+#' @description `.ph_legacy_read_duckdb_backend()` loads legacy CSV/parquet
+#' inputs into temporary DuckDB tables, reshapes them into a long format, and
+#' prepares the final tables used by `phip_convert_legacy()`.
+#'
+#' @param cfg Named list of resolved file paths and options from
+#'   `.resolve_paths()`.
+#' @param meta List of preprocessed metadata tables from
+#'   `.ph_legacy_prepare_metadata()`.
+#'
+#' @return A DuckDB DBI connection containing the temporary and final tables
+#'   needed for the legacy conversion.
+#'
+#' @details
+#' - No rows are collected into R; all transformations are executed in DuckDB.
+#' - The caller is responsible for closing the returned connection.
+#'
+#' @internal
+#' @keywords internal
+.ph_legacy_read_duckdb_backend <- function(cfg,
+                                           meta) {
   rlang::check_installed(c("duckdb", "DBI", "dbplyr"),
                          reason = "duckdb backend"
   )
@@ -362,12 +373,25 @@ phip_convert_legacy <- function(
   invisible(con)
 }
 
-# ------------------------------------------------------------------------------
-#  helper: fastest possible CSV reader with delimiter sniffing -
-#   variation on the Carlos's function --> added .parquet support
-# ------------------------------------------------------------------------------
-.auto_read <- function(path,
-                       ...) {
+#' @title Read CSV/TSV/Parquet with delimiter sniffing
+#'
+#' @description `.ph_auto_read_file()` loads delimited text or parquet files,
+#' detecting the delimiter for text inputs and using Arrow for parquet.
+#'
+#' @param path Character scalar. Path to a CSV/TSV or parquet file.
+#' @param ... Additional arguments passed to the underlying reader.
+#'
+#' @return A data.frame containing the parsed file contents.
+#'
+#' @details
+#' - For parquet inputs, the reader uses `arrow::read_parquet()`.
+#' - For delimited text, the delimiter is inferred from the header.
+#' - If available, `data.table::fread()` is used for speed.
+#'
+#' @internal
+#' @keywords internal
+.ph_auto_read_file <- function(path,
+                               ...) {
   base <- basename(path)
 
   ext <- strsplit(base, "\\.", fixed = FALSE)[[1]][-1]
@@ -432,12 +456,12 @@ phip_convert_legacy <- function(
 #' @return A list with elements `samples`, `comparisons` (or `NULL`), and
 #'   `extra_cols` (possibly augmented).
 #' @keywords internal
-.legacy_prepare_metadata <- function(samples_file,
+.ph_legacy_prepare_metadata <- function(samples_file,
                                      comparisons_file = NULL,
                                      timepoints_file = NULL,
                                      extra_cols = character()) {
   # ---- samples -------------------------------------------------------------
-  samples <- .auto_read(samples_file) # small table
+  samples <- .ph_auto_read_file(samples_file) # small table
   names(samples)[1] <- "sample_id" # rename first var
 
   # this is my personal discussion with myself, maybe somebody will find this
@@ -465,7 +489,7 @@ phip_convert_legacy <- function(
   if (is.null(comparisons_file)) {
     comparisons <- NULL
   } else {
-    comparisons <- .auto_read(comparisons_file)
+    comparisons <- .ph_auto_read_file(comparisons_file)
 
     # collect dummy-coded column names referenced in comparisons
     dummy_cols <- unique(c(comparisons$group1, comparisons$group2))
@@ -493,7 +517,7 @@ phip_convert_legacy <- function(
   if (is.null(timepoints_file)) {
     timepoints <- NULL
   } else {
-    tp_wide <- .auto_read(timepoints_file)
+    tp_wide <- .ph_auto_read_file(timepoints_file)
 
     tp_long <- stats::reshape(
       tp_wide,
