@@ -631,10 +631,7 @@ compute_pcoa <- function(dist_obj,
       "no 'abundances' attribute found on `dist_obj`;
       skipping feature associations."
     )
-  } else if (identical(feature_assoc, "none")) {
-    feature_associations <- tibble::tibble()
-  } else if (k_use < 1L) {
-    # no axes, nothing to load
+  } else if (identical(feature_assoc, "none") || k_use < 1L) {
     feature_associations <- tibble::tibble()
   } else {
     X <- as.matrix(X)
