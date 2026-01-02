@@ -7,6 +7,7 @@
 coverage](https://codecov.io/gh/Polymerase3/phiper/graph/badge.svg)](https://app.codecov.io/gh/Polymerase3/phiper)
 [![R-CMD-check](https://github.com/Polymerase3/phiper/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Polymerase3/phiper/actions/workflows/R-CMD-check.yaml)
 [![pkgcheck](https://github.com/Polymerase3/phiper/workflows/pkgcheck/badge.svg)](https://github.com/Polymerase3/phiper/actions?query=workflow%3Apkgcheck)
+[![version](https://img.shields.io/github/r-package/v/Polymerase3/phiper?label=version)](https://github.com/Polymerase3/phiper)
 [![Project Status:
 Active/Unstable](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![Lifecycle:

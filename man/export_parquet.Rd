@@ -30,7 +30,9 @@ database/lazy table without reading all data into memory.
 \examples{
 \donttest{
 pd <- phip_load_example_data()
-export_parquet(pd, "output_data.parquet")
+out_path <- tempfile(fileext = ".parquet")
+export_parquet(pd, out_path)
+unlink(out_path)
 }
 
 }

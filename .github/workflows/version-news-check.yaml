@@ -1,0 +1,55 @@
+# .github/workflows/version-news-check.yaml
+
+name: Version-NEWS-check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  version-news:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify DESCRIPTION version bump and NEWS.md update
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          base_ref="origin/${{ github.base_ref }}"
+          git fetch --no-tags origin "${{ github.base_ref }}"
+
+          changed_files="$(git diff --name-only "${base_ref}"...HEAD)"
+
+          if ! printf '%s\n' "$changed_files" | grep -qx "DESCRIPTION"; then
+            echo "ERROR: DESCRIPTION must be updated in every PR."
+            exit 1
+          fi
+
+          if ! printf '%s\n' "$changed_files" | grep -qx "NEWS.md"; then
+            echo "ERROR: NEWS.md must be updated in every PR."
+            exit 1
+          fi
+
+          base_ver="$(git show "${base_ref}:DESCRIPTION" | awk -F': *' '/^Version:/ {print $2; exit}')"
+          head_ver="$(awk -F': *' '/^Version:/ {print $2; exit}' DESCRIPTION)"
+
+          if [ -z "$base_ver" ] || [ -z "$head_ver" ]; then
+            echo "ERROR: Could not read Version from DESCRIPTION."
+            exit 1
+          fi
+
+          if [ "$base_ver" = "$head_ver" ]; then
+            echo "ERROR: DESCRIPTION Version must be bumped (base=$base_ver, head=$head_ver)."
+            exit 1
+          fi
+
+
+          first_ver="$(awk 'BEGIN{FS=" "}; /^# / {print $3; exit}' NEWS.md || true)"
+          if [ "$first_ver" != "$head_ver" ]; then
+            echo "ERROR: NEWS.md first header should match version $head_ver."
+            exit 1
+          fi
