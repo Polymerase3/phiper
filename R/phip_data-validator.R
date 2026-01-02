@@ -93,7 +93,7 @@ validate_phip_data <- function(x,
       ## --------------------------------------------- 4  ATOMIC COLUMNS -------
       .ph_log_info("Ensuring all columns are atomic (no list-cols)")
       sample0 <- if (inherits(tbl, "tbl_lazy")) {
-        # LIMIT 0 --> fetch only the schema, then drop Arrow/DB-specific classes
+        # LIMIT 0 --> fetch only the schema, then drop DB-specific classes
         tbl |>
           utils::head(0) |>
           dplyr::collect() |>
@@ -334,16 +334,12 @@ validate_phip_data <- function(x,
             )
           )
 
-          if (x$backend %in% c("duckdb", "arrow")) {
-            x$data_long <- phip_register_tbl(
-              tbl_expanded,
-              con = x$meta$con,
-              name = "data_long",
-              materialise_table = x$meta$materialise_table
-            )
-          } else {
-            x$data_long <- tbl_expanded
-          }
+          x$data_long <- phip_register_tbl(
+            tbl_expanded,
+            con = x$meta$con,
+            name = "data_long",
+            materialise_table = x$meta$materialise_table
+          )
           x$meta$full_cross <- TRUE
           .ph_log_ok("Auto-expansion complete; grid is now full")
         } else {
@@ -630,7 +626,7 @@ validate_phip_data <- function(x,
 
       ## the main workhorse of the func --> expanding the table by joining
       ## it is like that (no expand.grid), cause it's faster and works on the
-      ## duckdb/arrow backends. DO NOT CHANGE!
+      ## database backends. DO NOT CHANGE!
       out <- cross_tbl |>
         dplyr::left_join(sample_meta, by = by_key) |>
         dplyr::left_join(base_cells, by = by_both)
@@ -795,9 +791,9 @@ validate_phip_data <- function(x,
 #'
 
 #'
-#' @details Works with in-memory data frames and lazy `dbplyr` tables. The
-#'   `<phip_data>` method updates `x$data_long` in place (preserving laziness
-#'   unless you later `compute()` / `collect()` or use [phip_register_tbl()]).
+#' @details Works with lazy `dbplyr` tables. The `<phip_data>` method updates
+#'   `x$data_long` in place (preserving laziness unless you later `compute()` /
+#'   `collect()` or use [phip_register_tbl()]).
 #'
 #'   Method dispatch:
 #' * `phip_expand_full_grid.data.frame()` - returns a local tibble/data frame.
@@ -826,7 +822,7 @@ validate_phip_data <- function(x,
 #' # local tibble
 #' df_expanded <- phip_expand_full_grid(df_long)
 #'
-#' # lazy (DuckDB)
+#' # lazy table
 #' df_lazy <- dplyr::tbl(con, "data_long")
 #' df_lazy2 <- phip_expand_full_grid(df_lazy)
 #' dplyr::compute(df_lazy2, name = "data_long_full", temporary = TRUE)
@@ -931,23 +927,19 @@ phip_expand_full_grid.phip_data <- function(x,
         x$meta$exist <- TRUE
       }
 
-      # -- Register back according to backend policy -----------------------------
-      if (x$backend %in% c("duckdb", "arrow")) {
-        .ph_log_info("Registering expanded table back to DB",
-          bullets = c(
-            sprintf("name: %s", add_quotes("data_long", 1L)),
-            sprintf("materialise_table: %s", as.character(x$meta$materialise_table))
-          )
+      # -- Register back to DB ---------------------------------------------------
+      .ph_log_info("Registering expanded table back to DB",
+        bullets = c(
+          sprintf("name: %s", add_quotes("data_long", 1L)),
+          sprintf("materialise_table: %s", as.character(x$meta$materialise_table))
         )
-        x$data_long <- phip_register_tbl(
-          tbl_expanded,
-          con = x$meta$con,
-          name = "data_long",
-          materialise_table = x$meta$materialise_table
-        )
-      } else {
-        x$data_long <- tbl_expanded
-      }
+      )
+      x$data_long <- phip_register_tbl(
+        tbl_expanded,
+        con = x$meta$con,
+        name = "data_long",
+        materialise_table = x$meta$materialise_table
+      )
 
       x
     },
@@ -961,7 +953,7 @@ phip_expand_full_grid.phip_data <- function(x,
 #'
 #' @description Convenience wrapper that either materialises a lazy pipeline via
 #'   `dplyr::compute()` (creating a TABLE) or emits a `CREATE [TEMP] VIEW AS
-#'   ...` (creating a VIEW) for engines like DuckDB. Returns a `dplyr::tbl()`
+#'   ...` (creating a VIEW). Returns a `dplyr::tbl()`
 #'   pointing to the created object.
 #'
 #' @param tbl A lazy table (e.g., from `dbplyr`).
