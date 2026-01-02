@@ -4,7 +4,7 @@ head.phip_data <- function(x, ...) {
   tryCatch(
     {
       tbl <- x$data_long
-      if (inherits(tbl, c("tbl_dbi", "arrow_dplyr_query"))) {
+      if (inherits(tbl, "tbl_dbi")) {
         tbl |>
           utils::head(...) |>
           dplyr::collect()
@@ -22,7 +22,7 @@ dim.phip_data <- function(x) {
 
   .data <- rlang::.data
   n_rows = tryCatch(
-    if (inherits(x$data_long, c("tbl_dbi", "arrow_dplyr_query"))) {
+    if (inherits(x$data_long, "tbl_dbi")) {
       x$data_long |>
         dplyr::summarise(n = dplyr::n()) |>
         dplyr::pull(.data$n)
@@ -37,10 +37,7 @@ dim.phip_data <- function(x) {
 
 #' @exportS3Method print phip_data
 print.phip_data <- function(x, ...) {
-  cat(cli::rule(
-    left  = "<phip_data>",
-    right = paste0("backend: ", x$backend)
-  ), "\n\n")
+  cat(cli::rule(left = "<phip_data>"), "\n\n")
 
   # ---- counts preview -------------------------------------------------------
   cat(cli::col_cyan("counts (first 5 rows):"), "\n")
@@ -162,19 +159,6 @@ get_comparisons <- function(x) {
   x$comparisons
 }
 
-#' @title Report the storage backend in use
-#'
-#' @description Tells you whether the counts are held in `"duckdb"`, `"arrow"`,
-#' or `"memory"`.
-#'
-#' @inheritParams get_counts
-#' @return A single string (`"duckdb"`, `"arrow"`, or `"memory"`).
-#' @export
-get_backend <- function(x) {
-  .check_pd(x)
-  x$backend
-}
-
 #' @title Retrieve the metadata list
 #'
 #' @description Accesses the `meta` slot, which holds flags such as whether the
@@ -204,8 +188,8 @@ get_peptide_library <- function(x) {
 #' @title Export a phip_data Table to Parquet
 #'
 #' @description
-#' Exports the `data_long` table from a **phip_data** object to disk in Apache Parquet format.
-#' Only implemented for DuckDB backend.
+#' Exports the `data_long` table from a **phip_data** object to disk in Apache
+#' Parquet format.
 #' 
 #' @note The export is performed directly and efficiently from the
 #' database/lazy table without reading all data into memory.
@@ -214,9 +198,6 @@ get_peptide_library <- function(x) {
 #' @param path File path (character) to save the output `.parquet` file.
 #'
 #' @return NULL (invisibly).
-#'
-#' @details
-#' - For the "memory" backend, you may use `arrow::write_parquet(as.data.frame(x$data_long), path)` directly.
 #'
 #' @examples 
 #' \donttest{
@@ -232,11 +213,6 @@ export_parquet <- function(x, path) {
   .check_pd(x)
   .chk_extension(path, "path", c("parquet", "parq", "pq", "pqt"))
   .chk_path(dirname(path), "path", is_dir=TRUE)
-
-  .chk_cond(
-    get_backend(x) != "duckdb",
-    "Action is only supported for duckdb backend"
-  )
 
   con <- dbplyr::remote_con(x$data_long)
 
@@ -472,7 +448,7 @@ anti_join.phip_data <- function(x, y, ...) {
 #' @title Ensure an existence flag (all ones) on `data_long`
 #'
 #' @description Appends/overwrites a column (default: "exist") filled with 1L on
-#'   the lazy `data_long` backend. Preserves laziness; no collection is forced.
+#'   the lazy `data_long` table. Preserves laziness; no collection is forced.
 #'
 #' @param phip_data A <phip_data> object.
 #' @param exist_col Name of the existence column to append/overwrite.
@@ -522,7 +498,7 @@ add_exist <- function(phip_data,
         )
       }
 
-      # lazy mutate; stays in DuckDB/Arrow without materialising
+      # lazy mutate; stays in DuckDB without materialising
       tbl_new <- dplyr::mutate(tbl, !!rlang::sym(exist_col) := 1L)
 
       x_new <- .modify_pd(x, tbl_new)
@@ -541,8 +517,8 @@ add_exist <- function(phip_data,
 #' @title Disconnect backend database connections
 #'
 #' @description Closes any open database connections held inside a
-#' `phip_data` object-both the `data_long` backend (e.g. DuckDB,
-#' Arrow) and the optional `peptide_library` connection.
+#' `phip_data` object, including the `data_long` connection and the optional
+#' `peptide_library` connection.
 #'
 #' Call this when you want to release resources explicitly; it is
 #' also safe to rely on garbage collection to close the connections
