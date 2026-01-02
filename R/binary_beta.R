@@ -77,7 +77,7 @@
 #' # small subset for speed: 5 peptides at time t1
 #' keep_pep <- c("16627", "5243", "24799", "16196", "18003")
 #' dat_cols <- dplyr::tbl_vars(ps$data_long)
-#' tp_col <- "time"
+#' tp_col <- "timepoint"
 #'
 #' ps_small <- ps |>
 #'   dplyr::filter(
@@ -87,7 +87,7 @@
 #'   dplyr::collect()
 #'
 #' # compute distances (needs either 'parallelDist' or 'vegan')
-#' val_col <- "exist"
+#' val_col <- "fold_change"
 #'
 #' d <- compute_distance(
 #'   ps_small,
@@ -377,6 +377,7 @@ compute_distance <- function(ps,
                                      feature_assoc,
                                      top_features,
                                      max_axes = NULL,
+                                     intersect_fn = intersect,
                                      warn_missing_ids,
                                      warn_insufficient_overlap) {
   if (identical(feature_assoc, "none")) {
@@ -390,7 +391,7 @@ compute_distance <- function(ps,
     return(tibble::tibble())
   }
 
-  common_ids <- intersect(coords_ids, X_ids)
+  common_ids <- intersect_fn(coords_ids, X_ids)
   if (length(common_ids) < 2L) {
     .ph_warn(warn_insufficient_overlap)
     return(tibble::tibble())
@@ -738,6 +739,7 @@ compute_pcoa <- function(dist_obj,
       feature_assoc = feature_assoc,
       top_features = top_features,
       max_axes = k_use,
+      intersect_fn = intersect,
       warn_missing_ids = paste(
         "row names missing in coordinates or 'abundances'; cannot align",
         "samples for feature associations."
@@ -1164,6 +1166,7 @@ compute_capscale <- function(dist_obj,
       feature_assoc = feature_assoc,
       top_features = top_features,
       max_axes = min(rank_constrained, 10L),
+      intersect_fn = intersect,
       warn_missing_ids = paste(
         "row names missing in sample scores or abundance matrix; cannot align",
         "for feature associations."
