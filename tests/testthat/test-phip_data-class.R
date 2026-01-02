@@ -28,10 +28,7 @@ test_that("new_phip_data sets meta flags correctly", {
   withr::with_message_sink(
     tempfile(),
     withr::with_options(list(warn = -1), {
-      pd <- new_phip_data(counts_tbl, contrasts_df,
-        backend = "memory",
-        peptide_library = FALSE
-      )
+      pd <- new_phip_data(counts_tbl, contrasts_df, peptide_library = FALSE)
     })
   )
 
@@ -39,26 +36,21 @@ test_that("new_phip_data sets meta flags correctly", {
   expect_s3_class(pd, "phip_data")
   expect_true(pd$meta$longitudinal)
   expect_true(pd$meta$fold_change)
-  expect_equal(get_backend(pd), "memory")
 })
 
 # ---------------------------------------------------------------------------
 # print method (just make sure it runs and contains certain strings)
 # ---------------------------------------------------------------------------
-test_that("print.phip_data shows backend and previews", {
+test_that("print.phip_data shows previews", {
   withr::with_message_sink(
     tempfile(),
     withr::with_options(list(warn = -1), {
-      pd <- new_phip_data(counts_tbl, contrasts_df,
-        backend = "memory",
-        peptide_library = FALSE
-      )
+      pd <- new_phip_data(counts_tbl, contrasts_df, peptide_library = FALSE)
     })
   )
 
 
   out <- capture.output(print(pd))
-  expect_true(any(grepl("backend: memory", out)))
   expect_true(any(grepl("counts \\(first 5 rows\\):", out)))
   expect_true(any(grepl("contrasts:", out)))
 })
@@ -71,7 +63,6 @@ test_that("accessors work and .check_pd errors on wrong class", {
     tempfile(),
     withr::with_options(list(warn = -1), {
       pd <- new_phip_data(counts_tbl, contrasts_df,
-        backend = "memory",
         peptide_library = FALSE, auto_expand = FALSE
       )
     })
@@ -94,7 +85,6 @@ test_that("dplyr wrappers modify data_long lazily", {
     tempfile(),
     withr::with_options(list(warn = -1), {
       pd <- new_phip_data(counts_tbl, contrasts_df,
-        backend = "memory",
         peptide_library = FALSE, auto_expand = FALSE
       )
     })
@@ -135,7 +125,6 @@ test_that("disconnect.phip_data closes duckdb connection if present", {
     tempfile(),
     withr::with_options(list(warn = -1), {
       pd <- new_phip_data(counts_tbl, contrasts_df,
-        backend = "duckdb",
         materialise_table = TRUE,
         meta = list(con = con),
         peptide_library = FALSE

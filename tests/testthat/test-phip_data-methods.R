@@ -1,5 +1,6 @@
 skip_if_not_installed("chk")
-library(arrow)
+skip_if_not_installed("DBI")
+skip_if_not_installed("duckdb")
 
 # -------------------------------------------------------------------------
 # export_parquet ----------------------------------------------------------
@@ -42,7 +43,16 @@ test_that("export_parquet exports as expected", {
     phiper::export_parquet(df, tmp_path)
   )
 
-  exported_df = read_parquet(tmp_path)
+  con <- DBI::dbConnect(duckdb::duckdb(), dbdir = ":memory:")
+  on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
 
-  expect_true(all.equal(df$data_long |> collect(), exported_df))
+  exported_df <- DBI::dbGetQuery(
+    con,
+    sprintf(
+      "SELECT * FROM read_parquet(%s);",
+      DBI::dbQuoteString(con, tmp_path)
+    )
+  )
+
+  expect_true(all.equal(df$data_long |> collect() |> as.data.frame(), exported_df))
 })

@@ -11,7 +11,6 @@
 
     ps <- phip_convert(
       data_long_path    = phip_path,
-      backend           = "duckdb",
       peptide_library   = TRUE,
       subject_id        = "subject_id",
       peptide_id        = "peptide_id",

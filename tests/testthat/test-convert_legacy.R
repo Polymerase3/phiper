@@ -1,5 +1,5 @@
 # # testing the legacy workflow for loading the data from separate files
-# test_that("convert legacy: memory", {
+# test_that("convert legacy: duckdb", {
 #   withr::with_message_sink(
 #     tempfile(),
 #     withr::with_options(list(warn = -1), {
@@ -11,12 +11,8 @@
 #         )
 #
 #         ## SMOKE TEST --------------------------------------------------------------
-#         ### memory
 #         expect_no_error(
-#           pd <- phip_convert_legacy(
-#             config_yaml = path,
-#             backend = "memory"
-#           )
+#           pd <- phip_convert_legacy(config_yaml = path)
 #         )
 #
 #         expect_output(print(pd))
@@ -36,7 +32,6 @@
 #               system.file("extdata", package = "phiper"),
 #               "comparisons.csv"
 #             ),
-#             backend = "memory",
 #             peptide_library = FALSE
 #           )
 #         )
@@ -50,7 +45,6 @@
 #               system.file("extdata", package = "phiper"),
 #               "exist.csv"
 #             ),
-#             backend = "memory",
 #             peptide_library = FALSE
 #           ), "samples_file"
 #         )
@@ -78,7 +72,6 @@
 #               system.file("extdata", package = "phiper"),
 #               "raw_hit.csv"
 #             ),
-#             backend = "memory",
 #             peptide_library = FALSE
 #           )
 #         )
@@ -105,7 +98,6 @@
 #               system.file("extdata", package = "phiper"),
 #               "raw_hit.csv"
 #             ),
-#             backend = "duckdb",
 #             peptide_library = FALSE
 #           )
 #         )
@@ -114,14 +106,12 @@
 #   )
 # })
 #
-# ## testing the other backends; as these are "soft" dependencies, skip them if
-# ## the packages are not installed
+# ## duckdb-only tests
 # skip_if_not_installed("duckdb")
 # skip_if_not_installed("DBI")
-# skip_if_not_installed("arrow")
 # skip_if_not_installed("dbplyr")
 #
-# test_that("convert legacy: duckdb and arrow", {
+# test_that("convert legacy: duckdb", {
 #   withr::with_message_sink(
 #     tempfile(),
 #     withr::with_options(list(warn = -1), {
@@ -132,28 +122,10 @@
 #           "config.yaml"
 #         )
 #         ## SMOKE TESTS -------------------------------------------------------------
-#         ### default backend ("duckdb")
+#         ### default
 #         expect_no_error(
 #           phip_convert_legacy(
 #             config_yaml = path,
-#             peptide_library = FALSE
-#           )
-#         )
-#
-#         ### duckdb explicitly
-#         expect_no_error(
-#           phip_convert_legacy(
-#             config_yaml = path,
-#             backend = "duckdb",
-#             peptide_library = FALSE
-#           )
-#         )
-#
-#         ### arrow
-#         expect_no_error(
-#           phip_convert_legacy(
-#             config_yaml = path,
-#             backend = "arrow",
 #             peptide_library = FALSE
 #           )
 #         )
@@ -209,7 +181,6 @@
 #         # ------------------------------------------------------------------#
 #         pd <- phip_convert_legacy(
 #           config_yaml = yaml_dst,
-#           backend = "duckdb",
 #           peptide_library = FALSE
 #         )
 #
@@ -228,17 +199,17 @@
 #   )
 # })
 #
-# ## .auto_read
+# ## .ph_auto_read_file
 # tmp_csv <- withr::local_tempfile(fileext = ".csv")
 # write.csv(data.frame(a = 1:3, b = 4:6), tmp_csv, row.names = FALSE)
 #
 # # ------------------------------------------------------------------
 # # 1) branch where data.table IS available
 # # ------------------------------------------------------------------
-# test_that(".auto_read_csv uses data.table::fread when available", {
+# test_that(".ph_auto_read_file uses data.table::fread when available", {
 #   skip_if_not_installed("data.table") # ensures branch can run
 #
-#   res <- .auto_read(tmp_csv)
+#   res <- .ph_auto_read_file(tmp_csv)
 #
 #   expect_s3_class(res, "data.frame")
 #   expect_equal(nrow(res), 3)
@@ -250,11 +221,11 @@
 # # ------------------------------------------------------------------
 # # 2) branch where data.table is *pretended* to be missing
 # # ------------------------------------------------------------------
-# test_that(".auto_read_csv falls back to read.csv when data.table is absent", {
+# test_that(".ph_auto_read_file falls back to read.csv when data.table is absent", {
 #   # Mock requireNamespace() so it always returns FALSE inside this call
-#   mockery::stub(.auto_read, "requireNamespace", function(pkg, ...) FALSE)
+#   mockery::stub(.ph_auto_read_file, "requireNamespace", function(pkg, ...) FALSE)
 #
-#   res <- .auto_read(tmp_csv)
+#   res <- .ph_auto_read_file(tmp_csv)
 #
 #   expect_s3_class(res, "data.frame")
 #   expect_equal(nrow(res), 3)
