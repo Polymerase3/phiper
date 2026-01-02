@@ -511,41 +511,29 @@ compute_pcoa <- function(dist_obj,
   # cmdscale requires k in [1, n - 1]
   k_cmd <- min(n_axes, n - 1L)
 
-  pcoa_fit <- if (identical(neg_correction, "none")) {
-    stats::cmdscale(dist_obj, eig = TRUE, k = k_cmd)
-  } else {
-    vegan::wcmdscale(dist_obj, eig = TRUE, k = k_cmd, add = neg_correction)
-  }
-
   is_corrected <- !identical(neg_correction, "none")
-  correction_add <- if (is_corrected && !is.null(pcoa_fit$add)) {
-    as.numeric(pcoa_fit$add)
-  } else {
-    NA_real_
-  }
-  correction_note <- if (is_corrected) {
-    sprintf(
+  correction_add <- NA_real_
+  correction_note <- "No negative eigenvalue correction applied."
+  if (is_corrected) {
+    pcoa_fit <- vegan::wcmdscale(dist_obj, eig = TRUE,
+                                 k = k_cmd, add = neg_correction)
+    if (!is.null(pcoa_fit$add)) {
+      correction_add <- as.numeric(pcoa_fit$add)
+    }
+    correction_note <- sprintf(
       "Distances modified using %s correction prior to PCoA.",
       neg_correction
     )
-  } else {
-    "No negative eigenvalue correction applied."
-  }
-
-  if (is_corrected) {
     .ph_warn(correction_note)
+  } else {
+    pcoa_fit <- stats::cmdscale(dist_obj, eig = TRUE, k = k_cmd)
   }
 
   eig_vals <- pcoa_fit$eig
-  if (is.null(eig_vals)) {
-    eig_vals <- numeric(0L)
-  }
+
   eig_vals <- as.numeric(eig_vals)
 
   coords <- as.matrix(pcoa_fit$points)
-  if (is.null(coords)) {
-    coords <- matrix(0, nrow = n, ncol = 0L)
-  }
 
   # enforce stable axis and sample naming
   if (ncol(coords) > 0L) {
