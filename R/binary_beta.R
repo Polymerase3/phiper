@@ -372,6 +372,103 @@ compute_distance <- function(ps,
   dist_obj
 }
 
+.ph_feature_associations <- function(coords,
+                                     X,
+                                     feature_assoc,
+                                     top_features,
+                                     max_axes = NULL,
+                                     warn_missing_ids,
+                                     warn_insufficient_overlap) {
+  if (identical(feature_assoc, "none")) {
+    return(tibble::tibble())
+  }
+
+  coords_ids <- rownames(coords)
+  X_ids <- rownames(X)
+  if (is.null(coords_ids) || is.null(X_ids)) {
+    .ph_warn(warn_missing_ids)
+    return(tibble::tibble())
+  }
+
+  common_ids <- intersect(coords_ids, X_ids)
+  if (length(common_ids) < 2L) {
+    .ph_warn(warn_insufficient_overlap)
+    return(tibble::tibble())
+  }
+
+  ax_limit <- ncol(coords)
+  if (!is.null(max_axes)) {
+    ax_limit <- min(ax_limit, max_axes)
+  }
+  if (ax_limit < 1L) {
+    return(tibble::tibble())
+  }
+
+  ax_idx <- seq_len(ax_limit)
+  U <- coords[common_ids, ax_idx, drop = FALSE]
+  Xsub <- X[common_ids, , drop = FALSE]
+
+  if (identical(feature_assoc, "weighted_average")) {
+    w <- colSums(Xsub, na.rm = TRUE)
+    keep_feats <- which(w > 0)
+    if (length(keep_feats) > 0L) {
+      S <- t(Xsub[, keep_feats, drop = FALSE]) %*% U
+      S <- sweep(S, 1, w[keep_feats], "/")
+      rownames(S) <- colnames(Xsub)[keep_feats]
+      colnames(S) <- colnames(U)
+    } else {
+      S <- matrix(0, nrow = 0, ncol = ncol(U))
+    }
+  } else {
+    X_center <- scale(Xsub, center = TRUE, scale = FALSE)
+    U_center <- scale(U, center = TRUE, scale = FALSE)
+    n_common <- nrow(X_center)
+    var_X <- colSums(X_center^2) / (n_common - 1)
+    keep_feats <- which(var_X > 0)
+
+    if (length(keep_feats) > 0L) {
+      cov_XU <- crossprod(
+        X_center[, keep_feats, drop = FALSE],
+        U_center
+      ) / (n_common - 1)
+
+      if (identical(feature_assoc, "correlation")) {
+        sd_X <- sqrt(var_X[keep_feats])
+        sd_U <- sqrt(colSums(U_center^2) / (n_common - 1))
+        S <- sweep(cov_XU, 1, sd_X, "/")
+        S <- sweep(S, 2, sd_U, "/")
+        if (any(sd_U == 0)) {
+          S[, sd_U == 0] <- NA_real_
+        }
+      } else {
+        S <- sweep(cov_XU, 1, var_X[keep_feats], "/")
+      }
+
+      rownames(S) <- colnames(Xsub)[keep_feats]
+      colnames(S) <- colnames(U)
+    } else {
+      S <- matrix(0, nrow = 0, ncol = ncol(U))
+    }
+  }
+
+  if (nrow(S) < 1L) {
+    return(tibble::tibble())
+  }
+
+  assoc_tbl <- tibble::as_tibble(S, rownames = "feature")
+
+  ax_names <- colnames(U)
+  top_list <- unique(unlist(lapply(seq_along(ax_names), function(j) {
+    ord <- order(abs(S[, j]), decreasing = TRUE, na.last = NA)
+    head(rownames(S)[ord], top_features)
+  })))
+
+  dplyr::filter(
+    assoc_tbl,
+    .data$feature %in% top_list
+  )
+}
+
 #' @title Principal Components Analysis (PCoA) on a Distance Matrix
 #'
 #' @description Performs PCoA on a distance matrix (typically from
@@ -581,7 +678,7 @@ compute_pcoa <- function(dist_obj,
 
   names(pct_axes) <- paste0("%PCoA", seq_len(k_use))
   var_explained <- tibble::as_tibble_row(
-    c(as.list(round(pct_axes, 3)), `%Other` = round(pct_other, 3))
+    c(as.list(pct_axes), `%Other` = pct_other)
   )
 
   min_eig <- if (length(eig_vals) > 0L) {
@@ -635,88 +732,21 @@ compute_pcoa <- function(dist_obj,
     feature_associations <- tibble::tibble()
   } else {
     X <- as.matrix(X)
-
-    coords_ids <- rownames(coords)
-    X_ids <- rownames(X)
-
-    if (is.null(coords_ids) || is.null(X_ids)) {
-      .ph_warn(
-        "row names missing in coordinates or 'abundances'; cannot align samples
-        for feature associations."
+    feature_associations <- .ph_feature_associations(
+      coords = coords,
+      X = X,
+      feature_assoc = feature_assoc,
+      top_features = top_features,
+      max_axes = k_use,
+      warn_missing_ids = paste(
+        "row names missing in coordinates or 'abundances'; cannot align",
+        "samples for feature associations."
+      ),
+      warn_insufficient_overlap = paste(
+        "insufficient overlap between distance labels and abundance rows;",
+        "skipping feature associations."
       )
-    } else {
-      common_ids <- intersect(coords_ids, X_ids)
-
-      if (length(common_ids) < 2L) {
-        .ph_warn(
-          "insufficient overlap between distance labels and abundance rows;
-          skipping feature associations."
-        )
-      } else {
-        # compute associations for all returned axes
-        ax_idx <- seq_len(k_use)
-        U <- coords[common_ids, ax_idx, drop = FALSE]
-        Xsub <- X[common_ids, , drop = FALSE]
-
-        if (identical(feature_assoc, "weighted_average")) {
-          w <- colSums(Xsub, na.rm = TRUE)
-          keep_feats <- which(w > 0)
-          if (length(keep_feats) > 0L) {
-            S <- t(Xsub[, keep_feats, drop = FALSE]) %*% U
-            S <- sweep(S, 1, w[keep_feats], "/")
-            rownames(S) <- colnames(Xsub)[keep_feats]
-            colnames(S) <- colnames(U)
-          } else {
-            S <- matrix(0, nrow = 0, ncol = ncol(U))
-          }
-        } else {
-          X_center <- scale(Xsub, center = TRUE, scale = FALSE)
-          U_center <- scale(U, center = TRUE, scale = FALSE)
-          n_common <- nrow(X_center)
-          var_X <- colSums(X_center^2) / (n_common - 1)
-          keep_feats <- which(var_X > 0)
-
-          if (length(keep_feats) > 0L) {
-            cov_XU <- crossprod(
-              X_center[, keep_feats, drop = FALSE],
-              U_center
-            ) / (n_common - 1)
-
-            if (identical(feature_assoc, "correlation")) {
-              sd_X <- sqrt(var_X[keep_feats])
-              sd_U <- sqrt(colSums(U_center^2) / (n_common - 1))
-              S <- sweep(cov_XU, 1, sd_X, "/")
-              S <- sweep(S, 2, sd_U, "/")
-              if (any(sd_U == 0)) {
-                S[, sd_U == 0] <- NA_real_
-              }
-            } else {
-              S <- sweep(cov_XU, 1, var_X[keep_feats], "/")
-            }
-
-            rownames(S) <- colnames(Xsub)[keep_feats]
-            colnames(S) <- colnames(U)
-          } else {
-            S <- matrix(0, nrow = 0, ncol = ncol(U))
-          }
-        }
-
-        if (nrow(S) > 0L) {
-          assoc_tbl <- tibble::as_tibble(S, rownames = "feature")
-
-          ax_names <- colnames(U)
-          top_list <- unique(unlist(lapply(seq_along(ax_names), function(j) {
-            ord <- order(abs(S[, j]), decreasing = TRUE, na.last = NA)
-            head(rownames(S)[ord], top_features)
-          })))
-
-          feature_associations <- dplyr::filter(
-            assoc_tbl,
-            .data$feature %in% top_list
-          )
-        }
-      }
-    }
+    )
   }
 
   # ---------------------------------------------------------------------------
@@ -1135,92 +1165,21 @@ compute_capscale <- function(dist_obj,
   feature_associations <- tibble::tibble()
 
   if (!is.null(X_sub) && rank_constrained > 0L) {
-    coords_ids <- rownames(pts)
-    X_ids <- rownames(X_sub)
-
-    if (is.null(coords_ids) || is.null(X_ids)) {
-      .ph_warn(
-        "row names missing in sample scores or abundance matrix; cannot align
-        for feature associations."
+    feature_associations <- .ph_feature_associations(
+      coords = pts,
+      X = X_sub,
+      feature_assoc = feature_assoc,
+      top_features = top_features,
+      max_axes = min(rank_constrained, 10L),
+      warn_missing_ids = paste(
+        "row names missing in sample scores or abundance matrix; cannot align",
+        "for feature associations."
+      ),
+      warn_insufficient_overlap = paste(
+        "insufficient overlap between distance labels and abundance rows;",
+        "skipping feature associations."
       )
-    } else {
-      common_ids <- intersect(coords_ids, X_ids)
-
-      if (length(common_ids) < 2L) {
-        .ph_warn(
-          "insufficient overlap between distance labels and abundance rows;
-          skipping feature associations."
-        )
-      } else {
-        if (identical(feature_assoc, "none")) {
-          feature_associations <- tibble::tibble()
-        } else {
-          # to limit runtime/memory, compute associations for at most 10
-          # constrained axes
-          ax_idx <- seq_len(min(rank_constrained, 10L))
-          U <- pts[common_ids, ax_idx, drop = FALSE]
-          Xsub <- X_sub[common_ids, , drop = FALSE]
-
-          if (identical(feature_assoc, "weighted_average")) {
-            w <- colSums(Xsub, na.rm = TRUE)
-            keep_feats <- which(w > 0)
-            if (length(keep_feats) > 0L) {
-              S <- t(Xsub[, keep_feats, drop = FALSE]) %*% U
-              S <- sweep(S, 1, w[keep_feats], "/")
-              rownames(S) <- colnames(Xsub)[keep_feats]
-              colnames(S) <- colnames(U)
-            } else {
-              S <- matrix(0, nrow = 0, ncol = ncol(U))
-            }
-          } else {
-            X_center <- scale(Xsub, center = TRUE, scale = FALSE)
-            U_center <- scale(U, center = TRUE, scale = FALSE)
-            n_common <- nrow(X_center)
-            var_X <- colSums(X_center^2) / (n_common - 1)
-            keep_feats <- which(var_X > 0)
-
-            if (length(keep_feats) > 0L) {
-              cov_XU <- crossprod(
-                X_center[, keep_feats, drop = FALSE],
-                U_center
-              ) / (n_common - 1)
-
-              if (identical(feature_assoc, "correlation")) {
-                sd_X <- sqrt(var_X[keep_feats])
-                sd_U <- sqrt(colSums(U_center^2) / (n_common - 1))
-                S <- sweep(cov_XU, 1, sd_X, "/")
-                S <- sweep(S, 2, sd_U, "/")
-                if (any(sd_U == 0)) {
-                  S[, sd_U == 0] <- NA_real_
-                }
-              } else {
-                S <- sweep(cov_XU, 1, var_X[keep_feats], "/")
-              }
-
-              rownames(S) <- colnames(Xsub)[keep_feats]
-              colnames(S) <- colnames(U)
-            } else {
-              S <- matrix(0, nrow = 0, ncol = ncol(U))
-            }
-          }
-
-          if (nrow(S) > 0L) {
-            assoc_tbl <- tibble::as_tibble(S, rownames = "feature")
-
-            ax_names <- colnames(U)
-            top_list <- unique(unlist(lapply(seq_along(ax_names), function(j) {
-              ord <- order(abs(S[, j]), decreasing = TRUE, na.last = NA)
-              head(rownames(S)[ord], top_features)
-            })))
-
-            feature_associations <- dplyr::filter(
-              assoc_tbl,
-              .data$feature %in% top_list
-            )
-          }
-        }
-      }
-    }
+    )
   }
 
   # ----------------------------------------------------------------------------
