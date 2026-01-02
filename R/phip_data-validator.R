@@ -314,11 +314,11 @@ validate_phip_data <- function(x,
 
         if (isTRUE(auto_expand)) {
           .ph_log_info("Auto-expanding to full grid via
-                       phip_expand_full_grid()",
+                       expand_phip_data()",
             bullets = c("add_exist = TRUE", "exist_col = \"exist\"")
           )
 
-          tbl_expanded <- phip_expand_full_grid(
+          tbl_expanded <- expand_phip_data(
             tbl,
             key_col = "sample_id",
             id_col = "peptide_id",
@@ -780,7 +780,6 @@ validate_phip_data <- function(x,
   )
 }
 
-# 2) PUBLIC GENERIC + METHODS
 # ------------------------------------------------------------------------------
 #' @title Expand to a full `sample_id * peptide_id` grid
 #'
@@ -789,18 +788,10 @@ validate_phip_data <- function(x,
 #'   numeric/integer columns are filled with `0` and logical columns with
 #'   `FALSE`, unless overridden via `fill_override`.
 #'
-
+#' @details Updates `x$data_long` in place (preserving laziness unless you later
+#'   `compute()` / `collect()` or use [phip_register_tbl()]).
 #'
-#' @details Works with lazy `dbplyr` tables. The `<phip_data>` method updates
-#'   `x$data_long` in place (preserving laziness unless you later `compute()` /
-#'   `collect()` or use [phip_register_tbl()]).
-#'
-#'   Method dispatch:
-#' * `phip_expand_full_grid.data.frame()` - returns a local tibble/data frame.
-#' * `phip_expand_full_grid.tbl_lazy()`   - returns a lazy table (still lazy).
-#' * `phip_expand_full_grid.phip_data()`  - updates `x$data_long` and returns `x`.
-#'
-#' @param x Input: data frame / tibble, lazy `dbplyr` table, or `<phip_data>`.
+#' @param x A `<phip_data>` object.
 #' @param key_col Name(s) of the sample identifier column(s). Character scalar
 #'   or vector, e.g. `"sample_id"` or `c("subject_id", "timepoint_factor")`.
 #' @param id_col  Name of the peptide identifier column. Default `"peptide_id"`.
@@ -813,76 +804,21 @@ validate_phip_data <- function(x,
 #'   it will be **overwritten**.
 #' @param ... Reserved for future extensions; currently unused.
 #'
-#' @return
-#' * `data.frame` / `tbl_lazy` methods: object of the same general kind.
-#' * `<phip_data>` method: the updated `<phip_data>` object (returned).
+#' @return The updated `<phip_data>` object.
 #'
 #' @examples
 #' \dontrun{
-#' # local tibble
-#' df_expanded <- phip_expand_full_grid(df_long)
-#'
-#' # lazy table
-#' df_lazy <- dplyr::tbl(con, "data_long")
-#' df_lazy2 <- phip_expand_full_grid(df_lazy)
-#' dplyr::compute(df_lazy2, name = "data_long_full", temporary = TRUE)
-#'
-#' # <phip_data>: update in place & reassign
-#' pd <- phip_expand_full_grid(pd, fill_override = list(fold_change = NA_real_))
+#' pd <- expand_phip_data(pd, fill_override = list(fold_change = NA_real_))
 #' }
 #' @seealso [phip_register_tbl()]
 #' @export
-phip_expand_full_grid <- function(x, ...) UseMethod("phip_expand_full_grid")
-
-#' @rdname phip_expand_full_grid
-#' @export
-phip_expand_full_grid.data.frame <- function(x,
-                                             key_col = "sample_id",
-                                             id_col = "peptide_id",
-                                             fill_override = NULL,
-                                             add_exist = FALSE,
-                                             exist_col = "exist",
-                                             ...) {
-  .ph_log_info("phip_expand_full_grid.data_frame called")
-  .phip_expand_full_grid(
-    x,
-    key_col       = key_col,
-    id_col        = id_col,
-    fill_override = fill_override,
-    add_exist     = add_exist,
-    exist_col     = exist_col
-  )
-}
-
-#' @rdname phip_expand_full_grid
-#' @export
-phip_expand_full_grid.tbl_lazy <- function(x,
-                                           key_col = "sample_id",
-                                           id_col = "peptide_id",
-                                           fill_override = NULL,
-                                           add_exist = FALSE,
-                                           exist_col = "exist",
-                                           ...) {
-  .ph_log_info("phip_expand_full_grid.tbl_lazy called")
-  .phip_expand_full_grid(
-    x,
-    key_col       = key_col,
-    id_col        = id_col,
-    fill_override = fill_override,
-    add_exist     = add_exist,
-    exist_col     = exist_col
-  )
-}
-
-#' @rdname phip_expand_full_grid
-#' @export
-phip_expand_full_grid.phip_data <- function(x,
-                                            key_col = "sample_id",
-                                            id_col = "peptide_id",
-                                            fill_override = NULL,
-                                            add_exist = FALSE,
-                                            exist_col = "exist",
-                                            ...) {
+expand_phip_data <- function(x,
+                             key_col = "sample_id",
+                             id_col = "peptide_id",
+                             fill_override = NULL,
+                             add_exist = FALSE,
+                             exist_col = "exist",
+                             ...) {
   .ph_with_timing(
     headline = "Expanding <phip_data> to full grid",
     step = "updating x$data_long",
