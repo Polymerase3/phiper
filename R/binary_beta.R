@@ -1221,10 +1221,10 @@ compute_capscale <- function(dist_obj,
 #'   applicable. This should be a \emph{categorical} factor for this function
 #'   (continuous time not supported).
 #' @param subject_col Name of the subject identifier column in \code{ps}
-#'   (for repeated measures). Default \code{"subject_id"}. If this column is
-#'   present and \code{time_col} is provided, permutations will be stratified by
-#'   subject. This is a simplification and does not implement a full
-#'   repeated-measures permutation design (see Details).
+#'   (for repeated measures). Default \code{NULL}. If provided and this column
+#'   is present and \code{time_col} is provided, permutations will be
+#'   stratified by subject. This is a simplification and does not implement a
+#'   full repeated-measures permutation design (see Details).
 #' @param permutations Number of permutations for significance testing
 #'   (default 999).
 #' @param p_adjust P-value adjustment method applied within each contrast scope.
@@ -1314,7 +1314,7 @@ compute_permanova <- function(dist_obj,
                               ps,
                               group_col = NULL,
                               time_col = NULL,
-                              subject_col = "subject_id",
+                              subject_col = NULL,
                               permutations = 999,
                               p_adjust = "none") {
   # ----------------------------------------------------------------------------
@@ -1327,7 +1327,9 @@ compute_permanova <- function(dist_obj,
   if (!is.null(time_col)) {
     chk::chk_string(time_col)
   }
-  chk::chk_string(subject_col)
+  if (!is.null(subject_col)) {
+    chk::chk_string(subject_col)
+  }
   chk::chk_count(permutations)
   chk::chk_gt(permutations, 0)
   chk::chk_string(p_adjust)
@@ -1385,6 +1387,15 @@ compute_permanova <- function(dist_obj,
   dat_cols <- dplyr::tbl_vars(dat)
   if (!"sample_id" %in% dat_cols) {
     .ph_abort("`ps` must contain a `sample_id` column.")
+  }
+
+  if (is.null(subject_col) && "subject_id" %in% dat_cols) {
+    .ph_warn(
+      paste(
+        "column `subject_id` found in `ps`, but `subject_col` is NULL;",
+        "repeated-measures stratification is disabled."
+      )
+    )
   }
 
   has_group <- !is.null(group_col) && group_col %in% dat_cols
