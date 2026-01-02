@@ -405,9 +405,9 @@ prev_filter_pairs <- function(
 #' Within each rank `r` (and `view` if present), **weights are scaled to sum to**
 #' `m_r`:
 #'
-#' \deqn{ w_i^\* \;=\; w_i \cdot \frac{m_r}{\sum_j w_j}. }
+#' \deqn{ w_i^{*} \;=\; w_i \cdot \frac{m_r}{\sum_j w_j}. }
 #'
-#' We adjust using the standard weighted step-up rule on `p_i / w_i^\*`. The
+#' We adjust using the standard weighted step-up rule on \eqn{p_i / w_i^{*}}. The
 #' resulting q-values are reported in `p_adj_rank_wbh`, with flags
 #' `passed_rank_wbh` and labels `category_rank_wbh`. If `weight_mode="none"`,
 #' all weights are 1 and wBH reduces to BH.
@@ -434,7 +434,7 @@ prev_filter_pairs <- function(
 #' @param interaction_sep Separator for interaction labels (default `"::"`).
 #' @param collect Logical; if `TRUE` (default) return a collected tibble; otherwise a lazy table.
 #' @param register_name Optional DuckDB table name for materialization (unpaired path).
-#' @param pop_k_min Integer ≥1; k-of-n POP threshold per sample (default 1).
+#' @param pop_k_min Integer \eqn{\ge} 1; k-of-n POP threshold per sample (default 1).
 #' @param paired Logical; use paired design (McNemar exact) with `subject_id` (default `FALSE`).
 #'        NOTE: can also be a character scalar naming the column that links related samples
 #'        (e.g. "subject_id" or "dyade"). If so, only samples present in both groups

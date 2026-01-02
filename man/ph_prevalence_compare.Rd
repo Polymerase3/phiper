@@ -50,7 +50,7 @@ if \code{paired=TRUE} also \code{subject_id}. If \code{rank_cols} include non-pe
 
 \item{register_name}{Optional DuckDB table name for materialization (unpaired path).}
 
-\item{pop_k_min}{Integer ≥1; k-of-n POP threshold per sample (default 1).}
+\item{pop_k_min}{Integer \eqn{\ge} 1; k-of-n POP threshold per sample (default 1).}
 
 \item{paired}{Logical; use paired design (McNemar exact) with \code{subject_id} (default \code{FALSE}).
 NOTE: can also be a character scalar naming the column that links related samples
@@ -140,9 +140,9 @@ base weight equal to the number of distinct peptides mapping to that feature.
 Within each rank \code{r} (and \code{view} if present), \strong{weights are scaled to sum to}
 \code{m_r}:
 
-\deqn{ w_i^\* \;=\; w_i \cdot \frac{m_r}{\sum_j w_j}. }
+\deqn{ w_i^{*} \;=\; w_i \cdot \frac{m_r}{\sum_j w_j}. }
 
-We adjust using the standard weighted step-up rule on \verb{p_i / w_i^\\*}. The
+We adjust using the standard weighted step-up rule on \eqn{p_i / w_i^{*}}. The
 resulting q-values are reported in \code{p_adj_rank_wbh}, with flags
 \code{passed_rank_wbh} and labels \code{category_rank_wbh}. If \code{weight_mode="none"},
 all weights are 1 and wBH reduces to BH.

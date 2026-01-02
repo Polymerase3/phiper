@@ -71,7 +71,8 @@
 #'    A **two-sided** permutation p-value for the global shift is computed:
 #'
 #'    - **Paired design**: if both groups have measurements for the same
-#'      `subject_id`, each subject’s labels (`g1` ↔ `g2`) are independently
+#'      `subject_id`, each subject’s labels (\code{g1} \eqn{\leftrightarrow}
+#'      \code{g2}) are independently
 #'      flipped with probability 1/2 and steps (1–4) are recomputed to obtain
 #'      \eqn{T_b}.
 #'
@@ -101,7 +102,8 @@
 #'      `"mean"`, `"max"`, `"median"`).
 #'
 #'    - If `cross_prev != "none"`, pooled peptide-level prevalences across
-#'      `g1 ∪ g2` are summarized with the same set of reducers (`"sum"`,
+#'      \code{g1} \eqn{\cup} \code{g2} are summarized with the same set of
+#'      reducers (`"sum"`,
 #'      `"mean"`, `"max"`, `"median"`) and returned as `cross_prev_<mode>`.
 #'
 #' **Input requirements.**
@@ -198,7 +200,8 @@
 #'   contrast. One of `c("none", "sum", "mean", "max", "median")`. If `"none"`,
 #'   no fold-change summary is returned.
 #' @param cross_prev Character scalar specifying whether and how to summarize
-#'   pooled peptide-level prevalences across `g1 ∪ g2` in each contrast. One
+#'   pooled peptide-level prevalences across \code{g1} \eqn{\cup} \code{g2} in
+#'   each contrast. One
 #'   of `c("none", "sum", "mean", "max", "median")`. If `"none"`, no
 #'   prevalence summary is returned.
 #'
