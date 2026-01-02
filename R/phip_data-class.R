@@ -2,7 +2,7 @@
 #'
 #' @description Creates a fully-validated S3 object that bundles the tidy
 #'   PhIP-Seq counts (`data_long`), optional comparison definitions, a
-#'   peptide-library annotation table, and backend metadata. The function
+#'   peptide-library annotation table, and other metadata. The function
 #'   performs a minimal sanity check on *comparisons* before returning the
 #'   object (validation of the data itself happens via `validate_phip_data()`
 #'   helper).

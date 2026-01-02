@@ -488,7 +488,6 @@ add_quotes <- function(x,
 #'   suitable for downstream helper functions.
 #'
 #' @keywords internal
-
 .resolve_paths <- function(
     exist_file = NULL,
     fold_change_file = NULL,

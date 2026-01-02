@@ -43,7 +43,6 @@
 #'     `NULL` if none were supplied.}
 #'   \item{`peptide_library`}{Loaded peptide-library metadata (if
 #'     `peptide_library = TRUE`).}
-#'   \item{`backend`}{Character vector indicating the storage engine.}
 #'   \item{`meta`}{List with DuckDB connection handles.}
 #' }
 #'
@@ -123,7 +122,6 @@ phip_convert <- function(
   ## resolve the path to data_long_path
   cfg <- .resolve_paths(
     data_long_path = data_long_path,
-    backend = "duckdb",
     peptide_library = peptide_library,
     n_cores = n_cores,
     materialise_table = materialise_table,
@@ -161,7 +159,6 @@ phip_convert <- function(
     data_long = long,
     comparisons = NULL,
     peptide_library = cfg$peptide_library,
-    backend = "duckdb",
     auto_expand = cfg$auto_expand,
     materialise_table = cfg$materialise_table,
     meta = list(con = con)

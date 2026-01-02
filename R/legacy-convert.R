@@ -123,7 +123,6 @@ phip_convert_legacy <- function(
     extra_cols = extra_cols,
     comparisons_file = comparisons_file,
     output_dir = output_dir,
-    backend = "duckdb",
     peptide_library = peptide_library,
     config_yaml = config_yaml,
     n_cores = n_cores,
@@ -157,7 +156,6 @@ phip_convert_legacy <- function(
     data_long = long,
     comparisons = comps,
     peptide_library = cfg$peptide_library,
-    backend = "duckdb",
     meta = list(con = con)
   )
 }
