@@ -536,12 +536,9 @@ compute_pcoa <- function(dist_obj,
   coords <- as.matrix(pcoa_fit$points)
 
   # enforce stable axis and sample naming
-  if (ncol(coords) > 0L) {
-    colnames(coords) <- paste0("PCoA", seq_len(ncol(coords)))
-  }
-  if (nrow(coords) == n) {
-    rownames(coords) <- labels
-  }
+  colnames(coords) <- paste0("PCoA", seq_len(ncol(coords)))
+
+  rownames(coords) <- labels
 
   # ----------------------------------------------------------------------------
   # 3) sample coordinates (first n_axes, or fewer)
