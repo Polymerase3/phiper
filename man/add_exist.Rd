@@ -18,7 +18,7 @@ Modified <phip_data> with updated \code{data_long}.
 }
 \description{
 Appends/overwrites a column (default: "exist") filled with 1L on
-the lazy \code{data_long} backend. Preserves laziness; no collection is forced.
+the lazy \code{data_long} table. Preserves laziness; no collection is forced.
 }
 \examples{
 pd <- phip_load_example_data()

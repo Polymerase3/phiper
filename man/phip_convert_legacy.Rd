@@ -14,7 +14,6 @@ phip_convert_legacy(
   extra_cols = NULL,
   comparisons_file = NULL,
   output_dir = NULL,
-  backend = NULL,
   peptide_library = TRUE,
   n_cores = 8,
   materialise_table = TRUE,
@@ -43,27 +42,22 @@ mapping). Optional for cross-sectional data.}
 
 \item{output_dir}{\emph{Deprecated.} Ignored with a warning.}
 
-\item{backend}{Storage backend: \code{"arrow"}, \code{"duckdb"}, or
-\code{"memory"}. Defaults to \code{"duckdb"}.}
-
 \item{peptide_library}{logical, defining if the \code{peptide_library} is to be
 downloaded from the official \code{phiper} GitHub}
 
-\item{n_cores}{Integer >= 1. Number of CPU threads DuckDB/Arrow may use while
-reading and writing files. Ignored when \code{backend = "memory"}.}
+\item{n_cores}{Integer >= 1. Number of CPU threads DuckDB may use while
+reading and writing files.}
 
-\item{materialise_table}{Logical (DuckDB & Arrow only).
-If \code{FALSE} the result is registered as a \strong{view}; if \code{TRUE} the table is
-fully \strong{materialised} and stored on disk, trading higher load time and
-storage for faster repeated queries.}
+\item{materialise_table}{Logical. If \code{FALSE} the result is registered as a
+\strong{view}; if \code{TRUE} the table is fully \strong{materialised} and stored on disk,
+trading higher load time and storage for faster repeated queries.}
 
 \item{config_yaml}{Optional YAML file containing any of the above
 parameters (see example).}
 }
 \value{
 A validated \code{phip_data} object whose \code{data_long} slot is backed by a
-tibble (memory), a DuckDB connection, or an Arrow dataset, depending on
-\code{backend}.
+DuckDB connection.
 }
 \description{
 \code{phip_convert_legacy()} ingests the original three-file PhIP-Seq input
@@ -71,7 +65,7 @@ tibble (memory), a DuckDB connection, or an Arrow dataset, depending on
 an optional \emph{comparisons} file.
 Paths can be supplied directly or via a single YAML config; explicit
 arguments always override the YAML.  The function normalises the chosen
-storage \code{backend}, validates every file, and returns a ready-to-use
+DuckDB storage, validates every file, and returns a ready-to-use
 \code{phip_data} object.
 }
 \details{
@@ -115,8 +109,7 @@ pd <- phip_convert_legacy(
   exist_file = "legacy/exist.csv",
   samples_file = "legacy/samples.csv",
   timepoints_file = "legacy/timepoints.csv",
-  comparisons_file = "legacy/comparisons.csv",
-  backend = "duckdb"
+  comparisons_file = "legacy/comparisons.csv"
 )
 
 ## 2. YAML-driven usage (explicit args override YAML)
@@ -126,12 +119,10 @@ pd <- phip_convert_legacy(
 # timepoints_file:  meta/timepoints.csv
 # comparisons_file: meta/comparisons.csv
 # extra_cols: [sex, age]
-# backend: duckdb
 # -------------------------------
 
 pd <- phip_convert_legacy(
-  config_yaml = "config/legacy_config.yaml",
-  backend     = "arrow" # overrides YAML backend
+  config_yaml = "config/legacy_config.yaml"
 )
 }
 

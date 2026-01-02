@@ -1,24 +1,17 @@
-################################################################################
-## phip_data S3 class  ---------------------------------------------------------
-################################################################################
 #' @title Construct a **phip_data** object
 #'
 #' @description Creates a fully-validated S3 object that bundles the tidy
 #'   PhIP-Seq counts (`data_long`), optional comparison definitions, a
-#'   peptide-library annotation table, and backend metadata.  The function
-#'   performs a minimal sanity check on *comparisons* and normalises the chosen
-#'   storage
-#' *backend* before returning the object (validation of the data itself
-#'   happens via `validate_phip_data()` helper).
+#'   peptide-library annotation table, and other metadata. The function
+#'   performs a minimal sanity check on *comparisons* before returning the
+#'   object (validation of the data itself happens via `validate_phip_data()`
+#'   helper).
 #'
 #' @param data_long A tidy data frame (or `tbl_lazy`) with one row per
 #'   `peptide_id` x `sample_id` combination. **Required.**
 #' @param comparisons A data frame describing two-way contrasts
 #'   (\code{comparison}, \code{group1}, \code{group2}, \code{variable});
 #'   defaults to an empty tibble if \code{NULL}.
-#' @param backend Character string specifying the storage engine to use:
-#'   \code{"memory"}, \code{"duckdb"}, or \code{"arrow"}.  If \code{NULL}
-#'   the implicit default is \code{"duckdb"}.
 #' @param peptide_library A data frame with one row per \code{peptide_id}
 #'   and its annotations.  If \code{NULL}, the package’s current default
 #'   library is used.
@@ -32,10 +25,10 @@
 #'   * Measurement columns such as `fold_change`, `exist`, raw counts, or any
 #'     other non-recyclable fields are initialised to 0.
 #'   The expanded table replaces `data_long` in place.
-#' @param materialise_table Logical (DuckDB and Arrow back-ends only).
-#'   If `FALSE` (default) the result is registered as a **view**.
-#'   If `TRUE` the result is fully **materialised** and stored as a physical
-#'   table, which speeds up repeated queries at the cost of extra memory/disk.
+#' @param materialise_table Logical. If `FALSE` (default) the result is
+#'   registered as a **view**. If `TRUE` the result is fully **materialised**
+#'   and stored as a physical table, which speeds up repeated queries at the
+#'   cost of extra memory/disk.
 #'
 #' @return An object of class \code{"phip_data"}.
 #'
@@ -45,17 +38,13 @@
 #' pd <- new_phip_data(
 #'   data_long = tidy_counts,
 #'   comparisons = NULL,
-#'   backend = "duckdb",
 #'   peptide_library = TRUE
 #' )
 #' }
-#' ## list available backends
-#' c("memory", "duckdb", "arrow")
 #'
 #' @export
 new_phip_data <- function(data_long,
                           comparisons,
-                          backend = c("memory", "duckdb", "arrow"),
                           peptide_library = TRUE,
                           auto_expand = TRUE,
                           materialise_table = TRUE,
@@ -64,12 +53,6 @@ new_phip_data <- function(data_long,
     headline = "Constructing <phip_data> object",
     step = "new_phip_data()",
     expr = {
-      backend <- if (is.null(backend)) {
-        "duckdb" # implicit default
-      } else {
-        match.arg(backend, choices = c("arrow", "duckdb", "memory"))
-      }
-
       # quick sanity check
       if (!is.null(comparisons)) {
         .chk_cond(
@@ -147,7 +130,6 @@ new_phip_data <- function(data_long,
         list(
           data_long       = data_long, # lazy tbl or tibble
           comparisons     = tibble::as_tibble(comparisons),
-          backend         = backend,
           peptide_library = peptide_library,
           meta            = meta
         ),

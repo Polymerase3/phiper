@@ -93,7 +93,7 @@ validate_phip_data <- function(x,
       ## --------------------------------------------- 4  ATOMIC COLUMNS -------
       .ph_log_info("Ensuring all columns are atomic (no list-cols)")
       sample0 <- if (inherits(tbl, "tbl_lazy")) {
-        # LIMIT 0 --> fetch only the schema, then drop Arrow/DB-specific classes
+        # LIMIT 0 --> fetch only the schema, then drop DB-specific classes
         tbl |>
           utils::head(0) |>
           dplyr::collect() |>
@@ -314,12 +314,12 @@ validate_phip_data <- function(x,
 
         if (isTRUE(auto_expand)) {
           .ph_log_info("Auto-expanding to full grid via
-                       phip_expand_full_grid()",
+                       expand_phip_data()",
             bullets = c("add_exist = TRUE", "exist_col = \"exist\"")
           )
 
-          tbl_expanded <- phip_expand_full_grid(
-            tbl,
+          x <- expand_phip_data(
+            x,
             key_col = "sample_id",
             id_col = "peptide_id",
             add_exist = TRUE, # keep binary column
@@ -334,17 +334,6 @@ validate_phip_data <- function(x,
             )
           )
 
-          if (x$backend %in% c("duckdb", "arrow")) {
-            x$data_long <- phip_register_tbl(
-              tbl_expanded,
-              con = x$meta$con,
-              name = "data_long",
-              materialise_table = x$meta$materialise_table
-            )
-          } else {
-            x$data_long <- tbl_expanded
-          }
-          x$meta$full_cross <- TRUE
           .ph_log_ok("Auto-expansion complete; grid is now full")
         } else {
           .ph_warn(
@@ -630,7 +619,7 @@ validate_phip_data <- function(x,
 
       ## the main workhorse of the func --> expanding the table by joining
       ## it is like that (no expand.grid), cause it's faster and works on the
-      ## duckdb/arrow backends. DO NOT CHANGE!
+      ## database backends. DO NOT CHANGE!
       out <- cross_tbl |>
         dplyr::left_join(sample_meta, by = by_key) |>
         dplyr::left_join(base_cells, by = by_both)
@@ -784,7 +773,6 @@ validate_phip_data <- function(x,
   )
 }
 
-# 2) PUBLIC GENERIC + METHODS
 # ------------------------------------------------------------------------------
 #' @title Expand to a full `sample_id * peptide_id` grid
 #'
@@ -793,18 +781,10 @@ validate_phip_data <- function(x,
 #'   numeric/integer columns are filled with `0` and logical columns with
 #'   `FALSE`, unless overridden via `fill_override`.
 #'
-
+#' @details Updates `x$data_long` in place (preserving laziness unless you later
+#'   `compute()` / `collect()` or use [register_phip_data_tbl()]).
 #'
-#' @details Works with in-memory data frames and lazy `dbplyr` tables. The
-#'   `<phip_data>` method updates `x$data_long` in place (preserving laziness
-#'   unless you later `compute()` / `collect()` or use [phip_register_tbl()]).
-#'
-#'   Method dispatch:
-#' * `phip_expand_full_grid.data.frame()` - returns a local tibble/data frame.
-#' * `phip_expand_full_grid.tbl_lazy()`   - returns a lazy table (still lazy).
-#' * `phip_expand_full_grid.phip_data()`  - updates `x$data_long` and returns `x`.
-#'
-#' @param x Input: data frame / tibble, lazy `dbplyr` table, or `<phip_data>`.
+#' @param x A `<phip_data>` object.
 #' @param key_col Name(s) of the sample identifier column(s). Character scalar
 #'   or vector, e.g. `"sample_id"` or `c("subject_id", "timepoint_factor")`.
 #' @param id_col  Name of the peptide identifier column. Default `"peptide_id"`.
@@ -817,76 +797,21 @@ validate_phip_data <- function(x,
 #'   it will be **overwritten**.
 #' @param ... Reserved for future extensions; currently unused.
 #'
-#' @return
-#' * `data.frame` / `tbl_lazy` methods: object of the same general kind.
-#' * `<phip_data>` method: the updated `<phip_data>` object (returned).
+#' @return The updated `<phip_data>` object.
 #'
 #' @examples
 #' \dontrun{
-#' # local tibble
-#' df_expanded <- phip_expand_full_grid(df_long)
-#'
-#' # lazy (DuckDB)
-#' df_lazy <- dplyr::tbl(con, "data_long")
-#' df_lazy2 <- phip_expand_full_grid(df_lazy)
-#' dplyr::compute(df_lazy2, name = "data_long_full", temporary = TRUE)
-#'
-#' # <phip_data>: update in place & reassign
-#' pd <- phip_expand_full_grid(pd, fill_override = list(fold_change = NA_real_))
+#' pd <- expand_phip_data(pd, fill_override = list(fold_change = NA_real_))
 #' }
-#' @seealso [phip_register_tbl()]
+#' @seealso [register_phip_data_tbl()]
 #' @export
-phip_expand_full_grid <- function(x, ...) UseMethod("phip_expand_full_grid")
-
-#' @rdname phip_expand_full_grid
-#' @export
-phip_expand_full_grid.data.frame <- function(x,
-                                             key_col = "sample_id",
-                                             id_col = "peptide_id",
-                                             fill_override = NULL,
-                                             add_exist = FALSE,
-                                             exist_col = "exist",
-                                             ...) {
-  .ph_log_info("phip_expand_full_grid.data_frame called")
-  .phip_expand_full_grid(
-    x,
-    key_col       = key_col,
-    id_col        = id_col,
-    fill_override = fill_override,
-    add_exist     = add_exist,
-    exist_col     = exist_col
-  )
-}
-
-#' @rdname phip_expand_full_grid
-#' @export
-phip_expand_full_grid.tbl_lazy <- function(x,
-                                           key_col = "sample_id",
-                                           id_col = "peptide_id",
-                                           fill_override = NULL,
-                                           add_exist = FALSE,
-                                           exist_col = "exist",
-                                           ...) {
-  .ph_log_info("phip_expand_full_grid.tbl_lazy called")
-  .phip_expand_full_grid(
-    x,
-    key_col       = key_col,
-    id_col        = id_col,
-    fill_override = fill_override,
-    add_exist     = add_exist,
-    exist_col     = exist_col
-  )
-}
-
-#' @rdname phip_expand_full_grid
-#' @export
-phip_expand_full_grid.phip_data <- function(x,
-                                            key_col = "sample_id",
-                                            id_col = "peptide_id",
-                                            fill_override = NULL,
-                                            add_exist = FALSE,
-                                            exist_col = "exist",
-                                            ...) {
+expand_phip_data <- function(x,
+                             key_col = "sample_id",
+                             id_col = "peptide_id",
+                             fill_override = NULL,
+                             add_exist = FALSE,
+                             exist_col = "exist",
+                             ...) {
   .ph_with_timing(
     headline = "Expanding <phip_data> to full grid",
     step = "updating x$data_long",
@@ -931,23 +856,19 @@ phip_expand_full_grid.phip_data <- function(x,
         x$meta$exist <- TRUE
       }
 
-      # -- Register back according to backend policy -----------------------------
-      if (x$backend %in% c("duckdb", "arrow")) {
-        .ph_log_info("Registering expanded table back to DB",
-          bullets = c(
-            sprintf("name: %s", add_quotes("data_long", 1L)),
-            sprintf("materialise_table: %s", as.character(x$meta$materialise_table))
-          )
+      # -- Register back to DB ---------------------------------------------------
+      .ph_log_info("Registering expanded table back to DB",
+        bullets = c(
+          sprintf("name: %s", add_quotes("data_long", 1L)),
+          sprintf("materialise_table: %s", as.character(x$meta$materialise_table))
         )
-        x$data_long <- phip_register_tbl(
-          tbl_expanded,
-          con = x$meta$con,
-          name = "data_long",
-          materialise_table = x$meta$materialise_table
-        )
-      } else {
-        x$data_long <- tbl_expanded
-      }
+      )
+      x$data_long <- register_phip_data_tbl(
+        tbl_expanded,
+        con = x$meta$con,
+        name = "data_long",
+        materialise_table = x$meta$materialise_table
+      )
 
       x
     },
@@ -955,13 +876,12 @@ phip_expand_full_grid.phip_data <- function(x,
   )
 }
 
-# 3) Register a lazy table back to the DB as TABLE or VIEW
 # ------------------------------------------------------------------------------
 #' @title Register a lazy table back to the database as a TABLE or VIEW
 #'
 #' @description Convenience wrapper that either materialises a lazy pipeline via
 #'   `dplyr::compute()` (creating a TABLE) or emits a `CREATE [TEMP] VIEW AS
-#'   ...` (creating a VIEW) for engines like DuckDB. Returns a `dplyr::tbl()`
+#'   ...` (creating a VIEW). Returns a `dplyr::tbl()`
 #'   pointing to the created object.
 #'
 #' @param tbl A lazy table (e.g., from `dbplyr`).
@@ -976,17 +896,17 @@ phip_expand_full_grid.phip_data <- function(x,
 #' @examples
 #' \dontrun{
 #' lazy <- dplyr::tbl(con, "data_long") |> dplyr::filter(fold_change > 0)
-#' phip_register_tbl(lazy, con,
+#' register_phip_data_tbl(lazy, con,
 #'   name = "data_long_pos",
 #'   materialise_table = TRUE
 #' )
 #' }
 #' @export
-phip_register_tbl <- function(tbl,
-                              con,
-                              name = "data_long",
-                              materialise_table = TRUE,
-                              temporary = TRUE) {
+register_phip_data_tbl <- function(tbl,
+                                   con,
+                                   name = "data_long",
+                                   materialise_table = TRUE,
+                                   temporary = TRUE) {
   .ph_with_timing(
     headline = "Registering lazy table",
     step = sprintf(

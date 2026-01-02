@@ -15,13 +15,8 @@ export_parquet(x, path)
 NULL (invisibly).
 }
 \description{
-Exports the \code{data_long} table from a \strong{phip_data} object to disk in Apache Parquet format.
-Only implemented for DuckDB backend.
-}
-\details{
-\itemize{
-\item For the "memory" backend, you may use \code{arrow::write_parquet(as.data.frame(x$data_long), path)} directly.
-}
+Exports the \code{data_long} table from a \strong{phip_data} object to disk in Apache
+Parquet format.
 }
 \note{
 The export is performed directly and efficiently from the
