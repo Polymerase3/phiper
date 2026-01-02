@@ -48,6 +48,9 @@ volcano_interactive(
 
 \item{significant_colors}{Named vector of colors for significance categories.}
 }
+\value{
+A \code{plotly} htmlwidget.
+}
 \description{
 Interactive volcano plot (log2 ratio vs -log10 p)
 }

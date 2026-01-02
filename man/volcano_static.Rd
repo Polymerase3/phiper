@@ -48,6 +48,9 @@ volcano_static(
 
 \item{significant_colors}{Named vector of colors for significance categories.}
 }
+\value{
+A \code{ggplot} object.
+}
 \description{
 Static volcano plot (log2 ratio vs -log10 p)
 }

@@ -1005,6 +1005,8 @@ scatter_interactive <- function(df,
 #' @param p_cut Numeric; p-value cutoff.
 #' @param p_mode One of `c("raw","bh","wbh")` controlling which p-values to use.
 #' @param significant_colors Named vector of colors for significance categories.
+#'
+#' @return A `ggplot` object.
 #' @export
 volcano_static <- function(df,
                            pair = NULL,
@@ -1064,6 +1066,7 @@ volcano_static <- function(df,
 #' Interactive volcano plot (log2 ratio vs -log10 p)
 #'
 #' @inheritParams volcano_static
+#' @return A `plotly` htmlwidget.
 #' @export
 volcano_interactive <- function(df,
                                 pair = NULL,

@@ -1410,6 +1410,7 @@ ph_prevalence_compare <- function(x,
 #' @param x Result object to write.
 #' @param path Output file path.
 #' @param ... Additional arguments passed to methods.
+#' @return Invisible `NULL`.
 #'
 #' @export
 write_result <- function(x, path, ...) {
@@ -1426,6 +1427,7 @@ write_result <- function(x, path, ...) {
 #' @param sheet_by_rank Logical; if TRUE create one sheet/file per rank when multiple ranks present.
 #' @param overwrite Logical; allow overwriting existing files (default FALSE).
 #' @param ... Reserved for future use.
+#' @return Invisible `NULL`.
 #' @export
 write_result.ph_prev_result <- function(x,
                                         path,

@@ -13,6 +13,9 @@ write_result(x, path, ...)
 
 \item{...}{Additional arguments passed to methods.}
 }
+\value{
+Invisible \code{NULL}.
+}
 \description{
 Generic writer for phiper result objects
 }
