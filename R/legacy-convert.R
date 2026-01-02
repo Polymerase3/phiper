@@ -178,7 +178,6 @@ phip_convert_legacy <- function(
 #' - No rows are collected into R; all transformations are executed in DuckDB.
 #' - The caller is responsible for closing the returned connection.
 #'
-#' @internal
 #' @keywords internal
 .ph_legacy_read_duckdb_backend <- function(cfg,
                                            meta) {
@@ -386,7 +385,6 @@ phip_convert_legacy <- function(
 #' - For delimited text, the delimiter is inferred from the header.
 #' - If available, `data.table::fread()` is used for speed.
 #'
-#' @internal
 #' @keywords internal
 .ph_auto_read_file <- function(path,
                                ...) {

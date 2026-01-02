@@ -206,9 +206,6 @@ print.summary.ph_prev_result <- function(x, ...) {
 #' }
 #'
 #' @export
-#' Filter pairwise results by groups/ranks/features with optional q-value gates
-#' (robust row subsetting; works whether df is data.table or data.frame)
-#' @export
 prev_filter_pairs <- function(
   df,
   gA, gB,

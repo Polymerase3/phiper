@@ -477,6 +477,17 @@ compute_distance <- function(ps,
 #' and returns coordinates, eigenvalues, variance explained, and feature-axis
 #' associations.
 #'
+#' @details
+#' Negative eigenvalues indicate that the distances are not perfectly euclidean.
+#' If \code{neg_correction} is \code{"lingoes"} or \code{"cailliez"}, a
+#' correction is applied via \code{vegan::wcmdscale(add = ...)}.
+#'
+#' Feature associations are post-hoc summaries of how features relate to PCoA
+#' axes. Weighted-average scores (\code{feature_assoc = "weighted_average"}) compute
+#' \code{t(X) %*% U / colSums(X)}, where \code{X} is the abundance matrix and
+#' \code{U} are the sample coordinates. Correlation and regression associations
+#' are computed between feature abundances and axis scores and are not "true"
+#' PCA loadings unless distances are Euclidean and derived compatibly.
 #' @param dist_obj a \code{dist} object (for example returned by
 #'   \code{compute_distance()}). The normalized abundance matrix used to compute
 #'   the distances is attached as attribute \code{"abundances"} (numeric
@@ -505,7 +516,7 @@ compute_distance <- function(ps,
 #'     \code{n_samples - 1} is smaller).
 #'   \item \code{eigenvalues}: numeric vector of eigenvalues from the PCoA.
 #'   \item \code{var_explained}: one-row tibble with percent variance explained
-#'     by the returned axes and \code{%Other}. percentages are computed from the
+#'     by the returned axes and \code{\%Other}. percentages are computed from the
 #'     sum of positive eigenvalues.
 #'   \item \code{eigen_diagnostics}: one-row tibble with eigenvalue diagnostics:
 #'     \code{sum_negative}, \code{sum_positive}, their ratio, the minimum
@@ -518,18 +529,6 @@ compute_distance <- function(ps,
 #'     the returned axes (empty if \code{"abundances"} is missing, cannot be
 #'     aligned, or \code{feature_assoc = "none"}).
 #' }
-#'
-#' @details
-#' Negative eigenvalues indicate that the distances are not perfectly euclidean.
-#' If \code{neg_correction} is \code{"lingoes"} or \code{"cailliez"}, a
-#' correction is applied via \code{vegan::wcmdscale(add = ...)}.
-#'
-#' Feature associations are post-hoc summaries of how features relate to PCoA
-#' axes. Weighted-average scores (\code{feature_assoc = "weighted_average"}) compute
-#' \code{t(X) %*% U / colSums(X)}, where \code{X} is the abundance matrix and
-#' \code{U} are the sample coordinates. Correlation and regression associations
-#' are computed between feature abundances and axis scores and are not "true"
-#' PCA loadings unless distances are Euclidean and derived compatibly.
 #'
 #' @examples
 #' \donttest{
@@ -831,7 +830,6 @@ compute_pcoa <- function(dist_obj,
 #' keep_pep <- c("16627", "5243", "24799", "16196", "18003")
 #' dat_cols <- dplyr::tbl_vars(ps$data_long)
 #' tp_col <- "timepoint_factor"
-#' }
 #'
 #' ps_small <- ps |>
 #'   dplyr::filter(
