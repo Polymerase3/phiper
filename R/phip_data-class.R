@@ -1,6 +1,3 @@
-################################################################################
-## phip_data S3 class  ---------------------------------------------------------
-################################################################################
 #' @title Construct a **phip_data** object
 #'
 #' @description Creates a fully-validated S3 object that bundles the tidy
@@ -48,7 +45,6 @@
 #' @export
 new_phip_data <- function(data_long,
                           comparisons,
-                          backend = c("memory", "duckdb", "arrow"),
                           peptide_library = TRUE,
                           auto_expand = TRUE,
                           materialise_table = TRUE,
@@ -57,12 +53,6 @@ new_phip_data <- function(data_long,
     headline = "Constructing <phip_data> object",
     step = "new_phip_data()",
     expr = {
-      backend <- if (is.null(backend)) {
-        "duckdb" # implicit default
-      } else {
-        match.arg(backend, choices = c("arrow", "duckdb", "memory"))
-      }
-
       # quick sanity check
       if (!is.null(comparisons)) {
         .chk_cond(
@@ -140,7 +130,6 @@ new_phip_data <- function(data_long,
         list(
           data_long       = data_long, # lazy tbl or tibble
           comparisons     = tibble::as_tibble(comparisons),
-          backend         = backend,
           peptide_library = peptide_library,
           meta            = meta
         ),
