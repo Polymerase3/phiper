@@ -1,4 +1,4 @@
-# keep ggplot2’s replace operator available
+# keep ggplot2's replace operator available
 "%+replace%" <- ggplot2::"%+replace%"
 
 #' @title PHIP default colour palette
@@ -309,7 +309,7 @@ theme_phip <- function(base_size = 14,
     pct_cols <- paste0("%", axis_cols)
     miss <- setdiff(pct_cols, names(var_ex))
     if (length(miss)) {
-      .ph_log_info(sprintf("No %% columns for %s — using raw axis names.", paste(miss, collapse = ", ")),
+      .ph_log_info(sprintf("No %% columns for %s: using raw axis names.", paste(miss, collapse = ", ")),
         step = "plot_beta_pcoa"
       )
       setNames(axis_cols, axis_cols)

@@ -17,7 +17,5 @@
 A \code{phip_data} object with updated \code{data_long}.
 }
 \description{
-Cienkie wrappery: stosują \verb{dplyr::<join>} do \code{x$data_long}
-po uprzednim rozwinięciu \code{y} (jeśli to \code{phip_data}), a wynik
-zawijają z powrotem przez \code{.modify_pd()}.
+dplyr joins for \code{phip_data}
 }

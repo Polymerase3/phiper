@@ -138,7 +138,7 @@ scatter_static <- function(df,
       base_p <- if ("p_adj_rank_wbh" %in% names(df)) df$p_adj_rank_wbh else df$p_raw
       df$p_bin <- cut(base_p,
         breaks = c(0, 1e-3, 1e-2, 5e-2, 1, Inf),
-        labels = c("≤1e-3", "(1e-3,1e-2]", "(1e-2,0.05]", ">0.05", "NA"),
+        labels = c("<+1e-3", "(1e-3,1e-2]", "(1e-2,0.05]", ">0.05", "NA"),
         include.lowest = TRUE, right = TRUE
       )
       color_var <- "p_bin"

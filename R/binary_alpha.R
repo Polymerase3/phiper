@@ -1,7 +1,3 @@
-# ==============================================================================
-# Alpha diversity – single exported function (no S3)
-# ==============================================================================
-
 #' @title Compute alpha diversity per sample / group across ranks
 #'
 #' @description
@@ -25,7 +21,7 @@
 #'   of data frames, one per `group_col`.
 #' - If `group_cols = NULL`, a single non-facetted table is returned under the
 #'   name `"all_samples"`.
-#' - If `group_interaction = TRUE` (and you supplied ≥ 2 `group_cols`), an
+#' - If `group_interaction = TRUE` (and you supplied >= 2 `group_cols`), an
 #'   additional element is computed for the interaction of all group columns,
 #'   with labels joined by `interaction_sep`.
 #' - If `interaction_only = TRUE`, you get **only** that interaction element
@@ -56,7 +52,7 @@
 #'
 #' @examples
 #' pd <- phip_load_example_data()
-#' # phip_data input — peptide-level diversity by group
+#' # phip_data input: peptide-level diversity by group
 #' out <- compute_alpha_diversity(
 #'   pd, group_cols = "group", ranks = "peptide_id"
 #' )
@@ -79,7 +75,7 @@
 #' )
 #'
 #' \dontrun{
-#' # data.frame input — ranks must be columns in the data
+#' # data.frame input: ranks must be columns in the data
 #' out_df <- compute_alpha_diversity(
 #'   df_long, group_cols = NULL, ranks = "peptide_id"
 #' )
@@ -141,7 +137,7 @@ compute_alpha_diversity <- function(x,
         sprintf(
           "available columns: %s%s",
           paste(utils::head(peplib_cols, 8), collapse = ", "),
-          if (length(peplib_cols) > 8) sprintf(" …(+%d)", length(peplib_cols) - 8) else ""
+          if (length(peplib_cols) > 8) sprintf(" ...(+%d)", length(peplib_cols) - 8) else ""
         )
       )
     )

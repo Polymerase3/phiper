@@ -95,8 +95,8 @@ monochrome.}
 \value{
 A list with:
 \itemize{
-\item \code{data} – tibble used for plotting (selected top/bottom items),
-\item \code{plot} – ggplot object.
+\item \code{data} - tibble used for plotting (selected top/bottom items),
+\item \code{plot} - ggplot object.
 }
 }
 \description{

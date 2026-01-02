@@ -1,4 +1,4 @@
-#' @title Δ Prevalence vs Pooled Prevalence
+#' @title Delta-prevalence vs Pooled Prevalence
 #'
 #' @description
 #' Build a static ggplot showing the per-peptide shift in prevalence
@@ -340,7 +340,7 @@ deltaplot <- function(
   p
 }
 
-#' @title Interactive Δ Prevalence vs Pooled Prevalence
+#' @title Interactive Delta-prevalence vs Pooled Prevalence
 #'
 #' @description
 #' Build an interactive plotly chart showing the per-peptide shift in prevalence
@@ -553,7 +553,7 @@ deltaplot_interactive <- function(
   } else {
     pairs <- unique(d[, c("group1", "group2")])
     if (nrow(pairs) != 1L) {
-      .ph_abort("Multiple (group1,group2) pairs – pass group_pair_values.")
+      .ph_abort("Multiple (group1,group2) pairs: pass group_pair_values.")
     }
     g1_raw <- pairs$group1[1]
     g2_raw <- pairs$group2[1]
@@ -960,8 +960,8 @@ deltaplot_interactive <- function(
 #'
 #' @return A list with:
 #' \itemize{
-#'   \item `data` – tibble used for plotting (selected top/bottom items),
-#'   \item `plot` – ggplot object.
+#'   \item `data` - tibble used for plotting (selected top/bottom items),
+#'   \item `plot` - ggplot object.
 #' }
 #'
 #' @details The y-axis lists feature names (sorted by the chosen statistic), and
@@ -2169,7 +2169,7 @@ ecdf_plot_interactive <- function(
             sub <- plot_subtitle %||% ""
             km <- if (!is.null(ks_txt)) {
               sprintf(
-                "%s | Δ median = %s", ks_txt,
+                "%s | Delta-median = %s", ks_txt,
                 fmt_pct(dmed)
               )
             } else {
@@ -2177,7 +2177,7 @@ ecdf_plot_interactive <- function(
             }
             sprintf(
               "<br><sup>%s%s%s</sup>",
-              sub, if (nzchar(sub) && nzchar(km)) " — " else "", km
+              sub, if (nzchar(sub) && nzchar(km)) " - " else "", km
             )
           } else {
             ""

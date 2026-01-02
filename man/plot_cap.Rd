@@ -24,7 +24,7 @@ plot_cap(
 \arguments{
 \item{cap_res}{A \code{"beta_capscale"} object as returned by \code{\link[=compute_capscale]{compute_capscale()}}.
 Must contain at least a \code{sample_coords} tibble with columns \code{sample_id}
-and \code{CAP1}, \code{CAP2}, …, and a numeric \code{eigenvalues} vector for constrained
+and \code{CAP1}, \code{CAP2}, ..., and a numeric \code{eigenvalues} vector for constrained
 axes.}
 
 \item{axes}{Integer vector of length 2 giving the CAP axes to plot
@@ -41,11 +41,11 @@ if present.}
 Continuous time is not supported in this plotting function.}
 
 \item{show_centroids}{Logical; if \code{TRUE} (default), plots centroids for
-groups / time levels / group×time combinations depending on \code{centroid_by}.}
+groups / time levels / group*time combinations depending on \code{centroid_by}.}
 
 \item{centroid_by}{How to define centroids. One of
 \code{"auto"}, \code{"group"}, \code{"time"}, \code{"group_time"}. \code{"auto"} uses:
-group×time if both factors are available, otherwise group if present,
+group*time if both factors are available, otherwise group if present,
 otherwise time.}
 
 \item{connect_centroids}{How to connect centroids with lines. One of
@@ -84,7 +84,7 @@ A \link[ggplot2:ggplot]{ggplot2::ggplot} object representing the CAP ordination.
 Creates a 2D scatter plot from a \code{"beta_capscale"} object (output of
 \code{\link[=compute_capscale]{compute_capscale()}}), showing sample scores on CAP axes. Points can be
 coloured by group and shaped by (categorical) time. Optional ellipses and
-centroids can be overlaid for group/time/group×time summaries.
+centroids can be overlaid for group/time/group*time summaries.
 }
 \details{
 Axis labels are annotated with the percentage of constrained variance

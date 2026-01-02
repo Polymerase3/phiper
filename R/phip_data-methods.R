@@ -138,7 +138,7 @@ print.phip_data <- function(x, ...) {
 #'
 #' @param x A valid `phip_data` object.
 #'
-#' @return A tibble or lazy table with one row per peptide × sample pair.
+#' @return A tibble or lazy table with one row per peptide * sample pair.
 #' @export
 get_counts <- function(x) {
   .check_pd(x)
@@ -162,7 +162,7 @@ get_comparisons <- function(x) {
 #' @title Retrieve the metadata list
 #'
 #' @description Accesses the `meta` slot, which holds flags such as whether the
-#'  table is a full peptide × sample grid, the available outcome columns, etc.
+#'  table is a full peptide * sample grid, the available outcome columns, etc.
 #'
 #' @inheritParams get_counts
 #' @return A named list.
@@ -190,7 +190,7 @@ get_peptide_library <- function(x) {
 #' @description
 #' Exports the `data_long` table from a **phip_data** object to disk in Apache
 #' Parquet format.
-#' 
+#'
 #' @note The export is performed directly and efficiently from the
 #' database/lazy table without reading all data into memory.
 #'
@@ -199,7 +199,7 @@ get_peptide_library <- function(x) {
 #'
 #' @return NULL (invisibly).
 #'
-#' @examples 
+#' @examples
 #' \donttest{
 #' pd <- phip_load_example_data()
 #' out_path <- tempfile(fileext = ".parquet")
@@ -323,7 +323,7 @@ ungroup.phip_data <- function(x, ...) {
       "{.question {question}} {.dim [y/n]} ",
       .envir = list(question = question)
     )
-    answer <- tolower(trimws(readline(cli::style_dim("→ "))))
+    answer <- tolower(trimws(readline(cli::style_dim("--> "))))
     if (answer %in% yes) {
       return(TRUE)
     }
@@ -350,12 +350,12 @@ ungroup.phip_data <- function(x, ...) {
 #' Merge or join a `phip_data` object
 #'
 #' @param x      A `phip_data` object.
-#' @param y      A data-frame–like object *or* another `phip_data`.
+#' @param y      A data-frame-like object *or* another `phip_data`.
 #' @param ...    Arguments forwarded to either [base::merge()] or the chosen
 #'               **dplyr** join (e.g. `by =`, `suffix =`, etc.).
 #' @param confirm Logical.  When `TRUE` *and* `type = "base"` *and* the session
 #'               is interactive, the user is asked to confirm.  Set to `FALSE`
-#'               to skip the prompt (use sparingly—OOM risk remains).
+#'               to skip the prompt (use sparingly-OOM risk remains).
 #'
 #' @return A new `phip_data` whose `data_long` contains the merged / joined
 #'         tibble.
@@ -385,10 +385,6 @@ merge.phip_data <- function(x, y,
 }
 
 #' dplyr joins for `phip_data`
-#'
-#' Cienkie wrappery: stosują `dplyr::<join>` do `x$data_long`
-#' po uprzednim rozwinięciu `y` (jeśli to `phip_data`), a wynik
-#' zawijają z powrotem przez `.modify_pd()`.
 #'
 #' @param x A `phip_data` object.
 #' @param y A `phip_data` or a data frame / tbl.

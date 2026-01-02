@@ -10,7 +10,7 @@ get_counts(x)
 \item{x}{A valid \code{phip_data} object.}
 }
 \value{
-A tibble or lazy table with one row per peptide × sample pair.
+A tibble or lazy table with one row per peptide * sample pair.
 }
 \description{
 Quick accessor for the \code{data_long} slot of a \strong{phip_data}

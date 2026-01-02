@@ -39,7 +39,7 @@ ph_plot_dispersion_box(
 
 \item{point_size}{Point size (default 1).}
 
-\item{rotate_x}{Rotate x labels by 45° (default TRUE).}
+\item{rotate_x}{Rotate x labels by 45 degrees (default TRUE).}
 }
 \value{
 A ggplot object.

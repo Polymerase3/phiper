@@ -9,14 +9,14 @@
 \arguments{
 \item{x}{A \code{phip_data} object.}
 
-\item{y}{A data-frame–like object \emph{or} another \code{phip_data}.}
+\item{y}{A data-frame-like object \emph{or} another \code{phip_data}.}
 
 \item{...}{Arguments forwarded to either \code{\link[base:merge]{base::merge()}} or the chosen
 \strong{dplyr} join (e.g. \verb{by =}, \verb{suffix =}, etc.).}
 
 \item{confirm}{Logical.  When \code{TRUE} \emph{and} \code{type = "base"} \emph{and} the session
 is interactive, the user is asked to confirm.  Set to \code{FALSE}
-to skip the prompt (use sparingly—OOM risk remains).}
+to skip the prompt (use sparingly-OOM risk remains).}
 }
 \value{
 A new \code{phip_data} whose \code{data_long} contains the merged / joined

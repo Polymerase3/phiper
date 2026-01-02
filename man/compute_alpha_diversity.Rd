@@ -78,7 +78,7 @@ lineage/taxa fields).
 of data frames, one per \code{group_col}.
 \item If \code{group_cols = NULL}, a single non-facetted table is returned under the
 name \code{"all_samples"}.
-\item If \code{group_interaction = TRUE} (and you supplied ≥ 2 \code{group_cols}), an
+\item If \code{group_interaction = TRUE} (and you supplied >= 2 \code{group_cols}), an
 additional element is computed for the interaction of all group columns,
 with labels joined by \code{interaction_sep}.
 \item If \code{interaction_only = TRUE}, you get \strong{only} that interaction element
@@ -88,7 +88,7 @@ with labels joined by \code{interaction_sep}.
 }
 \examples{
 pd <- phip_load_example_data()
-# phip_data input — peptide-level diversity by group
+# phip_data input: peptide-level diversity by group
 out <- compute_alpha_diversity(
   pd, group_cols = "group", ranks = "peptide_id"
 )
@@ -111,7 +111,7 @@ out3 <- compute_alpha_diversity(
 )
 
 \dontrun{
-# data.frame input — ranks must be columns in the data
+# data.frame input: ranks must be columns in the data
 out_df <- compute_alpha_diversity(
   df_long, group_cols = NULL, ranks = "peptide_id"
 )
