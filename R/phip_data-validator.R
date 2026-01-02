@@ -334,7 +334,7 @@ validate_phip_data <- function(x,
             )
           )
 
-          x$data_long <- phip_register_tbl(
+          x$data_long <- register_phip_data_tbl(
             tbl_expanded,
             con = x$meta$con,
             name = "data_long",
@@ -789,7 +789,7 @@ validate_phip_data <- function(x,
 #'   `FALSE`, unless overridden via `fill_override`.
 #'
 #' @details Updates `x$data_long` in place (preserving laziness unless you later
-#'   `compute()` / `collect()` or use [phip_register_tbl()]).
+#'   `compute()` / `collect()` or use [register_phip_data_tbl()]).
 #'
 #' @param x A `<phip_data>` object.
 #' @param key_col Name(s) of the sample identifier column(s). Character scalar
@@ -810,7 +810,7 @@ validate_phip_data <- function(x,
 #' \dontrun{
 #' pd <- expand_phip_data(pd, fill_override = list(fold_change = NA_real_))
 #' }
-#' @seealso [phip_register_tbl()]
+#' @seealso [register_phip_data_tbl()]
 #' @export
 expand_phip_data <- function(x,
                              key_col = "sample_id",
@@ -870,7 +870,7 @@ expand_phip_data <- function(x,
           sprintf("materialise_table: %s", as.character(x$meta$materialise_table))
         )
       )
-      x$data_long <- phip_register_tbl(
+      x$data_long <- register_phip_data_tbl(
         tbl_expanded,
         con = x$meta$con,
         name = "data_long",
@@ -883,7 +883,6 @@ expand_phip_data <- function(x,
   )
 }
 
-# 3) Register a lazy table back to the DB as TABLE or VIEW
 # ------------------------------------------------------------------------------
 #' @title Register a lazy table back to the database as a TABLE or VIEW
 #'
@@ -904,17 +903,17 @@ expand_phip_data <- function(x,
 #' @examples
 #' \dontrun{
 #' lazy <- dplyr::tbl(con, "data_long") |> dplyr::filter(fold_change > 0)
-#' phip_register_tbl(lazy, con,
+#' register_phip_data_tbl(lazy, con,
 #'   name = "data_long_pos",
 #'   materialise_table = TRUE
 #' )
 #' }
 #' @export
-phip_register_tbl <- function(tbl,
-                              con,
-                              name = "data_long",
-                              materialise_table = TRUE,
-                              temporary = TRUE) {
+register_phip_data_tbl <- function(tbl,
+                                   con,
+                                   name = "data_long",
+                                   materialise_table = TRUE,
+                                   temporary = TRUE) {
   .ph_with_timing(
     headline = "Registering lazy table",
     step = sprintf(
