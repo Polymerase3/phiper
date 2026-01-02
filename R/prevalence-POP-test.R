@@ -1010,7 +1010,7 @@ ph_prevalence_compare <- function(x,
               )
           }
 
-          do_wbh <- function(df) {
+          do_wbh_simple <- function(df) {
             df2 <- df |> dplyr::mutate(n_peptides = dplyr::coalesce(n_peptides, 1.0))
             split_vars <- intersect(c("view", "rank"), names(df2))
             pieces <- split(df2, df2[split_vars], drop = TRUE)
@@ -1047,7 +1047,7 @@ ph_prevalence_compare <- function(x,
 
           split_vars <- intersect(c("view", "rank"), names(out_df))
           out_df_bh <- do.call(rbind, lapply(split(out_df, out_df[split_vars], drop = TRUE), do_bh))
-          out_df_wbh <- do_wbh(out_df_bh)
+          out_df_wbh <- do_wbh_simple(out_df_bh)
 
           out_df <- out_df_wbh |>
             dplyr::select(
@@ -1300,7 +1300,7 @@ ph_prevalence_compare <- function(x,
           )
       }
 
-      do_wbh <- function(df, w_tbl) {
+      do_wbh_weighted <- function(df, w_tbl) {
         df2 <- df %>%
           dplyr::left_join(w_tbl, by = c("rank", "feature")) %>%
           dplyr::mutate(n_peptides = dplyr::coalesce(n_peptides, 1.0))
@@ -1339,7 +1339,7 @@ ph_prevalence_compare <- function(x,
 
       split_vars <- intersect(c("view", "rank"), names(res))
       res_bh <- do.call(rbind, lapply(split(res, res[split_vars], drop = TRUE), do_bh))
-      res_wbh <- do_wbh(res_bh, w_tbl)
+      res_wbh <- do_wbh_weighted(res_bh, w_tbl)
 
       out_df <- res_wbh %>%
         dplyr::arrange(rank, feature, group_col, group1, group2) %>%
