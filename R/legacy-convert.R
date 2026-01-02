@@ -6,7 +6,7 @@
 #' an optional *comparisons* file.
 #' Paths can be supplied directly or via a single YAML config; explicit
 #' arguments always override the YAML.  The function normalises the chosen
-#' storage `backend`, validates every file, and returns a ready-to-use
+#' DuckDB storage, validates every file, and returns a ready-to-use
 #' `phip_data` object.
 #'
 #' @details
@@ -48,22 +48,18 @@
 #' @param extra_cols       Character vector of extra metadata columns to retain.
 #' @param comparisons_file Path to a **comparisons** CSV. Optional.
 #' @param output_dir       *Deprecated.* Ignored with a warning.
-#' @param backend          Storage backend: `"arrow"`, `"duckdb"`, or
-#'   `"memory"`. Defaults to `"duckdb"`.
 #' @param peptide_library logical, defining if the `peptide_library` is to be
 #'    downloaded from the official `phiper` GitHub
 #' @param config_yaml      Optional YAML file containing any of the above
 #'   parameters (see example).
-#' @param n_cores Integer >= 1. Number of CPU threads DuckDB/Arrow may use while
-#'   reading and writing files. Ignored when `backend = "memory"`.
+#' @param n_cores Integer >= 1. Number of CPU threads DuckDB may use while
+#'   reading and writing files.
 #'
-#' @param materialise_table Logical (DuckDB & Arrow only).
-#'   If `FALSE` the result is registered as a **view**; if `TRUE` the table is
-#'   fully **materialised** and stored on disk, trading higher load time and
-#'   storage for faster repeated queries.
+#' @param materialise_table Logical. If `FALSE` the result is registered as a
+#'   **view**; if `TRUE` the table is fully **materialised** and stored on disk,
+#'   trading higher load time and storage for faster repeated queries.
 #' @return A validated `phip_data` object whose `data_long` slot is backed by a
-#'   tibble (memory), a DuckDB connection, or an Arrow dataset, depending on
-#'   `backend`.
+#'   DuckDB connection.
 #'
 #' @examples
 #' \dontrun{
@@ -72,8 +68,7 @@
 #'   exist_file = "legacy/exist.csv",
 #'   samples_file = "legacy/samples.csv",
 #'   timepoints_file = "legacy/timepoints.csv",
-#'   comparisons_file = "legacy/comparisons.csv",
-#'   backend = "duckdb"
+#'   comparisons_file = "legacy/comparisons.csv"
 #' )
 #'
 #' ## 2. YAML-driven usage (explicit args override YAML)
@@ -83,12 +78,10 @@
 #' # timepoints_file:  meta/timepoints.csv
 #' # comparisons_file: meta/comparisons.csv
 #' # extra_cols: [sex, age]
-#' # backend: duckdb
 #' # -------------------------------
 #'
 #' pd <- phip_convert_legacy(
-#'   config_yaml = "config/legacy_config.yaml",
-#'   backend     = "arrow" # overrides YAML backend
+#'   config_yaml = "config/legacy_config.yaml"
 #' )
 #' }
 #'
@@ -104,7 +97,6 @@ phip_convert_legacy <- function(
   extra_cols = NULL,
   comparisons_file = NULL,
   output_dir = NULL, # hard deprecation
-  backend = NULL,
   peptide_library = TRUE,
   n_cores = 8,
   materialise_table = TRUE,
@@ -113,15 +105,10 @@ phip_convert_legacy <- function(
   #' @importFrom rlang .data
 
   # ------------------------------------------------------------------
-  # 1. db-backend: default to "duckdb" if user supplies nothing
+  # 1. arg checks
   # ------------------------------------------------------------------
-  backend_choices <- c("arrow", "duckdb", "memory")
-
-  backend <- if (is.null(backend)) {
-    "duckdb" # implicit default
-  } else {
-    match.arg(backend, choices = backend_choices)
-  }
+  chk::chk_numeric(n_cores)
+  chk::chk_flag(materialise_table)
 
   # ------------------------------------------------------------------
   # 2. resolving the paths to absolute
@@ -136,7 +123,7 @@ phip_convert_legacy <- function(
     extra_cols = extra_cols,
     comparisons_file = comparisons_file,
     output_dir = output_dir,
-    backend = backend,
+    backend = "duckdb",
     peptide_library = peptide_library,
     config_yaml = config_yaml,
     n_cores = n_cores,
@@ -154,68 +141,23 @@ phip_convert_legacy <- function(
   )
 
   # ------------------------------------------------------------------
-  # 4. create the phip_data object with different backends
+  # 4. create the phip_data object (DuckDB)
   # ------------------------------------------------------------------
-  if (backend == "memory") {
-    .read_memory_backend(cfg, meta_list) ## already registers phip_data object
-  } else if (backend == "duckdb") {
-    # using the helper (a lot of code is repeated in duckdb and arrow, so i
-    # decided to export it into a separate internale helper to reuse it)
-    con <- .read_duckdb_backend(cfg, meta_list)
+  con <- .read_duckdb_backend(cfg, meta_list)
 
-    ## duckdb-specific code
-    long <- dplyr::tbl(con, "final_long")
+  ## duckdb-specific code
+  long <- dplyr::tbl(con, "final_long")
 
-    comps <- if (DBI::dbExistsTable(con, "comparisons")) {
-      dplyr::tbl(con, "comparisons") |> dplyr::collect()
-    }
-
-    # returning the phip_data object
-    new_phip_data(
-      data_long = long,
-      comparisons = comps,
-      peptide_library = cfg$peptide_library,
-      backend = "duckdb",
-      meta = list(con = con)
-    )
-  } else if (backend == "arrow") {
-    ## check dependency
-    rlang::check_installed(c("arrow"), reason = "arrow backend")
-
-    # same as up - use helper to create the data
-    con <- .read_duckdb_backend(cfg, meta_list)
-
-    # arrow-specific code, create tempdir to store the data
-    arrow_dir <- withr::local_tempdir(
-      pattern = sprintf(
-        "phip_arrow_%s_",
-        format(Sys.time(), "%Y%m%d%H%M%OS6")
-      ),
-      .local_envir = parent.frame()
-    )
-
-    # store the data as .parquet (more efficient than plain .csv)
-    DBI::dbExecute(
-      con,
-      sprintf(
-        "COPY final_long TO %s (FORMAT 'parquet', PER_THREAD_OUTPUT TRUE);",
-        DBI::dbQuoteString(con, arrow_dir)
-      )
-    )
-
-    # open as arrow dataset
-    long <- arrow::open_dataset(arrow_dir)
-    comps <- if (DBI::dbExistsTable(con, "comparisons")) {
-      dplyr::tbl(con, "comparisons") |> dplyr::collect()
-    }
-
-    # returning the phip_data object
-    new_phip_data(
-      data_long = long,
-      comparisons = comps,
-      peptide_library = cfg$peptide_library,
-      backend = "arrow",
-      meta = list(parquet_dir = arrow_dir)
-    )
+  comps <- if (DBI::dbExistsTable(con, "comparisons")) {
+    dplyr::tbl(con, "comparisons") |> dplyr::collect()
   }
+
+  # returning the phip_data object
+  new_phip_data(
+    data_long = long,
+    comparisons = comps,
+    peptide_library = cfg$peptide_library,
+    backend = "duckdb",
+    meta = list(con = con)
+  )
 }
