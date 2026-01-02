@@ -18,10 +18,10 @@ head.phip_data <- function(x, ...) {
 
 #' @exportS3Method dim phip_data
 dim.phip_data <- function(x) {
-  n_cols  = ncol(x$data_long)
+  n_cols <- ncol(x$data_long)
 
   .data <- rlang::.data
-  n_rows = tryCatch(
+  n_rows <- tryCatch(
     if (inherits(x$data_long, "tbl_dbi")) {
       x$data_long |>
         dplyr::summarise(n = dplyr::n()) |>
