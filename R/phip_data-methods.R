@@ -384,6 +384,10 @@ merge.phip_data <- function(x, y,
   .modify_pd(x, merged_tbl)
 }
 
+# helpers (internal)
+#' @noRd
+.extract_data_long <- function(y) if (inherits(y, "phip_data")) y$data_long else y
+
 #' dplyr joins for `phip_data`
 #'
 #' @param x A `phip_data` object.
@@ -391,10 +395,12 @@ merge.phip_data <- function(x, y,
 #' @param ... Passed to the corresponding `dplyr::<join>` function.
 #' @return A `phip_data` object with updated `data_long`.
 #'
-#' @importFrom dplyr left_join right_join inner_join full_join semi_join anti_join
-# helpers (internal)
-.extract_data_long <- function(y) if (inherits(y, "phip_data")) y$data_long else y
+#' @name phip_data_join
+NULL
 
+#' @importFrom dplyr left_join right_join inner_join full_join semi_join anti_join
+
+#' @rdname phip_data_join
 #' @export
 #' @method left_join phip_data
 left_join.phip_data <- function(x, y, ...) {
@@ -402,6 +408,7 @@ left_join.phip_data <- function(x, y, ...) {
   .modify_pd(x, dplyr::left_join(x$data_long, y, ...))
 }
 
+#' @rdname phip_data_join
 #' @export
 #' @method right_join phip_data
 right_join.phip_data <- function(x, y, ...) {
@@ -409,6 +416,7 @@ right_join.phip_data <- function(x, y, ...) {
   .modify_pd(x, dplyr::right_join(x$data_long, y, ...))
 }
 
+#' @rdname phip_data_join
 #' @export
 #' @method inner_join phip_data
 inner_join.phip_data <- function(x, y, ...) {
@@ -416,6 +424,7 @@ inner_join.phip_data <- function(x, y, ...) {
   .modify_pd(x, dplyr::inner_join(x$data_long, y, ...))
 }
 
+#' @rdname phip_data_join
 #' @export
 #' @method full_join phip_data
 full_join.phip_data <- function(x, y, ...) {
@@ -423,6 +432,7 @@ full_join.phip_data <- function(x, y, ...) {
   .modify_pd(x, dplyr::full_join(x$data_long, y, ...))
 }
 
+#' @rdname phip_data_join
 #' @export
 #' @method semi_join phip_data
 semi_join.phip_data <- function(x, y, ...) {
@@ -430,6 +440,7 @@ semi_join.phip_data <- function(x, y, ...) {
   .modify_pd(x, dplyr::semi_join(x$data_long, y, ...))
 }
 
+#' @rdname phip_data_join
 #' @export
 #' @method anti_join phip_data
 anti_join.phip_data <- function(x, y, ...) {

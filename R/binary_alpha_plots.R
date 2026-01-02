@@ -241,6 +241,16 @@ plot_enrichment_counts <- function(phip_data,
 #'   with `group_interaction = TRUE`.
 #' @param interaction_sep character; separator used to join interaction labels.
 #'   default is taken from `attr(x, "interaction_sep")` if present, otherwise `" * "`.
+#' @param jitter_width Numeric; horizontal jitter width for points.
+#' @param point_size Numeric; size of jittered points.
+#' @param point_alpha Numeric in [0,1]; alpha for jittered points.
+#' @param text_size Numeric; base text size for plot labels.
+#' @param font_family Character; font family for plot text.
+#' @param show_grids Logical; whether to show panel grid lines.
+#' @param x_order Optional character vector specifying the x-axis order.
+#' @param x_labels Optional named character vector mapping x-axis labels.
+#' @param y_range Optional numeric length-2 vector for y-axis limits.
+#' @param x_tickangle Numeric; x-axis label angle in degrees.
 #'
 #' @return a `ggplot` object.
 #'
@@ -465,6 +475,12 @@ plot_alpha_diversity <- function(
 #' @param y_range optional numeric length-2; y axis range (e.g., c(0, 2300)).
 #' @param x_tickangle numeric; tick label rotation in degrees (default 0; e.g., 25).
 #' @param quartile_method one of c("exclusive","inclusive","linear"); passed to plotly box (default "exclusive" ~ ggplot).
+#' @param jitter_width Numeric; horizontal jitter width for points.
+#' @param point_size Numeric; size of jittered points.
+#' @param point_alpha Numeric in [0,1]; alpha for jittered points.
+#' @param text_size Numeric; base text size for plot labels.
+#' @param font_family Character; font family for plot text.
+#' @param show_grids Logical; whether to show panel grid lines.
 #' @return A plotly htmlwidget.
 #' @examples
 #' \dontrun{

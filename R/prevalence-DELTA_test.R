@@ -155,6 +155,8 @@
 #'   universes; pairwise group contrasts are constructed within each
 #'   `(rank, feature, group_col)` stratum.
 #' @param exist_col Name of the 0/1 presence column. Default `"exist"`.
+#' @param paired_by Optional single column name identifying paired samples
+#'   (e.g. subject ID). When provided, paired tests are used where applicable.
 #' @param interaction Logical; reserved for future use (currently ignored). If
 #'   `TRUE`, an interaction of the first two `group_cols` may be used as an
 #'   additional `group_col` in future versions.

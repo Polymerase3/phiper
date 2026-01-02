@@ -439,6 +439,9 @@ prev_filter_pairs <- function(
 #'        NOTE: can also be a character scalar naming the column that links related samples
 #'        (e.g. "subject_id" or "dyade"). If so, only samples present in both groups
 #'        for that identifier will be used for paired McNemar tests.
+#' @param peptide_library Optional peptide metadata table used to map
+#'   non-peptide rank columns. If `NULL`, the function will use
+#'   `x$peptide_library`.
 #'
 #' @return An object of class `ph_prev_result`, i.e., a tibble (or lazy table if
 #'   `collect = FALSE` on the unpaired path) with attributes:

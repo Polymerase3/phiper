@@ -310,6 +310,12 @@ scatter_static <- function(df,
 #' @param prefer_flags logical; reserved for future use (kept for back-compat).
 #' @param color_by optional peptide-level meta column name to color by.
 #' @param color_title optional legend title for `color_by`.
+#' @param point_size Numeric; marker size for points.
+#' @param point_alpha Numeric in [0,1]; marker opacity.
+#' @param jitter_width_pp Numeric; jitter width in percentage points.
+#' @param jitter_height_pp Numeric; jitter height in percentage points.
+#' @param font_family Character; font family for plot text.
+#' @param font_size Numeric; font size for plot text.
 #'
 #' @return a `plotly` object.
 #'
