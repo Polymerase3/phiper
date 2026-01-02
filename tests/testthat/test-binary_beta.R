@@ -2,10 +2,11 @@
 
 # helper that builds a small real phip_data from the package example data
 .get_ps_small_for_distance <- local({
-  cache <- NULL
+  cache_env <- new.env(parent = emptyenv())
+  cache_env$ps <- NULL
 
   function() {
-    if (!is.null(cache)) return(cache)
+    if (!is.null(cache_env$ps)) return(cache_env$ps)
 
     phip_path <- phip_example_path()
 
@@ -44,8 +45,8 @@
       ) %>%
       dplyr::collect()
 
-    cache <<- ps_filt
-    cache
+    cache_env$ps <- ps_filt
+    cache_env$ps
   }
 })
 

@@ -2058,17 +2058,18 @@ compute_dispersion <- function(dist_obj,
 
   add_distance_rows <- function(sample_ids, dists, level_vals,
                                 scope_val, contrast_val) {
-    distances_list[[length(distances_list) + 1L]] <<- tibble::tibble(
+    distances_list[[length(distances_list) + 1L]] <- tibble::tibble(
       sample_id = sample_ids,
       distance  = dists,
       level     = level_vals,
       scope     = scope_val,
       contrast  = contrast_val
     )
+    distances_list
   }
 
   add_test_row <- function(scope_val, contrast_val, p_val) {
-    tests_list[[length(tests_list) + 1L]] <<- tibble::tibble(
+    tests_list[[length(tests_list) + 1L]] <- tibble::tibble(
       scope    = scope_val,
       contrast = contrast_val,
       term     = "dispersion",
@@ -2076,6 +2077,7 @@ compute_dispersion <- function(dist_obj,
       p_adjust = p_val,
       n_perm   = permutations
     )
+    tests_list
   }
 
   # ----------------------------------------------------------------------------
@@ -2090,7 +2092,7 @@ compute_dispersion <- function(dist_obj,
         "betadisper failed for group factor; skipping group dispersion test.",
       )
     } else {
-      add_distance_rows(
+      distances_list <- add_distance_rows(
         sample_ids = names(bd$distances),
         dists = as.numeric(bd$distances),
         level_vals = as.character(bd$group),
@@ -2099,7 +2101,7 @@ compute_dispersion <- function(dist_obj,
       )
       pt <- vegan::permutest(bd, permutations = permutations, parallel = 1)
       pval <- tryCatch(pt$tab[1, "Pr(>F)"], error = function(e) NA_real_)
-      add_test_row("group", "<global>", pval)
+      tests_list <- add_test_row("group", "<global>", pval)
     }
   }
 
@@ -2112,7 +2114,7 @@ compute_dispersion <- function(dist_obj,
           "betadisper failed for time factor; skipping time dispersion test.",
         )
       } else {
-        add_distance_rows(
+        distances_list <- add_distance_rows(
           sample_ids = names(bd$distances),
           dists = as.numeric(bd$distances),
           level_vals = as.character(bd$group),
@@ -2121,7 +2123,7 @@ compute_dispersion <- function(dist_obj,
         )
         pt <- vegan::permutest(bd, permutations = permutations, parallel = 1)
         pval <- tryCatch(pt$tab[1, "Pr(>F)"], error = function(e) NA_real_)
-        add_test_row("time", "<global>", pval)
+        tests_list <- add_test_row("time", "<global>", pval)
       }
     } else {
       .ph_warn(
@@ -2138,7 +2140,7 @@ compute_dispersion <- function(dist_obj,
     if (length(unique(inter_factor)) > 1L) {
       bd <- try(vegan::betadisper(d, inter_factor), silent = TRUE)
       if (!inherits(bd, "try-error")) {
-        add_distance_rows(
+        distances_list <- add_distance_rows(
           sample_ids = names(bd$distances),
           dists = as.numeric(bd$distances),
           level_vals = as.character(bd$group),
@@ -2147,7 +2149,7 @@ compute_dispersion <- function(dist_obj,
         )
         pt <- vegan::permutest(bd, permutations = permutations, parallel = 1)
         pval <- tryCatch(pt$tab[1, "Pr(>F)"], error = function(e) NA_real_)
-        add_test_row("group:time", "<global>", pval)
+        tests_list <- add_test_row("group:time", "<global>", pval)
       }
     }
   }
@@ -2172,7 +2174,7 @@ compute_dispersion <- function(dist_obj,
       return(NULL)
     }
 
-    add_distance_rows(
+    distances_list <- add_distance_rows(
       sample_ids = names(bd$distances),
       dists = as.numeric(bd$distances),
       level_vals = as.character(bd$group),
@@ -2181,7 +2183,7 @@ compute_dispersion <- function(dist_obj,
     )
     pt <- vegan::permutest(bd, permutations = permutations, parallel = 1)
     pval <- tryCatch(pt$tab[1, "Pr(>F)"], error = function(e) NA_real_)
-    add_test_row(scope_lab, contrast_lab, pval)
+    tests_list <- add_test_row(scope_lab, contrast_lab, pval)
   }
 
   # ----------------------------------------------------------------------------
