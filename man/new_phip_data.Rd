@@ -7,7 +7,6 @@
 new_phip_data(
   data_long,
   comparisons,
-  backend = c("memory", "duckdb", "arrow"),
   peptide_library = TRUE,
   auto_expand = TRUE,
   materialise_table = TRUE,
@@ -21,10 +20,6 @@ new_phip_data(
 \item{comparisons}{A data frame describing two-way contrasts
 (\code{comparison}, \code{group1}, \code{group2}, \code{variable});
 defaults to an empty tibble if \code{NULL}.}
-
-\item{backend}{Character string specifying the storage engine to use:
-\code{"memory"}, \code{"duckdb"}, or \code{"arrow"}.  If \code{NULL}
-the implicit default is \code{"duckdb"}.}
 
 \item{peptide_library}{A data frame with one row per \code{peptide_id}
 and its annotations.  If \code{NULL}, the package’s current default
@@ -41,10 +36,10 @@ other non-recyclable fields are initialised to 0.
 The expanded table replaces \code{data_long} in place.
 }}
 
-\item{materialise_table}{Logical (DuckDB and Arrow back-ends only).
-If \code{FALSE} (default) the result is registered as a \strong{view}.
-If \code{TRUE} the result is fully \strong{materialised} and stored as a physical
-table, which speeds up repeated queries at the cost of extra memory/disk.}
+\item{materialise_table}{Logical. If \code{FALSE} (default) the result is
+registered as a \strong{view}. If \code{TRUE} the result is fully \strong{materialised}
+and stored as a physical table, which speeds up repeated queries at the
+cost of extra memory/disk.}
 
 \item{meta}{Optional named list of metadata flags to pre-populate the
 \code{meta} slot (rarely needed by users).}
@@ -55,11 +50,10 @@ An object of class \code{"phip_data"}.
 \description{
 Creates a fully-validated S3 object that bundles the tidy
 PhIP-Seq counts (\code{data_long}), optional comparison definitions, a
-peptide-library annotation table, and backend metadata.  The function
-performs a minimal sanity check on \emph{comparisons} and normalises the chosen
-storage
-\emph{backend} before returning the object (validation of the data itself
-happens via \code{validate_phip_data()} helper).
+peptide-library annotation table, and other metadata. The function
+performs a minimal sanity check on \emph{comparisons} before returning the
+object (validation of the data itself happens via \code{validate_phip_data()}
+helper).
 }
 \examples{
 \dontrun{
@@ -67,11 +61,8 @@ happens via \code{validate_phip_data()} helper).
 pd <- new_phip_data(
   data_long = tidy_counts,
   comparisons = NULL,
-  backend = "duckdb",
   peptide_library = TRUE
 )
 }
-## list available backends
-c("memory", "duckdb", "arrow")
 
 }
