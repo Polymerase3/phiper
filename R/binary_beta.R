@@ -771,8 +771,8 @@ compute_pcoa <- function(dist_obj,
 #'
 #' # Compute PCoA vectors on these distances
 #' pcoa_res <- compute_pcoa(d, neg_correction = "none", n_axes = 3L)
-#' 
-#' feature_associations = compute_pcoa_feature_associations(d, pcoa_res)
+#'
+#' feature_associations <- compute_pcoa_feature_associations(d, pcoa_res)
 #' feature_associations
 #' }
 #' @export
@@ -783,7 +783,8 @@ compute_pcoa_feature_associations <- function(
   feature_assoc = c(
     "weighted_average", "correlation",
     "regression"
-  )) {
+  )
+) {
   chk::chk_s3_class(dist_obj, "dist")
   chk::chk_s3_class(pcoa_result, "beta_pcoa")
   chk::chk_count(top_features)
@@ -794,7 +795,7 @@ compute_pcoa_feature_associations <- function(
   chk::chk_not_null(X)
 
   X <- as.matrix(X)
-  
+
   .ph_feature_associations(
     coords = pcoa_result$sample_coords,
     X = X,
