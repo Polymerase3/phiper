@@ -1,3 +1,25 @@
+# phiper 0.2.1
+
+## Minor changes
+
+- Removed superassignments, changed all assignments to "<-" style
+- Stated all dependencies, removed unstated dependencies
+
+## Bug fixes
+
+- Fixed typos in the examples from binary_beta.R
+
+## Documentation
+
+- Documented empty params, got rid of all documentation-related wearnings, 
+removed all non-ASCII chars
+- Moved CONTRIBUTING.md to .github/ (it caused a note in R CMD CHECK),
+
+
+## Internal
+
+- None.
+
 # phiper 0.2.0
 
 ## Minor changes
