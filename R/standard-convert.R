@@ -120,7 +120,7 @@ phip_convert <- function(
   }
 
   ## resolve the path to data_long_path
-  cfg <- .resolve_paths(
+  cfg <- .ph_resolve_paths(
     data_long_path = data_long_path,
     peptide_library = peptide_library,
     n_cores = n_cores,

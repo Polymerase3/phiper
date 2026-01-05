@@ -8,7 +8,7 @@
 }
 \arguments{
 \item{cfg}{Named list of resolved file paths and options from
-\code{.resolve_paths()}.}
+\code{.ph_resolve_paths()}.}
 
 \item{meta}{List of preprocessed metadata tables from
 \code{.ph_legacy_prepare_metadata()}.}

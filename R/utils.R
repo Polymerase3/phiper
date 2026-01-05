@@ -455,6 +455,73 @@ add_quotes <- function(x,
   )
 }
 
+#' @title Path to example PhIP-Seq datasets shipped with phiper
+#'
+#' @param name Character scalar. Name of the example dataset.
+#'   Currently supported: `"phip_mixture"`.
+#'
+#' @return A character scalar with an absolute path to the file.
+#'
+#' @examples
+#' sim_path <- phip_example_path("phip_mixture")
+#' # phip_obj <- phip_convert(sim_path)
+#'
+#' @export
+phip_example_path <- function(name = c("phip_mixture")) {
+  name <- match.arg(name)
+  fname <- switch(
+    name,
+    phip_mixture = "phip_mixture.parquet"
+  )
+
+  path <- system.file("extdata", fname, package = "phiper")
+  if (path == "") {
+    stop("File ", fname, " not found in extdata/", call. = FALSE)
+  }
+  path
+}
+
+#' @title Load Example PhIP-Seq Dataset as <phip_data>
+#'
+#' @description
+#' Convenience helper to quickly load a shipped example dataset ("phip_mixture") into a `<phip_data>` object,
+#' suitable for downstream analysis and visualization. This function wraps \code{\link{phip_convert}},
+#' automatically supplying the correct parameters for the included example data.
+#'
+#' @param name Character scalar. Name of the shipped example dataset. Currently supported: \code{"phip_mixture"}.
+#'
+#' @return A `<phip_data>` object created from the chosen example dataset.
+#'
+#' @examples
+#' # Load the example data shipped with the package:
+#' ex <- phip_load_example_data()
+#' # ex is now a <phip_data> object ready for analysis
+#'
+#' # Specify the dataset name explicitly (currently only "phip_mixture" is available)
+#' ex2 <- phip_load_example_data("phip_mixture")
+#'
+#' # Use with plotting functions
+#' p = plot_enrichment_counts(ex, group_cols = "timepoint")
+#'
+#' @export
+phip_load_example_data <- function(name = c("phip_mixture")) {
+  name <- match.arg(name)
+  phip_convert(
+    data_long_path = phip_example_path(name),
+    peptide_library = TRUE,
+    subject_id = "subject_id",
+    peptide_id = "peptide_id",
+    sample_id  = "sample_id",
+    exist      = "exist",
+    timepoint  = "time",
+    fold_change= "fold_change",
+    materialise_table = TRUE,
+    auto_expand = FALSE,
+    n_cores = 5
+  )
+}
+
+
 #' @title Resolve legacy-import paths and perform fast-fail argument checks
 #'
 #' @description Combines explicit arguments with a YAML config (if given),
@@ -488,7 +555,7 @@ add_quotes <- function(x,
 #'   suitable for downstream helper functions.
 #'
 #' @keywords internal
-.resolve_paths <- function(
+.ph_resolve_paths <- function(
     exist_file = NULL,
     fold_change_file = NULL,
     samples_file = NULL,
@@ -696,70 +763,4 @@ add_quotes <- function(x,
   # phip_data class validator
 
   cfg
-}
-
-#' @title Path to example PhIP-Seq datasets shipped with phiper
-#'
-#' @param name Character scalar. Name of the example dataset.
-#'   Currently supported: `"phip_mixture"`.
-#'
-#' @return A character scalar with an absolute path to the file.
-#'
-#' @examples
-#' sim_path <- phip_example_path("phip_mixture")
-#' # phip_obj <- phip_convert(sim_path)
-#'
-#' @export
-phip_example_path <- function(name = c("phip_mixture")) {
-  name <- match.arg(name)
-  fname <- switch(
-    name,
-    phip_mixture = "phip_mixture.parquet"
-  )
-
-  path <- system.file("extdata", fname, package = "phiper")
-  if (path == "") {
-    stop("File ", fname, " not found in extdata/", call. = FALSE)
-  }
-  path
-}
-
-#' @title Load Example PhIP-Seq Dataset as <phip_data>
-#'
-#' @description
-#' Convenience helper to quickly load a shipped example dataset ("phip_mixture") into a `<phip_data>` object,
-#' suitable for downstream analysis and visualization. This function wraps \code{\link{phip_convert}},
-#' automatically supplying the correct parameters for the included example data.
-#'
-#' @param name Character scalar. Name of the shipped example dataset. Currently supported: \code{"phip_mixture"}.
-#'
-#' @return A `<phip_data>` object created from the chosen example dataset.
-#'
-#' @examples
-#' # Load the example data shipped with the package:
-#' ex <- phip_load_example_data()
-#' # ex is now a <phip_data> object ready for analysis
-#'
-#' # Specify the dataset name explicitly (currently only "phip_mixture" is available)
-#' ex2 <- phip_load_example_data("phip_mixture")
-#'
-#' # Use with plotting functions
-#' p = plot_enrichment_counts(ex, group_cols = "timepoint")
-#'
-#' @export
-phip_load_example_data <- function(name = c("phip_mixture")) {
-  name <- match.arg(name)
-  phip_convert(
-    data_long_path = phip_example_path(name),
-    peptide_library = TRUE,
-    subject_id = "subject_id",
-    peptide_id = "peptide_id",
-    sample_id  = "sample_id",
-    exist      = "exist",
-    timepoint  = "time",
-    fold_change= "fold_change",
-    materialise_table = TRUE,
-    auto_expand = FALSE,
-    n_cores = 5
-  )
 }

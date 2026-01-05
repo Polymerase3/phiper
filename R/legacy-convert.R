@@ -113,7 +113,7 @@ phip_convert_legacy <- function(
   # ------------------------------------------------------------------
   # 2. resolving the paths to absolute
   # ------------------------------------------------------------------
-  cfg <- .resolve_paths(
+  cfg <- .ph_resolve_paths(
     exist_file = exist_file,
     fold_change_file = fold_change_file,
     samples_file = samples_file,
@@ -167,7 +167,7 @@ phip_convert_legacy <- function(
 #' prepares the final tables used by `phip_convert_legacy()`.
 #'
 #' @param cfg Named list of resolved file paths and options from
-#'   `.resolve_paths()`.
+#'   `.ph_resolve_paths()`.
 #' @param meta List of preprocessed metadata tables from
 #'   `.ph_legacy_prepare_metadata()`.
 #'
