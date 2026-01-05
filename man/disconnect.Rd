@@ -15,8 +15,8 @@ connections closed.
 }
 \description{
 Closes any open database connections held inside a
-\code{phip_data} object-both the \code{data_long} backend (e.g. DuckDB,
-Arrow) and the optional \code{peptide_library} connection.
+\code{phip_data} object, including the \code{data_long} connection and the optional
+\code{peptide_library} connection.
 
 Call this when you want to release resources explicitly; it is
 also safe to rely on garbage collection to close the connections

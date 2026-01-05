@@ -14,7 +14,6 @@ phip_convert(
   fold_change = NULL,
   counts_input = NULL,
   counts_hit = NULL,
-  backend = "duckdb",
   n_cores = 8,
   materialise_table = TRUE,
   auto_expand = FALSE,
@@ -32,22 +31,12 @@ from the defaults (\code{"sample_id"}, \code{"peptide_id"}, \code{"subject_id"},
 \code{"counts_hit"}). Each argument should contain the \emph{name} of the column in the
 incoming data; \code{NULL} lets the default stand.}
 
-\item{backend}{One of \code{"duckdb"} (default), \code{"arrow"}, or \code{"memory"}.
-Determines where the converted table is stored:
-\itemize{
-\item \strong{duckdb} - in-process DuckDB database; fast and SQL-capable.
-\item \strong{arrow} - Apache Arrow dataset on disk; good for
-columnar analytics & inter-process sharing.
-\item \strong{memory} - ordinary R tibble; simplest but limited by RAM.
-}}
+\item{n_cores}{Integer >= 1. Number of CPU threads DuckDB may use while
+reading and writing files.}
 
-\item{n_cores}{Integer >= 1. Number of CPU threads DuckDB/Arrow may use while
-reading and writing files. Ignored when \code{backend = "memory"}.}
-
-\item{materialise_table}{Logical (DuckDB & Arrow only).
-If \code{FALSE} the result is registered as a \strong{view}; if \code{TRUE} the table is
-fully \strong{materialised} and stored on disk, trading higher load time and
-storage for faster repeated queries.}
+\item{materialise_table}{Logical. If \code{FALSE} the result is registered as a
+\strong{view}; if \code{TRUE} the table is fully \strong{materialised} and stored on disk,
+trading higher load time and storage for faster repeated queries.}
 
 \item{auto_expand}{Logical. If \code{TRUE} and the incoming data are \strong{not} a
 complete Cartesian product of \verb{sample_id x peptide_id}, missing
@@ -67,47 +56,39 @@ downstream annotation. Set to \code{FALSE} to skip this step.}
 \value{
 An S3 object of class \strong{\code{phip_data}} containing:
 \describe{
-\item{\code{data_long}}{The (possibly expanded) long-format table, stored in the
-selected back-end.}
+\item{\code{data_long}}{The (possibly expanded) long-format table.}
 \item{\code{comparisons}}{A tibble of pre-computed group comparisons or
 \code{NULL} if none were supplied.}
 \item{\code{peptide_library}}{Loaded peptide-library metadata (if
 \code{peptide_library = TRUE}).}
-\item{\code{backend}}{Character vector indicating the storage engine.}
-\item{\code{meta}}{List with connection handles or temporary paths relevant to
-the chosen backend.}
+\item{\code{meta}}{List with DuckDB connection handles.}
 }
 }
 \description{
 \code{phip_convert()} ingests a "long" table of PhIPsSeq read counts /
 enrichment statistics, optionally expands it to the full
-\verb{sample_id x peptide_id} grid, and registers the result in one of three
-back-ends (\emph{DuckDB}, \emph{Arrow}, or in-memory tibble).
+\verb{sample_id x peptide_id} grid, and registers the result in DuckDB.
 The function returns a fully initialised \strong{\code{phip_data}} object that can be
 queried with the tidy API used throughout the package.
 }
 \details{
 \emph{Paths are resolved to absolute form} before any work begins, and explicit
 checks confirm existence as well as extension validity.
-When \code{backend = "memory"} the parameters \code{n_cores} and
-\code{materialise_table} are ignored and safely reset to \code{NULL}.
 }
 \examples{
-# Basic DuckDB import, auto-detecting default column names
+# Basic import, auto-detecting default column names
 phip_obj <- phip_convert(
   data_long_path = phip_example_path("phip_mixture"),
-  backend = "duckdb",
   n_cores = 4,
   materialise_table = TRUE
 )
 
 \dontrun{
-# Import a CSV, rename columns, keep everything in memory
+# Import a CSV and rename columns
 phip_mem <- phip_convert(
   data_long_path = "data/phip_long.csv",
   sample_id      = "sample",
-  peptide_id     = "pep",
-  backend        = "memory"
+  peptide_id     = "pep"
 )
 }
 
@@ -115,6 +96,6 @@ phip_mem <- phip_convert(
 \seealso{
 \itemize{
 \item \code{new_phip_data()} for the object constructor.
-\item \code{dplyr::tbl()} to query DuckDB/Arrow tables lazily.
+\item \code{dplyr::tbl()} to query DuckDB tables lazily.
 }
 }
