@@ -45,13 +45,10 @@ numeric/integer columns are filled with \code{0} and logical columns with
 }
 \details{
 Updates \code{x$data_long} in place (preserving laziness unless you later
-\code{compute()} / \code{collect()} or use \code{\link[=register_phip_data_tbl]{register_phip_data_tbl()}}).
+\code{compute()} / \code{collect()}).
 }
 \examples{
 \dontrun{
 pd <- expand_phip_data(pd, fill_override = list(fold_change = NA_real_))
 }
-}
-\seealso{
-\code{\link[=register_phip_data_tbl]{register_phip_data_tbl()}}
 }
