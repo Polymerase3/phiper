@@ -35,7 +35,6 @@ associations.}
 \value{
 a tibble of feature-axis associations for the returned axes.
 }
-}
 \description{
 Calculates feature-axis associations based on given PCoA
 results (output of \code{\link[=compute_pcoa]{compute_pcoa()}})

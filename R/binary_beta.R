@@ -731,7 +731,6 @@ compute_pcoa <- function(dist_obj,
 #'   associations.
 #'
 #' @return a tibble of feature-axis associations for the returned axes.
-#' }
 #'
 #' @details
 #' These feature associations are post-hoc summaries of how features relate to PCoA

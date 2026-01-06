@@ -276,8 +276,7 @@ testthat::test_that("compute_pcoa returns expected structure and types", {
   res <- suppressWarnings(compute_pcoa(
     d,
     neg_correction = "none",
-    n_axes = 5L,
-    top_features = 30L
+    n_axes = 5L
   ))
 
   testthat::expect_s3_class(res, "beta_pcoa")
@@ -356,8 +355,7 @@ testthat::test_that("compute_pcoa uses all requested axes up to n-1
   n_axes_req <- 12L
   k_expected <- min(n_axes_req, n - 1L)
 
-  res <- suppressWarnings(compute_pcoa(d, n_axes = n_axes_req,
-                                       top_features = 10L))
+  res <- suppressWarnings(compute_pcoa(d, n_axes = n_axes_req))
   axis_cols <- grep("^PCoA\\d+$", names(res$sample_coords), value = TRUE)
 
   testthat::expect_equal(length(axis_cols), k_expected)
@@ -414,15 +412,15 @@ testthat::test_that("compute_pcoa reproducibility: repeated runs match across
   d <- .get_dist_for_pcoa(ps_small)
 
   combos <- list(
-    list(neg = "none",     n_axes = 3L, top = 10L),
-    list(neg = "none",     n_axes = 5L, top = 5L)
+    list(neg = "none",     n_axes = 3L),
+    list(neg = "none",     n_axes = 5L)
   )
 
   if (rlang::is_installed("vegan")) {
     combos <- c(
       combos,
-      list(list(neg = "lingoes",  n_axes = 3L, top = 10L)),
-      list(list(neg = "cailliez", n_axes = 3L, top = 10L))
+      list(list(neg = "lingoes",  n_axes = 3L)),
+      list(list(neg = "cailliez", n_axes = 3L))
     )
   }
 
@@ -430,14 +428,12 @@ testthat::test_that("compute_pcoa reproducibility: repeated runs match across
     r1 <- withr::with_seed(123, suppressWarnings(compute_pcoa(
       d,
       neg_correction = cmb$neg,
-      n_axes = cmb$n_axes,
-      top_features = cmb$top
+      n_axes = cmb$n_axes
     )))
     r2 <- withr::with_seed(123, suppressWarnings(compute_pcoa(
       d,
       neg_correction = cmb$neg,
-      n_axes = cmb$n_axes,
-      top_features = cmb$top
+      n_axes = cmb$n_axes
     )))
 
     testthat::expect_equal(r1$sample_coords, r2$sample_coords, tolerance = 1e-12)
@@ -469,13 +465,13 @@ testthat::test_that("compute_pcoa_feature_associations reproducibility: repeated
       d,
       pcoa_res,
       top_features = cmb$top_features,
-      association_method = cmb$association_method,
+      association_method = cmb$association_method
     )))
     associations2 <- withr::with_seed(123, suppressWarnings(compute_pcoa_feature_associations(
       d,
       pcoa_res,
       top_features = cmb$top_features,
-      association_method = cmb$association_method,
+      association_method = cmb$association_method
     )))
 
     testthat::expect_equal(associations1, associations2, tolerance = 1e-12)
