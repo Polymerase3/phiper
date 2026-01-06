@@ -8,21 +8,7 @@
   function() {
     if (!is.null(cache_env$ps)) return(cache_env$ps)
 
-    phip_path <- phip_example_path()
-
-    ps <- phip_convert(
-      data_long_path    = phip_path,
-      peptide_library   = TRUE,
-      subject_id        = "subject_id",
-      peptide_id        = "peptide_id",
-      sample_id         = "sample_id",
-      exist             = "exist",
-      timepoint         = "timepoint_factor",
-      fold_change       = "fold_change",
-      materialise_table = TRUE,
-      auto_expand       = TRUE,
-      n_cores           = 2
-    )
+    ps <- suppressWarnings(phip_load_example_data())
 
     cols <- dplyr::tbl_vars(ps$data_long)
     tp_col <- if ("time" %in% cols) {
@@ -298,15 +284,13 @@ testthat::test_that("compute_pcoa returns expected structure and types", {
   testthat::expect_true(is.list(res))
 
   testthat::expect_true(all(c("sample_coords", "eigenvalues", "var_explained",
-                              "eigen_diagnostics", "correction_infos",
-                              "feature_associations") %in% names(res)))
+                              "eigen_diagnostics", "correction_infos") %in% names(res)))
 
   testthat::expect_s3_class(res$sample_coords, "tbl_df")
   testthat::expect_true("sample_id" %in% names(res$sample_coords))
   testthat::expect_true(is.numeric(res$eigenvalues))
   testthat::expect_s3_class(res$var_explained, "tbl_df")
   testthat::expect_equal(nrow(res$var_explained), 1L)
-  testthat::expect_s3_class(res$feature_associations, "tbl_df")
 
   # sample_coords rows should match dist size
   n <- attr(d, "Size")
@@ -384,8 +368,7 @@ testthat::test_that("compute_pcoa uses all requested axes up to n-1
   }
 })
 
-testthat::test_that("compute_pcoa feature_associations: skips when abundances
-                    missing", {
+testthat::test_that("compute_pcoa_feature_associations: error when abundances missing", {
 
   ps_small <- .get_ps_small_for_distance()
   d <- .get_dist_for_pcoa(ps_small)
@@ -393,29 +376,34 @@ testthat::test_that("compute_pcoa feature_associations: skips when abundances
   # remove abundances attribute
   attr(d, "abundances") <- NULL
 
-  res <- suppressWarnings(compute_pcoa(d, n_axes = 3L, top_features = 10L))
-  testthat::expect_s3_class(res$feature_associations, "tbl_df")
-  testthat::expect_equal(nrow(res$feature_associations), 0L)
+  pcoa_res <- suppressWarnings(compute_pcoa(d, n_axes = 3L))
+
+  expect_error(compute_pcoa_feature_associations(d, pcoa_res, top_features = 10L))
 })
 
-testthat::test_that("compute_pcoa feature_associations: returns expected columns
+testthat::test_that("compute_pcoa_feature_associations: returns expected columns
                     and respects top_features logic", {
-
   ps_small <- .get_ps_small_for_distance()
   d <- .get_dist_for_pcoa(ps_small)
 
-  res <- suppressWarnings(compute_pcoa(d, n_axes = 3L, top_features = 2L))
+  combos <- list(
+    list(n_axes = 3L, top_features = 2L),
+    list(n_axes = 2L, top_features = 4L),
+    list(n_axes = 1L, top_features = 1L)
+  )
 
-  fl <- res$feature_associations
-  # may still be empty if alignment fails, but on example data it should work
-  testthat::expect_true(is.data.frame(fl))
-  if (nrow(fl) > 0L) {
+  for (comb in combos) {
+    pcoa_res <- suppressWarnings(compute_pcoa(d, n_axes = comb$n_axes))
+
+    fl <- compute_pcoa_feature_associations(d, pcoa_res, top_features = comb$top_features)
+    testthat::expect_true(is.data.frame(fl))
+    testthat::expect_gte(nrow(fl), 1L)
     testthat::expect_true("feature" %in% names(fl))
-    testthat::expect_true(all(paste0("PCoA", 1:3) %in% names(fl)))
+    testthat::expect_true(all(paste0("PCoA", 1:comb$n_axes) %in% names(fl)))
     testthat::expect_equal(length(unique(fl$feature)), nrow(fl))
 
     # selection is union of top_features per axis, so upper bound is top_features * n_axes
-    testthat::expect_lte(nrow(fl), 2L * 3L)
+    testthat::expect_lte(nrow(fl), comb$n_axes * comb$top_features)
   }
 })
 
@@ -455,8 +443,42 @@ testthat::test_that("compute_pcoa reproducibility: repeated runs match across
     testthat::expect_equal(r1$sample_coords, r2$sample_coords, tolerance = 1e-12)
     testthat::expect_equal(r1$eigenvalues, r2$eigenvalues, tolerance = 1e-12)
     testthat::expect_equal(r1$var_explained, r2$var_explained, tolerance = 1e-12)
-    testthat::expect_equal(r1$feature_associations, r2$feature_associations,
-                           tolerance = 1e-12)
+  }
+})
+
+testthat::test_that("compute_pcoa_feature_associations reproducibility: repeated runs match across
+                    parameter combinations", {
+
+  ps_small <- .get_ps_small_for_distance()
+  d <- .get_dist_for_pcoa(ps_small)
+
+  pcoa_n_axes <- 3
+  combos <- list(
+    list(association_method = "weighted_average",  top_features = 1L),
+    list(association_method = "correlation",       top_features = 2L),
+    list(association_method = "regression",        top_features = 3L)
+  )
+
+  for (cmb in combos) {
+    pcoa_res <- withr::with_seed(123, suppressWarnings(compute_pcoa(
+      d,
+      n_axes = pcoa_n_axes,
+    )))
+
+    associations1 <- withr::with_seed(123, suppressWarnings(compute_pcoa_feature_associations(
+      d,
+      pcoa_res,
+      top_features = cmb$top_features,
+      association_method = cmb$association_method,
+    )))
+    associations2 <- withr::with_seed(123, suppressWarnings(compute_pcoa_feature_associations(
+      d,
+      pcoa_res,
+      top_features = cmb$top_features,
+      association_method = cmb$association_method,
+    )))
+
+    testthat::expect_equal(associations1, associations2, tolerance = 1e-12)
   }
 })
 
@@ -1529,27 +1551,39 @@ testthat::test_that("compute_pcoa: variance explained calculations", {
   }
 })
 
-testthat::test_that("compute_pcoa: feature associations edge cases", {
+describe("compute_pcoa_feature_associations: edge cases", {
   ps_small <- .get_ps_small_for_distance()
-  d <- .get_dist_for_pcoa(ps_small)
 
-  # test with mismatched row names
-  X_bad <- attr(d, "abundances")
-  rownames(X_bad) <- paste0("bad_", rownames(X_bad))
-  attr(d, "abundances") <- X_bad
+  it("returns empty tibble on mismatched row names", {
+    d <- .get_dist_for_pcoa(ps_small)
+    X_bad <- attr(d, "abundances")
+    rownames(X_bad) <- paste0("bad_", rownames(X_bad))
+    attr(d, "abundances") <- X_bad
 
-  res_bad <- suppressWarnings(compute_pcoa(d, n_axes = 2L))
-  testthat::expect_equal(nrow(res_bad$feature_associations), 0L)
+    pcoa_res <- suppressWarnings(compute_pcoa(d, n_axes = 2L))
 
-  # test with zero-weight features
-  d2 <- .get_dist_for_pcoa(ps_small)
-  X2 <- attr(d2, "abundances")
-  X2[, 1] <- 0  # make first feature all zeros
-  attr(d2, "abundances") <- X2
+    testthat::expect_warning(
+      {
+        associations <- compute_pcoa_feature_associations(d, pcoa_res)
+        testthat::expect_equal(nrow(associations), 0L)
+      },
+      regexp = "(?i)insufficient overlap"
+    )
+  })
 
-  res_zero <- suppressWarnings(compute_pcoa(d2, n_axes = 2L, top_features = 10L))
-  # should still work, just exclude zero-weight features
-  testthat::expect_s3_class(res_zero$feature_associations, "tbl_df")
+  it("returns works even with zero-weight features", {
+    # test with zero-weight features
+    d2 <- .get_dist_for_pcoa(ps_small)
+    X2 <- attr(d2, "abundances")
+    X2[, 1] <- 0  # make first feature all zeros
+    attr(d2, "abundances") <- X2
+
+    pcoa_res <- suppressWarnings(compute_pcoa(d2, n_axes = 3L))
+    associations <- compute_pcoa_feature_associations(d2, pcoa_res, top_features = 10L)
+    # should still work, just exclude zero-weight features
+    testthat::expect_s3_class(associations, "tbl_df")
+    testthat::expect_gte(nrow(associations), 1L)
+  })
 })
 
 testthat::test_that("compute_capscale: size mismatches and edge cases", {
@@ -1797,11 +1831,13 @@ testthat::test_that("compute_pcoa: missing labels and zero-axis handling", {
     dimnames = list(c("s1", "s2"), c("p1", "p2"))
   )
 
-  res <- compute_pcoa(d, n_axes = 3L, top_features = 5L)
+  res <- compute_pcoa(d, n_axes = 3L)
 
   testthat::expect_true(all(res$sample_coords$sample_id %in% c("1", "2")))
   testthat::expect_gte(ncol(res$sample_coords), 1L)
-  testthat::expect_s3_class(res$feature_associations, "tbl_df")
+
+  testthat::expect_warning(associations <- compute_pcoa_feature_associations(d, res, top_features = 5L))
+  testthat::expect_s3_class(associations, "tbl_df")
 })
 
 testthat::test_that("compute_pcoa: feature association alignment warnings", {

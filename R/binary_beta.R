@@ -723,7 +723,7 @@ compute_pcoa <- function(dist_obj,
 #'   reporting associations. Features are selected by taking the union of the
 #'   top \code{top_features} features (by absolute association) for each
 #'   returned axis. Must be > 0.
-#' @param feature_assoc character scalar. Type of feature-axis association to
+#' @param association_method character scalar. Type of feature-axis association to
 #'   return. \code{"weighted_average"} returns weighted-average feature scores (centroid of
 #'   sample scores weighted by feature abundance). \code{"correlation"} returns
 #'   feature-axis correlations. \code{"regression"} returns regression slopes
@@ -735,7 +735,7 @@ compute_pcoa <- function(dist_obj,
 #'
 #' @details
 #' These feature associations are post-hoc summaries of how features relate to PCoA
-#' axes. Weighted-average scores (\code{feature_assoc = "weighted_average"}) compute
+#' axes. Weighted-average scores (\code{association_method = "weighted_average"}) compute
 #' \code{t(X) %*% U / colSums(X)}, where \code{X} is the abundance matrix and
 #' \code{U} are the sample coordinates. Correlation and regression associations
 #' are computed between feature abundances and axis scores and are not "true"
@@ -780,7 +780,7 @@ compute_pcoa_feature_associations <- function(
   dist_obj,
   pcoa_result,
   top_features = 30L,
-  feature_assoc = c(
+  association_method = c(
     "weighted_average", "correlation",
     "regression"
   )
@@ -789,17 +789,20 @@ compute_pcoa_feature_associations <- function(
   chk::chk_s3_class(pcoa_result, "beta_pcoa")
   chk::chk_count(top_features)
   chk::chk_gt(top_features, 0)
-  feature_assoc <- match.arg(feature_assoc)
+  association_method <- match.arg(association_method)
 
   X <- attr(dist_obj, "abundances")
   chk::chk_not_null(X)
-
   X <- as.matrix(X)
 
+  # Take names from distance object (compute_pcoa converts these to sample id)
+  coords <- as.matrix(pcoa_result$sample_coords |> select(-sample_id))
+  rownames(coords) <- attr(dist_obj, "Labels")
+
   .ph_feature_associations(
-    coords = pcoa_result$sample_coords,
+    coords = coords,
     X = X,
-    feature_assoc = feature_assoc,
+    feature_assoc = association_method,
     top_features = top_features,
     max_axes = NULL,
     intersect_fn = intersect,

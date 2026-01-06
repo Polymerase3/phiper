@@ -7,9 +7,7 @@
 compute_pcoa(
   dist_obj,
   neg_correction = c("none", "lingoes", "cailliez"),
-  n_axes = 5L,
-  top_features = 30L,
-  feature_assoc = c("weighted_average", "correlation", "regression", "none")
+  n_axes = 5L
 )
 }
 \arguments{
@@ -25,18 +23,6 @@ eigenvalues (if any). One of \code{"none"}, \code{"lingoes"}, or
 
 \item{n_axes}{integer scalar. Number of PCoA axes to return in the sample
 scores. Must be > 0. Internally, \code{k = min(n_axes, n_samples - 1)}.}
-
-\item{top_features}{integer scalar. Number of features to keep per axis when
-reporting associations. Features are selected by taking the union of the
-top \code{top_features} features (by absolute association) for each
-returned axis. Must be > 0.}
-
-\item{feature_assoc}{character scalar. Type of feature-axis association to
-return. \code{"weighted_average"} returns weighted-average feature scores (centroid of
-sample scores weighted by feature abundance). \code{"correlation"} returns
-feature-axis correlations. \code{"regression"} returns regression slopes
-for axis scores on feature abundance. \code{"none"} skips feature
-associations.}
 }
 \value{
 a list of class \code{"beta_pcoa"} with elements:
@@ -70,13 +56,6 @@ associations.
 Negative eigenvalues indicate that the distances are not perfectly euclidean.
 If \code{neg_correction} is \code{"lingoes"} or \code{"cailliez"}, a
 correction is applied via \code{vegan::wcmdscale(add = ...)}.
-
-Feature associations are post-hoc summaries of how features relate to PCoA
-axes. Weighted-average scores (\code{feature_assoc = "weighted_average"}) compute
-\code{t(X) \%*\% U / colSums(X)}, where \code{X} is the abundance matrix and
-\code{U} are the sample coordinates. Correlation and regression associations
-are computed between feature abundances and axis scores and are not "true"
-PCA loadings unless distances are Euclidean and derived compatibly.
 }
 \examples{
 \donttest{
@@ -109,6 +88,5 @@ d <- compute_distance(
 pcoa_res <- compute_pcoa(d, neg_correction = "none", n_axes = 3L)
 pcoa_res$sample_coords
 pcoa_res$var_explained
-pcoa_res$feature_associations
 }
 }
