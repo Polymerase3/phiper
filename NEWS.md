@@ -8,17 +8,13 @@
 ## Bug fixes
 
 - Fixed typos in the examples from binary_beta.R
+- fixed R CMD check (0 errors, 0 warnings, 0 notes)
 
 ## Documentation
 
 - Documented empty params, got rid of all documentation-related wearnings, 
 - removed all non-ASCII chars
-- Moved CONTRIBUTING.md to .github/ (it caused a note in R CMD CHECK),
-
-
-## Internal
-
-- None.
+- Added CONTRIBUTING.md to .Rbuildignore (it caused a note in R CMD CHECK),
 
 # phiper 0.2.0
 
@@ -39,10 +35,6 @@ standard/legacy import workflows live in the standard-conver.R or
 legacy-convert.R
 - removed the resolve-paths.R file. Moved the functions to utils.R
 
-## Documentation
-
-- Regenerated the docs.
-
 
 # phiper 0.1.1
 
@@ -54,10 +46,6 @@ R/fold_change-analysis.R
 
 - i left other files, even if they were undocumented/untested, as they were 
 essential for phiper to work (e.g. the data import paths)
-
-## Documentation
-
-- Regenerated the docs, removed the old functions from NAMESPACE
 
 
 # phiper 0.1.0
