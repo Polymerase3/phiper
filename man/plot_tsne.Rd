@@ -28,7 +28,7 @@ in \code{attr(tsne_res, "meta_cols")}, if available.}
 
 \item{size}{Numeric point size for scatter plots. Defaults to \code{1.5}.}
 
-\item{alpha}{Numeric transparency for points (0–1). Defaults to \code{0.8}.}
+\item{alpha}{Numeric transparency for points (0-1). Defaults to \code{0.8}.}
 
 \item{palette}{Optional vector of colour values passed to
 \code{scale_color_manual()} (2D) or \code{colors} (3D plotly).}

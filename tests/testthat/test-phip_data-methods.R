@@ -12,7 +12,7 @@ test_that("export_parquet sanity checks", {
     phiper::export_parquet(123, tmp_path)
   )
 
-  df = phiper::phip_load_example_data()
+  df <- phiper::phip_load_example_data()
 
   # Output path should be file (not folder)
   tmp_dir <- withr::local_tempdir()
@@ -37,7 +37,7 @@ test_that("export_parquet sanity checks", {
 
 test_that("export_parquet exports as expected", {
   tmp_path <- withr::local_tempfile(fileext = ".parquet")
-  df = phiper::phip_load_example_data()
+  df <- phiper::phip_load_example_data()
 
   expect_silent(
     phiper::export_parquet(df, tmp_path)

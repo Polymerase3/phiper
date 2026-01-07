@@ -241,6 +241,16 @@ plot_enrichment_counts <- function(phip_data,
 #'   with `group_interaction = TRUE`.
 #' @param interaction_sep character; separator used to join interaction labels.
 #'   default is taken from `attr(x, "interaction_sep")` if present, otherwise `" * "`.
+#' @param jitter_width Numeric; horizontal jitter width for points.
+#' @param point_size Numeric; size of jittered points.
+#' @param point_alpha Numeric in (0,1); alpha for jittered points.
+#' @param text_size Numeric; base text size for plot labels.
+#' @param font_family Character; font family for plot text.
+#' @param show_grids Logical; whether to show panel grid lines.
+#' @param x_order Optional character vector specifying the x-axis order.
+#' @param x_labels Optional named character vector mapping x-axis labels.
+#' @param y_range Optional numeric length-2 vector for y-axis limits.
+#' @param x_tickangle Numeric; x-axis label angle in degrees.
 #'
 #' @return a `ggplot` object.
 #'
@@ -399,7 +409,7 @@ plot_alpha_diversity <- function(
         dplyr::group_by(!!gsym) |>
         dplyr::summarise(sample_count = dplyr::n(), .groups = "drop")
 
-      default_lab <- setNames(
+      default_lab <- stats::setNames(
         paste0(as.character(df_counts[[group_col]]), "\n(n = ", df_counts$sample_count, ")"),
         as.character(df_counts[[group_col]])
       )
@@ -465,6 +475,12 @@ plot_alpha_diversity <- function(
 #' @param y_range optional numeric length-2; y axis range (e.g., c(0, 2300)).
 #' @param x_tickangle numeric; tick label rotation in degrees (default 0; e.g., 25).
 #' @param quartile_method one of c("exclusive","inclusive","linear"); passed to plotly box (default "exclusive" ~ ggplot).
+#' @param jitter_width Numeric; horizontal jitter width for points.
+#' @param point_size Numeric; size of jittered points.
+#' @param point_alpha Numeric in (0,1); alpha for jittered points.
+#' @param text_size Numeric; base text size for plot labels.
+#' @param font_family Character; font family for plot text.
+#' @param show_grids Logical; whether to show panel grid lines.
 #' @return A plotly htmlwidget.
 #' @examples
 #' \dontrun{
@@ -645,7 +661,7 @@ plot_alpha_diversity_interactive <- function(
         }
 
         pos    <- seq_along(group_levels)
-        pos_of <- setNames(pos, group_levels)
+        pos_of <- stats::setNames(pos, group_levels)
         base_x <- unname(pos_of[gvals_raw])
 
         if (!is.null(x_labels) && !is.null(names(x_labels))) {
@@ -654,7 +670,7 @@ plot_alpha_diversity_interactive <- function(
           counts <- df_panel |>
             dplyr::group_by(.data[[group_col]]) |>
             dplyr::summarise(n = dplyr::n(), .groups = "drop")
-          n_map <- setNames(counts$n, as.character(counts[[group_col]]))
+          n_map <- stats::setNames(counts$n, as.character(counts[[group_col]]))
           ticktext <- unname(vapply(group_levels, function(lev) sprintf("%s<br>(n = %s)", lev, n_map[[lev]] %||% "NA"), ""))
         }
 

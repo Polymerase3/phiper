@@ -29,6 +29,9 @@
 
 \item{...}{Reserved for future use.}
 }
+\value{
+Invisible \code{NULL}.
+}
 \description{
 Write method for ph_prev_result (ph_prevalence_compare output)
 }

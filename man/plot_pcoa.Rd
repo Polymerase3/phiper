@@ -24,7 +24,7 @@ plot_pcoa(
 \arguments{
 \item{pcoa_res}{A \code{"beta_pcoa"} object as returned by \code{\link[=compute_pcoa]{compute_pcoa()}}.
 Must contain at least a \code{sample_coords} component with columns
-\code{sample_id} and \code{PCoA1}, \code{PCoA2}, …, and a \code{var_explained} component
+\code{sample_id} and \code{PCoA1}, \code{PCoA2}, ..., and a \code{var_explained} component
 (one-row tibble) with columns such as \code{"\%PCoA1"}, \code{"\%PCoA2"}, etc.}
 
 \item{axes}{Integer vector of length 2 giving the PCoA axes to plot
@@ -47,12 +47,12 @@ chosen grouping are shown.}
 \item{centroid_by}{Granularity of centroids. One of:
 \itemize{
 \item \code{"auto"} (default): if both \code{group_col} and \code{time_col} are
-present, centroids are computed for each group–time combination
+present, centroids are computed for each group-time combination
 (\code{"group_time"}); otherwise by \code{"group"} or \code{"time"} depending on
 which factor is available.
 \item \code{"group"}: centroids per group (requires \code{group_col}).
 \item \code{"time"}: centroids per time level (requires \code{time_col}).
-\item \code{"group_time"}: centroids per group×time combination
+\item \code{"group_time"}: centroids per group*time combination
 (requires both \code{group_col} and \code{time_col}).
 }}
 

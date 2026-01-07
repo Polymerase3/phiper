@@ -71,7 +71,8 @@
 #'    A **two-sided** permutation p-value for the global shift is computed:
 #'
 #'    - **Paired design**: if both groups have measurements for the same
-#'      `subject_id`, each subject’s labels (`g1` ↔ `g2`) are independently
+#'      `subject_id`, each subject’s labels (\code{g1} \eqn{\leftrightarrow}
+#'      \code{g2}) are independently
 #'      flipped with probability 1/2 and steps (1–4) are recomputed to obtain
 #'      \eqn{T_b}.
 #'
@@ -101,7 +102,8 @@
 #'      `"mean"`, `"max"`, `"median"`).
 #'
 #'    - If `cross_prev != "none"`, pooled peptide-level prevalences across
-#'      `g1 ∪ g2` are summarized with the same set of reducers (`"sum"`,
+#'      \code{g1} \eqn{\cup} \code{g2} are summarized with the same set of
+#'      reducers (`"sum"`,
 #'      `"mean"`, `"max"`, `"median"`) and returned as `cross_prev_<mode>`.
 #'
 #' **Input requirements.**
@@ -155,6 +157,8 @@
 #'   universes; pairwise group contrasts are constructed within each
 #'   `(rank, feature, group_col)` stratum.
 #' @param exist_col Name of the 0/1 presence column. Default `"exist"`.
+#' @param paired_by Optional single column name identifying paired samples
+#'   (e.g. subject ID). When provided, paired tests are used where applicable.
 #' @param interaction Logical; reserved for future use (currently ignored). If
 #'   `TRUE`, an interaction of the first two `group_cols` may be used as an
 #'   additional `group_col` in future versions.
@@ -196,7 +200,8 @@
 #'   contrast. One of `c("none", "sum", "mean", "max", "median")`. If `"none"`,
 #'   no fold-change summary is returned.
 #' @param cross_prev Character scalar specifying whether and how to summarize
-#'   pooled peptide-level prevalences across `g1 ∪ g2` in each contrast. One
+#'   pooled peptide-level prevalences across \code{g1} \eqn{\cup} \code{g2} in
+#'   each contrast. One
 #'   of `c("none", "sum", "mean", "max", "median")`. If `"none"`, no
 #'   prevalence summary is returned.
 #'
@@ -668,7 +673,7 @@ compute_delta <- function(
     dplyr::left_join(subj_row_map, by = "subject_id")
 
   # peptide column index map (within bitset columns 1..m)
-  pep_col_map <- setNames(seq_along(peptides_order), peptides_order)
+  pep_col_map <- stats::setNames(seq_along(peptides_order), peptides_order)
 
   get_pep_cols <- function(rk, ft) {
     pid <- rank_map_long |>
@@ -699,7 +704,7 @@ compute_delta <- function(
       return(NULL)
     }
 
-    id_map <- setNames(seq_along(pair_ids), pair_ids)
+    id_map <- stats::setNames(seq_along(pair_ids), pair_ids)
 
     # G1: block-level presence
     g1_hits <- df_long |>
@@ -858,7 +863,7 @@ compute_delta <- function(
           # dbplyr->DuckDB supports median; if not, collect minimal vector
           fc_try <- try(
             dplyr::summarise(fc_tbl,
-              v = median(.data$fold_change,
+              v = stats::median(.data$fold_change,
                 na.rm = TRUE
               )
             ),
@@ -907,7 +912,7 @@ compute_delta <- function(
       if (cross_prev == "median") {
         cp_try <- try(
           dplyr::summarise(cp_tbl,
-            v = median(.data$prev, na.rm = TRUE)
+            v = stats::median(.data$prev, na.rm = TRUE)
           ),
           silent = TRUE
         )
@@ -1090,7 +1095,7 @@ compute_delta <- function(
   # ---- p.adjust + final select/arrange ---------------------------------------
   res <- res |>
     dplyr::group_by(rank) |>
-    dplyr::mutate(p_adj_rank = p.adjust(p_perm, method = "BH")) |>
+    dplyr::mutate(p_adj_rank = stats::p.adjust(p_perm, method = "BH")) |>
     dplyr::ungroup() |>
     dplyr::mutate(
       category_rank_bh = dplyr::case_when(

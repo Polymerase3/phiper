@@ -44,6 +44,9 @@ universes; pairwise group contrasts are constructed within each
 
 \item{exist_col}{Name of the 0/1 presence column. Default \code{"exist"}.}
 
+\item{paired_by}{Optional single column name identifying paired samples
+(e.g. subject ID). When provided, paired tests are used where applicable.}
+
 \item{interaction}{Logical; reserved for future use (currently ignored). If
 \code{TRUE}, an interaction of the first two \code{group_cols} may be used as an
 additional \code{group_col} in future versions.}
@@ -101,7 +104,8 @@ contrast. One of \code{c("none", "sum", "mean", "max", "median")}. If \code{"non
 no fold-change summary is returned.}
 
 \item{cross_prev}{Character scalar specifying whether and how to summarize
-pooled peptide-level prevalences across \verb{g1 ∪ g2} in each contrast. One
+pooled peptide-level prevalences across \code{g1} \eqn{\cup} \code{g2} in
+each contrast. One
 of \code{c("none", "sum", "mean", "max", "median")}. If \code{"none"}, no
 prevalence summary is returned.}
 }
@@ -201,7 +205,8 @@ a Stouffer statistic \eqn{T_b} is computed within each bin, and the
 A \strong{two-sided} permutation p-value for the global shift is computed:
 \itemize{
 \item \strong{Paired design}: if both groups have measurements for the same
-\code{subject_id}, each subject’s labels (\code{g1} ↔ \code{g2}) are independently
+\code{subject_id}, each subject’s labels (\code{g1} \eqn{\leftrightarrow}
+\code{g2}) are independently
 flipped with probability 1/2 and steps (1–4) are recomputed to obtain
 \eqn{T_b}.
 \item \strong{Unpaired design}: sample labels are shuffled while preserving group
@@ -228,7 +233,8 @@ returned in \code{category_rank_bh}.
 contrast is returned as \verb{fold_change_<mode>} (\code{mode} = \code{"sum"},
 \code{"mean"}, \code{"max"}, \code{"median"}).
 \item If \code{cross_prev != "none"}, pooled peptide-level prevalences across
-\verb{g1 ∪ g2} are summarized with the same set of reducers (\code{"sum"},
+\code{g1} \eqn{\cup} \code{g2} are summarized with the same set of
+reducers (\code{"sum"},
 \code{"mean"}, \code{"max"}, \code{"median"}) and returned as \verb{cross_prev_<mode>}.
 }
 }

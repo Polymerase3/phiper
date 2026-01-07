@@ -1,6 +1,6 @@
 Package: phiper
 Title: Automated PhIP-seq Analysis and Reporting
-Version: 0.2.0
+Version: 0.2.1
 Authors@R: c(
   person(
     "Mateusz", "Kolek", 
@@ -28,6 +28,8 @@ Description: Provides an end-to-end toolkit for Phage ImmunoPrecipitation-
     through tidy data frames, visualised with publication-ready ggplot2
     graphics, or rendered into fully fledged HTML reports via R Markdown.
 License: GPL (>= 3)
+Depends: 
+    R (>= 4.1.0)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
@@ -39,34 +41,42 @@ Suggests:
     arrow,
     dbplyr,
     duckdb,
+    filelock,
+    future,
+    future.apply,
+    ggpubr,
+    mgcv,
     mockery,
+    openxlsx,
+    parallelDist,
+    readr,
     rprojroot,
+    showtext,
+    sysfonts,
     testthat (>= 3.0.0),
     vdiffr,
-    yaml,
     withr,
-    ggpubr,
-    parallelDist
+    yaml
 Config/testthat/edition: 3
 Imports: 
     chk,
     cli,
-    colorspace,
     data.table,
     DBI,
     dplyr,
-    foreach,
     fs,
-    ggh4x,
+    ggplot2,
+    htmltools,
     knitr,
-    MASS,
+    purrr,
     rlang,
+    scales,
     tibble,
     tidyr,
+    tidyselect,
     vegan,
     Rcpp,
     RcppParallel,
-    doParallel,
     forcats,
     utils,
     Rtsne,

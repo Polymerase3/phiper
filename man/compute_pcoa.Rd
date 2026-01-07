@@ -46,18 +46,18 @@ a list of class \code{"beta_pcoa"} with elements:
 \code{n_samples - 1} is smaller).
 \item \code{eigenvalues}: numeric vector of eigenvalues from the PCoA.
 \item \code{var_explained}: one-row tibble with percent variance explained
-by the returned axes and \code{%Other}. percentages are computed from the
-    sum of positive eigenvalues.
-  \item \code{eigen_diagnostics}: one-row tibble with eigenvalue diagnostics:
-    \code{sum_negative}, \code{sum_positive}, their ratio, the minimum
-    eigenvalue, and the number and fraction of negative eigenvalues.
-  \item \code{correction_infos}: one-row tibble describing any negative
-    eigenvalue correction applied, including \code{corrected},
-    \code{correction_method}, \code{correction_add}, and
-    \code{correction_note}.
-  \item \code{feature_associations}: tibble of feature-axis associations for
-    the returned axes (empty if \code{"abundances"} is missing, cannot be
-    aligned, or \code{feature_assoc = "none"}).
+by the returned axes and \code{\%Other}. percentages are computed from the
+sum of positive eigenvalues.
+\item \code{eigen_diagnostics}: one-row tibble with eigenvalue diagnostics:
+\code{sum_negative}, \code{sum_positive}, their ratio, the minimum
+eigenvalue, and the number and fraction of negative eigenvalues.
+\item \code{correction_infos}: one-row tibble describing any negative
+eigenvalue correction applied, including \code{corrected},
+\code{correction_method}, \code{correction_add}, and
+\code{correction_note}.
+\item \code{feature_associations}: tibble of feature-axis associations for
+the returned axes (empty if \code{"abundances"} is missing, cannot be
+aligned, or \code{feature_assoc = "none"}).
 }
 }
 \description{
@@ -87,7 +87,7 @@ ps <- phip_load_example_data()
 # small subset for speed: 5 peptides at time t1
 keep_pep <- c("16627", "5243", "24799", "16196", "18003")
 dat_cols <- dplyr::tbl_vars(ps$data_long)
-tp_col <- "time"
+tp_col <- "timepoint"
 
 ps_small <- ps |>
   dplyr::filter(
@@ -97,7 +97,7 @@ ps_small <- ps |>
   dplyr::collect()
 
 # compute distances (needs either 'parallelDist' or 'vegan')
-val_col <- "exist"
+val_col <- "fold_change"
 
 d <- compute_distance(
   ps_small,

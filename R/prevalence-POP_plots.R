@@ -12,6 +12,26 @@
 #'   informative coloring.
 #' - If `color_by` is provided, it joins peptide metadata (like interactive).
 #'
+#' @param df A `ph_prev_result` object or a data frame with prevalence results.
+#' @param pair optional group pair (character length-2).
+#' @param rank optional single rank (character) to keep.
+#' @param universe optional `group_col` value or regex (if `universe_regex = TRUE`).
+#' @param features optional character vector or regex patterns (if `features_regex = TRUE`).
+#' @param features_regex logical; treat `features` as regex patterns.
+#' @param universe_regex logical; treat `universe` as regex pattern(s).
+#' @param xlab,ylab axis labels; if missing and `pair` is provided, they default
+#'   to `pair[1]` and `pair[2]`.
+#' @param alpha numeric in (0,1]; used only for nominal labels.
+#' @param prefer_flags logical; reserved for future use (kept for back-compat).
+#' @param color_by optional peptide-level meta column name to color by.
+#' @param color_title optional legend title for `color_by`.
+#' @param point_size Numeric; marker size for points.
+#' @param point_alpha Numeric in (0,1); marker opacity.
+#' @param jitter_width_pp Numeric; jitter width in percentage points.
+#' @param jitter_height_pp Numeric; jitter height in percentage points.
+#' @param font_family Character; font family for plot text.
+#' @param font_size Numeric; font size for plot text.
+#'
 #' @return A ggplot object.
 #' @export
 scatter_static <- function(df,
@@ -138,7 +158,7 @@ scatter_static <- function(df,
       base_p <- if ("p_adj_rank_wbh" %in% names(df)) df$p_adj_rank_wbh else df$p_raw
       df$p_bin <- cut(base_p,
         breaks = c(0, 1e-3, 1e-2, 5e-2, 1, Inf),
-        labels = c("≤1e-3", "(1e-3,1e-2]", "(1e-2,0.05]", ">0.05", "NA"),
+        labels = c("<+1e-3", "(1e-3,1e-2]", "(1e-2,0.05]", ">0.05", "NA"),
         include.lowest = TRUE, right = TRUE
       )
       color_var <- "p_bin"
@@ -310,6 +330,25 @@ scatter_static <- function(df,
 #' @param prefer_flags logical; reserved for future use (kept for back-compat).
 #' @param color_by optional peptide-level meta column name to color by.
 #' @param color_title optional legend title for `color_by`.
+#' @param peplib Optional peptide metadata table used to color points by
+#'   `color_by` when not present in `df`.
+#' @param category_colors Optional named vector mapping categories to colors.
+#' @param show_background Logical; plot background peptides if provided.
+#' @param background_df Optional data frame of background points.
+#' @param background_name Character; legend name for background points.
+#' @param background_color Character; color for background points.
+#' @param background_size Numeric; size for background points.
+#' @param background_alpha Numeric in (0,1); opacity for background points.
+#' @param background_max_n Integer; maximum number of background points to plot.
+#' @param background_seed Integer; RNG seed for background downsampling.
+#' @param point_line_width Numeric; outline width for points.
+#' @param point_line_color Character; outline color for points.
+#' @param point_size Numeric; marker size for points.
+#' @param point_alpha Numeric in (0,1); marker opacity.
+#' @param jitter_width_pp Numeric; jitter width in percentage points.
+#' @param jitter_height_pp Numeric; jitter height in percentage points.
+#' @param font_family Character; font family for plot text.
+#' @param font_size Numeric; font size for plot text.
 #'
 #' @return a `plotly` object.
 #'
@@ -339,16 +378,56 @@ scatter_interactive <- function(df,
                                 prefer_flags = TRUE,
                                 color_by = NULL,
                                 color_title = NULL,
+
                                 # ---- NEW ----
-                                point_size      = 7,
-                                point_alpha     = 0.85,
-                                jitter_width_pp = 0.0,
-                                jitter_height_pp= 0.0,
-                                font_family     = NULL,
-                                font_size       = 12) {
+                                peplib = NULL,
+
+                                # Colors for the default category mapping (when color_by is NULL)
+                                category_colors = c(
+                                  "significant (wBH, per rank)" = "#009E73",
+                                  "nominal only"                = "#E69F00",
+                                  "not significant"             = "#0072B2",
+                                  "other/NA"                    = "#999999"
+                                ),
+
+                                # Background overlay (separate trace, toggleable in legend)
+                                show_background   = FALSE,
+                                background_df     = NULL,
+                                background_name   = "background peptides",
+                                background_color  = "#808080",
+                                background_size   = 6,
+                                background_alpha  = 0.30,
+                                background_max_n  = 3000,
+                                background_seed   = 1L,
+
+                                # Marker styling (main points)
+                                point_size       = 7,
+                                point_alpha      = 0.85,
+                                point_line_width = 0.7,
+                                point_line_color = "rgba(0,0,0,0.6)",
+
+                                jitter_width_pp  = 0.0,
+                                jitter_height_pp = 0.0,
+                                font_family      = NULL,
+                                font_size        = 12) {
 
   clamp01 <- function(x) pmin(1, pmax(0, as.numeric(x)))
   point_alpha <- clamp01(point_alpha)
+
+  escape_html <- function(x) {
+    x <- as.character(x)
+    x[is.na(x)] <- ""
+    x <- gsub("&", "&amp;", x, fixed = TRUE)
+    x <- gsub("<", "&lt;",  x, fixed = TRUE)
+    x <- gsub(">", "&gt;",  x, fixed = TRUE)
+    x <- gsub('"', "&quot;", x, fixed = TRUE)
+    x
+  }
+  fmt_na <- function(x) {
+    x <- as.character(x)
+    x[is.na(x) | x == ""] <- "NA"
+    x
+  }
 
   df_original <- df
 
@@ -367,8 +446,7 @@ scatter_interactive <- function(df,
       df <- as.data.frame(df)
       if (!is.null(rank) && "rank" %in% names(df)) df <- df[df$rank %in% rank, , drop = FALSE]
       if (!is.null(universe) && "group_col" %in% names(df)) {
-        gvec <- as.character(df$group_col)
-        gvec[is.na(gvec)] <- ""
+        gvec <- as.character(df$group_col); gvec[is.na(gvec)] <- ""
         if (universe_regex) {
           keep <- rep(FALSE, nrow(df))
           for (p in as.character(universe)) keep <- keep | grepl(p, gvec, ignore.case = TRUE, perl = TRUE)
@@ -378,8 +456,7 @@ scatter_interactive <- function(df,
         }
       }
       if (!is.null(features) && "feature" %in% names(df)) {
-        fvec <- as.character(df$feature)
-        fvec[is.na(fvec)] <- ""
+        fvec <- as.character(df$feature); fvec[is.na(fvec)] <- ""
         if (features_regex) {
           keep <- rep(FALSE, nrow(df))
           for (p in as.character(features)) keep <- keep | grepl(p, fvec, ignore.case = TRUE, perl = TRUE)
@@ -401,8 +478,8 @@ scatter_interactive <- function(df,
         x = 0.5, y = 0.5, text = "no data for this contrast",
         showarrow = FALSE, xref = "paper", yref = "paper"
       ),
-      xaxis = list(title = xlab %||% "group a", zeroline = FALSE),
-      yaxis = list(title = ylab %||% "group b", zeroline = FALSE),
+      xaxis = list(title = if (is.null(xlab)) "group a" else xlab, zeroline = FALSE),
+      yaxis = list(title = if (is.null(ylab)) "group b" else ylab, zeroline = FALSE),
       legend = list(orientation = "h", y = -0.15)
     ))
   }
@@ -431,14 +508,14 @@ scatter_interactive <- function(df,
       )
   }
 
-  # join peptide-level meta for color_by --------------------------------------
+  # join peptide-level meta for color_by (keep old behaviour) -----------------
   color_var <- NULL
   color_val_label <- NULL
   if (!is.null(color_by)) {
     if ("peptide_id" %in% names(df)) {
       df <- dplyr::mutate(df, pep_key = as.character(.data$peptide_id))
     } else if (all(c("feature","rank") %in% names(df))) {
-      df <- dplyr::mutate(df, pep_key = dplyr::if_else(.data$rank=="peptide_id",
+      df <- dplyr::mutate(df, pep_key = dplyr::if_else(.data$rank == "peptide_id",
                                                        as.character(.data$feature), NA_character_))
     } else if ("feature" %in% names(df)) {
       df <- dplyr::mutate(df, pep_key = as.character(.data$feature))
@@ -448,22 +525,35 @@ scatter_interactive <- function(df,
 
     has_any_keys <- any(!is.na(df$pep_key))
     if (has_any_keys) {
-      lib_handle <- NULL
-      if (inherits(df_original, "ph_prev_result")) {
-        meta <- attr(df_original, "prev_meta")
-        if (!is.null(meta) && "peptide_library" %in% names(meta)) lib_handle <- meta$peptide_library
-      }
-      pm <- if (!is.null(lib_handle)) {
-        lib_handle %>% dplyr::select("peptide_id", tidyselect::all_of(color_by)) %>%
-          dplyr::distinct(peptide_id, .keep_all = TRUE) %>% dplyr::collect()
+      pm <- NULL
+      if (!is.null(peplib) && ("peptide_id" %in% names(peplib)) && (color_by %in% names(peplib))) {
+        pm <- peplib %>%
+          dplyr::select("peptide_id", tidyselect::all_of(color_by)) %>%
+          dplyr::distinct(peptide_id, .keep_all = TRUE)
       } else {
-        get_peptide_meta() %>% dplyr::select("peptide_id", tidyselect::all_of(color_by)) %>%
-          dplyr::distinct(peptide_id, .keep_all = TRUE) %>% dplyr::collect()
+        lib_handle <- NULL
+        if (inherits(df_original, "ph_prev_result")) {
+          meta <- attr(df_original, "prev_meta")
+          if (!is.null(meta) && "peptide_library" %in% names(meta)) lib_handle <- meta$peptide_library
+        }
+        pm <- if (!is.null(lib_handle)) {
+          lib_handle %>%
+            dplyr::select("peptide_id", tidyselect::all_of(color_by)) %>%
+            dplyr::distinct(peptide_id, .keep_all = TRUE) %>%
+            dplyr::collect()
+        } else {
+          get_peptide_meta() %>%
+            dplyr::select("peptide_id", tidyselect::all_of(color_by)) %>%
+            dplyr::distinct(peptide_id, .keep_all = TRUE) %>%
+            dplyr::collect()
+        }
       }
+
       df <- df %>% dplyr::left_join(pm, by = dplyr::join_by(pep_key == peptide_id))
+
       if (color_by %in% names(df) && is.list(df[[color_by]])) {
-        df[[color_by]] <- vapply(df[[color_by]] , function(z){
-          if (length(z)==0) return(NA_character_)
+        df[[color_by]] <- vapply(df[[color_by]], function(z) {
+          if (length(z) == 0) return(NA_character_)
           if (is.atomic(z)) return(as.character(z)[1])
           as.character(z[[1]])
         }, character(1))
@@ -471,13 +561,15 @@ scatter_interactive <- function(df,
     } else {
       df[[color_by]] <- NA
     }
+
     if (is.logical(df[[color_by]])) {
       df[[color_by]] <- dplyr::case_when(
-        df[[color_by]] %in% TRUE ~ "yes",
+        df[[color_by]] %in% TRUE  ~ "yes",
         df[[color_by]] %in% FALSE ~ "no",
-        is.na(df[[color_by]]) ~ "na"
+        is.na(df[[color_by]])     ~ "na"
       )
     }
+
     df[[color_by]] <- as.factor(as.character(df[[color_by]]))
     color_var <- color_by
     if (is.null(color_title)) color_title <- color_by
@@ -487,9 +579,11 @@ scatter_interactive <- function(df,
   # Create jittered copies in percent scale -----------------------------------
   jw <- as.numeric(jitter_width_pp  %||% 0)
   jh <- as.numeric(jitter_height_pp %||% 0)
+
   pdat <- df
   if (!"percent1" %in% names(pdat) && "prop1" %in% names(pdat)) pdat$percent1 <- pdat$prop1 * 100
   if (!"percent2" %in% names(pdat) && "prop2" %in% names(pdat)) pdat$percent2 <- pdat$prop2 * 100
+
   if (jw > 0 || jh > 0) {
     set.seed(1L)
     n <- nrow(pdat)
@@ -497,7 +591,27 @@ scatter_interactive <- function(df,
     pdat$percent2 <- pmin(100, pmax(0, pdat$percent2 + stats::rnorm(n, 0, jh)))
   }
 
-  # enriched hover text --------------------------------------------------------
+  # ---- peptide_id + peplib join (ONLY for peptide points) -------------------
+  pdat$pep_id <- NA_character_
+  if (all(c("rank", "feature") %in% names(pdat))) {
+    pdat$pep_id <- ifelse(pdat$rank == "peptide_id", as.character(pdat$feature), NA_character_)
+  } else if ("peptide_id" %in% names(pdat)) {
+    pdat$pep_id <- as.character(pdat$peptide_id)
+  }
+
+  if (!is.null(peplib) && any(!is.na(pdat$pep_id))) {
+    pm2 <- peplib %>%
+      dplyr::select(dplyr::any_of(c("peptide_id", "species", "common", "Fullname", "Description"))) %>%
+      dplyr::distinct(peptide_id, .keep_all = TRUE)
+    pdat <- dplyr::left_join(pdat, pm2, by = c("pep_id" = "peptide_id"))
+  } else {
+    if (!"species" %in% names(pdat))      pdat$species <- NA_character_
+    if (!"common" %in% names(pdat))       pdat$common <- NA_character_
+    if (!"Fullname" %in% names(pdat))     pdat$Fullname <- NA_character_
+    if (!"Description" %in% names(pdat))  pdat$Description <- NA_character_
+  }
+
+  # enriched hover text (KEEP OLD PREVALENCE REPORTING) -----------------------
   pdat <- pdat %>%
     dplyr::mutate(
       p1r  = round(.data$percent1, 2),
@@ -505,18 +619,29 @@ scatter_interactive <- function(df,
       rr   = dplyr::coalesce(round(
         if (!"ratio" %in% names(.) & all(c("prop1","prop2") %in% names(.)))
           (pmax(prop1,1e-12)/pmax(prop2,1e-12)) else ratio, 2), NA_real_),
-      praw = round(.data$p_raw, 3),
-      padj_wbh = round(.data$p_adj_rank_wbh, 3),
+      praw = if ("p_raw" %in% names(.)) round(.data$p_raw, 3) else NA_real_,
+      padj_wbh = if ("p_adj_rank_wbh" %in% names(.)) round(.data$p_adj_rank_wbh, 3) else NA_real_,
       padj_bh  = if ("p_adj_rank" %in% names(.)) round(.data$p_adj_rank, 3) else NA_real_,
-      padj_bh_str = ifelse(is.na(.data$padj_bh), "NA", sprintf("%.3f", .data$padj_bh)),
+      padj_bh_str = ifelse(is.na(padj_bh), "NA", sprintf("%.3f", padj_bh)),
       npep = dplyr::coalesce(
         if ("n_peptides" %in% names(.)) .data[["n_peptides"]] else NULL,
         if ("n_peptide"  %in% names(.)) .data[["n_peptide" ]] else NULL
       ),
       color_info = if (!is.null(color_var)) as.character(.data[[color_var]]) else NA_character_,
+      meta_block = dplyr::if_else(
+        !is.na(.data$pep_id),
+        paste0(
+          "<br>species: ",     escape_html(fmt_na(.data$species)),
+          "<br>common: ",      escape_html(fmt_na(.data$common)),
+          "<br>Fullname: ",    escape_html(fmt_na(.data$Fullname)),
+          "<br>Description: ", escape_html(fmt_na(.data$Description))
+        ),
+        ""
+      ),
       text = sprintf(
-        "<b>%s</b><br>%s: %d/%d (%.2f%%)<br>%s: %d/%d (%.2f%%)%s<br>peptides: %s<br>p: %.3f<br>p_adj (bh): %s<br>p_adj (wbh): %.3f",
+        "<b>%s</b>%s<br>%s: %d/%d (%.2f%%)<br>%s: %d/%d (%.2f%%)%s<br>peptides: %s<br>p: %.3f<br>p_adj (bh): %s<br>p_adj (wbh): %.3f",
         .data$feature,
+        .data$meta_block,
         xlab, .data$n1, .data$N1, .data$p1r,
         ylab, .data$n2, .data$N2, .data$p2r,
         if (!is.null(color_var)) sprintf("<br>%s: %s", color_val_label, .data$color_info) else "",
@@ -525,33 +650,126 @@ scatter_interactive <- function(df,
       )
     )
 
-  color_mapping <- if (is.null(color_var)) {
-    ~category
-  } else {
-    stats::as.formula(paste0("~`", color_var, "`"))
+  pdat$text <- as.character(pdat$text)
+
+  # ---- background overlay prep ----------------------------------------------
+  bg <- NULL
+  if (isTRUE(show_background) && !is.null(background_df) && nrow(background_df) > 0) {
+    bg <- as.data.frame(background_df)
+
+    if (!"percent1" %in% names(bg) && "prop1" %in% names(bg)) bg$percent1 <- bg$prop1 * 100
+    if (!"percent2" %in% names(bg) && "prop2" %in% names(bg)) bg$percent2 <- bg$prop2 * 100
+
+    bg <- bg[, intersect(c("percent1", "percent2"), names(bg)), drop = FALSE]
+    bg$percent1 <- as.numeric(bg$percent1)
+    bg$percent2 <- as.numeric(bg$percent2)
+    bg <- bg[stats::complete.cases(bg), , drop = FALSE]
+
+    if (is.finite(background_max_n) && nrow(bg) > background_max_n) {
+      set.seed(as.integer(background_seed))
+      bg <- bg[sample.int(nrow(bg), size = background_max_n), , drop = FALSE]
+    }
   }
 
-  p <- plotly::plot_ly(
-    pdat,
-    x = ~percent1, y = ~percent2,
-    color = color_mapping,
-    type = "scatter", mode = "markers",
-    text = ~text,
-    hovertemplate = "%{text}<extra></extra>",
-    marker = list(size = point_size, opacity = point_alpha)
-  )
+  # ---- build plot: background first (bottom), then diagonal, then main -------
+  p <- plotly::plot_ly()
+
+  if (!is.null(bg) && nrow(bg) > 0) {
+    p <- plotly::add_trace(
+      p,
+      data = bg,
+      x = ~percent1, y = ~percent2,
+      type = "scatter", mode = "markers",
+      name = background_name,
+      showlegend = TRUE,
+      hoverinfo = "skip",
+      inherit = FALSE,
+      legendrank = 999,
+      marker = list(
+        size    = background_size,
+        color   = background_color,
+        opacity = clamp01(background_alpha)
+      )
+    )
+  }
 
   rng <- range(c(pdat$percent1, pdat$percent2), na.rm = TRUE)
-  p <- plotly::add_lines(p, x = rng, y = rng, inherit = FALSE, showlegend = FALSE)
+  p <- plotly::add_trace(
+    p,
+    x = rng, y = rng,
+    type = "scatter", mode = "lines",
+    inherit = FALSE,
+    showlegend = FALSE,
+    hoverinfo = "skip"
+  )
 
-  leg <- list(orientation = "h", y = -0.15)
+  if (is.null(color_var)) {
+    # Explicit colors per category = always works (no plotly palette surprises)
+    pdat$category <- droplevels(pdat$category)
+    levs <- levels(pdat$category)
+
+    default_pal <- c(
+      "significant (wBH, per rank)" = "#009E73",
+      "nominal only"                = "#E69F00",
+      "not significant"             = "#0072B2",
+      "other/NA"                    = "#999999"
+    )
+    pal_map <- default_pal
+    if (!is.null(category_colors) && length(category_colors) > 0) {
+      pal_map[names(category_colors)] <- category_colors
+    }
+    # ensure every present level has a color
+    missing_cols <- setdiff(levs, names(pal_map))
+    if (length(missing_cols) > 0) pal_map[missing_cols] <- "#999999"
+
+    for (lv in levs) {
+      dd <- pdat[pdat$category == lv, , drop = FALSE]
+      if (!nrow(dd)) next
+      p <- plotly::add_trace(
+        p,
+        data = dd,
+        x = ~percent1, y = ~percent2,
+        type = "scatter", mode = "markers",
+        name = lv,
+        showlegend = TRUE,
+        inherit = FALSE,
+        text = ~text,
+        hovertemplate = "%{text}<extra></extra>",
+        marker = list(
+          size    = point_size,
+          opacity = point_alpha,
+          color   = unname(pal_map[lv]),
+          line    = list(width = point_line_width, color = point_line_color)
+        )
+      )
+    }
+
+  } else {
+    # keep old color_by behaviour
+    p <- plotly::add_trace(
+      p,
+      data = pdat,
+      x = ~percent1, y = ~percent2,
+      color = stats::as.formula(paste0("~`", color_var, "`")),
+      type = "scatter", mode = "markers",
+      name = if (!is.null(color_title)) color_title else color_var,
+      inherit = FALSE,
+      text = ~text,
+      hovertemplate = "%{text}<extra></extra>",
+      marker = list(
+        size    = point_size,
+        opacity = point_alpha,
+        line    = list(width = point_line_width, color = point_line_color)
+      )
+    )
+  }
 
   plotly::layout(
     p,
     font  = list(family = font_family, size = font_size),
-    xaxis = list(title = xlab, zeroline = FALSE, range = c(0,100)),
-    yaxis = list(title = ylab, zeroline = FALSE, range = c(0,100)),
-    legend = leg
+    xaxis = list(title = xlab, zeroline = FALSE, range = c(0, 100)),
+    yaxis = list(title = ylab, zeroline = FALSE, range = c(0, 100)),
+    legend = list(orientation = "h", y = -0.15)
   )
 }
 
@@ -773,6 +991,22 @@ scatter_interactive <- function(df,
 # Static volcano (ggplot2)
 # ------------------------------------------------------------------------------
 #' Static volcano plot (log2 ratio vs -log10 p)
+#'
+#' @param df A `ph_prev_result` object or a data frame with prevalence results.
+#' @param pair optional group pair (character length-2).
+#' @param rank optional single rank (character) to keep.
+#' @param universe optional `group_col` value or regex (if `universe_regex = TRUE`).
+#' @param features optional character vector or regex patterns (if `features_regex = TRUE`).
+#' @param features_regex logical; treat `features` as regex patterns.
+#' @param universe_regex logical; treat `universe` as regex pattern(s).
+#' @param color_by optional peptide-level meta column name to color by.
+#' @param color_title optional legend title for `color_by`.
+#' @param fc_cut Numeric; absolute log2 fold-change cutoff.
+#' @param p_cut Numeric; p-value cutoff.
+#' @param p_mode One of `c("raw","bh","wbh")` controlling which p-values to use.
+#' @param significant_colors Named vector of colors for significance categories.
+#'
+#' @return A `ggplot` object.
 #' @export
 volcano_static <- function(df,
                            pair = NULL,
@@ -830,6 +1064,9 @@ volcano_static <- function(df,
 # Interactive volcano (plotly)
 # ------------------------------------------------------------------------------
 #' Interactive volcano plot (log2 ratio vs -log10 p)
+#'
+#' @inheritParams volcano_static
+#' @return A `plotly` htmlwidget.
 #' @export
 volcano_interactive <- function(df,
                                 pair = NULL,
@@ -881,7 +1118,7 @@ volcano_interactive <- function(df,
       n = max(3L, length(levels(dd[[prep$color_var]]))),
       palette = "Dark 3"
     )
-    pal <- setNames(pal[seq_along(levels(dd[[prep$color_var]]))],
+    pal <- stats::setNames(pal[seq_along(levels(dd[[prep$color_var]]))],
                     levels(dd[[prep$color_var]]))
     col_vec <- pal[as.character(dd[[prep$color_var]])]
   } else {

@@ -6,7 +6,7 @@
 #'
 #' @param pcoa_res A `"beta_pcoa"` object as returned by [compute_pcoa()].
 #'   Must contain at least a `sample_coords` component with columns
-#'   `sample_id` and `PCoA1`, `PCoA2`, …, and a `var_explained` component
+#'   `sample_id` and `PCoA1`, `PCoA2`, ..., and a `var_explained` component
 #'   (one-row tibble) with columns such as `"%PCoA1"`, `"%PCoA2"`, etc.
 #' @param axes Integer vector of length 2 giving the PCoA axes to plot
 #'   (e.g., `c(1, 2)` for PCoA1 vs PCoA2). Defaults to `c(1, 2)`.
@@ -24,12 +24,12 @@
 #' @param centroid_by Granularity of centroids. One of:
 #'   \itemize{
 #'     \item `"auto"` (default): if both `group_col` and `time_col` are
-#'       present, centroids are computed for each group–time combination
+#'       present, centroids are computed for each group-time combination
 #'       (`"group_time"`); otherwise by `"group"` or `"time"` depending on
 #'       which factor is available.
 #'     \item `"group"`: centroids per group (requires `group_col`).
 #'     \item `"time"`: centroids per time level (requires `time_col`).
-#'     \item `"group_time"`: centroids per group×time combination
+#'     \item `"group_time"`: centroids per group*time combination
 #'       (requires both `group_col` and `time_col`).
 #'   }
 #' @param connect_centroids Character; if centroids are shown and
@@ -356,7 +356,7 @@ plot_pcoa <- function(pcoa_res,
       }
     }
 
-    # group×time ellipses
+    # group*time ellipses
     if ("group_time" %in% ellipse_by && has_group && has_time) {
       for (g in stats::na.omit(unique(df[[group_col]]))) {
         for (tlev in stats::na.omit(unique(df[[time_col]]))) {
@@ -381,7 +381,7 @@ plot_pcoa <- function(pcoa_res,
   # --- centroids + optional connections --------------------------------------
   if (isTRUE(show_centroids) && !is.null(cent) && nrow(cent) > 0L) {
     if ("group_lab" %in% names(cent) && "time_lab" %in% names(cent)) {
-      # group×time centroids
+      # group*time centroids
       p <- p +
         ggplot2::geom_point(
           data = cent,
@@ -464,11 +464,11 @@ plot_pcoa <- function(pcoa_res,
 #' Creates a 2D scatter plot from a `"beta_capscale"` object (output of
 #' [compute_capscale()]), showing sample scores on CAP axes. Points can be
 #' coloured by group and shaped by (categorical) time. Optional ellipses and
-#' centroids can be overlaid for group/time/group×time summaries.
+#' centroids can be overlaid for group/time/group*time summaries.
 #'
 #' @param cap_res A `"beta_capscale"` object as returned by [compute_capscale()].
 #'   Must contain at least a `sample_coords` tibble with columns `sample_id`
-#'   and `CAP1`, `CAP2`, …, and a numeric `eigenvalues` vector for constrained
+#'   and `CAP1`, `CAP2`, ..., and a numeric `eigenvalues` vector for constrained
 #'   axes.
 #' @param axes Integer vector of length 2 giving the CAP axes to plot
 #'   (e.g., `c(1, 2)` for CAP1 vs CAP2). Default is `c(1, 2)`.
@@ -481,10 +481,10 @@ plot_pcoa <- function(pcoa_res,
 #'   `"timepoint"`). If `NULL`, the function auto-detects `"time"` if present.
 #'   Continuous time is not supported in this plotting function.
 #' @param show_centroids Logical; if `TRUE` (default), plots centroids for
-#'   groups / time levels / group×time combinations depending on `centroid_by`.
+#'   groups / time levels / group*time combinations depending on `centroid_by`.
 #' @param centroid_by How to define centroids. One of
 #'   `"auto"`, `"group"`, `"time"`, `"group_time"`. `"auto"` uses:
-#'   group×time if both factors are available, otherwise group if present,
+#'   group*time if both factors are available, otherwise group if present,
 #'   otherwise time.
 #' @param connect_centroids How to connect centroids with lines. One of
 #'   `"none"` (default), `"group"`, `"time"`. The logic is:
@@ -760,7 +760,7 @@ plot_cap <- function(cap_res,
           )
       }
     }
-    # group×time ellipses
+    # group*time ellipses
     if ("group_time" %in% ellipse_by && has_group && has_time) {
       for (g in group_levels) {
         for (tlev in time_levels) {
@@ -1209,7 +1209,7 @@ plot_dispersion <- function(x,
 #'   colour. If `NULL`, the function uses the first metadata column stored
 #'   in `attr(tsne_res, "meta_cols")`, if available.
 #' @param size Numeric point size for scatter plots. Defaults to `1.5`.
-#' @param alpha Numeric transparency for points (0–1). Defaults to `0.8`.
+#' @param alpha Numeric transparency for points (0-1). Defaults to `0.8`.
 #' @param palette Optional vector of colour values passed to
 #'   `scale_color_manual()` (2D) or `colors` (3D plotly).
 #' @param ... Currently ignored; reserved for future extensions.
@@ -1443,10 +1443,6 @@ ph_plot_cap_axes_vs_time <- function(beta,
   })
 }
 
-# ======================================================================
-# Dispersion (betadisper distance to group centroid) ~ time_cont
-# ======================================================================
-
 #' Plot dispersion (distance to centroid) vs time (capscale; continuous time)
 #'
 #' @param beta A `phip_beta_diversity` object produced with method_pcoa = "cap".
@@ -1529,12 +1525,6 @@ ph_plot_dispersion_vs_time <- function(beta,
   })
 }
 
-# ======================================================================
-# phiper-style: Dispersion (distance to group centroid) — boxplots + Wilcoxon
-# Works with ANY phip_beta_diversity object (capscale or plain PCoA), single function.
-# No extra helpers beyond phiper logging + theme_phip()/scale_*_phip().
-# ======================================================================
-
 #' Plot dispersion (distance to centroid) by group
 #'
 #' @param beta            A `phip_beta_diversity` object (works for method_pcoa = "cap" or "pcoa").
@@ -1547,7 +1537,7 @@ ph_plot_dispersion_vs_time <- function(beta,
 #' @param show_points     Add jittered points on top of boxplots (default TRUE).
 #' @param point_alpha     Point alpha (default 0.30).
 #' @param point_size      Point size (default 1).
-#' @param rotate_x        Rotate x labels by 45° (default TRUE).
+#' @param rotate_x        Rotate x labels by 45 degrees (default TRUE).
 #' @return A ggplot object.
 #' @examples
 #' \dontrun{
@@ -1681,7 +1671,7 @@ ph_plot_dispersion_box <- function(beta,
       ggplot2::labs(
         title = "Dispersion by group",
         subtitle = sprintf(
-          "Distance to group centroid · view = %s · scope = %s · contrast = %s",
+          "Distance to group centroid: view = %s, scope = %s, contrast = %s",
           view, scope_filter, contrast_filter
         ),
         x = "Group",

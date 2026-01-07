@@ -69,6 +69,18 @@ default is taken from \code{attr(x, "interaction_sep")} if present, otherwise \c
 \item{x_tickangle}{numeric; tick label rotation in degrees (default 0; e.g., 25).}
 
 \item{quartile_method}{one of c("exclusive","inclusive","linear"); passed to plotly box (default "exclusive" ~ ggplot).}
+
+\item{jitter_width}{Numeric; horizontal jitter width for points.}
+
+\item{point_size}{Numeric; size of jittered points.}
+
+\item{point_alpha}{Numeric in (0,1); alpha for jittered points.}
+
+\item{text_size}{Numeric; base text size for plot labels.}
+
+\item{font_family}{Character; font family for plot text.}
+
+\item{show_grids}{Logical; whether to show panel grid lines.}
 }
 \value{
 A plotly htmlwidget.

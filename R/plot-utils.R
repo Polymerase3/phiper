@@ -1,4 +1,4 @@
-# keep ggplot2’s replace operator available
+# keep ggplot2's replace operator available
 "%+replace%" <- ggplot2::"%+replace%"
 
 #' @title PHIP default colour palette
@@ -304,19 +304,19 @@ theme_phip <- function(base_size = 14,
 
 .axis_labels_with_pct <- function(var_ex, axis_cols) {
   if (is.null(var_ex) || !nrow(var_ex)) {
-    setNames(axis_cols, axis_cols)
+    stats::setNames(axis_cols, axis_cols)
   } else {
     pct_cols <- paste0("%", axis_cols)
     miss <- setdiff(pct_cols, names(var_ex))
     if (length(miss)) {
-      .ph_log_info(sprintf("No %% columns for %s — using raw axis names.", paste(miss, collapse = ", ")),
+      .ph_log_info(sprintf("No %% columns for %s: using raw axis names.", paste(miss, collapse = ", ")),
         step = "plot_beta_pcoa"
       )
-      setNames(axis_cols, axis_cols)
+      stats::setNames(axis_cols, axis_cols)
     } else {
       pct <- suppressWarnings(as.numeric(var_ex[1, pct_cols, drop = TRUE]))
       nms <- sprintf("%s (%.1f%%)", axis_cols, pct)
-      setNames(nms, axis_cols)
+      stats::setNames(nms, axis_cols)
     }
   }
 }
@@ -341,7 +341,7 @@ theme_phip <- function(base_size = 14,
   grp_chr <- as.character(df[[group_col]])
   grp_chr[is.na(grp_chr)] <- "<missing>"
   groups <- droplevels(factor(grp_chr, levels = unique(grp_chr)))
-  base_map <- setNames(.ph_cols(nlevels(groups)), levels(groups))
+  base_map <- stats::setNames(.ph_cols(nlevels(groups)), levels(groups))
   cols <- unname(base_map[as.character(groups)])
 
   has_tc <- time_cont %in% names(df) && any(!is.na(df[[time_cont]]))
@@ -350,7 +350,7 @@ theme_phip <- function(base_size = 14,
   if (shade %in% c("auto", "time")) {
     if (has_tc) {
       # normalize within group for nicer gradients; default mid if degenerate
-      norm_t <- ave(df[[time_cont]], groups, FUN = function(z) {
+      norm_t <- stats::ave(df[[time_cont]], groups, FUN = function(z) {
         z <- as.numeric(z)
         rng <- range(z, na.rm = TRUE)
         if (!is.finite(diff(rng)) || diff(rng) == 0) {
@@ -395,7 +395,7 @@ theme_phip <- function(base_size = 14,
 
   if (mode == "time" && has_tc) {
     # normalise time within group for nicer within-group gradients
-    t_norm <- ave(df[[time_cont]], grp, FUN = function(z) {
+    t_norm <- stats::ave(df[[time_cont]], grp, FUN = function(z) {
       z <- as.numeric(z)
       r <- range(z, na.rm = TRUE)
       if (!is.finite(diff(r)) || diff(r) == 0) {

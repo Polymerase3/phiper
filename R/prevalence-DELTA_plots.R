@@ -1,4 +1,4 @@
-#' @title Δ Prevalence vs Pooled Prevalence
+#' @title Delta-prevalence vs Pooled Prevalence
 #'
 #' @description
 #' Build a static ggplot showing the per-peptide shift in prevalence
@@ -108,10 +108,8 @@ deltaplot <- function(
   d <- prev_tbl
   .ph_log_info("Preparing delta prevalence plot.")
   if (requireNamespace("chk", quietly = TRUE)) {
-    if (exists("chk_data.frame", asNamespace("chk"), inherits = FALSE)) {
-      chk::chk_data.frame(d)
-    } else if (exists("chk_df", asNamespace("chk"), inherits = FALSE)) {
-      chk::chk_df(d)
+    if (exists("chk_data", asNamespace("chk"), inherits = FALSE)) {
+      chk::chk_data(d)
     }
     if (!is.null(group_pair_values)) {
       chk::chk_character(group_pair_values)
@@ -340,7 +338,7 @@ deltaplot <- function(
   p
 }
 
-#' @title Interactive Δ Prevalence vs Pooled Prevalence
+#' @title Interactive Delta-prevalence vs Pooled Prevalence
 #'
 #' @description
 #' Build an interactive plotly chart showing the per-peptide shift in prevalence
@@ -449,10 +447,8 @@ deltaplot_interactive <- function(
 ) {
   # ---- Input validation ------------------------------------------------------
   if (requireNamespace("chk", quietly = TRUE)) {
-    if (exists("chk_data.frame", asNamespace("chk"), inherits = FALSE)) {
-      chk::chk_data.frame(prev_tbl)
-    } else if (exists("chk_df", asNamespace("chk"), inherits = FALSE)) {
-      chk::chk_df(prev_tbl)
+    if (exists("chk_data", asNamespace("chk"), inherits = FALSE)) {
+      chk::chk_data(prev_tbl)
     }
     if (!is.null(group_pair_values)) {
       chk::chk_character(group_pair_values)
@@ -553,7 +549,7 @@ deltaplot_interactive <- function(
   } else {
     pairs <- unique(d[, c("group1", "group2")])
     if (nrow(pairs) != 1L) {
-      .ph_abort("Multiple (group1,group2) pairs – pass group_pair_values.")
+      .ph_abort("Multiple (group1,group2) pairs: pass group_pair_values.")
     }
     g1_raw <- pairs$group1[1]
     g2_raw <- pairs$group2[1]
@@ -960,8 +956,8 @@ deltaplot_interactive <- function(
 #'
 #' @return A list with:
 #' \itemize{
-#'   \item `data` – tibble used for plotting (selected top/bottom items),
-#'   \item `plot` – ggplot object.
+#'   \item `data` - tibble used for plotting (selected top/bottom items),
+#'   \item `plot` - ggplot object.
 #' }
 #'
 #' @details The y-axis lists feature names (sorted by the chosen statistic), and
@@ -996,7 +992,7 @@ deltaplot_interactive <- function(
 #'   design = "case-control",
 #'   T_obs = rnorm(n, sd = 2),
 #'   p_perm = runif(n),
-#'   p_adj_rank = p.adjust(runif(n), method = "BH"),
+#'   p_adj_rank = stats::p.adjust(runif(n), method = "BH"),
 #'   category_rank_bh = ifelse(runif(n) < 0.2, "significant (BH, per rank)",
 #'     "ns"
 #'   ),
@@ -1335,7 +1331,7 @@ forestplot <- function(
 #'     design = "case-control",
 #'     T_obs = rnorm(n, sd = 2),
 #'     p_perm = runif(n),
-#'     p_adj_rank = p.adjust(runif(n), method = "BH"),
+#'     p_adj_rank = stats::p.adjust(runif(n), method = "BH"),
 #'     category_rank_bh = ifelse(runif(n) < 0.2, "significant (BH, per rank)",
 #'       "ns"
 #'     ),
@@ -1736,10 +1732,8 @@ ecdf_plot <- function(
 ) {
   # ---- input validation ------------------------------------------------------
   if (requireNamespace("chk", quietly = TRUE)) {
-    if (exists("chk_data.frame", asNamespace("chk"), inherits = FALSE)) {
-      chk::chk_data.frame(prev_tbl)
-    } else if (exists("chk_df", asNamespace("chk"), inherits = FALSE)) {
-      chk::chk_df(prev_tbl)
+    if (exists("chk_data", asNamespace("chk"), inherits = FALSE)) {
+      chk::chk_data(prev_tbl)
     }
     if (!is.null(group_pair_values)) {
       chk::chk_character(group_pair_values)
@@ -1890,7 +1884,7 @@ ecdf_plot <- function(
       x = x_label %||% "Prevalence",
       y = y_label %||% "ECDF"
     ) +
-    ggplot2::scale_color_manual(values = setNames(
+    ggplot2::scale_color_manual(values = stats::setNames(
       c(
         group1_line_color,
         group2_line_color
@@ -2002,10 +1996,8 @@ ecdf_plot_interactive <- function(
 ) {
   # ---- input validation ------------------------------------------------------
   if (requireNamespace("chk", quietly = TRUE)) {
-    if (exists("chk_data.frame", asNamespace("chk"), inherits = FALSE)) {
-      chk::chk_data.frame(prev_tbl)
-    } else if (exists("chk_df", asNamespace("chk"), inherits = FALSE)) {
-      chk::chk_df(prev_tbl)
+    if (exists("chk_data", asNamespace("chk"), inherits = FALSE)) {
+      chk::chk_data(prev_tbl)
     }
     if (!is.null(group_pair_values)) {
       chk::chk_character(group_pair_values)
@@ -2169,7 +2161,7 @@ ecdf_plot_interactive <- function(
             sub <- plot_subtitle %||% ""
             km <- if (!is.null(ks_txt)) {
               sprintf(
-                "%s | Δ median = %s", ks_txt,
+                "%s | Delta-median = %s", ks_txt,
                 fmt_pct(dmed)
               )
             } else {
@@ -2177,7 +2169,7 @@ ecdf_plot_interactive <- function(
             }
             sprintf(
               "<br><sup>%s%s%s</sup>",
-              sub, if (nzchar(sub) && nzchar(km)) " — " else "", km
+              sub, if (nzchar(sub) && nzchar(km)) " - " else "", km
             )
           } else {
             ""

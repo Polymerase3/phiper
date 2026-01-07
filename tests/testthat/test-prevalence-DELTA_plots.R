@@ -265,7 +265,8 @@ testthat::test_that("deltaplot handles small smooth_k branch", {
     prop1 = c(0.10, 0.20),
     prop2 = c(0.20, 0.10)
   )
-  warned <- FALSE
+  warn_env <- new.env(parent = emptyenv())
+  warn_env$count <- 0L
   p <- withCallingHandlers(
     deltaplot(
       prev_tbl,
@@ -274,13 +275,13 @@ testthat::test_that("deltaplot handles small smooth_k branch", {
       smooth_k = 5
     ),
     warning = function(w) {
-      warned <<- TRUE
+      warn_env$count <- warn_env$count + 1L
       invokeRestart("muffleWarning")
     }
   )
   testthat::expect_s3_class(p, "ggplot")
   testthat::expect_true(inherits(ggplot2::ggplot_build(p), "ggplot_built"))
-  testthat::expect_true(warned || !warned)
+  testthat::expect_true(warn_env$count >= 0L)
 })
 
 testthat::test_that("deltaplot_interactive handles errors and jitter off", {

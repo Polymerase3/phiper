@@ -2,7 +2,7 @@
 % Please edit documentation in R/prevalence-DELTA_plots.R
 \name{deltaplot_interactive}
 \alias{deltaplot_interactive}
-\title{Interactive Δ Prevalence vs Pooled Prevalence}
+\title{Interactive Delta-prevalence vs Pooled Prevalence}
 \usage{
 deltaplot_interactive(
   prev_tbl,

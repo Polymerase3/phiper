@@ -477,6 +477,17 @@ compute_distance <- function(ps,
 #' and returns coordinates, eigenvalues, variance explained, and feature-axis
 #' associations.
 #'
+#' @details
+#' Negative eigenvalues indicate that the distances are not perfectly euclidean.
+#' If \code{neg_correction} is \code{"lingoes"} or \code{"cailliez"}, a
+#' correction is applied via \code{vegan::wcmdscale(add = ...)}.
+#'
+#' Feature associations are post-hoc summaries of how features relate to PCoA
+#' axes. Weighted-average scores (\code{feature_assoc = "weighted_average"}) compute
+#' \code{t(X) %*% U / colSums(X)}, where \code{X} is the abundance matrix and
+#' \code{U} are the sample coordinates. Correlation and regression associations
+#' are computed between feature abundances and axis scores and are not "true"
+#' PCA loadings unless distances are Euclidean and derived compatibly.
 #' @param dist_obj a \code{dist} object (for example returned by
 #'   \code{compute_distance()}). The normalized abundance matrix used to compute
 #'   the distances is attached as attribute \code{"abundances"} (numeric
@@ -505,7 +516,7 @@ compute_distance <- function(ps,
 #'     \code{n_samples - 1} is smaller).
 #'   \item \code{eigenvalues}: numeric vector of eigenvalues from the PCoA.
 #'   \item \code{var_explained}: one-row tibble with percent variance explained
-#'     by the returned axes and \code{%Other}. percentages are computed from the
+#'     by the returned axes and \code{\%Other}. percentages are computed from the
 #'     sum of positive eigenvalues.
 #'   \item \code{eigen_diagnostics}: one-row tibble with eigenvalue diagnostics:
 #'     \code{sum_negative}, \code{sum_positive}, their ratio, the minimum
@@ -519,18 +530,6 @@ compute_distance <- function(ps,
 #'     aligned, or \code{feature_assoc = "none"}).
 #' }
 #'
-#' @details
-#' Negative eigenvalues indicate that the distances are not perfectly euclidean.
-#' If \code{neg_correction} is \code{"lingoes"} or \code{"cailliez"}, a
-#' correction is applied via \code{vegan::wcmdscale(add = ...)}.
-#'
-#' Feature associations are post-hoc summaries of how features relate to PCoA
-#' axes. Weighted-average scores (\code{feature_assoc = "weighted_average"}) compute
-#' \code{t(X) %*% U / colSums(X)}, where \code{X} is the abundance matrix and
-#' \code{U} are the sample coordinates. Correlation and regression associations
-#' are computed between feature abundances and axis scores and are not "true"
-#' PCA loadings unless distances are Euclidean and derived compatibly.
-#'
 #' @examples
 #' \donttest{
 #' # compute a distance matrix with an attached abundance matrix
@@ -540,7 +539,7 @@ compute_distance <- function(ps,
 #' # small subset for speed: 5 peptides at time t1
 #' keep_pep <- c("16627", "5243", "24799", "16196", "18003")
 #' dat_cols <- dplyr::tbl_vars(ps$data_long)
-#' tp_col <- "time"
+#' tp_col <- "timepoint"
 #'
 #' ps_small <- ps |>
 #'   dplyr::filter(
@@ -550,7 +549,7 @@ compute_distance <- function(ps,
 #'   dplyr::collect()
 #'
 #' # compute distances (needs either 'parallelDist' or 'vegan')
-#' val_col <- "exist"
+#' val_col <- "fold_change"
 #'
 #' d <- compute_distance(
 #'   ps_small,
@@ -830,8 +829,7 @@ compute_pcoa <- function(dist_obj,
 #' # small subset for speed: 5 peptides at time t1
 #' keep_pep <- c("16627", "5243", "24799", "16196", "18003")
 #' dat_cols <- dplyr::tbl_vars(ps$data_long)
-#' tp_col <- "timepoint_factor"
-#' }
+#' tp_col <- "timepoint"
 #'
 #' ps_small <- ps |>
 #'   dplyr::filter(
@@ -1698,7 +1696,7 @@ compute_permanova <- function(dist_obj,
 
   # pairwise group comparisons
   if (has_group) {
-    groups <- na.omit(unique(meta_df[[group_col]]))
+    groups <- stats::na.omit(unique(meta_df[[group_col]]))
     if (length(groups) > 1L) {
       pairs <- utils::combn(groups, 2, simplify = FALSE)
       for (p in pairs) {
@@ -1740,7 +1738,7 @@ compute_permanova <- function(dist_obj,
 
   # pairwise time comparisons
   if (has_time) {
-    times <- na.omit(unique(meta_df[[time_col]]))
+    times <- stats::na.omit(unique(meta_df[[time_col]]))
     if (length(times) > 1L) {
       pairs <- utils::combn(times, 2, simplify = FALSE)
       for (p in pairs) {
@@ -2060,17 +2058,18 @@ compute_dispersion <- function(dist_obj,
 
   add_distance_rows <- function(sample_ids, dists, level_vals,
                                 scope_val, contrast_val) {
-    distances_list[[length(distances_list) + 1L]] <<- tibble::tibble(
+    distances_list[[length(distances_list) + 1L]] <- tibble::tibble(
       sample_id = sample_ids,
       distance  = dists,
       level     = level_vals,
       scope     = scope_val,
       contrast  = contrast_val
     )
+    distances_list
   }
 
   add_test_row <- function(scope_val, contrast_val, p_val) {
-    tests_list[[length(tests_list) + 1L]] <<- tibble::tibble(
+    tests_list[[length(tests_list) + 1L]] <- tibble::tibble(
       scope    = scope_val,
       contrast = contrast_val,
       term     = "dispersion",
@@ -2078,6 +2077,7 @@ compute_dispersion <- function(dist_obj,
       p_adjust = p_val,
       n_perm   = permutations
     )
+    tests_list
   }
 
   # ----------------------------------------------------------------------------
@@ -2092,7 +2092,7 @@ compute_dispersion <- function(dist_obj,
         "betadisper failed for group factor; skipping group dispersion test.",
       )
     } else {
-      add_distance_rows(
+      distances_list <- add_distance_rows(
         sample_ids = names(bd$distances),
         dists = as.numeric(bd$distances),
         level_vals = as.character(bd$group),
@@ -2101,7 +2101,7 @@ compute_dispersion <- function(dist_obj,
       )
       pt <- vegan::permutest(bd, permutations = permutations, parallel = 1)
       pval <- tryCatch(pt$tab[1, "Pr(>F)"], error = function(e) NA_real_)
-      add_test_row("group", "<global>", pval)
+      tests_list <- add_test_row("group", "<global>", pval)
     }
   }
 
@@ -2114,7 +2114,7 @@ compute_dispersion <- function(dist_obj,
           "betadisper failed for time factor; skipping time dispersion test.",
         )
       } else {
-        add_distance_rows(
+        distances_list <- add_distance_rows(
           sample_ids = names(bd$distances),
           dists = as.numeric(bd$distances),
           level_vals = as.character(bd$group),
@@ -2123,7 +2123,7 @@ compute_dispersion <- function(dist_obj,
         )
         pt <- vegan::permutest(bd, permutations = permutations, parallel = 1)
         pval <- tryCatch(pt$tab[1, "Pr(>F)"], error = function(e) NA_real_)
-        add_test_row("time", "<global>", pval)
+        tests_list <- add_test_row("time", "<global>", pval)
       }
     } else {
       .ph_warn(
@@ -2140,7 +2140,7 @@ compute_dispersion <- function(dist_obj,
     if (length(unique(inter_factor)) > 1L) {
       bd <- try(vegan::betadisper(d, inter_factor), silent = TRUE)
       if (!inherits(bd, "try-error")) {
-        add_distance_rows(
+        distances_list <- add_distance_rows(
           sample_ids = names(bd$distances),
           dists = as.numeric(bd$distances),
           level_vals = as.character(bd$group),
@@ -2149,7 +2149,7 @@ compute_dispersion <- function(dist_obj,
         )
         pt <- vegan::permutest(bd, permutations = permutations, parallel = 1)
         pval <- tryCatch(pt$tab[1, "Pr(>F)"], error = function(e) NA_real_)
-        add_test_row("group:time", "<global>", pval)
+        tests_list <- add_test_row("group:time", "<global>", pval)
       }
     }
   }
@@ -2174,7 +2174,7 @@ compute_dispersion <- function(dist_obj,
       return(NULL)
     }
 
-    add_distance_rows(
+    distances_list <- add_distance_rows(
       sample_ids = names(bd$distances),
       dists = as.numeric(bd$distances),
       level_vals = as.character(bd$group),
@@ -2183,7 +2183,7 @@ compute_dispersion <- function(dist_obj,
     )
     pt <- vegan::permutest(bd, permutations = permutations, parallel = 1)
     pval <- tryCatch(pt$tab[1, "Pr(>F)"], error = function(e) NA_real_)
-    add_test_row(scope_lab, contrast_lab, pval)
+    tests_list <- add_test_row(scope_lab, contrast_lab, pval)
   }
 
   # ----------------------------------------------------------------------------
@@ -2192,7 +2192,7 @@ compute_dispersion <- function(dist_obj,
   .ph_log_info("running pairwise dispersion contrasts.")
   # groups
   if (has_group) {
-    grps <- na.omit(unique(meta_df[[group_col]]))
+    grps <- stats::na.omit(unique(meta_df[[group_col]]))
     if (length(grps) > 1L) {
       for (pair in utils::combn(grps, 2, simplify = FALSE)) {
         sel <- which(meta_df[[group_col]] %in% pair)
@@ -2206,7 +2206,7 @@ compute_dispersion <- function(dist_obj,
   }
   # time
   if (has_time && !is.numeric(meta_df[[time_col]])) {
-    times <- na.omit(unique(meta_df[[time_col]]))
+    times <- stats::na.omit(unique(meta_df[[time_col]]))
     if (length(times) > 1L) {
       for (pair in utils::combn(times, 2, simplify = FALSE)) {
         sel <- which(meta_df[[time_col]] %in% pair)

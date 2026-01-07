@@ -26,6 +26,44 @@ scatter_static(
   font_size = 12
 )
 }
+\arguments{
+\item{df}{A \code{ph_prev_result} object or a data frame with prevalence results.}
+
+\item{pair}{optional group pair (character length-2).}
+
+\item{rank}{optional single rank (character) to keep.}
+
+\item{universe}{optional \code{group_col} value or regex (if \code{universe_regex = TRUE}).}
+
+\item{features}{optional character vector or regex patterns (if \code{features_regex = TRUE}).}
+
+\item{features_regex}{logical; treat \code{features} as regex patterns.}
+
+\item{universe_regex}{logical; treat \code{universe} as regex pattern(s).}
+
+\item{xlab, ylab}{axis labels; if missing and \code{pair} is provided, they default
+to \code{pair[1]} and \code{pair[2]}.}
+
+\item{alpha}{numeric in (0,1]; used only for nominal labels.}
+
+\item{prefer_flags}{logical; reserved for future use (kept for back-compat).}
+
+\item{color_by}{optional peptide-level meta column name to color by.}
+
+\item{color_title}{optional legend title for \code{color_by}.}
+
+\item{point_size}{Numeric; marker size for points.}
+
+\item{point_alpha}{Numeric in (0,1); marker opacity.}
+
+\item{jitter_width_pp}{Numeric; jitter width in percentage points.}
+
+\item{jitter_height_pp}{Numeric; jitter height in percentage points.}
+
+\item{font_family}{Character; font family for plot text.}
+
+\item{font_size}{Numeric; font size for plot text.}
+}
 \value{
 A ggplot object.
 }

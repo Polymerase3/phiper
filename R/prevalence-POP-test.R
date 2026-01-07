@@ -76,7 +76,7 @@ summary.ph_prev_result <- function(object, ...) {
 
   pool_by_rank <- meta$pool_by_rank %||% tibble::tibble(rank = character(), POOL = integer())
   pairs_by_universe <- meta$pairs_by_universe %||% tibble::tibble(group_col = character(), k_levels = integer(), n_pairs = integer())
-  m_by_rank <- meta$m_by_rank %||% setNames(integer(0), character(0))
+  m_by_rank <- meta$m_by_rank %||% stats::setNames(integer(0), character(0))
 
   # compute pairs_total (sum across universes) and overview per rank
   pairs_total <- if (nrow(pairs_by_universe)) sum(pairs_by_universe$n_pairs, na.rm = TRUE) else 0L
@@ -205,9 +205,6 @@ print.summary.ph_prev_result <- function(x, ...) {
 #' # prev_filter_pairs(res, pairs[[1]][1], pairs[[1]][2], ranks="peptide_id")
 #' }
 #'
-#' @export
-#' Filter pairwise results by groups/ranks/features with optional q-value gates
-#' (robust row subsetting; works whether df is data.table or data.frame)
 #' @export
 prev_filter_pairs <- function(
   df,
@@ -408,9 +405,9 @@ prev_filter_pairs <- function(
 #' Within each rank `r` (and `view` if present), **weights are scaled to sum to**
 #' `m_r`:
 #'
-#' \deqn{ w_i^\* \;=\; w_i \cdot \frac{m_r}{\sum_j w_j}. }
+#' \deqn{ w_i^{*} \;=\; w_i \cdot \frac{m_r}{\sum_j w_j}. }
 #'
-#' We adjust using the standard weighted step-up rule on `p_i / w_i^\*`. The
+#' We adjust using the standard weighted step-up rule on \eqn{p_i / w_i^{*}}. The
 #' resulting q-values are reported in `p_adj_rank_wbh`, with flags
 #' `passed_rank_wbh` and labels `category_rank_wbh`. If `weight_mode="none"`,
 #' all weights are 1 and wBH reduces to BH.
@@ -437,11 +434,14 @@ prev_filter_pairs <- function(
 #' @param interaction_sep Separator for interaction labels (default `"::"`).
 #' @param collect Logical; if `TRUE` (default) return a collected tibble; otherwise a lazy table.
 #' @param register_name Optional DuckDB table name for materialization (unpaired path).
-#' @param pop_k_min Integer ≥1; k-of-n POP threshold per sample (default 1).
+#' @param pop_k_min Integer \eqn{\ge} 1; k-of-n POP threshold per sample (default 1).
 #' @param paired Logical; use paired design (McNemar exact) with `subject_id` (default `FALSE`).
 #'        NOTE: can also be a character scalar naming the column that links related samples
 #'        (e.g. "subject_id" or "dyade"). If so, only samples present in both groups
 #'        for that identifier will be used for paired McNemar tests.
+#' @param peptide_library Optional peptide metadata table used to map
+#'   non-peptide rank columns. If `NULL`, the function will use
+#'   `x$peptide_library`.
 #'
 #' @return An object of class `ph_prev_result`, i.e., a tibble (or lazy table if
 #'   `collect = FALSE` on the unpaired path) with attributes:
@@ -1001,7 +1001,7 @@ ph_prevalence_compare <- function(x,
                 p_adj_rank = {
                   ok <- !is.na(p_raw)
                   out <- rep(NA_real_, length(p_raw))
-                  if (any(ok)) out[ok] <- p.adjust(p_raw[ok], method = "BH")
+                  if (any(ok)) out[ok] <- stats::p.adjust(p_raw[ok], method = "BH")
                   out
                 },
                 passed_rank_bh = !is.na(p_adj_rank) & p_adj_rank < 0.05,
@@ -1013,7 +1013,7 @@ ph_prevalence_compare <- function(x,
               )
           }
 
-          do_wbh <- function(df) {
+          do_wbh_simple <- function(df) {
             df2 <- df |> dplyr::mutate(n_peptides = dplyr::coalesce(n_peptides, 1.0))
             split_vars <- intersect(c("view", "rank"), names(df2))
             pieces <- split(df2, df2[split_vars], drop = TRUE)
@@ -1050,7 +1050,7 @@ ph_prevalence_compare <- function(x,
 
           split_vars <- intersect(c("view", "rank"), names(out_df))
           out_df_bh <- do.call(rbind, lapply(split(out_df, out_df[split_vars], drop = TRUE), do_bh))
-          out_df_wbh <- do_wbh(out_df_bh)
+          out_df_wbh <- do_wbh_simple(out_df_bh)
 
           out_df <- out_df_wbh |>
             dplyr::select(
@@ -1291,7 +1291,7 @@ ph_prevalence_compare <- function(x,
             p_adj_rank = {
               ok <- !is.na(p_raw)
               out <- rep(NA_real_, length(p_raw))
-              if (any(ok)) out[ok] <- p.adjust(p_raw[ok], method = "BH")
+              if (any(ok)) out[ok] <- stats::p.adjust(p_raw[ok], method = "BH")
               out
             },
             passed_rank_bh = !is.na(p_adj_rank) & p_adj_rank < 0.05,
@@ -1303,7 +1303,7 @@ ph_prevalence_compare <- function(x,
           )
       }
 
-      do_wbh <- function(df, w_tbl) {
+      do_wbh_weighted <- function(df, w_tbl) {
         df2 <- df %>%
           dplyr::left_join(w_tbl, by = c("rank", "feature")) %>%
           dplyr::mutate(n_peptides = dplyr::coalesce(n_peptides, 1.0))
@@ -1342,7 +1342,7 @@ ph_prevalence_compare <- function(x,
 
       split_vars <- intersect(c("view", "rank"), names(res))
       res_bh <- do.call(rbind, lapply(split(res, res[split_vars], drop = TRUE), do_bh))
-      res_wbh <- do_wbh(res_bh, w_tbl)
+      res_wbh <- do_wbh_weighted(res_bh, w_tbl)
 
       out_df <- res_wbh %>%
         dplyr::arrange(rank, feature, group_col, group1, group2) %>%
@@ -1407,6 +1407,11 @@ ph_prevalence_compare <- function(x,
 
 #' Generic writer for phiper result objects
 #'
+#' @param x Result object to write.
+#' @param path Output file path.
+#' @param ... Additional arguments passed to methods.
+#' @return Invisible `NULL`.
+#'
 #' @export
 write_result <- function(x, path, ...) {
   UseMethod("write_result")
@@ -1422,6 +1427,7 @@ write_result <- function(x, path, ...) {
 #' @param sheet_by_rank Logical; if TRUE create one sheet/file per rank when multiple ranks present.
 #' @param overwrite Logical; allow overwriting existing files (default FALSE).
 #' @param ... Reserved for future use.
+#' @return Invisible `NULL`.
 #' @export
 write_result.ph_prev_result <- function(x,
                                         path,
