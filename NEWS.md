@@ -12,7 +12,7 @@
 ## Documentation
 
 - Documented empty params, got rid of all documentation-related wearnings, 
-removed all non-ASCII chars
+- removed all non-ASCII chars
 - Moved CONTRIBUTING.md to .github/ (it caused a note in R CMD CHECK),
 
 
