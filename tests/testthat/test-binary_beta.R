@@ -1836,7 +1836,7 @@ testthat::test_that("compute_pcoa: missing labels and zero-axis handling", {
   testthat::expect_s3_class(associations, "tbl_df")
 })
 
-testthat::test_that("compute_pcoa: feature association alignment warnings", {
+testthat::test_that("compute_pcoa_feature association alignment warnings", {
   testthat::skip_if_not_installed("mockery")
 
   d <- stats::dist(matrix(c(0, 1, 1, 0), nrow = 2))
@@ -1854,8 +1854,9 @@ testthat::test_that("compute_pcoa: feature association alignment warnings", {
   })
   mockery::stub(compute_pcoa, "intersect", function(x, y) x[1])
 
+  pcoa_res1 <- compute_pcoa(d, n_axes = 1L)
   testthat::expect_warning(
-    compute_pcoa(d, n_axes = 1L, top_features = 5L),
+    compute_pcoa_feature_associations(d, pcoa_res1, top_features = 5L),
     regexp = "(?i)insufficient overlap"
   )
 
@@ -1865,8 +1866,9 @@ testthat::test_that("compute_pcoa: feature association alignment warnings", {
     list(eig = c(1, 0.5), points = matrix(1, nrow = 2, ncol = 1))
   })
 
+  pcoa_res2 <- compute_pcoa(d, n_axes = 1L)
   testthat::expect_warning(
-    compute_pcoa(d, n_axes = 1L, top_features = 5L),
+    compute_pcoa_feature_associations(d, pcoa_res2, top_features = 5L),
     regexp = "(?i)row names missing"
   )
 })
