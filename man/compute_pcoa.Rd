@@ -41,9 +41,6 @@ eigenvalue, and the number and fraction of negative eigenvalues.
 eigenvalue correction applied, including \code{corrected},
 \code{correction_method}, \code{correction_add}, and
 \code{correction_note}.
-\item \code{feature_associations}: tibble of feature-axis associations for
-the returned axes (empty if \code{"abundances"} is missing, cannot be
-aligned, or \code{feature_assoc = "none"}).
 }
 }
 \description{

@@ -2,7 +2,7 @@
 % Please edit documentation in R/binary_beta.R
 \name{compute_pcoa_feature_associations}
 \alias{compute_pcoa_feature_associations}
-\title{Compute feature associations to PCoA vectors}
+\title{Compute Feature Associations to PCoA Vectors}
 \usage{
 compute_pcoa_feature_associations(
   dist_obj,
@@ -66,7 +66,7 @@ ps_small <- ps |>
   dplyr::collect()
 
 # compute distances (needs either 'parallelDist' or 'vegan')
-val_col <- "exist"
+val_col <- "fold_change"
 
 d <- compute_distance(
   ps_small,

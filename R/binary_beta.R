@@ -482,12 +482,6 @@ compute_distance <- function(ps,
 #' If \code{neg_correction} is \code{"lingoes"} or \code{"cailliez"}, a
 #' correction is applied via \code{vegan::wcmdscale(add = ...)}.
 #'
-#' Feature associations are post-hoc summaries of how features relate to PCoA
-#' axes. Weighted-average scores (\code{feature_assoc = "weighted_average"}) compute
-#' \code{t(X) %*% U / colSums(X)}, where \code{X} is the abundance matrix and
-#' \code{U} are the sample coordinates. Correlation and regression associations
-#' are computed between feature abundances and axis scores and are not "true"
-#' PCA loadings unless distances are Euclidean and derived compatibly.
 #' @param dist_obj a \code{dist} object (for example returned by
 #'   \code{compute_distance()}). The normalized abundance matrix used to compute
 #'   the distances is attached as attribute \code{"abundances"} (numeric
@@ -708,7 +702,7 @@ compute_pcoa <- function(dist_obj,
   result
 }
 
-#' @title Compute feature associations to PCoA vectors
+#' @title Compute Feature Associations to PCoA Vectors
 #'
 #' @description Calculates feature-axis associations based on given PCoA
 #' results (output of [compute_pcoa()])
@@ -759,7 +753,7 @@ compute_pcoa <- function(dist_obj,
 #'   dplyr::collect()
 #'
 #' # compute distances (needs either 'parallelDist' or 'vegan')
-#' val_col <- "exist"
+#' val_col <- "fold_change"
 #'
 #' d <- compute_distance(
 #'   ps_small,
