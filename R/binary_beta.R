@@ -743,7 +743,7 @@ compute_pcoa <- function(dist_obj,
 #' # small subset for speed: 5 peptides at time t1
 #' keep_pep <- c("16627", "5243", "24799", "16196", "18003")
 #' dat_cols <- dplyr::tbl_vars(ps$data_long)
-#' tp_col <- "time"
+#' tp_col <- "timepoint"
 #'
 #' ps_small <- ps |>
 #'   dplyr::filter(

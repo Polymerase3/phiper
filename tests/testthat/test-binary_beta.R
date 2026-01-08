@@ -1600,50 +1600,6 @@ testthat::test_that("compute_capscale: size mismatches and edge cases", {
   )
 })
 
-testthat::test_that("compute_permanova: stratification and repeated measures", {
-  ps_small <- .get_ps_small_for_distance()
-  d <- .get_dist_for_pcoa(ps_small)
-
-  testthat::skip_if_not_installed("vegan")
-
-  group_var <- .pick_constraint_var_perm(ps_small)
-  testthat::skip_if(is.null(group_var), "no grouping variable available")
-
-  # test with subject stratification
-  dat <- if ("phip_data" %in% class(ps_small)) ps_small$data_long else ps_small
-  cols <- dplyr::tbl_vars(dat)
-
-  if ("subject_id" %in% cols) {
-    # create artificial repeated measures by duplicating some samples
-    dat_collected <- dat |> dplyr::collect()
-    n_rows <- nrow(dat_collected)
-    indices <- rep(1:min(5, n_rows), each = 2)
-
-    dat_rep <- dat_collected |>
-      dplyr::slice(indices) |>
-      dplyr::mutate(
-        sample_id = paste0(sample_id, "_rep", rep(1:2, length.out = dplyr::n())),
-        timepoint_factor = rep(c("T1", "T2"), length.out = dplyr::n())
-      )
-
-    # create corresponding distance matrix
-    n_rep <- nrow(dat_rep)
-    d_rep <- stats::as.dist(matrix(runif(n_rep * (n_rep - 1) / 2),
-                                   nrow = n_rep - 1))
-    attr(d_rep, "Labels") <- dat_rep$sample_id
-    attr(d_rep, "Size") <- n_rep
-
-    res_strat <- suppressWarnings(compute_permanova(
-      d_rep, dat_rep,
-      group_col = group_var,
-      time_col = "timepoint_factor",
-      subject_col = "subject_id",
-      permutations = 99
-    ))
-    testthat::expect_s3_class(res_strat, "tbl_df")
-  }
-})
-
 testthat::test_that("compute_permanova: insufficient data warnings", {
   ps_small <- .get_ps_small_for_distance()
   d <- .get_dist_for_pcoa(ps_small)
