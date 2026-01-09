@@ -1,3 +1,7 @@
+# phiper 0.2.2
+
+- Separated the feature associations to PCoA vectors from `compute_pcoa` to a separate function.
+
 # phiper 0.2.1
 
 ## Minor changes

@@ -482,12 +482,6 @@ compute_distance <- function(ps,
 #' If \code{neg_correction} is \code{"lingoes"} or \code{"cailliez"}, a
 #' correction is applied via \code{vegan::wcmdscale(add = ...)}.
 #'
-#' Feature associations are post-hoc summaries of how features relate to PCoA
-#' axes. Weighted-average scores (\code{feature_assoc = "weighted_average"}) compute
-#' \code{t(X) %*% U / colSums(X)}, where \code{X} is the abundance matrix and
-#' \code{U} are the sample coordinates. Correlation and regression associations
-#' are computed between feature abundances and axis scores and are not "true"
-#' PCA loadings unless distances are Euclidean and derived compatibly.
 #' @param dist_obj a \code{dist} object (for example returned by
 #'   \code{compute_distance()}). The normalized abundance matrix used to compute
 #'   the distances is attached as attribute \code{"abundances"} (numeric
@@ -498,16 +492,6 @@ compute_distance <- function(ps,
 #'   \code{"cailliez"}. Default is \code{"none"}.
 #' @param n_axes integer scalar. Number of PCoA axes to return in the sample
 #'   scores. Must be > 0. Internally, \code{k = min(n_axes, n_samples - 1)}.
-#' @param top_features integer scalar. Number of features to keep per axis when
-#'   reporting associations. Features are selected by taking the union of the
-#'   top \code{top_features} features (by absolute association) for each
-#'   returned axis. Must be > 0.
-#' @param feature_assoc character scalar. Type of feature-axis association to
-#'   return. \code{"weighted_average"} returns weighted-average feature scores (centroid of
-#'   sample scores weighted by feature abundance). \code{"correlation"} returns
-#'   feature-axis correlations. \code{"regression"} returns regression slopes
-#'   for axis scores on feature abundance. \code{"none"} skips feature
-#'   associations.
 #'
 #' @return a list of class \code{"beta_pcoa"} with elements:
 #' \itemize{
@@ -525,9 +509,6 @@ compute_distance <- function(ps,
 #'     eigenvalue correction applied, including \code{corrected},
 #'     \code{correction_method}, \code{correction_add}, and
 #'     \code{correction_note}.
-#'   \item \code{feature_associations}: tibble of feature-axis associations for
-#'     the returned axes (empty if \code{"abundances"} is missing, cannot be
-#'     aligned, or \code{feature_assoc = "none"}).
 #' }
 #'
 #' @examples
@@ -561,17 +542,11 @@ compute_distance <- function(ps,
 #' pcoa_res <- compute_pcoa(d, neg_correction = "none", n_axes = 3L)
 #' pcoa_res$sample_coords
 #' pcoa_res$var_explained
-#' pcoa_res$feature_associations
 #' }
 #' @export
 compute_pcoa <- function(dist_obj,
                          neg_correction = c("none", "lingoes", "cailliez"),
-                         n_axes = 5L,
-                         top_features = 30L,
-                         feature_assoc = c(
-                           "weighted_average", "correlation",
-                           "regression", "none"
-                         )) {
+                         n_axes = 5L) {
   # ----------------------------------------------------------------------------
   # 1) input validation
   # ----------------------------------------------------------------------------
@@ -579,9 +554,6 @@ compute_pcoa <- function(dist_obj,
   neg_correction <- match.arg(neg_correction)
   chk::chk_count(n_axes)
   chk::chk_gt(n_axes, 0)
-  chk::chk_count(top_features)
-  chk::chk_gt(top_features, 0)
-  feature_assoc <- match.arg(feature_assoc)
 
   n <- attr(dist_obj, "Size")
   if (is.null(n) || n < 2L) {
@@ -714,42 +686,6 @@ compute_pcoa <- function(dist_obj,
     correction_note = correction_note
   ))
 
-  # ----------------------------------------------------------------------------
-  # 5) feature associations (requires abundances attribute)
-  # ----------------------------------------------------------------------------
-  .ph_log_info(
-    paste0("computing feature associations: ", feature_assoc)
-  )
-  feature_associations <- tibble::tibble()
-
-  X <- attr(dist_obj, "abundances")
-  if (is.null(X)) {
-    .ph_warn(
-      "no 'abundances' attribute found on `dist_obj`;
-      skipping feature associations."
-    )
-  } else if (identical(feature_assoc, "none") || k_use < 1L) {
-    feature_associations <- tibble::tibble()
-  } else {
-    X <- as.matrix(X)
-    feature_associations <- .ph_feature_associations(
-      coords = coords,
-      X = X,
-      feature_assoc = feature_assoc,
-      top_features = top_features,
-      max_axes = k_use,
-      intersect_fn = intersect,
-      warn_missing_ids = paste(
-        "row names missing in coordinates or 'abundances'; cannot align",
-        "samples for feature associations."
-      ),
-      warn_insufficient_overlap = paste(
-        "insufficient overlap between distance labels and abundance rows;",
-        "skipping feature associations."
-      )
-    )
-  }
-
   # ---------------------------------------------------------------------------
   # 6) return
   # ---------------------------------------------------------------------------
@@ -758,13 +694,120 @@ compute_pcoa <- function(dist_obj,
     eigenvalues = eig_vals,
     var_explained = var_explained,
     eigen_diagnostics = eigen_diagnostics,
-    correction_infos = correction_infos,
-    feature_associations = feature_associations
+    correction_infos = correction_infos
   )
   class(result) <- "beta_pcoa"
 
   .ph_log_info("pcoa analysis complete.")
   result
+}
+
+#' @title Compute Feature Associations to PCoA Vectors
+#'
+#' @description Calculates feature-axis associations based on given PCoA
+#' results (output of [compute_pcoa()])
+#'
+#' @param dist_obj a \code{dist} object (for example returned by
+#'   \code{compute_distance()}). The normalized abundance matrix used to compute
+#'   the distances *must* be attached as attribute \code{"abundances"} (numeric
+#'   matrix with samples in rows and features in columns).
+#' @param pcoa_result a list of class \code{"beta_pcoa"}. The result
+#'   of \code{compute_pcoa()}, which contains the resulting PCoA eigen vectors.
+#' @param top_features integer scalar. Number of features to keep per axis when
+#'   reporting associations. Features are selected by taking the union of the
+#'   top \code{top_features} features (by absolute association) for each
+#'   returned axis. Must be > 0.
+#' @param association_method character scalar. Type of feature-axis association to
+#'   return. \code{"weighted_average"} returns weighted-average feature scores (centroid of
+#'   sample scores weighted by feature abundance). \code{"correlation"} returns
+#'   feature-axis correlations. \code{"regression"} returns regression slopes
+#'   for axis scores on feature abundance. \code{"none"} skips feature
+#'   associations.
+#'
+#' @return a tibble of feature-axis associations for the returned axes.
+#'
+#' @details
+#' These feature associations are post-hoc summaries of how features relate to PCoA
+#' axes. Weighted-average scores (\code{association_method = "weighted_average"}) compute
+#' \code{t(X) %*% U / colSums(X)}, where \code{X} is the abundance matrix and
+#' \code{U} are the sample coordinates. Correlation and regression associations
+#' are computed between feature abundances and axis scores and are not "true"
+#' PCA loadings unless distances are Euclidean and derived compatibly.
+#'
+#' @examples
+#' \donttest{
+#' # compute a distance matrix with an attached abundance matrix
+#' # build an example <phip_data> object from the package example dataset
+#' ps <- phip_load_example_data()
+#'
+#' # small subset for speed: 5 peptides at time t1
+#' keep_pep <- c("16627", "5243", "24799", "16196", "18003")
+#' dat_cols <- dplyr::tbl_vars(ps$data_long)
+#' tp_col <- "timepoint"
+#'
+#' ps_small <- ps |>
+#'   dplyr::filter(
+#'     peptide_id %in% keep_pep,
+#'     !!rlang::sym(tp_col) == "T1"
+#'   ) |>
+#'   dplyr::collect()
+#'
+#' # compute distances (needs either 'parallelDist' or 'vegan')
+#' val_col <- "fold_change"
+#'
+#' d <- compute_distance(
+#'   ps_small,
+#'   value_col = val_col,
+#'   distance = "jaccard",
+#'   n_threads = 2L
+#' )
+#'
+#' # Compute PCoA vectors on these distances
+#' pcoa_res <- compute_pcoa(d, neg_correction = "none", n_axes = 3L)
+#'
+#' feature_associations <- compute_pcoa_feature_associations(d, pcoa_res)
+#' feature_associations
+#' }
+#' @export
+compute_pcoa_feature_associations <- function(
+  dist_obj,
+  pcoa_result,
+  top_features = 30L,
+  association_method = c(
+    "weighted_average", "correlation",
+    "regression"
+  )
+) {
+  chk::chk_s3_class(dist_obj, "dist")
+  chk::chk_s3_class(pcoa_result, "beta_pcoa")
+  chk::chk_count(top_features)
+  chk::chk_gt(top_features, 0)
+  association_method <- match.arg(association_method)
+
+  X <- attr(dist_obj, "abundances")
+  chk::chk_not_null(X)
+  X <- as.matrix(X)
+
+  # Take names from distance object (compute_pcoa converts these to sample id)
+  coords <- as.matrix(pcoa_result$sample_coords |> select(-sample_id))
+  rownames(coords) <- attr(dist_obj, "Labels")
+
+  .ph_feature_associations(
+    coords = coords,
+    X = X,
+    feature_assoc = association_method,
+    top_features = top_features,
+    max_axes = NULL,
+    intersect_fn = intersect,
+    warn_missing_ids = paste(
+      "row names missing in coordinates or 'abundances'; cannot align",
+      "samples for feature associations."
+    ),
+    warn_insufficient_overlap = paste(
+      "insufficient overlap between distance labels and abundance rows;",
+      "skipping feature associations."
+    )
+  )
 }
 
 #' @title Constrained Ordination (db-rda / cap) on Distance Matrix
