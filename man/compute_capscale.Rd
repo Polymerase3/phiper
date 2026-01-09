@@ -78,24 +78,10 @@ eigenvalues, variance partitioning, and feature associations.
 }
 \examples{
 \donttest{
-ps <- phip_load_example_data()
-
-# small subset for speed: 5 peptides at time t1
-keep_pep <- c("16627", "5243", "24799", "16196", "18003")
-dat_cols <- dplyr::tbl_vars(ps$data_long)
-tp_col <- "timepoint"
-
-ps_small <- ps |>
-  dplyr::filter(
-    peptide_id \%in\% keep_pep,
-    !!rlang::sym(tp_col) == "T1"
-  ) |>
-  dplyr::collect()
-
-val_col <- "fold_change"
+ps <- phip_load_example_data("small_mixture")
 
 dist_bc <- compute_distance(
-  ps_small,
+  ps,
   value_col = val_col,
   method_normalization = "hellinger",
   distance = "bray",
@@ -103,13 +89,13 @@ dist_bc <- compute_distance(
 )
 
 # pick a simple constraint that exists in the example data (fallback order)
-dat <- ps_small
+dat <- ps
 cand <- c("group", "big_group", "type_person", "sex", "age")
 rhs_var <- cand[cand \%in\% dplyr::tbl_vars(dat)][1]
 
 cap_res <- compute_capscale(
   dist_bc,
-  ps = ps_small,
+  ps = ps,
   formula = stats::as.formula(paste0("~ ", rhs_var)),
   neg_correction = "none",
   top_features = 30L

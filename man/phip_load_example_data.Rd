@@ -4,10 +4,11 @@
 \alias{phip_load_example_data}
 \title{Load Example PhIP-Seq Dataset as <phip_data>}
 \usage{
-phip_load_example_data(name = c("phip_mixture"))
+phip_load_example_data(name = c("phip_mixture", "small_mixture"))
 }
 \arguments{
-\item{name}{Character scalar. Name of the shipped example dataset. Currently supported: \code{"phip_mixture"}.}
+\item{name}{Character scalar. Name of the shipped example dataset.
+Currently supported: \code{"phip_mixture"}, \code{"small_mixture"}.}
 }
 \value{
 A \verb{<phip_data>} object created from the chosen example dataset.
@@ -22,8 +23,8 @@ automatically supplying the correct parameters for the included example data.
 ex <- phip_load_example_data()
 # ex is now a <phip_data> object ready for analysis
 
-# Specify the dataset name explicitly (currently only "phip_mixture" is available)
-ex2 <- phip_load_example_data("phip_mixture")
+# Specify the dataset name explicitly
+ex2 <- phip_load_example_data("small_mixture")
 
 # Use with plotting functions
 p = plot_enrichment_counts(ex, group_cols = "timepoint")

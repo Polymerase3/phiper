@@ -90,25 +90,13 @@ P-values are optionally adjusted within each contrast scope (e.g.,
 }
 \examples{
 \donttest{
-ps <- phip_load_example_data()
-
-# small subset for speed
-keep_pep <- c("16627", "5243", "24799", "16196", "18003")
-dat_cols <- dplyr::tbl_vars(ps$data_long)
-tp_col <- "timepoint"
-
-ps_small <- ps |>
-  dplyr::filter(
-    peptide_id \%in\% keep_pep,
-    !!rlang::sym(tp_col) == "T1"
-  ) |>
-  dplyr::collect()
+ps <- phip_load_example_data("small_mixture")
 
 # compute distance matrix
 val_col <- "fold_change"
 
 dist_bc <- compute_distance(
-  ps_small,
+  ps,
   value_col = val_col,
   distance = "jaccard",
   n_threads = 2L
@@ -116,14 +104,14 @@ dist_bc <- compute_distance(
 
 permanova_res <- compute_permanova(
   dist_bc,
-  ps        = ps_small,
+  ps        = ps,
   group_col = "group",
   time_col  = "timepoint"
 )
 
 permanova_res2 <- compute_permanova(
   dist_bc,
-  ps        = ps_small,
+  ps        = ps,
   group_col = "group",
   time_col  = "timepoint",
   p_adjust  = "BH"
