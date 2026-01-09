@@ -49,25 +49,13 @@
 #' \donttest{
 #' library(dplyr)
 #' library(rlang)
-#' ps <- phip_load_example_data()
-#'
-#' # small subset for speed
-#' keep_pep <- c("16627", "5243", "24799", "16196", "18003")
-#' dat_cols <- dplyr::tbl_vars(ps$data_long)
-#' tp_col <- "time"
-#'
-#' ps_small <- ps |>
-#'   dplyr::filter(
-#'     peptide_id %in% keep_pep,
-#'     timepoint == "T1"
-#'   ) |>
-#'   dplyr::collect()
+#' ps <- phip_load_example_data("small_mixture")
 #'
 #' # pick the grouping column
 #' group_col <- "group"
 #'
 #' prev_res <- ph_prevalence_compare(
-#'   ps_small,
+#'   ps,
 #'   rank_cols  = "peptide_id",
 #'   group_cols = group_col,
 #'   collect    = TRUE
@@ -390,25 +378,13 @@ deltaplot <- function(
 #' \donttest{
 #' library(dplyr)
 #' library(rlang)
-#' ps <- phip_load_example_data()
-#'
-#' # small subset for speed
-#' keep_pep <- c("16627", "5243", "24799", "16196", "18003")
-#' dat_cols <- dplyr::tbl_vars(ps$data_long)
-#' tp_col <- "timepoint"
-#'
-#' ps_small <- ps |>
-#'   dplyr::filter(
-#'     peptide_id %in% keep_pep,
-#'     !!rlang::sym(tp_col) == "T1"
-#'   ) |>
-#'   dplyr::collect()
+#' ps <- phip_load_example_data("small_mixture")
 #'
 #' # pick the grouping column
 #' group_col <- "group"
 #'
 #' prev_res <- ph_prevalence_compare(
-#'   ps_small,
+#'   ps,
 #'   rank_cols  = "peptide_id",
 #'   group_cols = group_col,
 #'   collect    = TRUE
@@ -1679,24 +1655,13 @@ forestplot_interactive <- function(
 #' \donttest{
 #' library(dplyr)
 #' library(rlang)
-#' ps <- phip_load_example_data()
-#'
-#' # small subset for speed
-#' keep_pep <- c("16627", "5243", "24799", "16196", "18003")
-#' tp_col <- "timepoint"
-#'
-#' ps_small <- ps |>
-#'   dplyr::filter(
-#'     peptide_id %in% keep_pep,
-#'     !!rlang::sym(tp_col) == "T1"
-#'   ) |>
-#'   dplyr::collect()
+#' ps <- phip_load_example_data("small_mixture")
 #'
 #' # pick the grouping column
 #' group_col <- "group"
 #'
 #' prev_res <- ph_prevalence_compare(
-#'   ps_small,
+#'   ps,
 #'   rank_cols  = "peptide_id",
 #'   group_cols = group_col,
 #'   collect    = TRUE
@@ -1944,24 +1909,13 @@ ecdf_plot <- function(
 #' \donttest{
 #' library(dplyr)
 #' library(rlang)
-#' ps <- phip_load_example_data()
-#'
-#' # small subset for speed
-#' keep_pep <- c("16627", "5243", "24799", "16196", "18003")
-#' tp_col <- "timepoint"
-#'
-#' ps_small <- ps |>
-#'   dplyr::filter(
-#'     peptide_id %in% keep_pep,
-#'     !!rlang::sym(tp_col) == "T1"
-#'   ) |>
-#'   dplyr::collect()
+#' ps <- phip_load_example_data("small_mixture")
 #'
 #' # pick the grouping column
 #' group_col <- "group"
 #'
 #' prev_res <- ph_prevalence_compare(
-#'   ps_small,
+#'   ps,
 #'   rank_cols  = "peptide_id",
 #'   group_cols = group_col,
 #'   collect    = TRUE
