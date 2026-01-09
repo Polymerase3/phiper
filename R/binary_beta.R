@@ -716,6 +716,9 @@ compute_pcoa <- function(dist_obj,
 #' # build an example <phip_data> object from the package example dataset
 #' ps <- phip_load_example_data("small_mixture")
 #'
+#' # compute distances (needs either 'parallelDist' or 'vegan')
+#' val_col <- "fold_change"
+#'
 #' d <- compute_distance(
 #'   ps,
 #'   value_col = val_col,
