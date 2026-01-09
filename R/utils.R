@@ -505,41 +505,51 @@ phip_example_path <- function(name = c("phip_mixture")) {
 #' p = plot_enrichment_counts(ex, group_cols = "timepoint")
 #'
 #' @export
-phip_load_example_data <- function(name = c("phip_mixture", "small_mixture")) {
-  name <- match.arg(name)
+phip_load_example_data <- local({
+  cache_env <- new.env(parent = emptyenv())
+  cache_env$loaded <- list()
 
-  if (name == "small_mixture") {
-    ps <- phip_load_example_data(name = "phip_mixture")
+  function(name = c("phip_mixture", "small_mixture")) {
+    name <- match.arg(name)
 
-    # small subset for speed: 5 peptides at time t1
-    keep_pep <- c("16627", "5243", "24799", "16196", "18003")
-    dat_cols <- dplyr::tbl_vars(ps$data_long)
-    tp_col <- "timepoint"
-       
-    ps_small <- ps |>
-      dplyr::filter(
-        peptide_id %in% keep_pep,
-        !!rlang::sym(tp_col) == "T1"
-      ) |>
-      dplyr::collect()
-    
-    return(ps_small)
+    # Check if already in cache
+    if (name %in% names(cache_env$loaded)) return(cache_env$loaded[[name]])
+
+    if (name == "small_mixture") {
+      ps <- phip_load_example_data(name = "phip_mixture")
+
+      # small subset for speed: 5 peptides at time t1
+      keep_pep <- c("16627", "5243", "24799", "16196", "18003")
+      dat_cols <- dplyr::tbl_vars(ps$data_long)
+      tp_col <- "timepoint"
+        
+      ps <- ps |>
+        dplyr::filter(
+          peptide_id %in% keep_pep,
+          !!rlang::sym(tp_col) == "T1"
+        ) |>
+        dplyr::collect()
+      
+    } else {
+      ps <- phip_convert(
+        data_long_path = phip_example_path(name),
+        peptide_library = TRUE,
+        subject_id = "subject_id",
+        peptide_id = "peptide_id",
+        sample_id  = "sample_id",
+        exist      = "exist",
+        timepoint  = "time",
+        fold_change= "fold_change",
+        materialise_table = TRUE,
+        auto_expand = FALSE,
+        n_cores = 5
+      )
+    }
+
+    cache_env$loaded[[name]] <- ps
+    ps
   }
-
-  phip_convert(
-    data_long_path = phip_example_path(name),
-    peptide_library = TRUE,
-    subject_id = "subject_id",
-    peptide_id = "peptide_id",
-    sample_id  = "sample_id",
-    exist      = "exist",
-    timepoint  = "time",
-    fold_change= "fold_change",
-    materialise_table = TRUE,
-    auto_expand = FALSE,
-    n_cores = 5
-  )
-}
+})
 
 
 #' @title Resolve legacy-import paths and perform fast-fail argument checks
