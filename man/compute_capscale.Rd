@@ -80,6 +80,9 @@ eigenvalues, variance partitioning, and feature associations.
 \donttest{
 ps <- phip_load_example_data("small_mixture")
 
+# compute distance matrix
+val_col <- "fold_change"
+
 dist_bc <- compute_distance(
   ps,
   value_col = val_col,
