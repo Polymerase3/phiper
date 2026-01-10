@@ -51,25 +51,13 @@ PCA loadings unless distances are Euclidean and derived compatibly.
 \donttest{
 # compute a distance matrix with an attached abundance matrix
 # build an example <phip_data> object from the package example dataset
-ps <- phip_load_example_data()
-
-# small subset for speed: 5 peptides at time t1
-keep_pep <- c("16627", "5243", "24799", "16196", "18003")
-dat_cols <- dplyr::tbl_vars(ps$data_long)
-tp_col <- "timepoint"
-
-ps_small <- ps |>
-  dplyr::filter(
-    peptide_id \%in\% keep_pep,
-    !!rlang::sym(tp_col) == "T1"
-  ) |>
-  dplyr::collect()
+ps <- phip_load_example_data("small_mixture")
 
 # compute distances (needs either 'parallelDist' or 'vegan')
 val_col <- "fold_change"
 
 d <- compute_distance(
-  ps_small,
+  ps,
   value_col = val_col,
   distance = "jaccard",
   n_threads = 2L

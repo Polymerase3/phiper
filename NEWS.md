@@ -1,3 +1,9 @@
+# phiper 0.2.3
+
+- Added `small_mixture` to `phip_load_example_data`
+- Changed all examples and tests to use this `small_mixture` instead of redining it
+- Added cache to `phip_load_example_data` to make tests/examples faster
+
 # phiper 0.2.2
 
 - Separated the feature associations to PCoA vectors from `compute_pcoa` to a separate function.

@@ -45,7 +45,7 @@
 testthat::test_that("compute_distance works on example phip_data and attaches
                     abundances", {
 
-  ps <- .get_ps_small_for_distance()
+  ps <- phip_load_example_data("small_mixture")
   value_col <- .pick_existing_value_col(ps, "fold_change")
 
   d <- suppressWarnings(compute_distance(
@@ -75,7 +75,7 @@ testthat::test_that("compute_distance works on example phip_data and attaches
 
 testthat::test_that("compute_distance auto-detects value_col on example data", {
 
-  ps <- .get_ps_small_for_distance()
+  ps <- phip_load_example_data("small_mixture")
 
   d <- suppressWarnings(compute_distance(
     ps,
@@ -92,7 +92,7 @@ testthat::test_that("compute_distance auto-detects value_col on example data", {
 testthat::test_that("compute_distance auto normalization chooses none for binary
                     exist data", {
 
-  ps <- .get_ps_small_for_distance()
+  ps <- phip_load_example_data("small_mixture")
 
   cols <- dplyr::tbl_vars(ps)
 
@@ -113,7 +113,7 @@ testthat::test_that("compute_distance auto normalization chooses none for binary
 testthat::test_that("compute_distance errors on duplicated (sample_id,
                     peptide_id) pairs", {
 
-  ps <- .get_ps_small_for_distance()
+  ps <- phip_load_example_data("small_mixture")
   value_col <- .pick_existing_value_col(ps, "fold_change")
 
   ps_dup <- ps
@@ -133,7 +133,7 @@ testthat::test_that("compute_distance errors on duplicated (sample_id,
 
 testthat::test_that("compute_distance validates inputs (chk) on example data", {
 
-  ps <- .get_ps_small_for_distance()
+  ps <- phip_load_example_data("small_mixture")
   value_col <- .pick_existing_value_col(ps, "fold_change")
 
   ps_bad <- ps
@@ -163,7 +163,7 @@ testthat::test_that("compute_distance validates inputs (chk) on example data", {
 testthat::test_that("compute_distance reproducibility: repeated runs match
                     across parameter combinations", {
 
-  ps <- .get_ps_small_for_distance()
+  ps <- phip_load_example_data("small_mixture")
 
   value_fc <- "fold_change"
   value_ex <- "exist"
@@ -207,7 +207,7 @@ testthat::test_that("compute_distance reproducibility: repeated runs match
 
 testthat::test_that("compute_distance bray agrees with vegan and manual", {
 
-  ps <- .get_ps_small_for_distance()
+  ps <- phip_load_example_data("small_mixture")
   value_col <- .pick_existing_value_col(ps, "fold_change")
 
   d <- suppressWarnings(compute_distance(
@@ -270,7 +270,7 @@ testthat::test_that("compute_distance bray agrees with vegan and manual", {
 
 testthat::test_that("compute_pcoa returns expected structure and types", {
 
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
 
   res <- suppressWarnings(compute_pcoa(
@@ -324,7 +324,7 @@ testthat::test_that("compute_pcoa validates inputs (chk)", {
     regexp = "(?i)dist|s3|class|chk"
   )
 
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small)
 
   testthat::expect_error(
@@ -346,7 +346,7 @@ testthat::test_that("compute_pcoa validates inputs (chk)", {
 testthat::test_that("compute_pcoa uses all requested axes up to n-1
                     (no hard cap at 10)", {
 
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small)
 
   n <- attr(d, "Size")
@@ -368,7 +368,7 @@ testthat::test_that("compute_pcoa uses all requested axes up to n-1
 
 testthat::test_that("compute_pcoa_feature_associations: error when abundances missing", {
 
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small)
 
   # remove abundances attribute
@@ -381,7 +381,7 @@ testthat::test_that("compute_pcoa_feature_associations: error when abundances mi
 
 testthat::test_that("compute_pcoa_feature_associations: returns expected columns
                     and respects top_features logic", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small)
 
   combos <- list(
@@ -408,7 +408,7 @@ testthat::test_that("compute_pcoa_feature_associations: returns expected columns
 testthat::test_that("compute_pcoa reproducibility: repeated runs match across
                     parameter combinations", {
 
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small)
 
   combos <- list(
@@ -445,7 +445,7 @@ testthat::test_that("compute_pcoa reproducibility: repeated runs match across
 testthat::test_that("compute_pcoa_feature_associations reproducibility: repeated runs match across
                     parameter combinations", {
 
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small)
 
   pcoa_n_axes <- 3
@@ -481,7 +481,6 @@ testthat::test_that("compute_pcoa_feature_associations reproducibility: repeated
 # tests/testthat/test-mcompute_capscale.R
 
 # this file assumes these helpers already exist in the test suite:
-# - .get_ps_small_for_distance()
 # - .get_dist_for_pcoa()
 
 # helper: pick a constraint variable that exists and has >=2 distinct values
@@ -509,7 +508,7 @@ testthat::test_that("compute_pcoa_feature_associations reproducibility: repeated
 testthat::test_that("compute_capscale: full coverage (success, warnings,
                     errors, edge cases, reproducibility)", {
 
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
 
   # ---------------------------------------------------------------------------
@@ -734,7 +733,7 @@ testthat::test_that("compute_capscale: full coverage (success, warnings,
 }
 
 testthat::test_that("compute_permanova: basic functionality and input validation", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
 
   # skip if vegan not available
@@ -780,7 +779,7 @@ testthat::test_that("compute_permanova: basic functionality and input validation
 })
 
 testthat::test_that("compute_permanova: pairwise comparisons", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
 
   testthat::skip_if_not_installed("vegan")
@@ -805,7 +804,7 @@ testthat::test_that("compute_permanova: pairwise comparisons", {
 })
 
 testthat::test_that("compute_permanova: input validation errors", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
 
   testthat::skip_if_not_installed("vegan")
@@ -844,7 +843,7 @@ testthat::test_that("compute_permanova: input validation errors", {
 })
 
 testthat::test_that("compute_permanova: ps as data.frame vs phip_data", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
 
   testthat::skip_if_not_installed("vegan")
@@ -875,7 +874,7 @@ testthat::test_that("compute_permanova: ps as data.frame vs phip_data", {
 })
 
 testthat::test_that("compute_dispersion: basic functionality and input validation", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
 
   testthat::skip_if_not_installed("vegan")
@@ -911,7 +910,7 @@ testthat::test_that("compute_dispersion: basic functionality and input validatio
 })
 
 testthat::test_that("compute_dispersion: pairwise comparisons", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
 
   testthat::skip_if_not_installed("vegan")
@@ -933,7 +932,7 @@ testthat::test_that("compute_dispersion: pairwise comparisons", {
 })
 
 testthat::test_that("compute_dispersion: input validation errors", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
 
   testthat::skip_if_not_installed("vegan")
@@ -972,7 +971,7 @@ testthat::test_that("compute_dispersion: input validation errors", {
 })
 
 testthat::test_that("compute_dispersion: ps as data.frame vs phip_data", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
 
   testthat::skip_if_not_installed("vegan")
@@ -1005,7 +1004,7 @@ testthat::test_that("compute_dispersion: ps as data.frame vs phip_data", {
 # tests for compute_tsne function
 
 testthat::test_that("compute_tsne: basic functionality and structure", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
 
   testthat::skip_if_not_installed("Rtsne")
@@ -1039,7 +1038,7 @@ testthat::test_that("compute_tsne: basic functionality and structure", {
 })
 
 testthat::test_that("compute_tsne: dims parameter controls output dimensions", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
 
   testthat::skip_if_not_installed("Rtsne")
@@ -1070,7 +1069,7 @@ testthat::test_that("compute_tsne: dims parameter controls output dimensions", {
 })
 
 testthat::test_that("compute_tsne: metadata attachment works correctly", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
 
   testthat::skip_if_not_installed("Rtsne")
@@ -1099,7 +1098,7 @@ testthat::test_that("compute_tsne: metadata attachment works correctly", {
 })
 
 testthat::test_that("compute_tsne: matrix input works", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
 
   testthat::skip_if_not_installed("Rtsne")
@@ -1120,7 +1119,7 @@ testthat::test_that("compute_tsne: matrix input works", {
 })
 
 testthat::test_that("compute_tsne: reproducibility with seed", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
 
   testthat::skip_if_not_installed("Rtsne")
@@ -1146,7 +1145,7 @@ testthat::test_that("compute_tsne: reproducibility with seed", {
 })
 
 testthat::test_that("compute_tsne: input validation errors", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
 
   testthat::skip_if_not_installed("Rtsne")
@@ -1217,7 +1216,7 @@ testthat::test_that("compute_tsne: input validation errors", {
 })
 
 testthat::test_that("compute_tsne: perplexity too large gets adjusted", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
 
   testthat::skip_if_not_installed("Rtsne")
@@ -1240,7 +1239,7 @@ testthat::test_that("compute_tsne: perplexity too large gets adjusted", {
 })
 
 testthat::test_that("compute_tsne: handles missing labels gracefully", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
 
   testthat::skip_if_not_installed("Rtsne")
@@ -1259,7 +1258,7 @@ testthat::test_that("compute_tsne: handles missing labels gracefully", {
 })
 
 testthat::test_that("compute_tsne: handles non-square matrix error", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
 
   testthat::skip_if_not_installed("Rtsne")
 
@@ -1273,7 +1272,7 @@ testthat::test_that("compute_tsne: handles non-square matrix error", {
 })
 
 testthat::test_that("compute_tsne: handles non-numeric matrix error", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
 
   testthat::skip_if_not_installed("Rtsne")
 
@@ -1300,7 +1299,7 @@ testthat::test_that("compute_tsne: handles too few samples error", {
 })
 
 testthat::test_that("compute_tsne: handles duplicate labels error", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
 
   testthat::skip_if_not_installed("Rtsne")
@@ -1320,7 +1319,7 @@ testthat::test_that("compute_tsne: handles duplicate labels error", {
 })
 
 testthat::test_that("compute_tsne: ps as data.frame vs phip_data", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
 
   testthat::skip_if_not_installed("Rtsne")
@@ -1350,7 +1349,7 @@ testthat::test_that("compute_tsne: ps as data.frame vs phip_data", {
 })
 
 testthat::test_that("compute_tsne: handles missing sample_id column", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
 
   testthat::skip_if_not_installed("Rtsne")
@@ -1366,7 +1365,7 @@ testthat::test_that("compute_tsne: handles missing sample_id column", {
 })
 
 testthat::test_that("compute_tsne: warns about missing metadata columns", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
 
   testthat::skip_if_not_installed("Rtsne")
@@ -1386,7 +1385,7 @@ testthat::test_that("compute_tsne: warns about missing metadata columns", {
 # Additional tests for better coverage
 
 testthat::test_that("compute_distance: edge cases and error conditions", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
 
   # test with empty data after filtering
   ps_empty <- ps_small |> dplyr::filter(FALSE)
@@ -1431,7 +1430,7 @@ testthat::test_that("compute_distance: edge cases and error conditions", {
 })
 
 testthat::test_that("compute_distance: normalization methods", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
 
   # test log normalization
   d_log <- suppressWarnings(compute_distance(
@@ -1459,7 +1458,7 @@ testthat::test_that("compute_distance: normalization methods", {
 })
 
 testthat::test_that("compute_distance: distance method fallbacks", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
 
   # test vegan fallback methods (when parallelDist not available or method not supported)
   testthat::skip_if_not_installed("vegan")
@@ -1484,7 +1483,7 @@ testthat::test_that("compute_distance: distance method fallbacks", {
 })
 
 testthat::test_that("compute_distance: parallelDist vs vegan consistency", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
 
   testthat::skip_if_not_installed("vegan")
 
@@ -1504,7 +1503,7 @@ testthat::test_that("compute_distance: parallelDist vs vegan consistency", {
 })
 
 testthat::test_that("compute_pcoa: negative eigenvalue corrections", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small)
 
   testthat::skip_if_not_installed("vegan")
@@ -1527,7 +1526,7 @@ testthat::test_that("compute_pcoa: negative eigenvalue corrections", {
 })
 
 testthat::test_that("compute_pcoa: variance explained calculations", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small)
 
   res <- suppressWarnings(compute_pcoa(d, n_axes = 3L))
@@ -1548,7 +1547,7 @@ testthat::test_that("compute_pcoa: variance explained calculations", {
 })
 
 describe("compute_pcoa_feature_associations: edge cases", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
 
   it("returns empty tibble on mismatched row names", {
     d <- .get_dist_for_pcoa(ps_small)
@@ -1583,7 +1582,7 @@ describe("compute_pcoa_feature_associations: edge cases", {
 })
 
 testthat::test_that("compute_capscale: size mismatches and edge cases", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small)
 
   rhs_var <- .pick_constraint_var_cap(ps_small)
@@ -1601,7 +1600,7 @@ testthat::test_that("compute_capscale: size mismatches and edge cases", {
 })
 
 testthat::test_that("compute_permanova: insufficient data warnings", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small)
 
   testthat::skip_if_not_installed("vegan")
@@ -1624,7 +1623,7 @@ testthat::test_that("compute_permanova: insufficient data warnings", {
 })
 
 testthat::test_that("compute_dispersion: time factor edge cases", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small)
 
   testthat::skip_if_not_installed("vegan")
@@ -1646,7 +1645,7 @@ testthat::test_that("compute_dispersion: time factor edge cases", {
 })
 
 testthat::test_that("compute_dispersion: betadisper failures", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
 
   testthat::skip_if_not_installed("vegan")
 
@@ -1672,7 +1671,7 @@ testthat::test_that("compute_dispersion: betadisper failures", {
 })
 
 testthat::test_that("compute_tsne: Rtsne package not available", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small)
 
   testthat::skip_if_not_installed("mockery")
@@ -1689,7 +1688,7 @@ testthat::test_that("compute_tsne: Rtsne package not available", {
 })
 
 testthat::test_that("compute_tsne: unexpected Rtsne output", {
-  ps_small <- .get_ps_small_for_distance()
+  ps_small <- phip_load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small)
 
   testthat::skip_if_not_installed("Rtsne")

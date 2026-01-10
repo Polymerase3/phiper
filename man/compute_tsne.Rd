@@ -94,25 +94,13 @@ result but will have \code{NA} values for those metadata columns.
 \examples{
 \donttest{
 # Build example phip_data object
-ps <- phip_load_example_data()
-
-# Small subset for speed
-keep_pep <- c("16627", "5243", "24799", "16196", "18003")
-dat_cols <- dplyr::tbl_vars(ps$data_long)
-tp_col <- "timepoint"
-
-ps_small <- ps |>
-  dplyr::filter(
-    peptide_id \%in\% keep_pep,
-    !!rlang::sym(tp_col) == "T1"
-  ) |>
-  dplyr::collect()
+ps <- phip_load_example_data("small_mixture")
 
 # Compute distance matrix
 val_col <- "fold_change"
 
 d <- compute_distance(
-  ps_small,
+  ps,
   value_col = val_col,
   method_normalization = "hellinger",
   distance = "bray",
@@ -121,7 +109,7 @@ d <- compute_distance(
 
 # Compute t-SNE embeddings
 tsne_res <- compute_tsne(
-  ps = ps_small,
+  ps = ps,
   dist_obj = d,
   dims = 3L,
   perplexity = 15,
