@@ -1482,9 +1482,6 @@ write_result.ph_prev_result <- function(x,
     if (format == "xlsx" && !requireNamespace("openxlsx", quietly = TRUE)) {
       .ph_abort("package 'openxlsx' required for .xlsx output (install it with install.packages('openxlsx'))")
     }
-    if (format == "parquet" && !requireNamespace("arrow", quietly = TRUE)) {
-      .ph_abort("package 'arrow' required for .parquet output (install it with install.packages('arrow'))")
-    }
     if (format == "csv" && !requireNamespace("readr", quietly = TRUE)) {
       .ph_warn("package 'readr' not available; falling back to utils::write.csv")
     }
@@ -1623,16 +1620,13 @@ write_result.ph_prev_result <- function(x,
     }
 
     if (format == "parquet") {
-      if (!requireNamespace("arrow", quietly = TRUE)) {
-        .ph_abort("arrow required for parquet writing")
-      }
       if (length(ranks) <= 1 || !isTRUE(sheet_by_rank)) {
         out_df <- df
         if (nrow(out_df)) out_df <- out_df[sort_key(out_df), , drop = FALSE]
         if (file.exists(path) && !isTRUE(overwrite)) {
           .ph_abort("path exists; set overwrite = TRUE to replace it", bullets = path)
         }
-        arrow::write_parquet(out_df, path)
+        export_parquet(out_df, path)
         .ph_log_ok("wrote parquet file", bullets = path)
         return(invisible(path))
       } else {
@@ -1646,7 +1640,7 @@ write_result.ph_prev_result <- function(x,
           if (file.exists(fname) && !isTRUE(overwrite)) {
             .ph_abort("path exists; set overwrite = TRUE to replace it", bullets = fname)
           }
-          arrow::write_parquet(df_r, fname)
+          export_parquet(df_r, fname)
           out_files[i] <- fname
           .ph_log_info("wrote parquet for rank", bullets = sprintf("%s -> %s", r, fname))
         }

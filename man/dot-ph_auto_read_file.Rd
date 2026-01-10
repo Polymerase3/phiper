@@ -16,12 +16,6 @@ A data.frame containing the parsed file contents.
 }
 \description{
 \code{.ph_auto_read_file()} loads delimited text or parquet files,
-detecting the delimiter for text inputs and using Arrow for parquet.
-}
-\details{
-\itemize{
-\item For parquet inputs, the reader uses \code{arrow::read_parquet()}.
-\item For delimited text, the delimiter is inferred from the header.
-}
+detecting the delimiter for text inputs and using duckdb and DBI for parquet.
 }
 \keyword{internal}
