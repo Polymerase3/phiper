@@ -55,7 +55,7 @@ print.phip_data <- function(x, ...) {
   # ---- contrasts ------------------------------------------------------------
   if (!is.null(x$comparisons)) {
     cat(cli::col_cyan("contrasts:"), "\n")
-    cat(paste0(knitr::kable(x$comparisons, format = "simple"), collapse = "\n"))
+    cat(paste0(utils::capture.output(print(x$comparisons, row.names = FALSE)), collapse = "\n"))
     cat("\n\n")
   }
 
