@@ -1130,10 +1130,6 @@ compute_delta <- function(
 }
 
 .progress_init <- function(path) {
-  if (!requireNamespace("filelock", quietly = TRUE)) {
-    .ph_abort("`filelock` package required for progress logging.
-              Install it or disable logging.")
-  }
   if (file.exists(path)) unlink(path)
   con <- file(path, open = "wb")
   on.exit(try(close(con), silent = TRUE), add = TRUE)
@@ -1143,9 +1139,24 @@ compute_delta <- function(
 
 .progress_lock_path <- function(p) paste0(p, ".lock")
 
+.progress_lock <- function(lock_path, timeout_ms = 60000, poll_sec = 0.05) {
+  start_time <- Sys.time()
+  repeat {
+    if (file.create(lock_path)) {
+      return(lock_path)
+    }
+    if (as.numeric(difftime(Sys.time(), start_time, units = "secs")) * 1000 >=
+        timeout_ms) {
+      .ph_abort("Timed out waiting for progress lock. Disable logging or try
+                again.")
+    }
+    Sys.sleep(poll_sec)
+  }
+}
+
 .progress_add <- function(path, delta) {
-  lk <- filelock::lock(.progress_lock_path(path), timeout = 60000)
-  on.exit(try(filelock::unlock(lk), silent = TRUE), add = TRUE)
+  lock_path <- .progress_lock(.progress_lock_path(path), timeout_ms = 60000)
+  on.exit(try(unlink(lock_path), silent = TRUE), add = TRUE)
 
   cur <- 0
   if (file.exists(path)) {

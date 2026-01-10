@@ -38,8 +38,6 @@ BugReports: https://github.com/Polymerase3/phiper/issues
 SystemRequirements: C++17
 LinkingTo: Rcpp, RcppParallel
 Suggests:
-
-    filelock,
     future,
     future.apply,
     ggpubr,
