@@ -249,7 +249,7 @@ prev_filter_pairs <- function(
   if (!all(needed %in% names(df))) stop("prev_filter_pairs: df is missing required columns: ", paste(setdiff(needed, names(df)), collapse = ", "))
 
   # no mutation of original
-  dt <- data.table::as.data.table(df)
+  dt <- as.data.frame(df)
 
   # --- optional rank pre-filter (robust to scoping) --------------------------
   if (!is.null(ranks)) {
@@ -293,8 +293,8 @@ prev_filter_pairs <- function(
   c1 <- dt[[col_g1]]
   c2 <- dt[[col_g2]]
   ok <- if (drop_na) (!is.na(c1) & !is.na(c2)) else rep(TRUE, nrow(dt))
-  lo <- data.table::fifelse(c1 <= c2, c1, c2)
-  hi <- data.table::fifelse(c1 <= c2, c2, c1)
+  lo <- ifelse(c1 <= c2, c1, c2)
+  hi <- ifelse(c1 <= c2, c2, c1)
   keep_any <- rep(FALSE, nrow(dt))
   for (pp in pairs_list) {
     tgt <- sort(as.character(pp))
@@ -318,7 +318,10 @@ prev_filter_pairs <- function(
   if (isTRUE(passed_only)) {
     pass_cols <- intersect(c("passed_rank_bh", "passed_rank_wbh"), names(dt))
     if (length(pass_cols)) {
-      pass_any <- Reduce(`|`, lapply(pass_cols, function(cc) data.table::fcoalesce(dt[[cc]], FALSE)))
+      pass_any <- Reduce(`|`, lapply(pass_cols, function(cc) {
+        ifelse(is.na(dt[[cc]]), FALSE, dt[[cc]])
+        }))
+
       dt <- dt[pass_any, , drop = FALSE]
     }
   }
@@ -329,7 +332,7 @@ prev_filter_pairs <- function(
     dt <- dt[, ..keep_cols]
   }
 
-  res <- data.table::setDF(dt)
+  res <- as.data.frame(dt)
 
   # --- preserve class/metadata for ph_prev_result ----------------------------
   if (inherits(df, "ph_prev_result")) {

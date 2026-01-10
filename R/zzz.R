@@ -7,7 +7,6 @@
 #' @importFrom Rcpp evalCpp
 #' @importFrom RcppParallel setThreadOptions
 #' @importFrom dplyr %>%
-#' @importFrom data.table :=
 ## usethis namespace: end
 NULL
 

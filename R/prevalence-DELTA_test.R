@@ -400,8 +400,7 @@ compute_delta <- function(
   subj_index <- match(pos_pairs$subject_id, subjects_order)
   pep_index <- match(pos_pairs$peptide_id, peptides_order)
 
-  hits_dt <- data.table::data.table(pep = pep_index, subj = subj_index)
-  hits_split <- split(hits_dt$subj, hits_dt$pep)
+  hits_split <- split(subj_index, pep_index)
 
   nonempty_pep_ids <- as.integer(names(hits_split))
   if (length(nonempty_pep_ids) == 0L) {

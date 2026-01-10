@@ -383,7 +383,6 @@ phip_convert_legacy <- function(
 #' @details
 #' - For parquet inputs, the reader uses `arrow::read_parquet()`.
 #' - For delimited text, the delimiter is inferred from the header.
-#' - If available, `data.table::fread()` is used for speed.
 #'
 #' @keywords internal
 .ph_auto_read_file <- function(path,
@@ -415,24 +414,13 @@ phip_convert_legacy <- function(
     n_semi <- lengths(regmatches(hdr, gregexpr(";", hdr, fixed = TRUE)))
     sep <- if (n_semi > n_comma) ";" else ","
 
-    if (requireNamespace("data.table", quietly = TRUE)) {
-      rlang::check_installed("data.table")
-      data.table::fread(path,
-                        sep          = sep,
-                        data.table   = FALSE,
-                        check.names  = FALSE,
-                        showProgress = FALSE,
-                        ...
-      )
-    } else {
-      utils::read.csv(path,
-                      header = TRUE,
-                      sep = sep,
-                      check.names = FALSE,
-                      stringsAsFactors = FALSE,
-                      ...
-      )
-    }
+    utils::read.csv(path,
+                    header = TRUE,
+                    sep = sep,
+                    check.names = FALSE,
+                    stringsAsFactors = FALSE,
+                    ...
+    )
   }
 }
 
