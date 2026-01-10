@@ -605,13 +605,22 @@ phip_load_example_data <- local({
   ## ------------------------------------------------------------------------ ##
   ## 1.  locate base directory & read yaml (if any provided)                  ##
   ## ------------------------------------------------------------------------ ##
+  is_abs_path <- function(p) {
+    grepl("^(/|[A-Za-z]:[/\\\\])", p)
+  }
+  abs_path <- function(p, start = NULL) {
+    if (is.null(p)) return(p)
+    if (!is.null(start) && !is_abs_path(p)) p <- file.path(start, p)
+    normalizePath(p, winslash = "/", mustWork = FALSE)
+  }
+
   # Determine base_dir depending on which input source was provided
   base_dir <- if (!is.null(config_yaml)) {
     # 1) If a YAML config was given, take its folder
-    fs::path_dir(fs::path_abs(config_yaml))
+    dirname(abs_path(config_yaml))
   } else if (!is.null(data_long_path)) {
     # 2) If a data_long_path directory was given - use it
-    fs::path_dir(fs::path_abs(data_long_path))
+    dirname(abs_path(data_long_path))
   } else {
     # 3) Otherwise require at least a samples_file (or exist_file)
     .chk_cond(
@@ -620,7 +629,7 @@ phip_load_example_data <- local({
       you must supply 'samples_file' or 'exist_file'."
     )
     # pick samples_file if present, else exist_file, then take its parent folder
-    fs::path_dir(fs::path_abs(samples_file %||% exist_file))
+    dirname(abs_path(samples_file %||% exist_file))
   }
 
   yaml_cfg <- if (!is.null(config_yaml)) {
@@ -657,9 +666,10 @@ phip_load_example_data <- local({
     # to absolute
     if ((!is.null(val) && identical(validate, .chk_path)) ||
         (!is.null(val) && absolutize)) {
-      if (!fs::is_absolute_path(val)) {
-        val <- basename(val)
-        val <- fs::path_abs(val, start = base_dir)
+      if (!is_abs_path(val)) {
+        val <- abs_path(basename(val), start = base_dir)
+      } else {
+        val <- abs_path(val)
       }
     }
 
