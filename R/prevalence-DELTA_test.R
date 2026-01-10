@@ -740,8 +740,8 @@ compute_delta <- function(
       suffix = c("_g1", "_g2")
     ) |>
       dplyr::mutate(
-        idx_hits_g1 = purrr::map(idx_hits_g1, ~ .x %||% integer(0)),
-        idx_hits_g2 = purrr::map(idx_hits_g2, ~ .x %||% integer(0))
+        idx_hits_g1 = lapply(idx_hits_g1, function(x) x %||% integer(0)),
+        idx_hits_g2 = lapply(idx_hits_g2, function(x) x %||% integer(0))
       ) |>
       dplyr::arrange(peptide_id)
 
@@ -1065,7 +1065,7 @@ compute_delta <- function(
   }
 
   # ---- Collect results -------------------------------------------------------
-  rr <- purrr::compact(result_rows)
+  rr <- Filter(Negate(is.null), result_rows)
   res <- if (length(rr)) dplyr::bind_rows(rr) else tibble::tibble()
 
   # Return early if empty

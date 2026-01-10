@@ -830,9 +830,10 @@ deltaplot_interactive <- function(
   df_plot <- dplyr::bind_rows(top_neg, top_pos) |>
     dplyr::mutate(
       species_label = .data$feature,
-      species_label = forcats::fct_reorder(
+      species_label = stats::reorder(
         .data$species_label,
-        .data$stat_for_sort
+        .data$stat_for_sort,
+        FUN = stats::median
       ),
       stat_val = .data$stat_for_sort
     )

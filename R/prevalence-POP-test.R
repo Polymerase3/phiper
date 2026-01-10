@@ -1267,12 +1267,12 @@ ph_prevalence_compare <- function(x,
           .ph_log_info("collection complete", bullets = paste0("rows (post-collect): ", nrow(lib_min)))
         }
 
-        base_tbl <- purrr::map_dfr(ranks_needing_lib, function(rc) {
+        base_tbl <- dplyr::bind_rows(lapply(ranks_needing_lib, function(rc) {
           lib_min %>%
             dplyr::filter(!is.na(.data[[rc]])) %>%
             dplyr::distinct(.data[[rc]], peptide_id) %>%
             dplyr::count(rank = rc, feature = .data[[rc]], name = "n_peptides")
-        })
+        }))
 
         if ("peptide_id" %in% available_ranks) {
           pid_vals <- unique(res$feature[res$rank == "peptide_id"])
