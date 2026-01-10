@@ -234,30 +234,7 @@ theme_phip <- function(base_size = 14,
   stats::setNames(rep_len(palette, length(levels_vec)), levels_vec)
 }
 
-# ---- helpers -----------------------------------------------------------------
-# ---------- tiny logging shims (use your phiper ones if available) ----------
-.phi <- get0(".ph_log_info", ifnotfound = function(msg, step = "plot_beta_pcoa") {
-  cli::cat_line(sprintf(
-    "[%s] INFO  %s\n                 -> %s",
-    format(Sys.time(), "%H:%M:%S"), msg, step
-  ))
-})
-.phe <- get0(".ph_abort", ifnotfound = function(msg) {
-  rlang::abort(msg)
-})
-
 # ------------------------------- palette utils ------------------------------
-.get_palette <- function(n) {
-  pal <- get0("phip_palette", ifnotfound = NULL, inherits = TRUE)
-  if (is.null(pal)) {
-    return(scales::hue_pal()(n))
-  }
-  if (is.function(pal)) {
-    return(pal(n))
-  }
-  rep_len(pal, n)
-}
-
 
 # hex <-> rgb (robust, no named indexing; clamps to [0,1])
 .hex2rgb <- function(hex) {
@@ -319,14 +296,6 @@ theme_phip <- function(base_size = 14,
       stats::setNames(nms, axis_cols)
     }
   }
-}
-
-.centroids_df <- function(df, axes_cols, by) {
-  if (is.null(by) || !(by %in% names(df))) {
-    return(NULL)
-  }
-  stats::aggregate(df[axes_cols], by = list(df[[by]]), FUN = mean, na.rm = TRUE) |>
-    `names<-`(c(by, axes_cols))
 }
 
 # Shade points by time (continuous or fac) on top of base group color.
