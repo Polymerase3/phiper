@@ -64,7 +64,6 @@ Imports:
     DBI,
     dplyr,
     ggplot2,
-    htmltools,
     knitr,
     purrr,
     rlang,
