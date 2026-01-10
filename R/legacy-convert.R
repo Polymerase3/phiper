@@ -181,9 +181,6 @@ phip_convert_legacy <- function(
 #' @keywords internal
 .ph_legacy_read_duckdb_backend <- function(cfg,
                                            meta) {
-  rlang::check_installed(c("duckdb", "DBI", "dbplyr"),
-                         reason = "duckdb backend"
-  )
 
   cache_dir <- withr::local_tempdir("phiper_cache") # optional name-prefix
   duckdb_file <- file.path(cache_dir, "phip_cache.duckdb")

@@ -1755,7 +1755,6 @@ testthat::test_that("compute_distance: phip_data auto-detect and non-numeric val
 
 testthat::test_that("compute_distance: pivot_wider guard", {
   testthat::skip_if_not_installed("mockery")
-  testthat::skip_if_not_installed("dbplyr")
 
   dat <- data.frame(
     sample_id = c("s1", "s2"),

@@ -38,8 +38,7 @@ BugReports: https://github.com/Polymerase3/phiper/issues
 SystemRequirements: C++17
 LinkingTo: Rcpp, RcppParallel
 Suggests:
-    dbplyr,
-    duckdb,
+
     filelock,
     future,
     future.apply,
@@ -62,7 +61,9 @@ Imports:
     chk,
     cli,
     DBI,
+    dbplyr,
     dplyr,
+    duckdb,
     ggplot2,
     rlang,
     scales,
