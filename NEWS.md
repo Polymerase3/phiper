@@ -1,3 +1,8 @@
+# phiper 0.2.4
+
+- Updated the peptide library with the new annotations from Sasha
+- in the compute_distance --> fallback to collecting before pivoting
+
 # phiper 0.2.3
 
 - Added `small_mixture` to `phip_load_example_data`
