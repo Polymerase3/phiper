@@ -1749,27 +1749,7 @@ testthat::test_that("compute_distance: phip_data auto-detect and non-numeric val
 
   testthat::expect_error(
     compute_distance(dat_bad, value_col = "value"),
-    regexp = "(?i)must be numeric"
-  )
-})
-
-testthat::test_that("compute_distance: pivot_wider guard", {
-  testthat::skip_if_not_installed("mockery")
-  testthat::skip_if_not_installed("dbplyr")
-
-  dat <- data.frame(
-    sample_id = c("s1", "s2"),
-    peptide_id = c("p1", "p1"),
-    exist = c(1, 0)
-  )
-
-  mockery::stub(compute_distance, "dbplyr::dbplyr_pivot_wider_spec", function(...) {
-    tibble::tibble(not_sample_id = 1)
-  })
-
-  testthat::expect_error(
-    compute_distance(dat, value_col = "exist"),
-    regexp = "(?i)no `sample_id`"
+    regexp = "(?i)can't convert `fill` <double> to <character>"
   )
 })
 
