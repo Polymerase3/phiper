@@ -10,6 +10,17 @@ output_path <- "~/Documents/R/phiper/library-metadata/combined_library_15.01.26.
 
 peplib <- get_peptide_meta() %>% collect()
 
+cols_keep <- c(
+  "peptide_id","aa_seq","pos","len_seq","Fullname","Description",
+  "is_IEDB_or_cntrl","is_auto","is_infect","is_EBV","is_toxin","is_PNP",
+  "is_EM","is_MPA","is_patho","is_probio","is_IgA","is_flagellum",
+  "signalp6_slow","is_topgraph_new","is_allergens","domain","kingdom",
+  "phylum","class","order","family","genus","species","common"
+)
+
+peplib <- peplib %>%
+  dplyr::select(dplyr::any_of(cols_keep))
+
 sasha_peplib <- read_csv(
   input_path,
   col_types = cols(
