@@ -198,27 +198,6 @@ compute_distance <- function(ps,
     )
   }
 
-  # pivot_spec <- tidyr::build_wider_spec(
-  #   data = id_levels,
-  #   names_from = peptide_id,
-  #   values_from = !!value_sym
-  # )
-  #
-  # .ph_log_info("pivoting to wide abundance matrix in db.")
-  #
-  # # collecting only the columns needed for widening
-  # df_long <- dat |>
-  #   dplyr::select(sample_id, peptide_id, value) |>
-  #   dplyr::collect()
-  #
-  # wide_df <- df_long |>
-  #   tidyr::pivot_wider(
-  #     id_cols      = sample_id,
-  #     names_from   = peptide_id,
-  #     values_from  = value,
-  #     values_fill  = 0
-  #   )
-
   .ph_log_info("Collecting long table (sample_id, peptide_id, value).",
                step = "compute_distance")
 
