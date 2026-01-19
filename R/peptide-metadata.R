@@ -65,7 +65,7 @@ get_peptide_meta <- function(force_refresh = FALSE) {
       # 3. download raw RDS from the github repo
       url <- paste0(
         "https://raw.githubusercontent.com/Polymerase3/phiper/",
-        "master/library-metadata/",
+        "main/library-metadata/",
         "combined_library_15.01.26.rds"
       )
       tmp <- tempfile(fileext = ".rds")
