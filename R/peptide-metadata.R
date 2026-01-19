@@ -69,7 +69,7 @@ get_peptide_meta <- function(force_refresh = FALSE) {
         "combined_library_15.01.26.rds"
       )
       tmp <- tempfile(fileext = ".rds")
-      sha <- "56ed94b225c8e7e47e057b5d4489cee27049b27b32be9d295c8e0db757758f6a"
+      sha <- "86c167453b2d13135c3c4147e6deacdfbd9030bbac1f7420c409483f1ca71915"
 
       ## safe download (fallbacks if file changed, or if download does not
       ## succeed)
