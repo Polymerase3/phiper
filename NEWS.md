@@ -1,4 +1,4 @@
-# phiper 0.2.4
+# phiper 0.2.5
 
 - Removed 10 unused package dependencies (data.table, fs, htmltools, purrr, 
 forcats, filelock, arrow from suggests)
@@ -6,6 +6,11 @@ forcats, filelock, arrow from suggests)
 dependency management
 - Removed 360 lines of unused CAP/dispersion plotting functions and associated 
 documentation
+
+# phiper 0.2.4
+
+- Updated the peptide library with the new annotations from Sasha
+- in the compute_distance --> fallback to collecting before pivoting
 
 # phiper 0.2.3
 

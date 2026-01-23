@@ -198,21 +198,26 @@ compute_distance <- function(ps,
     )
   }
 
-  pivot_spec <- tidyr::build_wider_spec(
-    data = id_levels,
-    names_from = peptide_id,
-    values_from = !!value_sym
-  )
+  .ph_log_info("Collecting long table (sample_id, peptide_id, value).",
+               step = "compute_distance")
 
-  .ph_log_info("pivoting to wide abundance matrix in db.")
-
-  wide_df <- dbplyr::dbplyr_pivot_wider_spec(
-    data = dat,
-    spec = pivot_spec,
-    id_cols = sample_id,
-    values_fill = 0
-  ) |>
+  dat_small <- dat |>
+    dplyr::select(sample_id, peptide_id, !!value_sym) |>
     dplyr::collect()
+
+  # Replace NAs with 0 in abundance column
+  dat_small[[value_col]][is.na(dat_small[[value_col]])] <- 0
+
+  .ph_log_info("Pivoting to wide abundance matrix in R.",
+               step = "compute_distance")
+
+  wide_df <- dat_small |>
+    tidyr::pivot_wider(
+      id_cols     = sample_id,
+      names_from  = peptide_id,
+      values_from = !!value_sym,
+      values_fill = 0
+    )
 
   if (!"sample_id" %in% names(wide_df)) {
     .ph_abort("failed to construct wide abundance table (no `sample_id`).")
