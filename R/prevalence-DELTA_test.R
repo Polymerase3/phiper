@@ -17,8 +17,7 @@
 #'    }
 #'    where `x_k` is the number of samples with presence (`exist > 0`), `n_k`
 #'    is the number of distinct samples (or paired subjects), `\varepsilon` is
-#'    `smooth_eps_num`, and `\lambda` is `smooth_eps_den_mult`. Peptides with
-#'    \eqn{\max(\hat p_{g1}, \hat p_{g2}) <} `min_max_prev` are discarded.
+#'    `smooth_eps_num`, and `\lambda` is `smooth_eps_den_mult`.
 #'
 #' 2. **Per-peptide effect and z-score (`stat_mode`).**
 #'
@@ -159,8 +158,6 @@
 #'   smooth prevalence estimates. Default `0.5`.
 #' @param smooth_eps_den_mult Multiplicative factor \eqn{\lambda} applied to
 #'   the denominator epsilon in the smoothing formula. Default `2.0`.
-#' @param min_max_prev Minimum required value of `max(p1, p2)` for a peptide to
-#'   be retained in the analysis. Default `0.0` (no prevalence filter).
 #' @param weight_mode One of `c("equal", "se_invvar", "n_eff_sqrt")`,
 #'   controlling how peptide-level z-scores are weighted in the Stouffer
 #'   combination (see Details).
@@ -250,7 +247,6 @@ compute_delta <- function(
   B_permutations = 2000L,
   smooth_eps_num = 0.5,
   smooth_eps_den_mult = 2.0,
-  min_max_prev = 0.0,
   weight_mode = c("equal", "se_invvar", "n_eff_sqrt"),
   stat_mode = c("diff", "asin"),
   prev_strat = c("none", "decile"),
@@ -775,7 +771,6 @@ compute_delta <- function(
       seed             = seed_i,
       smooth_eps_num   = smooth_eps_num,
       smooth_eps_den   = smooth_eps_den_mult,
-      min_max_prev     = min_max_prev,
       weight_mode      = weight_mode,
       stat_mode        = stat_mode,
       prev_strat       = prev_strat,

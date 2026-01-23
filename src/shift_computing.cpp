@@ -179,7 +179,7 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
  * @param g1_rows, g2_rows IntegerVector (1-based): subject row indices per group (UNPAIRED).
  * @param hits_g1_paired, hits_g2_paired List: per-peptide IntegerVector of 1..P subject indices (PAIRED).
  * @param P int: number of paired subjects (PAIRED).
- * @param B, seed, smooth_eps_num, smooth_eps_den, min_max_prev, winsor_z numeric.
+ * @param B, seed, smooth_eps_num, smooth_eps_den, winsor_z numeric.
  * @param weight_mode, stat_mode, prev_strat, design strings.
  *
  * @return List with fields: n_peptides_used, m_eff, T_obs, T_null_mean, T_null_sd,
@@ -198,7 +198,6 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
                               const int seed,
                               const double smooth_eps_num,
                               const double smooth_eps_den,
-                              const double min_max_prev,
                               const std::string& weight_mode,
                               const std::string& stat_mode,
                               const std::string& prev_strat,
@@ -230,10 +229,8 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
       for (int w = 0; w < n_words_p; ++w) { s1 += pc64(M1[i][w]); s2 += pc64(M2[i][w]); }
       const double p1i = ( (double)s1 + smooth_eps_num ) / ( (double)P + smooth_eps_den * smooth_eps_num );
       const double p2i = ( (double)s2 + smooth_eps_num ) / ( (double)P + smooth_eps_den * smooth_eps_num );
-      if (std::max(p1i, p2i) >= min_max_prev) {
-        keep_idx.push_back(i);
-        p1.push_back(p1i); p2.push_back(p2i);
-      }
+      keep_idx.push_back(i);
+      p1.push_back(p1i); p2.push_back(p2i);
     }
 
     const int mu = (int)keep_idx.size();
@@ -317,9 +314,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         const double x2p = (double)c + (double)d;
         const double pA  = (x1p + smooth_eps_num) / ((double)P + smooth_eps_den * smooth_eps_num);
         const double pB  = (x2p + smooth_eps_num) / ((double)P + smooth_eps_den * smooth_eps_num);
-        if (std::max(pA, pB) >= min_max_prev) {
-          p1b.push_back(pA); p2b.push_back(pB);
-        }
+        p1b.push_back(pA); p2b.push_back(pB);
       }
 
       double Tb = 0.0;
@@ -396,7 +391,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
       );
     }
 
-    // Smoothed prevalences and filter by min_max_prev
+    // Smoothed prevalences
     std::vector<double> p1, p2, n1, n2;
     p1.reserve(m); p2.reserve(m); n1.reserve(m); n2.reserve(m);
     std::vector<int> keep_idx; keep_idx.reserve(m);
@@ -404,11 +399,9 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     for (int i = 0; i < m; ++i) {
       const double p1i = (x1[i] + smooth_eps_num) / (n1_const + smooth_eps_den * smooth_eps_num);
       const double p2i = (x2[i] + smooth_eps_num) / (n2_const + smooth_eps_den * smooth_eps_num);
-      if (std::max(p1i, p2i) >= min_max_prev) {
-        keep_idx.push_back(i);
-        p1.push_back(p1i); p2.push_back(p2i);
-        n1.push_back(n1_const); n2.push_back(n2_const);
-      }
+      keep_idx.push_back(i);
+      p1.push_back(p1i); p2.push_back(p2i);
+      n1.push_back(n1_const); n2.push_back(n2_const);
     }
 
     const int mu = (int)keep_idx.size();
@@ -502,9 +495,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         const double xB = (double)count_hits_col(reinterpret_cast<const uint8_t*>(RAW(bitset_raw)), n_words, col0, mask_B);
         const double pA = (xA + smooth_eps_num) / (n1b[0] + smooth_eps_den * smooth_eps_num);
         const double pB = (xB + smooth_eps_num) / (n2b[0] + smooth_eps_den * smooth_eps_num);
-        if (std::max(pA, pB) >= min_max_prev) {
-          p1b.push_back(pA); p2b.push_back(pB);
-        }
+        p1b.push_back(pA); p2b.push_back(pB);
       }
 
       double Tb = 0.0;
