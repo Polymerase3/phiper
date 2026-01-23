@@ -179,7 +179,7 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
  * @param g1_rows, g2_rows IntegerVector (1-based): subject row indices per group (UNPAIRED).
  * @param hits_g1_paired, hits_g2_paired List: per-peptide IntegerVector of 1..P subject indices (PAIRED).
  * @param P int: number of paired subjects (PAIRED).
- * @param B, seed, smooth_eps_num, smooth_eps_den, winsor_z numeric.
+ * @param B, seed, winsor_z numeric.
  * @param weight_mode, stat_mode, prev_strat, design strings.
  *
  * @return List with fields: n_peptides_used, m_eff, T_obs, T_null_mean, T_null_sd,
@@ -196,8 +196,6 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
                               const int P,
                               const int B,
                               const int seed,
-                              const double smooth_eps_num,
-                              const double smooth_eps_den,
                               const std::string& weight_mode,
                               const std::string& stat_mode,
                               const std::string& prev_strat,
@@ -227,8 +225,8 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
       // popcount masks
       uint32_t s1 = 0, s2 = 0;
       for (int w = 0; w < n_words_p; ++w) { s1 += pc64(M1[i][w]); s2 += pc64(M2[i][w]); }
-      const double p1i = ( (double)s1 + smooth_eps_num ) / ( (double)P + smooth_eps_den * smooth_eps_num );
-      const double p2i = ( (double)s2 + smooth_eps_num ) / ( (double)P + smooth_eps_den * smooth_eps_num );
+      const double p1i = (double)s1 / (double)P;
+      const double p2i = (double)s2 / (double)P;
       keep_idx.push_back(i);
       p1.push_back(p1i); p2.push_back(p2i);
     }
@@ -312,8 +310,8 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         }
         const double x1p = (double)a + (double)b2;
         const double x2p = (double)c + (double)d;
-        const double pA  = (x1p + smooth_eps_num) / ((double)P + smooth_eps_den * smooth_eps_num);
-        const double pB  = (x2p + smooth_eps_num) / ((double)P + smooth_eps_den * smooth_eps_num);
+        const double pA  = x1p / (double)P;
+        const double pB  = x2p / (double)P;
         p1b.push_back(pA); p2b.push_back(pB);
       }
 
@@ -391,14 +389,14 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
       );
     }
 
-    // Smoothed prevalences
+    // Prevalences
     std::vector<double> p1, p2, n1, n2;
     p1.reserve(m); p2.reserve(m); n1.reserve(m); n2.reserve(m);
     std::vector<int> keep_idx; keep_idx.reserve(m);
 
     for (int i = 0; i < m; ++i) {
-      const double p1i = (x1[i] + smooth_eps_num) / (n1_const + smooth_eps_den * smooth_eps_num);
-      const double p2i = (x2[i] + smooth_eps_num) / (n2_const + smooth_eps_den * smooth_eps_num);
+      const double p1i = x1[i] / n1_const;
+      const double p2i = x2[i] / n2_const;
       keep_idx.push_back(i);
       p1.push_back(p1i); p2.push_back(p2i);
       n1.push_back(n1_const); n2.push_back(n2_const);
@@ -483,7 +481,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         }
       }
 
-      // counts → smoothed p → filter → T_b
+      // counts --> p --> T_b
       std::vector<double> p1b; p1b.reserve(mu);
       std::vector<double> p2b; p2b.reserve(mu);
       std::vector<double> n1b(mu, (double)nA), n2b(mu, (double)nB);
@@ -493,8 +491,8 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         const int col0 = pep_cols[i_keep] - 1;
         const double xA = (double)count_hits_col(reinterpret_cast<const uint8_t*>(RAW(bitset_raw)), n_words, col0, mask_A);
         const double xB = (double)count_hits_col(reinterpret_cast<const uint8_t*>(RAW(bitset_raw)), n_words, col0, mask_B);
-        const double pA = (xA + smooth_eps_num) / (n1b[0] + smooth_eps_den * smooth_eps_num);
-        const double pB = (xB + smooth_eps_num) / (n2b[0] + smooth_eps_den * smooth_eps_num);
+        const double pA = xA / n1b[0];
+        const double pB = xB / n2b[0];
         p1b.push_back(pA); p2b.push_back(pB);
       }
 

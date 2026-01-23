@@ -10,14 +10,13 @@
 #' For each stratum `(rank, feature, group_col)` that defines an ordered pair of
 #' groups `(g1, g2)`, the procedure is:
 #'
-#' 1. **Smoothed peptide-level prevalences.**
-#'    For each peptide, smoothed prevalences in `g1` and `g2` are
+#' 1. **Peptide-level prevalences.**
+#'    For each peptide, prevalences in `g1` and `g2` are
 #'    \deqn{
-#'      \hat p_k = \frac{x_k + \varepsilon}{n_k + \lambda \varepsilon},\quad k \in \{g1, g2\},
+#'      \hat p_k = \frac{x_k}{n_k},\quad k \in \{g1, g2\},
 #'    }
-#'    where `x_k` is the number of samples with presence (`exist > 0`), `n_k`
-#'    is the number of distinct samples (or paired subjects), `\varepsilon` is
-#'    `smooth_eps_num`, and `\lambda` is `smooth_eps_den_mult`.
+#'    where `x_k` is the number of samples with presence (`exist > 0`) and `n_k`
+#'    is the number of distinct samples (or paired subjects).
 #'
 #' 2. **Per-peptide effect and z-score (`stat_mode`).**
 #'
@@ -154,10 +153,6 @@
 #' @param interaction_sep Separator for interaction values. Default `"::"`.
 #' @param B_permutations Number of permutations `B` used for the permutation
 #'   p-value. Default `2000L`. Must be at least 100.
-#' @param smooth_eps_num Laplace numerator epsilon \eqn{\varepsilon} used to
-#'   smooth prevalence estimates. Default `0.5`.
-#' @param smooth_eps_den_mult Multiplicative factor \eqn{\lambda} applied to
-#'   the denominator epsilon in the smoothing formula. Default `2.0`.
 #' @param weight_mode One of `c("equal", "se_invvar", "n_eff_sqrt")`,
 #'   controlling how peptide-level z-scores are weighted in the Stouffer
 #'   combination (see Details).
@@ -245,8 +240,6 @@ compute_delta <- function(
   combine_cols = NULL,
   interaction_sep = "::",
   B_permutations = 2000L,
-  smooth_eps_num = 0.5,
-  smooth_eps_den_mult = 2.0,
   weight_mode = c("equal", "se_invvar", "n_eff_sqrt"),
   stat_mode = c("diff", "asin"),
   prev_strat = c("none", "decile"),
@@ -769,8 +762,6 @@ compute_delta <- function(
       P                = as.integer(P),
       B                = as.integer(B_permutations),
       seed             = seed_i,
-      smooth_eps_num   = smooth_eps_num,
-      smooth_eps_den   = smooth_eps_den_mult,
       weight_mode      = weight_mode,
       stat_mode        = stat_mode,
       prev_strat       = prev_strat,
