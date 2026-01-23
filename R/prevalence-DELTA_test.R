@@ -33,6 +33,25 @@
 #'                 {\sqrt{1 / (4 n_{g1}) + 1 / (4 n_{g2})}} .
 #'      }
 #'
+#'    - `"score"`: pooled score z for equality of proportions (2×2 score test),
+#'      using raw proportions \eqn{\tilde p_k = x_k / n_k} and pooled
+#'      \eqn{\tilde p = (x_1 + x_2)/(n_1 + n_2)}:
+#'      \deqn{
+#'        z = \frac{\tilde p_{g2} - \tilde p_{g1}}
+#'                 {\sqrt{\tilde p(1-\tilde p)\left(1/n_{g1} + 1/n_{g2}\right)}} .
+#'      }
+#'
+#'    - `"srlr"`: signed root likelihood ratio for \eqn{H_0: p_{g1}=p_{g2}}:
+#'      \deqn{
+#'        LR = 2\left[\ell(\hat p_{g1};x_1,n_1)+\ell(\hat p_{g2};x_2,n_2)
+#'                  -\ell(\hat p;x_1,n_1)-\ell(\hat p;x_2,n_2)\right],
+#'      }
+#'      \deqn{
+#'        z = \mathrm{sign}(\hat p_{g2}-\hat p_{g1})\sqrt{LR},
+#'      }
+#'      where \eqn{\ell(p;x,n)=x\log p+(n-x)\log(1-p)} and
+#'      \eqn{\hat p_{gk}=x_k/n_k}, \eqn{\hat p=(x_1+x_2)/(n_1+n_2)}.
+#'
 #'    Each \eqn{z_i} is then **winsorized** to \eqn{\pm} `winsor_z`.
 #'
 #' 3. **Weights (`weight_mode`).**
@@ -156,8 +175,8 @@
 #' @param weight_mode One of `c("equal", "se_invvar", "n_eff_sqrt")`,
 #'   controlling how peptide-level z-scores are weighted in the Stouffer
 #'   combination (see Details).
-#' @param stat_mode One of `c("diff", "asin")`, determining whether z-scores
-#'   are based on prevalence differences or the arcsin–sqrt transform.
+#' @param stat_mode One of `c("diff", "asin", "score", "srlr")`, determining
+#'   the peptide-level test statistic (see Details).
 #' @param prev_strat One of `c("none", "decile")`. If `"decile"`, the Stouffer
 #'   statistic is computed within prevalence deciles and the mean of
 #'   decile-level z-scores is used as the global test statistic.
@@ -241,7 +260,7 @@ compute_delta <- function(
   interaction_sep = "::",
   B_permutations = 2000L,
   weight_mode = c("equal", "se_invvar", "n_eff_sqrt"),
-  stat_mode = c("diff", "asin"),
+  stat_mode = c("diff", "asin", "score", "srlr"),
   prev_strat = c("none", "decile"),
   winsor_z = 4.0,
   rank_feature_keep = NULL,
@@ -258,6 +277,9 @@ compute_delta <- function(
   if (!is.null(paired_by)) chk::chk_string(paired_by)
   chk::chk_number(B_permutations)
   chk::chk_true(B_permutations >= 100)
+  weight_mode <- match.arg(weight_mode)
+  stat_mode <- match.arg(stat_mode)
+  prev_strat <- match.arg(prev_strat)
 
   # --- 1) Prepare data once ---------------------------------------------------
   # Required columns from `x`

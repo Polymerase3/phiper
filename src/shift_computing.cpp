@@ -69,8 +69,39 @@ struct CombineOut {
   std::vector<double> delta;
 };
 
+static inline double ll_binom(double x, double n, double p) {
+  if (p <= 0.0) {
+    return (x > 0.0) ? -std::numeric_limits<double>::infinity() : 0.0;
+  }
+  if (p >= 1.0) {
+    return ((n - x) > 0.0) ? -std::numeric_limits<double>::infinity() : 0.0;
+  }
+  double out = 0.0;
+  if (x > 0.0) out += x * std::log(p);
+  const double nx = n - x;
+  if (nx > 0.0) out += nx * std::log1p(-p);
+  return out;
+}
+
+static inline bool score_boundary(double x1, double n1, double x2, double n2) {
+  const double total = x1 + x2;
+  const double N = n1 + n2;
+  return (total <= 0.0) || (N > 0.0 && total >= N);
+}
+
+static inline double score_denom_from_counts(double x1, double n1,
+                                             double x2, double n2) {
+  const double N = n1 + n2;
+  if (N <= 0.0 || n1 <= 0.0 || n2 <= 0.0) return 0.0;
+  const double p0 = (x1 + x2) / N;
+  const double v = p0 * (1.0 - p0) * (1.0 / n1 + 1.0 / n2);
+  return (v > 0.0) ? std::sqrt(v) : 0.0;
+}
+
 static CombineOut combine_T_internal(const std::vector<double>& p1,
                                      const std::vector<double>& p2,
+                                     const std::vector<double>& x1,
+                                     const std::vector<double>& x2,
                                      const std::vector<double>& n1,
                                      const std::vector<double>& n2,
                                      double winsor_z,
@@ -87,6 +118,33 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
     if (stat_mode == "asin") {
       const double den = std::sqrt( 1.0/(4.0*std::max(n1[i],1.0)) + 1.0/(4.0*std::max(n2[i],1.0)) );
       z[i] = (std::asin(std::sqrt(p2[i])) - std::asin(std::sqrt(p1[i]))) / den;
+    } else if (stat_mode == "score" || stat_mode == "srlr") {
+      const double n1i = n1[i];
+      const double n2i = n2[i];
+      const double x1i = x1[i];
+      const double x2i = x2[i];
+
+      if (stat_mode == "score" && score_boundary(x1i, n1i, x2i, n2i)) {
+        z[i] = 0.0;
+      } else {
+        const double p1m = (n1i > 0.0) ? (x1i / n1i) : 0.0;
+        const double p2m = (n2i > 0.0) ? (x2i / n2i) : 0.0;
+        const long double lhs = (long double)x2i * (long double)n1i;
+        const long double rhs = (long double)x1i * (long double)n2i;
+        const double sign = (lhs > rhs) ? 1.0 : (lhs < rhs) ? -1.0 : 0.0;
+
+        if (stat_mode == "score") {
+          const double den = score_denom_from_counts(x1i, n1i, x2i, n2i);
+          z[i] = (den > 0.0) ? ((p2m - p1m) / den) : 0.0;
+        } else { // "srlr"
+          const double p0 = (n1i + n2i > 0.0) ? ((x1i + x2i) / (n1i + n2i)) : 0.0;
+          const double ll_alt  = ll_binom(x1i, n1i, p1m) + ll_binom(x2i, n2i, p2m);
+          const double ll_null = ll_binom(x1i, n1i, p0)  + ll_binom(x2i, n2i, p0);
+          double LR = 2.0 * (ll_alt - ll_null);
+          if (LR < 0.0 && LR > -1e-12) LR = 0.0;
+          z[i] = (LR > 0.0) ? (sign * std::sqrt(LR)) : 0.0;
+        }
+      }
     } else { // diff
       const double se = std::sqrt(p1[i]*(1.0-p1[i])/std::max(n1[i],1.0) + p2[i]*(1.0-p2[i])/std::max(n2[i],1.0));
       z[i] = d / std::max(se, 1e-12);
@@ -96,7 +154,18 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
   }
 
   // weights
-  if (weight_mode == "se_invvar" && stat_mode == "asin") {
+  if (weight_mode == "se_invvar" && stat_mode == "srlr") {
+    std::fill(w.begin(), w.end(), 1.0);
+  } else if (weight_mode == "se_invvar" && stat_mode == "score") {
+    for (int i = 0; i < m; ++i) {
+      if (score_boundary(x1[i], n1[i], x2[i], n2[i])) {
+        w[i] = 0.0;
+      } else {
+        const double den = score_denom_from_counts(x1[i], n1[i], x2[i], n2[i]);
+        w[i] = 1.0 / std::max(den, 1e-6);
+      }
+    }
+  } else if (weight_mode == "se_invvar" && stat_mode == "asin") {
     for (int i = 0; i < m; ++i) {
       w[i] = 1.0 / std::sqrt( 1.0/(4.0*std::max(n1[i],1.0)) + 1.0/(4.0*std::max(n2[i],1.0)) );
     }
@@ -216,6 +285,8 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     std::vector< std::vector<uint64_t> > M2 = lists_to_masks(hits_g2_paired, n_words_p);
 
     // Observed counts x1=|S1|, x2=|S2|; n1=n2=P (constant)
+    std::vector<double> x1; x1.reserve(m);
+    std::vector<double> x2; x2.reserve(m);
     std::vector<double> p1; p1.reserve(m);
     std::vector<double> p2; p2.reserve(m);
     std::vector<double> n1(m, (double)P), n2(m, (double)P);
@@ -225,9 +296,12 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
       // popcount masks
       uint32_t s1 = 0, s2 = 0;
       for (int w = 0; w < n_words_p; ++w) { s1 += pc64(M1[i][w]); s2 += pc64(M2[i][w]); }
-      const double p1i = (double)s1 / (double)P;
-      const double p2i = (double)s2 / (double)P;
+      const double x1i = (double)s1;
+      const double x2i = (double)s2;
+      const double p1i = x1i / (double)P;
+      const double p2i = x2i / (double)P;
       keep_idx.push_back(i);
+      x1.push_back(x1i); x2.push_back(x2i);
       p1.push_back(p1i); p2.push_back(p2i);
     }
 
@@ -252,7 +326,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     n2.assign(mu, (double)P);
 
     // Observed T
-    CombineOut obs = combine_T_internal(p1, p2, n1, n2, winsor_z, weight_mode, stat_mode, prev_strat);
+    CombineOut obs = combine_T_internal(p1, p2, x1, x2, n1, n2, winsor_z, weight_mode, stat_mode, prev_strat);
 
     // Moments
     double max_delta = 0.0;  // max absolute delta
@@ -295,6 +369,8 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
       // For each peptide, counts after flip:
       // x1' = pop(S1 & ~F) + pop(S2 & F)
       // x2' = pop(S2 & ~F) + pop(S1 & F)
+      std::vector<double> x1b; x1b.reserve(mu);
+      std::vector<double> x2b; x2b.reserve(mu);
       std::vector<double> p1b; p1b.reserve(mu);
       std::vector<double> p2b; p2b.reserve(mu);
 
@@ -312,13 +388,14 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         const double x2p = (double)c + (double)d;
         const double pA  = x1p / (double)P;
         const double pB  = x2p / (double)P;
+        x1b.push_back(x1p); x2b.push_back(x2p);
         p1b.push_back(pA); p2b.push_back(pB);
       }
 
       double Tb = 0.0;
       if (!p1b.empty()) {
         std::vector<double> n1b(p1b.size(), (double)P), n2b(p2b.size(), (double)P);
-        Tb = combine_T_internal(p1b, p2b, n1b, n2b, winsor_z, weight_mode, stat_mode, prev_strat).T_obs;
+        Tb = combine_T_internal(p1b, p2b, x1b, x2b, n1b, n2b, winsor_z, weight_mode, stat_mode, prev_strat).T_obs;
       }
 
       ++n_mom;
@@ -419,7 +496,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     }
 
     // Observed T
-    CombineOut obs = combine_T_internal(p1, p2, n1, n2, winsor_z, weight_mode, stat_mode, prev_strat);
+    CombineOut obs = combine_T_internal(p1, p2, x1, x2, n1, n2, winsor_z, weight_mode, stat_mode, prev_strat);
 
     // Moments
     double max_delta = 0.0;  // max absolute delta
@@ -482,6 +559,8 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
       }
 
       // counts --> p --> T_b
+      std::vector<double> x1b; x1b.reserve(mu);
+      std::vector<double> x2b; x2b.reserve(mu);
       std::vector<double> p1b; p1b.reserve(mu);
       std::vector<double> p2b; p2b.reserve(mu);
       std::vector<double> n1b(mu, (double)nA), n2b(mu, (double)nB);
@@ -493,6 +572,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         const double xB = (double)count_hits_col(reinterpret_cast<const uint8_t*>(RAW(bitset_raw)), n_words, col0, mask_B);
         const double pA = xA / n1b[0];
         const double pB = xB / n2b[0];
+        x1b.push_back(xA); x2b.push_back(xB);
         p1b.push_back(pA); p2b.push_back(pB);
       }
 
@@ -500,7 +580,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
       if (!p1b.empty()) {
         n1b.assign(p1b.size(), (double)nA);
         n2b.assign(p2b.size(), (double)nB);
-        Tb = combine_T_internal(p1b, p2b, n1b, n2b, winsor_z, weight_mode, stat_mode, prev_strat).T_obs;
+        Tb = combine_T_internal(p1b, p2b, x1b, x2b, n1b, n2b, winsor_z, weight_mode, stat_mode, prev_strat).T_obs;
       }
 
       ++n_mom;
