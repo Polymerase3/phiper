@@ -400,8 +400,7 @@ compute_delta <- function(
   subj_index <- match(pos_pairs$subject_id, subjects_order)
   pep_index <- match(pos_pairs$peptide_id, peptides_order)
 
-  hits_dt <- data.table::data.table(pep = pep_index, subj = subj_index)
-  hits_split <- split(hits_dt$subj, hits_dt$pep)
+  hits_split <- split(subj_index, pep_index)
 
   nonempty_pep_ids <- as.integer(names(hits_split))
   if (length(nonempty_pep_ids) == 0L) {
@@ -741,8 +740,8 @@ compute_delta <- function(
       suffix = c("_g1", "_g2")
     ) |>
       dplyr::mutate(
-        idx_hits_g1 = purrr::map(idx_hits_g1, ~ .x %||% integer(0)),
-        idx_hits_g2 = purrr::map(idx_hits_g2, ~ .x %||% integer(0))
+        idx_hits_g1 = lapply(idx_hits_g1, function(x) x %||% integer(0)),
+        idx_hits_g2 = lapply(idx_hits_g2, function(x) x %||% integer(0))
       ) |>
       dplyr::arrange(peptide_id)
 
@@ -1066,7 +1065,7 @@ compute_delta <- function(
   }
 
   # ---- Collect results -------------------------------------------------------
-  rr <- purrr::compact(result_rows)
+  rr <- Filter(Negate(is.null), result_rows)
   res <- if (length(rr)) dplyr::bind_rows(rr) else tibble::tibble()
 
   # Return early if empty
@@ -1131,10 +1130,6 @@ compute_delta <- function(
 }
 
 .progress_init <- function(path) {
-  if (!requireNamespace("filelock", quietly = TRUE)) {
-    .ph_abort("`filelock` package required for progress logging.
-              Install it or disable logging.")
-  }
   if (file.exists(path)) unlink(path)
   con <- file(path, open = "wb")
   on.exit(try(close(con), silent = TRUE), add = TRUE)
@@ -1144,9 +1139,24 @@ compute_delta <- function(
 
 .progress_lock_path <- function(p) paste0(p, ".lock")
 
+.progress_lock <- function(lock_path, timeout_ms = 60000, poll_sec = 0.05) {
+  start_time <- Sys.time()
+  repeat {
+    if (file.create(lock_path)) {
+      return(lock_path)
+    }
+    if (as.numeric(difftime(Sys.time(), start_time, units = "secs")) * 1000 >=
+        timeout_ms) {
+      .ph_abort("Timed out waiting for progress lock. Disable logging or try
+                again.")
+    }
+    Sys.sleep(poll_sec)
+  }
+}
+
 .progress_add <- function(path, delta) {
-  lk <- filelock::lock(.progress_lock_path(path), timeout = 60000)
-  on.exit(try(filelock::unlock(lk), silent = TRUE), add = TRUE)
+  lock_path <- .progress_lock(.progress_lock_path(path), timeout_ms = 60000)
+  on.exit(try(unlink(lock_path), silent = TRUE), add = TRUE)
 
   cur <- 0
   if (file.exists(path)) {

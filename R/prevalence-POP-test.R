@@ -249,7 +249,7 @@ prev_filter_pairs <- function(
   if (!all(needed %in% names(df))) stop("prev_filter_pairs: df is missing required columns: ", paste(setdiff(needed, names(df)), collapse = ", "))
 
   # no mutation of original
-  dt <- data.table::as.data.table(df)
+  dt <- as.data.frame(df)
 
   # --- optional rank pre-filter (robust to scoping) --------------------------
   if (!is.null(ranks)) {
@@ -293,8 +293,8 @@ prev_filter_pairs <- function(
   c1 <- dt[[col_g1]]
   c2 <- dt[[col_g2]]
   ok <- if (drop_na) (!is.na(c1) & !is.na(c2)) else rep(TRUE, nrow(dt))
-  lo <- data.table::fifelse(c1 <= c2, c1, c2)
-  hi <- data.table::fifelse(c1 <= c2, c2, c1)
+  lo <- ifelse(c1 <= c2, c1, c2)
+  hi <- ifelse(c1 <= c2, c2, c1)
   keep_any <- rep(FALSE, nrow(dt))
   for (pp in pairs_list) {
     tgt <- sort(as.character(pp))
@@ -318,7 +318,10 @@ prev_filter_pairs <- function(
   if (isTRUE(passed_only)) {
     pass_cols <- intersect(c("passed_rank_bh", "passed_rank_wbh"), names(dt))
     if (length(pass_cols)) {
-      pass_any <- Reduce(`|`, lapply(pass_cols, function(cc) data.table::fcoalesce(dt[[cc]], FALSE)))
+      pass_any <- Reduce(`|`, lapply(pass_cols, function(cc) {
+        ifelse(is.na(dt[[cc]]), FALSE, dt[[cc]])
+        }))
+
       dt <- dt[pass_any, , drop = FALSE]
     }
   }
@@ -329,7 +332,7 @@ prev_filter_pairs <- function(
     dt <- dt[, ..keep_cols]
   }
 
-  res <- data.table::setDF(dt)
+  res <- as.data.frame(dt)
 
   # --- preserve class/metadata for ph_prev_result ----------------------------
   if (inherits(df, "ph_prev_result")) {
@@ -1264,12 +1267,12 @@ ph_prevalence_compare <- function(x,
           .ph_log_info("collection complete", bullets = paste0("rows (post-collect): ", nrow(lib_min)))
         }
 
-        base_tbl <- purrr::map_dfr(ranks_needing_lib, function(rc) {
+        base_tbl <- dplyr::bind_rows(lapply(ranks_needing_lib, function(rc) {
           lib_min %>%
             dplyr::filter(!is.na(.data[[rc]])) %>%
             dplyr::distinct(.data[[rc]], peptide_id) %>%
             dplyr::count(rank = rc, feature = .data[[rc]], name = "n_peptides")
-        })
+        }))
 
         if ("peptide_id" %in% available_ranks) {
           pid_vals <- unique(res$feature[res$rank == "peptide_id"])
@@ -1479,9 +1482,6 @@ write_result.ph_prev_result <- function(x,
     if (format == "xlsx" && !requireNamespace("openxlsx", quietly = TRUE)) {
       .ph_abort("package 'openxlsx' required for .xlsx output (install it with install.packages('openxlsx'))")
     }
-    if (format == "parquet" && !requireNamespace("arrow", quietly = TRUE)) {
-      .ph_abort("package 'arrow' required for .parquet output (install it with install.packages('arrow'))")
-    }
     if (format == "csv" && !requireNamespace("readr", quietly = TRUE)) {
       .ph_warn("package 'readr' not available; falling back to utils::write.csv")
     }
@@ -1620,16 +1620,13 @@ write_result.ph_prev_result <- function(x,
     }
 
     if (format == "parquet") {
-      if (!requireNamespace("arrow", quietly = TRUE)) {
-        .ph_abort("arrow required for parquet writing")
-      }
       if (length(ranks) <= 1 || !isTRUE(sheet_by_rank)) {
         out_df <- df
         if (nrow(out_df)) out_df <- out_df[sort_key(out_df), , drop = FALSE]
         if (file.exists(path) && !isTRUE(overwrite)) {
           .ph_abort("path exists; set overwrite = TRUE to replace it", bullets = path)
         }
-        arrow::write_parquet(out_df, path)
+        export_parquet(out_df, path)
         .ph_log_ok("wrote parquet file", bullets = path)
         return(invisible(path))
       } else {
@@ -1643,7 +1640,7 @@ write_result.ph_prev_result <- function(x,
           if (file.exists(fname) && !isTRUE(overwrite)) {
             .ph_abort("path exists; set overwrite = TRUE to replace it", bullets = fname)
           }
-          arrow::write_parquet(df_r, fname)
+          export_parquet(df_r, fname)
           out_files[i] <- fname
           .ph_log_info("wrote parquet for rank", bullets = sprintf("%s -> %s", r, fname))
         }

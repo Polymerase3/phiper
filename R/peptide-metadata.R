@@ -164,7 +164,7 @@ get_peptide_meta <- function(force_refresh = FALSE) {
                            dest,
                            sha_expected = NULL) {
   ## setup
-  fs::dir_create(fs::path_dir(dest))
+  dir.create(dirname(dest), recursive = TRUE, showWarnings = FALSE)
   methods <- c("", "libcurl", "curl")
   ok <- FALSE
 
@@ -203,7 +203,7 @@ get_peptide_meta <- function(force_refresh = FALSE) {
   }
 
   ## Print out error if download did not succeed
-  if (!ok || !fs::file_exists(dest) || fs::file_info(dest)$size == 0) {
+  if (!ok || !file.exists(dest) || isTRUE(file.info(dest)$size == 0)) {
     .ph_abort(
       headline = "Failed to download file.",
       step = "download.file",

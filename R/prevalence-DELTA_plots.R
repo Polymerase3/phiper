@@ -684,16 +684,14 @@ deltaplot_interactive <- function(
 
   plt <- plt |>
     plotly::layout(
-      title = list(text = htmltools::HTML(
-        paste0(
-          plot_title %||% sprintf("Per-peptide shift vs pooled prevalence
-                                  ( %s \u2212 %s )", g2_lab, g1_lab),
-          if (!is.null(plot_subtitle)) {
-            sprintf("<br><sup>%s</sup>", plot_subtitle)
-          } else {
-            ""
-          }
-        )
+      title = list(text = paste0(
+        plot_title %||% sprintf("Per-peptide shift vs pooled prevalence
+                                ( %s \u2212 %s )", g2_lab, g1_lab),
+        if (!is.null(plot_subtitle)) {
+          sprintf("<br><sup>%s</sup>", plot_subtitle)
+        } else {
+          ""
+        }
       )),
       xaxis = list(
         title = sprintf("Pooled prevalence (%s & %s)", g1_lab, g2_lab),
@@ -832,9 +830,10 @@ deltaplot_interactive <- function(
   df_plot <- dplyr::bind_rows(top_neg, top_pos) |>
     dplyr::mutate(
       species_label = .data$feature,
-      species_label = forcats::fct_reorder(
+      species_label = stats::reorder(
         .data$species_label,
-        .data$stat_for_sort
+        .data$stat_for_sort,
+        FUN = stats::median
       ),
       stat_val = .data$stat_for_sort
     )
@@ -2105,30 +2104,28 @@ ecdf_plot_interactive <- function(
       name = g2_lab
     ) |>
     plotly::layout(
-      title = list(text = htmltools::HTML(
-        paste0(
-          plot_title %||% sprintf(
-            "ECDF of per-peptide prevalence ( %s vs %s )",
-            g2_lab, g1_lab
-          ),
-          if (!is.null(plot_subtitle) || !is.null(ks_txt)) {
-            sub <- plot_subtitle %||% ""
-            km <- if (!is.null(ks_txt)) {
-              sprintf(
-                "%s | Delta-median = %s", ks_txt,
-                fmt_pct(dmed)
-              )
-            } else {
-              ""
-            }
+      title = list(text = paste0(
+        plot_title %||% sprintf(
+          "ECDF of per-peptide prevalence ( %s vs %s )",
+          g2_lab, g1_lab
+        ),
+        if (!is.null(plot_subtitle) || !is.null(ks_txt)) {
+          sub <- plot_subtitle %||% ""
+          km <- if (!is.null(ks_txt)) {
             sprintf(
-              "<br><sup>%s%s%s</sup>",
-              sub, if (nzchar(sub) && nzchar(km)) " - " else "", km
+              "%s | Delta-median = %s", ks_txt,
+              fmt_pct(dmed)
             )
           } else {
             ""
           }
-        )
+          sprintf(
+            "<br><sup>%s%s%s</sup>",
+            sub, if (nzchar(sub) && nzchar(km)) " - " else "", km
+          )
+        } else {
+          ""
+        }
       )),
       xaxis = list(title = "Prevalence", tickformat = ".0%", range = c(0, 1)),
       yaxis = list(title = "ECDF", tickformat = ".0%", range = c(0, 1)),

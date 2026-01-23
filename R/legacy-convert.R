@@ -181,9 +181,6 @@ phip_convert_legacy <- function(
 #' @keywords internal
 .ph_legacy_read_duckdb_backend <- function(cfg,
                                            meta) {
-  rlang::check_installed(c("duckdb", "DBI", "dbplyr"),
-                         reason = "duckdb backend"
-  )
 
   cache_dir <- withr::local_tempdir("phiper_cache") # optional name-prefix
   duckdb_file <- file.path(cache_dir, "phip_cache.duckdb")
@@ -373,17 +370,13 @@ phip_convert_legacy <- function(
 #' @title Read CSV/TSV/Parquet with delimiter sniffing
 #'
 #' @description `.ph_auto_read_file()` loads delimited text or parquet files,
-#' detecting the delimiter for text inputs and using Arrow for parquet.
+#' detecting the delimiter for text inputs and using duckdb and DBI for parquet.
 #'
 #' @param path Character scalar. Path to a CSV/TSV or parquet file.
 #' @param ... Additional arguments passed to the underlying reader.
 #'
 #' @return A data.frame containing the parsed file contents.
 #'
-#' @details
-#' - For parquet inputs, the reader uses `arrow::read_parquet()`.
-#' - For delimited text, the delimiter is inferred from the header.
-#' - If available, `data.table::fread()` is used for speed.
 #'
 #' @keywords internal
 .ph_auto_read_file <- function(path,
@@ -397,14 +390,22 @@ phip_convert_legacy <- function(
   ##                1.  PARQUET branch                                  ##
   ## ------------------------------------------------------------------ ##
   if (ext %in% c("parquet", "parq", "pq")) {
-    ## to avoid additional dependencies load the data using arrow, which
-    ## which is already listed in the dependencies
-    rlang::check_installed("arrow")
 
-    arrow::read_parquet(path,
-                        as_data_frame = TRUE,
-                        ...
+    con <- DBI::dbConnect(duckdb::duckdb(), dbdir = ":memory:")
+    on.exit(try(DBI::dbDisconnect(con, shutdown = TRUE), silent = TRUE), add = TRUE)
+
+    tbl_name <- paste0("ph_tmp_parquet_", format(Sys.time(), "%Y%m%d_%H%M%S"))
+    tbl_q <- DBI::dbQuoteIdentifier(con, tbl_name)
+    path_q <- DBI::dbQuoteString(con, path)
+    DBI::dbExecute(
+      con,
+      sprintf(
+        "CREATE TABLE %s AS
+           SELECT * FROM parquet_scan(%s);",
+        tbl_q, path_q
+      )
     )
+    DBI::dbReadTable(con, tbl_name)
   } else {
     ## ------------------------------------------------------------------ ##
     ##                2.  CSV / TSV branch (original)                     ##
@@ -415,24 +416,13 @@ phip_convert_legacy <- function(
     n_semi <- lengths(regmatches(hdr, gregexpr(";", hdr, fixed = TRUE)))
     sep <- if (n_semi > n_comma) ";" else ","
 
-    if (requireNamespace("data.table", quietly = TRUE)) {
-      rlang::check_installed("data.table")
-      data.table::fread(path,
-                        sep          = sep,
-                        data.table   = FALSE,
-                        check.names  = FALSE,
-                        showProgress = FALSE,
-                        ...
-      )
-    } else {
-      utils::read.csv(path,
-                      header = TRUE,
-                      sep = sep,
-                      check.names = FALSE,
-                      stringsAsFactors = FALSE,
-                      ...
-      )
-    }
+    utils::read.csv(path,
+                    header = TRUE,
+                    sep = sep,
+                    check.names = FALSE,
+                    stringsAsFactors = FALSE,
+                    ...
+    )
   }
 }
 

@@ -55,7 +55,7 @@ print.phip_data <- function(x, ...) {
   # ---- contrasts ------------------------------------------------------------
   if (!is.null(x$comparisons)) {
     cat(cli::col_cyan("contrasts:"), "\n")
-    cat(paste0(knitr::kable(x$comparisons, format = "simple"), collapse = "\n"))
+    cat(paste0(utils::capture.output(print(x$comparisons, row.names = FALSE)), collapse = "\n"))
     cat("\n\n")
   }
 
@@ -194,7 +194,7 @@ get_peptide_library <- function(x) {
 #' @note The export is performed directly and efficiently from the
 #' database/lazy table without reading all data into memory.
 #'
-#' @param x   A <phip_data> object.
+#' @param x   A <phip_data> object or a data frame.
 #' @param path File path (character) to save the output `.parquet` file.
 #'
 #' @return NULL (invisibly).
@@ -210,13 +210,23 @@ get_peptide_library <- function(x) {
 #' @importFrom DBI sqlInterpolate dbQuoteString dbExecute
 #' @export
 export_parquet <- function(x, path) {
-  .check_pd(x)
   .chk_extension(path, "path", c("parquet", "parq", "pq", "pqt"))
   .chk_path(dirname(path), "path", is_dir=TRUE)
 
-  con <- dbplyr::remote_con(x$data_long)
+  if (inherits(x, "phip_data")) {
+    con <- dbplyr::remote_con(x$data_long)
+    whole_file_qry <- dbplyr::sql_render(x$data_long)
+  } else if (is.data.frame(x)) {
 
-  whole_file_qry <- dbplyr::sql_render(x$data_long)
+    con <- DBI::dbConnect(duckdb::duckdb(), dbdir = ":memory:")
+    on.exit(try(DBI::dbDisconnect(con, shutdown = TRUE), silent = TRUE), add = TRUE)
+    tmp_name <- paste0("ph_tmp_long_", format(Sys.time(), "%Y%m%d_%H%M%S"))
+    DBI::dbWriteTable(con, tmp_name, tibble::as_tibble(x), temporary = TRUE)
+    whole_file_qry <- dbplyr::sql_render(dplyr::tbl(con, tmp_name))
+  } else {
+    .ph_abort("`x` must be a <phip_data> object or a data frame.")
+  }
+
   copy_sql <- sqlInterpolate(
     con,
     paste0("COPY ( ", whole_file_qry, " ) TO ?path (FORMAT 'parquet');"),

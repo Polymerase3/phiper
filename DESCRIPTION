@@ -1,6 +1,6 @@
 Package: phiper
 Title: Automated PhIP-seq Analysis and Reporting
-Version: 0.2.4
+Version: 0.2.5
 Authors@R: c(
   person(
     "Mateusz", "Kolek", 
@@ -37,14 +37,11 @@ URL: https://github.com/Polymerase3/phiper
 BugReports: https://github.com/Polymerase3/phiper/issues
 SystemRequirements: C++17
 LinkingTo: Rcpp, RcppParallel
-Suggests: 
-    arrow,
-    dbplyr,
-    duckdb,
-    filelock,
+Suggests:
     future,
     future.apply,
     ggpubr,
+    knitr,
     mgcv,
     mockery,
     openxlsx,
@@ -61,14 +58,11 @@ Config/testthat/edition: 3
 Imports: 
     chk,
     cli,
-    data.table,
     DBI,
+    dbplyr,
     dplyr,
-    fs,
+    duckdb,
     ggplot2,
-    htmltools,
-    knitr,
-    purrr,
     rlang,
     scales,
     tibble,
@@ -77,7 +71,6 @@ Imports:
     vegan,
     Rcpp,
     RcppParallel,
-    forcats,
     utils,
     Rtsne,
     plotly

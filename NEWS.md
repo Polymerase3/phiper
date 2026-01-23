@@ -1,3 +1,12 @@
+# phiper 0.2.5
+
+- Removed 10 unused package dependencies (data.table, fs, htmltools, purrr, 
+forcats, filelock, arrow from suggests)
+- Moved duckdb and dbplyr to imports; moved knitr to suggests for proper 
+dependency management
+- Removed 360 lines of unused CAP/dispersion plotting functions and associated 
+documentation
+
 # phiper 0.2.4
 
 - Updated the peptide library with the new annotations from Sasha

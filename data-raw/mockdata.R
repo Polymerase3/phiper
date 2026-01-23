@@ -416,7 +416,7 @@ panel_AB_T1_T2_long <- panel_AB_T1_T2_long |>
 
 # Saving
 out_path <- file.path("inst", "extdata", "phip_mixture.parquet")
-arrow::write_parquet(panel_AB_T1_T2_long, out_path)
+export_parquet(panel_AB_T1_T2_long, out_path)
 
 # reproducibility check
 all.equal(current_seed, .Random.seed)

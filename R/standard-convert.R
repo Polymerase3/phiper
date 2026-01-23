@@ -199,9 +199,6 @@ phip_convert <- function(
 #'
 #' @keywords internal
 .ph_standard_read_duckdb_backend <- function(cfg, colmap) {
-  rlang::check_installed(c("duckdb", "DBI", "dbplyr"),
-                         reason = "duckdb backend"
-  )
 
   ## 0. open a DuckDB connection -------------------------------------------
   ## keep it persistent only for this R session, but ON DISK (so it can spill)
