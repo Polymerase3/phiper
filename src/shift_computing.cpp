@@ -283,7 +283,9 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
 
     int b_hits = 0;
     std::vector<uint64_t> Fmask(n_words_p, 0ULL); // flip mask
-    double sum_T = 0.0, sum_T2 = 0.0;
+    int64_t n_mom = 0;
+    double mean_T = 0.0;
+    double M2_T = 0.0;
 
     for (int b = 0; b < B; ++b) {
       // Build flip mask F over P subjects
@@ -326,8 +328,11 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         Tb = combine_T_internal(p1b, p2b, n1b, n2b, winsor_z, weight_mode, stat_mode, prev_strat).T_obs;
       }
 
-      sum_T  += Tb;
-      sum_T2 += Tb * Tb;
+      ++n_mom;
+      const double delta = Tb - mean_T;
+      mean_T += delta / static_cast<double>(n_mom);
+      const double delta2 = Tb - mean_T;
+      M2_T += delta * delta2;
 
       if (std::fabs(Tb) >= std::fabs(obs.T_obs)) ++b_hits;
     }
@@ -336,10 +341,11 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
 
     double T_null_mean = NA_REAL;
     double T_null_sd = NA_REAL;
-    if (B > 0) {
-      T_null_mean = sum_T / static_cast<double>(B);
-      double var_T = (sum_T2 / static_cast<double>(B)) - T_null_mean * T_null_mean;
-      if (var_T > 0.0) T_null_sd = std::sqrt(var_T);
+    if (n_mom > 0) {
+      T_null_mean = mean_T;
+      double var_T = (n_mom > 1) ? (M2_T / static_cast<double>(n_mom - 1)) : NA_REAL;
+      if (var_T < 0.0 && var_T > -1e-15) var_T = 0.0;
+      if (var_T >= 0.0) T_null_sd = std::sqrt(var_T);
     }
 
     return Rcpp::List::create(
@@ -453,7 +459,9 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     int b_hits = 0;
     std::vector<int> choose_idx(nA);
     std::vector<uint64_t> mask_A(n_words), mask_B(n_words);
-    double sum_T = 0.0, sum_T2 = 0.0;
+    int64_t n_mom = 0;
+    double mean_T = 0.0;
+    double M2_T = 0.0;
 
     for (int b = 0; b < B; ++b) {
       // random split: sample nA indices for group A
@@ -506,8 +514,11 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         Tb = combine_T_internal(p1b, p2b, n1b, n2b, winsor_z, weight_mode, stat_mode, prev_strat).T_obs;
       }
 
-      sum_T  += Tb;
-      sum_T2 += Tb * Tb;
+      ++n_mom;
+      const double delta = Tb - mean_T;
+      mean_T += delta / static_cast<double>(n_mom);
+      const double delta2 = Tb - mean_T;
+      M2_T += delta * delta2;
 
       if (std::fabs(Tb) >= std::fabs(obs.T_obs)) ++b_hits;
     }
@@ -516,11 +527,11 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
 
     double T_null_mean = NA_REAL;
     double T_null_sd = NA_REAL;
-    if (B > 0) {
-      const double Bd = (double)B;
-      T_null_mean = sum_T / Bd;
-      double var_T = (sum_T2 / Bd) - T_null_mean * T_null_mean;
-      if (var_T > 0.0) T_null_sd = std::sqrt(var_T);
+    if (n_mom > 0) {
+      T_null_mean = mean_T;
+      double var_T = (n_mom > 1) ? (M2_T / static_cast<double>(n_mom - 1)) : NA_REAL;
+      if (var_T < 0.0 && var_T > -1e-15) var_T = 0.0;
+      if (var_T >= 0.0) T_null_sd = std::sqrt(var_T);
     }
 
     return Rcpp::List::create(
