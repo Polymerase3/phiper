@@ -130,5 +130,7 @@ utils::globalVariables(c(
   "v",
   "view",
   "x",
-  "y"
+  "y",
+  "T_null_mean",
+  "T_null_sd"
 ))

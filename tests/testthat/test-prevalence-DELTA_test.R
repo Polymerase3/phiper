@@ -25,17 +25,12 @@ test_that("compute_delta works for unpaired design (mock species)", {
     group_cols         = "group",
     peptide_library    = mock_peplib,
     B_permutations     = 500L,          # smaller for test speed
-    smooth_eps_num     = 0.5,
-    smooth_eps_den_mult= 2.0,
-    min_max_prev       = 0.0,
     weight_mode        = "n_eff_sqrt",
     stat_mode          = "asin",
     prev_strat         = "none",
     winsor_z           = Inf,
     rank_feature_keep  = list(species = NULL),
-    log                = FALSE,
-    fold_change        = "sum",
-    cross_prev         = "mean"
+    log                = FALSE
   )
 
   # basic structure
@@ -46,8 +41,8 @@ test_that("compute_delta works for unpaired design (mock species)", {
   expect_true(all(c(
     "rank", "feature", "group_col", "group1", "group2", "design",
     "n_subjects_paired", "n_peptides_used", "m_eff",
-    "T_obs", "T_obs_stand", "Z_from_p",
-    "p_perm", "b", "p_adj_rank", "category_rank_bh"
+    "T_obs", "T_null_mean", "T_null_sd", "T_obs_stand", "Z_from_p",
+    "p_perm", "b"
   ) %in% names(res)))
 
   # unpaired design should not report paired subjects
@@ -115,7 +110,6 @@ test_that("compute_delta handles paired design via paired_by and returns
       flipped    = sample_id %in% flip_ids,
       exist      = ifelse(flipped, 1L - exist, exist),
       counts_hits= ifelse(flipped & exist == 0L, 0, counts_hits),
-      fold_change= ifelse(flipped & exist == 0L, 0, fold_change)
     ) |>
     dplyr::select(-flipped)
 
@@ -127,17 +121,12 @@ test_that("compute_delta handles paired design via paired_by and returns
     group_cols         = "timepoint",
     peptide_library    = mock_peplib,
     B_permutations     = 500L,
-    smooth_eps_num     = 0.5,
-    smooth_eps_den_mult= 2.0,
-    min_max_prev       = 0.0,
     weight_mode        = "n_eff_sqrt",
     stat_mode          = "asin",
     prev_strat         = "none",
     winsor_z           = Inf,
     rank_feature_keep  = list(species = NULL),
     log                = FALSE,
-    fold_change        = "sum",
-    cross_prev         = "mean"
   )
 
   # paired design detected
@@ -177,9 +166,6 @@ test_that("compute_delta errors on duplicate positives within group", {
       rank_cols          = "peptide_id",
       group_cols         = "group",
       B_permutations     = 200L,
-      smooth_eps_num     = 0.5,
-      smooth_eps_den_mult= 2.0,
-      min_max_prev       = 0.0,
       weight_mode        = "equal",
       stat_mode          = "diff",
       prev_strat         = "none",
@@ -187,8 +173,6 @@ test_that("compute_delta errors on duplicate positives within group", {
       rank_feature_keep  = NULL,
       peptide_library    = NULL,
       log                = FALSE,
-      fold_change        = "none",
-      cross_prev         = "none"
     ),
     regexp = "duplicate positives",
     fixed  = FALSE
@@ -220,17 +204,12 @@ test_that("compute_delta gives consistent direction for T_obs,
     group_cols         = "group",
     peptide_library    = mock_peplib,
     B_permutations     = 300L,
-    smooth_eps_num     = 0.5,
-    smooth_eps_den_mult= 2.0,
-    min_max_prev       = 0.0,
     weight_mode        = "n_eff_sqrt",
     stat_mode          = "asin",
     prev_strat         = "none",
     winsor_z           = Inf,
     rank_feature_keep  = list(species = NULL),
     log                = FALSE,
-    fold_change        = "sum",
-    cross_prev         = "mean"
   )
 
   # only check direction when standardized T is available
@@ -255,9 +234,6 @@ test_that("compute_delta returns NA T_obs_stand when permutation
     rank_cols          = "peptide_id",
     group_cols         = "group",
     B_permutations     = 200L,
-    smooth_eps_num     = 0.5,
-    smooth_eps_den_mult= 2.0,
-    min_max_prev       = 0.0,
     weight_mode        = "equal",
     stat_mode          = "diff",
     prev_strat         = "none",
@@ -265,8 +241,6 @@ test_that("compute_delta returns NA T_obs_stand when permutation
     rank_feature_keep  = NULL,
     peptide_library    = NULL,
     log                = FALSE,
-    fold_change        = "none",
-    cross_prev         = "none"
   )
 
   # all permutations give the same T => variance zero
@@ -275,10 +249,8 @@ test_that("compute_delta returns NA T_obs_stand when permutation
     colnames(res),
     c("rank","feature","group_col","group1","group2","design",
       "n_subjects_paired","n_peptides_used","m_eff",
-      "T_obs","T_obs_stand","Z_from_p","p_perm","b",
-      "p_adj_rank",
-      "max_delta","frac_delta_pos","frac_delta_pos_w",
-      "category_rank_bh", "fold_change_none", "cross_prev_none")
+      "T_obs","T_null_mean","T_null_sd","T_obs_stand","Z_from_p","p_perm","b",
+      "max_delta","frac_delta_pos","frac_delta_pos_w")
   )
 })
 
@@ -297,9 +269,6 @@ test_that("compute_delta aborts when required columns are missing", {
       rank_cols          = "peptide_id",
       group_cols         = "group",
       B_permutations     = 200L,
-      smooth_eps_num     = 0.5,
-      smooth_eps_den_mult= 2.0,
-      min_max_prev       = 0.0,
       weight_mode        = "equal",
       stat_mode          = "diff",
       prev_strat         = "none",
@@ -307,8 +276,6 @@ test_that("compute_delta aborts when required columns are missing", {
       rank_feature_keep  = NULL,
       peptide_library    = NULL,
       log                = FALSE,
-      fold_change        = "none",
-      cross_prev         = "none"
     ),
     regexp = "Missing required columns"
   )
@@ -331,9 +298,6 @@ test_that("compute_delta aborts when all peptides are zero after hits
       rank_cols          = "peptide_id",
       group_cols         = "group",
       B_permutations     = 200L,
-      smooth_eps_num     = 0.5,
-      smooth_eps_den_mult= 2.0,
-      min_max_prev       = 0.0,
       weight_mode        = "equal",
       stat_mode          = "diff",
       prev_strat         = "none",
@@ -341,8 +305,6 @@ test_that("compute_delta aborts when all peptides are zero after hits
       rank_feature_keep  = NULL,
       peptide_library    = NULL,
       log                = FALSE,
-      fold_change        = "none",
-      cross_prev         = "none"
     ),
     regexp = "All peptides are zero after hits guard"
   )
@@ -370,17 +332,12 @@ test_that("compute_delta aborts when peptide_library misses required
       group_cols         = "group",
       peptide_library    = bad_lib,
       B_permutations     = 200L,
-      smooth_eps_num     = 0.5,
-      smooth_eps_den_mult= 2.0,
-      min_max_prev       = 0.0,
       weight_mode        = "equal",
       stat_mode          = "diff",
       prev_strat         = "none",
       winsor_z           = 4,
       rank_feature_keep  = NULL,
       log                = FALSE,
-      fold_change        = "none",
-      cross_prev         = "none"
     ),
     regexp = "Peptide library missing required columns"
   )
@@ -401,9 +358,6 @@ test_that("compute_delta works with rank_cols = 'peptide_id' only", {
     rank_cols          = "peptide_id",
     group_cols         = "group",
     B_permutations     = 200L,
-    smooth_eps_num     = 0.5,
-    smooth_eps_den_mult= 2.0,
-    min_max_prev       = 0.0,
     weight_mode        = "equal",
     stat_mode          = "diff",
     prev_strat         = "none",
@@ -411,8 +365,6 @@ test_that("compute_delta works with rank_cols = 'peptide_id' only", {
     rank_feature_keep  = NULL,
     peptide_library    = NULL,
     log                = FALSE,
-    fold_change        = "none",
-    cross_prev         = "none"
   )
 
   expect_s3_class(res, "tbl_df")
@@ -446,17 +398,12 @@ test_that("compute_delta uses peptide_library attached to phip_data", {
     group_cols         = "group",
     peptide_library    = NULL,
     B_permutations     = 100L,
-    smooth_eps_num     = 0.5,
-    smooth_eps_den_mult= 2.0,
-    min_max_prev       = 0.0,
     weight_mode        = "equal",
     stat_mode          = "diff",
     prev_strat         = "none",
     winsor_z           = 4,
     rank_feature_keep  = list(species = "mock_species"),
     log                = FALSE,
-    fold_change        = "none",
-    cross_prev         = "none"
   )
 
   expect_s3_class(res, "tbl_df")
@@ -496,9 +443,6 @@ test_that("compute_delta logs to default log_file in a temporary
     rank_cols          = "peptide_id",
     group_cols         = "group",
     B_permutations     = 100L,
-    smooth_eps_num     = 0.5,
-    smooth_eps_den_mult= 2.0,
-    min_max_prev       = 0.0,
     weight_mode        = "equal",
     stat_mode          = "diff",
     prev_strat         = "none",
@@ -507,8 +451,6 @@ test_that("compute_delta logs to default log_file in a temporary
     peptide_library    = NULL,
     log                = TRUE,
     # using default: log_file = "compute_delta.log"
-    fold_change        = "none",
-    cross_prev         = "none"
   )
 
   expect_true(file.exists("compute_delta.log"))
@@ -548,9 +490,6 @@ test_that("compute_delta logs to a custom log_file path", {
     rank_cols          = "peptide_id",
     group_cols         = "group",
     B_permutations     = 100L,
-    smooth_eps_num     = 0.5,
-    smooth_eps_den_mult= 2.0,
-    min_max_prev       = 0.0,
     weight_mode        = "equal",
     stat_mode          = "diff",
     prev_strat         = "none",
@@ -559,132 +498,10 @@ test_that("compute_delta logs to a custom log_file path", {
     peptide_library    = NULL,
     log                = TRUE,
     log_file           = custom_log,
-    fold_change        = "none",
-    cross_prev         = "none"
   )
 
   expect_true(file.exists(custom_log))
   expect_true(file.exists(paste0(custom_log, ".progress.bin")))
-})
-
-test_that("compute_delta computes fold_change summaries correctly for
-          all modes", {
-  toy_fc <- tibble::tibble(
-    sample_id  = c("s1", "s2", "s3", "s4"),
-    subject_id = c("id1", "id2", "id3", "id4"),
-    peptide_id = c("pep1", "pep1", "pep2", "pep2"),
-    group      = c("A",    "B",    "A",    "B"),
-    exist      = c(1L,     1L,     1L,     1L),
-    fold_change= c(1,      2,      3,      4)
-  )
-
-  # expected per peptide_id
-  expected <- toy_fc |>
-    dplyr::group_by(peptide_id) |>
-    dplyr::summarise(
-      fc_sum    = sum(fold_change),
-      fc_mean   = mean(fold_change),
-      fc_max    = max(fold_change),
-      fc_median = stats::median(fold_change),
-      .groups   = "drop"
-    ) |>
-    dplyr::arrange(peptide_id)
-
-  run_fc <- function(mode) {
-    set.seed(1)
-    compute_delta(
-      x                  = toy_fc,
-      exist_col          = "exist",
-      rank_cols          = "peptide_id",
-      group_cols         = "group",
-      B_permutations     = 100L,
-      smooth_eps_num     = 0.5,
-      smooth_eps_den_mult= 2.0,
-      min_max_prev       = 0.0,
-      weight_mode        = "equal",
-      stat_mode          = "diff",
-      prev_strat         = "none",
-      winsor_z           = 4,
-      rank_feature_keep  = NULL,
-      peptide_library    = NULL,
-      log                = FALSE,
-      fold_change        = mode,
-      cross_prev         = "none"
-    ) |>
-      dplyr::arrange(feature)
-  }
-
-  res_sum    <- run_fc("sum")
-  res_mean   <- run_fc("mean")
-  res_max    <- run_fc("max")
-  res_median <- run_fc("median")
-
-  expect_equal(res_sum$fold_change_sum,         expected$fc_sum)
-  expect_equal(res_mean$fold_change_mean,       expected$fc_mean)
-  expect_equal(res_max$fold_change_max,         expected$fc_max)
-  expect_equal(res_median$fold_change_median,   expected$fc_median)
-})
-
-test_that("compute_delta computes cross_prev summaries correctly for all
-          modes", {
-  toy_cp <- tibble::tibble(
-    sample_id  = c("s1", "s2", "s3", "s4"),
-    subject_id = c("id1", "id2", "id3", "id4"),
-    peptide_id = c("pep1","pep1","pep2","pep2"),
-    species    = c("sp1","sp1","sp1","sp1"),
-    group      = c("A",   "B",   "A",   "B"),
-    exist      = c(1L,    0L,    1L,    1L)
-  )
-
-  toy_lib <- toy_cp |>
-    dplyr::distinct(peptide_id, species)
-
-  # per-peptide prevalence across g1 ∪ g2 (here all subjects/rows)
-  prev_per_pep <- toy_cp |>
-    dplyr::group_by(peptide_id) |>
-    dplyr::summarise(
-      prev = mean(exist > 0, na.rm = TRUE),
-      .groups = "drop"
-    )
-
-  # For sp1: pep1 prev = (1,0) -> 0.5; pep2 prev = (1,1) -> 1.0
-  expected_sum    <- sum(prev_per_pep$prev)
-  expected_mean   <- mean(prev_per_pep$prev)
-  expected_max    <- max(prev_per_pep$prev)
-  expected_median <- stats::median(prev_per_pep$prev)
-
-  run_cp <- function(mode) {
-    set.seed(1)
-    compute_delta(
-      x                  = toy_cp,
-      exist_col          = "exist",
-      rank_cols          = "species",
-      group_cols         = "group",
-      B_permutations     = 100L,
-      smooth_eps_num     = 0.5,
-      smooth_eps_den_mult= 2.0,
-      min_max_prev       = 0.0,
-      weight_mode        = "equal",
-      stat_mode          = "diff",
-      prev_strat         = "none",
-      winsor_z           = 4,
-      rank_feature_keep  = list(species = "sp1"),
-      peptide_library    = toy_lib,
-      log                = FALSE,
-      fold_change        = "none",
-      cross_prev         = mode
-    )
-  }
-
-  res_sum    <- run_cp("sum")
-  res_mean   <- run_cp("mean")
-  res_max    <- run_cp("max")
-  res_median <- run_cp("median")
-
-  expect_equal(res_sum$cross_prev_sum,         expected_sum)
-  expect_equal(res_mean$cross_prev_mean,       expected_mean)
-  expect_equal(res_max$cross_prev_max,         expected_max)
-  expect_equal(res_median$cross_prev_median,   expected_median)
 })
 
 test_that("compute_delta supports se_invvar weights with asin and diff
@@ -705,9 +522,6 @@ test_that("compute_delta supports se_invvar weights with asin and diff
     rank_cols          = "peptide_id",
     group_cols         = "group",
     B_permutations     = 120L,
-    smooth_eps_num     = 0.5,
-    smooth_eps_den_mult= 2.0,
-    min_max_prev       = 0.0,
     weight_mode        = "se_invvar",
     stat_mode          = "asin",
     prev_strat         = "none",
@@ -715,8 +529,6 @@ test_that("compute_delta supports se_invvar weights with asin and diff
     rank_feature_keep  = NULL,
     peptide_library    = NULL,
     log                = FALSE,
-    fold_change        = "none",
-    cross_prev         = "none"
   )
 
   # se_invvar + diff
@@ -727,9 +539,6 @@ test_that("compute_delta supports se_invvar weights with asin and diff
     rank_cols          = "peptide_id",
     group_cols         = "group",
     B_permutations     = 120L,
-    smooth_eps_num     = 0.5,
-    smooth_eps_den_mult= 2.0,
-    min_max_prev       = 0.0,
     weight_mode        = "se_invvar",
     stat_mode          = "diff",
     prev_strat         = "none",
@@ -737,8 +546,6 @@ test_that("compute_delta supports se_invvar weights with asin and diff
     rank_feature_keep  = NULL,
     peptide_library    = NULL,
     log                = FALSE,
-    fold_change        = "none",
-    cross_prev         = "none"
   )
 
   expect_s3_class(res_asin, "tbl_df")
@@ -770,9 +577,6 @@ test_that("compute_delta supports prevalence-stratified combination
     rank_cols          = "species",
     group_cols         = "group",
     B_permutations     = 120L,
-    smooth_eps_num     = 0.5,
-    smooth_eps_den_mult= 2.0,
-    min_max_prev       = 0.0,
     weight_mode        = "equal",
     stat_mode          = "diff",
     prev_strat         = "decile",
@@ -780,89 +584,11 @@ test_that("compute_delta supports prevalence-stratified combination
     rank_feature_keep  = list(species = "sp1"),
     peptide_library    = toy_lib,
     log                = FALSE,
-    fold_change        = "none",
-    cross_prev         = "none"
   )
 
   expect_s3_class(res, "tbl_df")
   expect_equal(nrow(res), 1L)
   expect_true(all(is.numeric(res$T_obs)))
-})
-
-test_that("compute_delta returns NA stats when no peptides pass
-          min_max_prev (unpaired)", {
-  toy_prev <- tibble::tibble(
-    sample_id  = c("s1","s2","s3","s4"),
-    subject_id = c("id1","id2","id3","id4"),
-    peptide_id = c("pep1","pep1","pep2","pep2"),
-    group      = c("A",   "B",   "A",   "B"),
-    exist      = c(1L,    0L,    0L,    1L)
-  )
-
-  set.seed(1)
-  res <- compute_delta(
-    x                  = toy_prev,
-    exist_col          = "exist",
-    rank_cols          = "peptide_id",
-    group_cols         = "group",
-    B_permutations     = 100L,
-    smooth_eps_num     = 0.5,
-    smooth_eps_den_mult= 2.0,
-    min_max_prev       = 2.0,
-    weight_mode        = "equal",
-    stat_mode          = "diff",
-    prev_strat         = "none",
-    winsor_z           = 4,
-    rank_feature_keep  = NULL,
-    peptide_library    = NULL,
-    log                = FALSE,
-    fold_change        = "none",
-    cross_prev         = "none"
-  )
-
-  expect_s3_class(res, "tbl_df")
-  expect_equal(nrow(res), 2L)
-  expect_true(all(res$n_peptides_used == 0L))
-  expect_true(all(is.na(res$T_obs)))
-  expect_true(all(is.na(res$p_perm)))
-  expect_true(all(is.na(res$mean_delta)))
-  expect_true(all(is.na(res$mean_delta_w)))
-})
-
-test_that("compute_delta returns NA stats when no peptides pass
-          min_max_prev (paired)", {
-  toy_prev_p <- tibble::tibble(
-    sample_id  = c("s1","s2","s3","s4"),
-    subject_id = c("id1","id1","id2","id2"),
-    peptide_id = c("pep1","pep1","pep1","pep1"),
-    group      = c("A",   "B",   "A",   "B"),
-    exist      = c(1L,    0L,    0L,    1L)
-  )
-
-  set.seed(1)
-  res <- compute_delta(
-    x                  = toy_prev_p,
-    paired_by          = "subject_id",
-    exist_col          = "exist",
-    rank_cols          = "peptide_id",
-    group_cols         = "group",
-    B_permutations     = 100L,
-    smooth_eps_num     = 0.5,
-    smooth_eps_den_mult= 2.0,
-    min_max_prev       = 2.0,
-    weight_mode        = "equal",
-    stat_mode          = "diff",
-    prev_strat         = "none",
-    winsor_z           = 4,
-    rank_feature_keep  = NULL,
-    peptide_library    = NULL,
-    log                = FALSE,
-    fold_change        = "none",
-    cross_prev         = "none"
-  )
-
-  expect_s3_class(res, "tbl_df")
-  expect_equal(nrow(res), 1L)
 })
 
 test_that("compute_delta uses global RNG reproducibly and advances .Random.seed deterministically", {
@@ -884,9 +610,6 @@ test_that("compute_delta uses global RNG reproducibly and advances .Random.seed 
     rank_cols          = "peptide_id",
     group_cols         = "group",
     B_permutations     = 150L,  # >= 100 for the function, still fast for tests
-    smooth_eps_num     = 0.5,
-    smooth_eps_den_mult= 2.0,
-    min_max_prev       = 0.0,
     weight_mode        = "equal",
     stat_mode          = "diff",
     prev_strat         = "none",
@@ -894,8 +617,6 @@ test_that("compute_delta uses global RNG reproducibly and advances .Random.seed 
     rank_feature_keep  = NULL,
     peptide_library    = NULL,
     log                = FALSE,
-    fold_change        = "none",
-    cross_prev         = "none"
   )
 
   seed_after1 <- .Random.seed
@@ -910,9 +631,6 @@ test_that("compute_delta uses global RNG reproducibly and advances .Random.seed 
     rank_cols          = "peptide_id",
     group_cols         = "group",
     B_permutations     = 150L,
-    smooth_eps_num     = 0.5,
-    smooth_eps_den_mult= 2.0,
-    min_max_prev       = 0.0,
     weight_mode        = "equal",
     stat_mode          = "diff",
     prev_strat         = "none",
@@ -920,8 +638,6 @@ test_that("compute_delta uses global RNG reproducibly and advances .Random.seed 
     rank_feature_keep  = NULL,
     peptide_library    = NULL,
     log                = FALSE,
-    fold_change        = "none",
-    cross_prev         = "none"
   )
 
   seed_after2 <- .Random.seed
@@ -964,9 +680,6 @@ test_that("compute_delta aborts on bitset/peptide dimension mismatch", {
       rank_cols          = "peptide_id",
       group_cols         = "group",
       B_permutations     = 200L,
-      smooth_eps_num     = 0.5,
-      smooth_eps_den_mult= 2.0,
-      min_max_prev       = 0.0,
       weight_mode        = "equal",
       stat_mode          = "diff",
       prev_strat         = "none",
@@ -974,8 +687,6 @@ test_that("compute_delta aborts on bitset/peptide dimension mismatch", {
       rank_feature_keep  = NULL,
       peptide_library    = NULL,
       log                = FALSE,
-      fold_change        = "none",
-      cross_prev         = "none"
     ),
     regexp = "Bitset/peptide dimension mismatch"
   )
