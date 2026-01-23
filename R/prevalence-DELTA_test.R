@@ -937,11 +937,15 @@ compute_delta <- function(
         n_peptides_used = as.integer(res$n_peptides_used),
         m_eff = as.numeric(res$m_eff),
         T_obs = as.numeric(res$T_obs),
+        T_null_mean = as.numeric(res$T_null_mean),
+        T_null_sd = as.numeric(res$T_null_sd),
         T_obs_stand = {
+          mean_null <- as.numeric(res$T_null_mean)
           sd_null <- as.numeric(res$T_null_sd)
-          ifelse(!is.na(sd_null) & sd_null > 0,
-                 as.numeric(res$T_obs) / sd_null,
-                 NA_real_
+          ifelse(
+            !is.na(mean_null) & !is.na(sd_null) & sd_null > 0,
+            (as.numeric(res$T_obs) - mean_null) / sd_null,
+            NA_real_
           )
         },
         Z_from_p = {
@@ -1075,7 +1079,8 @@ compute_delta <- function(
       group1 = character(), group2 = character(), design = character(),
       n_subjects_paired = integer(), n_peptides_used = integer(),
       m_eff = numeric(),
-      T_obs = numeric(), T_obs_stand = numeric(), Z_from_p = numeric(),
+      T_obs = numeric(), T_null_mean = numeric(), T_null_sd = numeric(),
+      T_obs_stand = numeric(), Z_from_p = numeric(),
       p_perm = numeric(), b = integer(),
       p_adj_rank = numeric(),
       max_delta = numeric(), frac_delta_pos = numeric(),
@@ -1107,7 +1112,7 @@ compute_delta <- function(
     dplyr::select(
       rank, feature, group_col, group1, group2, design,
       n_subjects_paired, n_peptides_used, m_eff,
-      T_obs, T_obs_stand, Z_from_p, p_perm, b,
+      T_obs, T_null_mean, T_null_sd, T_obs_stand, Z_from_p, p_perm, b,
       p_adj_rank,
       max_delta, frac_delta_pos, frac_delta_pos_w,
       dplyr::any_of(paste0("fold_change_", fold_change)),

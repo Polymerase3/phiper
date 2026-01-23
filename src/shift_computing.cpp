@@ -182,8 +182,8 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
  * @param B, seed, smooth_eps_num, smooth_eps_den, min_max_prev, winsor_z numeric.
  * @param weight_mode, stat_mode, prev_strat, design strings.
  *
- * @return List with fields: n_peptides_used, m_eff, T_obs, T_null_sd, b, p_perm,
- *         max_delta, frac_delta_pos, frac_delta_pos_w.
+ * @return List with fields: n_peptides_used, m_eff, T_obs, T_null_mean, T_null_sd,
+ *         b, p_perm, max_delta, frac_delta_pos, frac_delta_pos_w.
  */
 // [[Rcpp::export]]
 Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
@@ -242,6 +242,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         _["n_peptides_used"]  = 0L,
         _["m_eff"]            = NA_REAL,
         _["T_obs"]            = NA_REAL,
+        _["T_null_mean"]      = NA_REAL,
         _["T_null_sd"]        = NA_REAL,
         _["b"]                = 0L,
         _["p_perm"]           = NA_REAL,
@@ -333,10 +334,11 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
 
     const double p_perm = (1.0 + (double)b_hits) / (1.0 + (double)B);
 
+    double T_null_mean = NA_REAL;
     double T_null_sd = NA_REAL;
     if (B > 0) {
-      const double mean_T = sum_T / static_cast<double>(B);
-      double var_T = (sum_T2 / static_cast<double>(B)) - mean_T * mean_T;
+      T_null_mean = sum_T / static_cast<double>(B);
+      double var_T = (sum_T2 / static_cast<double>(B)) - T_null_mean * T_null_mean;
       if (var_T > 0.0) T_null_sd = std::sqrt(var_T);
     }
 
@@ -344,6 +346,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
       _["n_peptides_used"]  = mu,
       _["m_eff"]            = m_eff,
       _["T_obs"]            = obs.T_obs,
+      _["T_null_mean"]      = T_null_mean,
       _["T_null_sd"]        = T_null_sd,
       _["b"]                = b_hits,
       _["p_perm"]           = p_perm,
@@ -377,6 +380,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         _["n_peptides_used"] = 0L,
         _["m_eff"] = NA_REAL,
         _["T_obs"] = NA_REAL,
+        _["T_null_mean"] = NA_REAL,
         _["T_null_sd"] = NA_REAL,
         _["b"] = NA_INTEGER,
         _["p_perm"] = NA_REAL,
@@ -407,6 +411,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         _["n_peptides_used"]  = 0L,
         _["m_eff"]            = NA_REAL,
         _["T_obs"]            = NA_REAL,
+        _["T_null_mean"]      = NA_REAL,
         _["T_null_sd"]        = NA_REAL,
         _["b"]                = 0L,
         _["p_perm"]           = NA_REAL,
@@ -509,11 +514,12 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
 
     const double p_perm = (1.0 + (double)b_hits) / (1.0 + (double)B);
 
+    double T_null_mean = NA_REAL;
     double T_null_sd = NA_REAL;
     if (B > 0) {
       const double Bd = (double)B;
-      const double mean_T = sum_T / Bd;
-      double var_T = (sum_T2 / Bd) - mean_T * mean_T;
+      T_null_mean = sum_T / Bd;
+      double var_T = (sum_T2 / Bd) - T_null_mean * T_null_mean;
       if (var_T > 0.0) T_null_sd = std::sqrt(var_T);
     }
 
@@ -521,6 +527,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
       _["n_peptides_used"]  = mu,
       _["m_eff"]            = m_eff,
       _["T_obs"]            = obs.T_obs,
+      _["T_null_mean"]      = T_null_mean,
       _["T_null_sd"]        = T_null_sd,
       _["b"]                = b_hits,
       _["p_perm"]           = p_perm,
