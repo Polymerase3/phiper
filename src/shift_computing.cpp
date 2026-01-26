@@ -107,7 +107,7 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
                                      double winsor_z,
                                      const std::string& weight_mode,
                                      const std::string& stat_mode,
-                                     const std::string& prev_strat) {
+                                     const std::vector<double>& strat_bins) {
   const int m = (int)p1.size();
   std::vector<double> z(m), w(m), delta(m);
 
@@ -184,43 +184,55 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
 
   // Stouffer combine
   double T_obs = 0.0;
-  if (prev_strat == "decile") {
+  bool use_strat = true;
+  if (strat_bins.empty()) use_strat = false;
+  if (strat_bins.size() == 1 && strat_bins[0] == 0.0) use_strat = false;
+
+  if (use_strat) {
     // pooled prevalence
     std::vector<double> pp(m);
     for (int i = 0; i < m; ++i) pp[i] = (n1[i]*p1[i] + n2[i]*p2[i]) / std::max(n1[i] + n2[i], 1.0);
 
-    // quantile breaks (approximate type 7)
-    std::vector<double> sorted = pp;
-    std::sort(sorted.begin(), sorted.end());
-    std::vector<double> brks; brks.reserve(11);
-    for (int k = 0; k <= 10; ++k) {
-      double q = k/10.0;
-      double pos = q * (m - 1);
-      int lo = (int)std::floor(pos);
-      int hi = (int)std::ceil(pos);
-      double v = (lo == hi) ? sorted[lo] : (sorted[lo] + (pos - lo) * (sorted[hi] - sorted[lo]));
-      if (brks.empty() || v > brks.back()) brks.push_back(v); // unique
+    // fixed cutpoints (0 < v < 1), with 0/1 boundaries added
+    std::vector<double> cuts;
+    cuts.reserve(strat_bins.size());
+    for (double v : strat_bins) {
+      if (std::isfinite(v) && v > 0.0 && v < 1.0) cuts.push_back(v);
     }
-    if (brks.size() < 2) brks = {sorted.front(), sorted.back()};
+    if (cuts.empty()) {
+      use_strat = false;
+    } else {
+      std::sort(cuts.begin(), cuts.end());
+      cuts.erase(std::unique(cuts.begin(), cuts.end()), cuts.end());
+    }
 
-    // bin & per-bin Stouffer
-    int nb = (int)brks.size() - 1;
-    std::vector<double> bin_z;
-    bin_z.reserve(nb);
-    for (int b = 0; b < nb; ++b) {
-      const double L = brks[b], R = brks[b+1];
-      double num = 0.0, den2 = 0.0; bool any=false;
-      for (int i = 0; i < m; ++i) {
-        const double v = pp[i];
-        const bool in = ( (b==0 ? (v >= L) : (v > L)) && ( (b==nb-1 ? (v <= R) : (v < R)) ) );
-        if (in) { num += w[i]*z[i]; den2 += w[i]*w[i]; any=true; }
+    if (use_strat) {
+      std::vector<double> brks;
+      brks.reserve(cuts.size() + 2);
+      brks.push_back(0.0);
+      brks.insert(brks.end(), cuts.begin(), cuts.end());
+      brks.push_back(1.0);
+
+      // bin & per-bin Stouffer
+      int nb = (int)brks.size() - 1;
+      std::vector<double> bin_z;
+      bin_z.reserve(nb);
+      for (int b = 0; b < nb; ++b) {
+        const double L = brks[b], R = brks[b+1];
+        double num = 0.0, den2 = 0.0; bool any=false;
+        for (int i = 0; i < m; ++i) {
+          const double v = pp[i];
+          const bool in = ((b == 0 ? (v >= L) : (v > L)) && (v <= R));
+          if (in) { num += w[i]*z[i]; den2 += w[i]*w[i]; any=true; }
+        }
+        bin_z.push_back(any ? (num / std::sqrt(std::max(den2, 1e-300))) : 0.0);
       }
-      bin_z.push_back(any ? (num / std::sqrt(std::max(den2, 1e-300))) : 0.0);
+      // mean of bin-level z's
+      double s=0.0; for (double v: bin_z) s += v;
+      T_obs = (nb>0) ? s / nb : 0.0;
     }
-    // mean of bin-level z's
-    double s=0.0; for (double v: bin_z) s += v;
-    T_obs = (nb>0) ? s / nb : 0.0;
-  } else {
+  }
+  if (!use_strat) {
     double num = 0.0, den2 = 0.0;
     for (int i = 0; i < m; ++i) { num += w[i]*z[i]; den2 += w[i]*w[i]; }
     T_obs = num / std::sqrt(std::max(den2, 1e-300));
@@ -249,7 +261,8 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
  * @param hits_g1_paired, hits_g2_paired List: per-peptide IntegerVector of 1..P subject indices (PAIRED).
  * @param P int: number of paired subjects (PAIRED).
  * @param B, seed, winsor_z numeric.
- * @param weight_mode, stat_mode, prev_strat, design strings.
+ * @param weight_mode, stat_mode, design strings.
+ * @param strat_bins Numeric vector of pooled prevalence cutpoints or 0 for no stratification.
  *
  * @return List with fields: n_peptides_used, m_eff, T_obs, T_null_mean, T_null_sd,
  *         b, p_perm, max_delta, frac_delta_pos, frac_delta_pos_w.
@@ -267,9 +280,10 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
                               const int seed,
                               const std::string& weight_mode,
                               const std::string& stat_mode,
-                              const std::string& prev_strat,
+                              const Rcpp::NumericVector& strat_bins,
                               const double winsor_z,
                               const std::string& design) {
+  std::vector<double> strat_bins_vec = Rcpp::as<std::vector<double> >(strat_bins);
 
   // --------------------------- PAIRED PATH -----------------------------------
   if (design == "paired") {
@@ -326,7 +340,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     n2.assign(mu, (double)P);
 
     // Observed T
-    CombineOut obs = combine_T_internal(p1, p2, x1, x2, n1, n2, winsor_z, weight_mode, stat_mode, prev_strat);
+    CombineOut obs = combine_T_internal(p1, p2, x1, x2, n1, n2, winsor_z, weight_mode, stat_mode, strat_bins_vec);
 
     // Moments
     double max_delta = 0.0;  // max absolute delta
@@ -395,7 +409,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
       double Tb = 0.0;
       if (!p1b.empty()) {
         std::vector<double> n1b(p1b.size(), (double)P), n2b(p2b.size(), (double)P);
-        Tb = combine_T_internal(p1b, p2b, x1b, x2b, n1b, n2b, winsor_z, weight_mode, stat_mode, prev_strat).T_obs;
+        Tb = combine_T_internal(p1b, p2b, x1b, x2b, n1b, n2b, winsor_z, weight_mode, stat_mode, strat_bins_vec).T_obs;
       }
 
       ++n_mom;
@@ -496,7 +510,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     }
 
     // Observed T
-    CombineOut obs = combine_T_internal(p1, p2, x1, x2, n1, n2, winsor_z, weight_mode, stat_mode, prev_strat);
+    CombineOut obs = combine_T_internal(p1, p2, x1, x2, n1, n2, winsor_z, weight_mode, stat_mode, strat_bins_vec);
 
     // Moments
     double max_delta = 0.0;  // max absolute delta
@@ -580,7 +594,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
       if (!p1b.empty()) {
         n1b.assign(p1b.size(), (double)nA);
         n2b.assign(p2b.size(), (double)nB);
-        Tb = combine_T_internal(p1b, p2b, x1b, x2b, n1b, n2b, winsor_z, weight_mode, stat_mode, prev_strat).T_obs;
+        Tb = combine_T_internal(p1b, p2b, x1b, x2b, n1b, n2b, winsor_z, weight_mode, stat_mode, strat_bins_vec).T_obs;
       }
 
       ++n_mom;

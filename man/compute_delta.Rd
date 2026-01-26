@@ -16,7 +16,7 @@ compute_delta(
   B_permutations = 2000L,
   weight_mode = c("equal", "se_invvar", "n_eff_sqrt"),
   stat_mode = c("diff", "asin", "score", "srlr"),
-  prev_strat = c("none", "decile"),
+  strat_bins = c(0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5),
   winsor_z = 4,
   rank_feature_keep = NULL,
   peptide_library = NULL,
@@ -62,9 +62,10 @@ combination (see Details).}
 \item{stat_mode}{One of \code{c("diff", "asin", "score", "srlr")}, determining
 the peptide-level test statistic (see Details).}
 
-\item{prev_strat}{One of \code{c("none", "decile")}. If \code{"decile"}, the Stouffer
-statistic is computed within prevalence deciles and the mean of
-decile-level z-scores is used as the global test statistic.}
+\item{strat_bins}{Numeric vector of pooled prevalence cutpoints in [0, 1].
+If \code{0}, no stratification is used (single global Stouffer statistic).
+Otherwise, peptides are binned by pooled prevalence and the mean of
+bin-level z-scores is used as the global test statistic.}
 
 \item{winsor_z}{Winsorization threshold applied to peptide-level z-scores.
 Values beyond \verb{±winsor_z} are truncated. Default \code{4.0}.}
@@ -170,19 +171,21 @@ groups.
 \item \strong{Combine into a single test statistic (Stouffer).}
 Let \eqn{w_i} be the weights and \eqn{z_i} the peptide-level z-scores.
 \itemize{
-\item If \code{prev_strat = "none"}:
+\item If \code{strat_bins = 0}:
 \deqn{
        T_{\mathrm{obs}} =
          \frac{\sum_i w_i z_i}{\sqrt{\sum_i w_i^2}} .
      }
-\item If \code{prev_strat = "decile"}: peptides are binned into deciles of pooled
-prevalence
+\item If \code{strat_bins} is a numeric vector of pooled prevalence cutpoints
+(between 0 and 1), peptides are binned by pooled prevalence
 \deqn{
        \frac{n_{g1}\hat p_{g1} + n_{g2}\hat p_{g2}}{n_{g1} + n_{g2}},
      }
 a Stouffer statistic \eqn{T_b} is computed within each bin, and the
 \strong{mean} of the bin-level z-scores is reported as
-\eqn{T_{\mathrm{obs}}}.
+\eqn{T_{\mathrm{obs}}}. For example, if \code{strat_bins} includes
+\code{0.10} and \code{0.20}, then peptides with pooled prevalence in
+(0.10, 0.20] share a bin.
 }
 \item \strong{Permutation scheme and p-value.}
 A \strong{two-sided} permutation p-value for the global shift is computed:
@@ -284,7 +287,7 @@ res <- compute_delta(
   B_permutations     = 500L,  # smaller for speed
   weight_mode        = "n_eff_sqrt",
   stat_mode          = "asin",
-  prev_strat         = "none",
+  strat_bins         = 0,
   winsor_z           = Inf,
   rank_feature_keep  = list(species = NULL),
   log                = FALSE

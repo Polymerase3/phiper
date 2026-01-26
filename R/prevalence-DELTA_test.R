@@ -69,20 +69,22 @@
 #' 4. **Combine into a single test statistic (Stouffer).**
 #'    Let \eqn{w_i} be the weights and \eqn{z_i} the peptide-level z-scores.
 #'
-#'    - If `prev_strat = "none"`:
+#'    - If `strat_bins = 0`:
 #'      \deqn{
 #'        T_{\mathrm{obs}} =
 #'          \frac{\sum_i w_i z_i}{\sqrt{\sum_i w_i^2}} .
 #'      }
 #'
-#'    - If `prev_strat = "decile"`: peptides are binned into deciles of pooled
-#'      prevalence
+#'    - If `strat_bins` is a numeric vector of pooled prevalence cutpoints
+#'      (between 0 and 1), peptides are binned by pooled prevalence
 #'      \deqn{
 #'        \frac{n_{g1}\hat p_{g1} + n_{g2}\hat p_{g2}}{n_{g1} + n_{g2}},
 #'      }
-#'      a Stouffer statistic \eqn{T_b} is computed within each bin, and the
+#'      a Stouffer statistic \eqn{T_b} is computed within each bin. The
 #'      **mean** of the bin-level z-scores is reported as
-#'      \eqn{T_{\mathrm{obs}}}.
+#'      \eqn{T_{\mathrm{obs}}}. For example, if `strat_bins` includes `0.10`
+#'      and `0.20`, then peptides with pooled prevalence in (0.10, 0.20] share
+#'      a bin.
 #'
 #' 5. **Permutation scheme and p-value.**
 #'    A **two-sided** permutation p-value for the global shift is computed:
@@ -177,9 +179,10 @@
 #'   combination (see Details).
 #' @param stat_mode One of `c("diff", "asin", "score", "srlr")`, determining
 #'   the peptide-level test statistic (see Details).
-#' @param prev_strat One of `c("none", "decile")`. If `"decile"`, the Stouffer
-#'   statistic is computed within prevalence deciles and the mean of
-#'   decile-level z-scores is used as the global test statistic.
+#' @param strat_bins Numeric vector of pooled prevalence cutpoints in [0, 1].
+#'   If `0`, no stratification is used (single global Stouffer statistic).
+#'   Otherwise, peptides are binned by pooled prevalence and the mean of
+#'   bin-level z-scores is used as the global test statistic.
 #' @param winsor_z Winsorization threshold applied to peptide-level z-scores.
 #'   Values beyond `±winsor_z` are truncated. Default `4.0`.
 #' @param rank_feature_keep Optional **named list** mapping `rank` to a vector
@@ -242,7 +245,7 @@
 #'   B_permutations     = 500L,  # smaller for speed
 #'   weight_mode        = "n_eff_sqrt",
 #'   stat_mode          = "asin",
-#'   prev_strat         = "none",
+#'   strat_bins         = 0,
 #'   winsor_z           = Inf,
 #'   rank_feature_keep  = list(species = NULL),
 #'   log                = FALSE
@@ -261,7 +264,7 @@ compute_delta <- function(
   B_permutations = 2000L,
   weight_mode = c("equal", "se_invvar", "n_eff_sqrt"),
   stat_mode = c("diff", "asin", "score", "srlr"),
-  prev_strat = c("none", "decile"),
+  strat_bins = c(0.002, 0.005, 0.01, 0.02, 0.05, 0.10, 0.20, 0.50),
   winsor_z = 4.0,
   rank_feature_keep = NULL,
   peptide_library = NULL,
@@ -279,7 +282,12 @@ compute_delta <- function(
   chk::chk_true(B_permutations >= 100)
   weight_mode <- match.arg(weight_mode)
   stat_mode <- match.arg(stat_mode)
-  prev_strat <- match.arg(prev_strat)
+  chk::chk_numeric(strat_bins)
+  if (!(length(strat_bins) == 1L && isTRUE(all.equal(strat_bins, 0)))) {
+    chk::chk_true(all(is.finite(strat_bins)))
+    chk::chk_true(all(strat_bins >= 0 & strat_bins <= 1))
+    strat_bins <- sort(unique(as.numeric(strat_bins)))
+  }
 
   # --- 1) Prepare data once ---------------------------------------------------
   # Required columns from `x`
@@ -786,7 +794,7 @@ compute_delta <- function(
       seed             = seed_i,
       weight_mode      = weight_mode,
       stat_mode        = stat_mode,
-      prev_strat       = prev_strat,
+      strat_bins       = strat_bins,
       winsor_z         = winsor_z,
       design           = st$design
     )
