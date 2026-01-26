@@ -16,6 +16,7 @@ compute_delta(
   B_permutations = 2000L,
   weight_mode = c("equal", "se_invvar", "n_eff_sqrt"),
   stat_mode = c("diff", "asin", "score", "srlr", "mcnemar", "srlr_paired"),
+  aggregate_stat = c("stouffer", "maxmean"),
   strat_bins = c(0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5),
   winsor_z = 4,
   rank_feature_keep = NULL,
@@ -62,6 +63,10 @@ combination (see Details).}
 \item{stat_mode}{One of \code{c("diff", "asin", "score", "srlr", "mcnemar",
 "srlr_paired")}, determining the peptide-level test statistic (see
 Details). The paired-only modes require paired designs.}
+
+\item{aggregate_stat}{One of \code{c("stouffer", "maxmean")}, controlling how
+peptide-level z-scores are aggregated into a single test statistic (see
+Details).}
 
 \item{strat_bins}{Numeric vector of pooled prevalence cutpoints in [0, 1].
 If \code{0}, no stratification is used (single global Stouffer statistic).
@@ -181,16 +186,17 @@ Each \eqn{z_i} is then \strong{winsorized} to \eqn{\pm} \code{winsor_z}.
 i.e. the square root of the expected number of positives across both
 groups.
 }
-\item \strong{Combine into a single test statistic (Stouffer).}
+\item \strong{Combine into a single test statistic (\code{aggregate_stat}).}
 Let \eqn{w_i} be the weights and \eqn{z_i} the peptide-level z-scores.
 \itemize{
-\item If \code{strat_bins = 0}:
+\item If \code{aggregate_stat = "stouffer"} and \code{strat_bins = 0}:
 \deqn{
        T_{\mathrm{obs}} =
          \frac{\sum_i w_i z_i}{\sqrt{\sum_i w_i^2}} .
      }
-\item If \code{strat_bins} is a numeric vector of pooled prevalence cutpoints
-(between 0 and 1), peptides are binned by pooled prevalence
+\item If \code{aggregate_stat = "stouffer"} and \code{strat_bins} is a numeric
+vector of pooled prevalence cutpoints (between 0 and 1), peptides are binned
+by pooled prevalence
 \deqn{
        \frac{n_{g1}\hat p_{g1} + n_{g2}\hat p_{g2}}{n_{g1} + n_{g2}},
      }
@@ -199,6 +205,10 @@ a Stouffer statistic \eqn{T_b} is computed within each bin, and the
 \eqn{T_{\mathrm{obs}}}. For example, if \code{strat_bins} includes
 \code{0.10} and \code{0.20}, then peptides with pooled prevalence in
 (0.10, 0.20] share a bin.
+\item If \code{aggregate_stat = "maxmean"}, split z-scores into positive and
+negative parts, compute their means, and take the dominant direction. If
+\code{strat_bins} is provided, maxmean is computed per bin and the
+\strong{mean} of bin-level statistics is reported.
 }
 \item \strong{Permutation scheme and p-value.}
 A \strong{two-sided} permutation p-value for the global shift is computed:

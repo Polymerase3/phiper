@@ -80,16 +80,17 @@
 #'      i.e. the square root of the expected number of positives across both
 #'      groups.
 #'
-#' 4. **Combine into a single test statistic (Stouffer).**
+#' 4. **Combine into a single test statistic (`aggregate_stat`).**
 #'    Let \eqn{w_i} be the weights and \eqn{z_i} the peptide-level z-scores.
 #'
-#'    - If `strat_bins = 0`:
+#'    - If `aggregate_stat = "stouffer"` and `strat_bins = 0`:
 #'      \deqn{
 #'        T_{\mathrm{obs}} =
 #'          \frac{\sum_i w_i z_i}{\sqrt{\sum_i w_i^2}} .
 #'      }
 #'
-#'    - If `strat_bins` is a numeric vector of pooled prevalence cutpoints
+#'    - If `aggregate_stat = "stouffer"` and `strat_bins` is a numeric vector
+#'      of pooled prevalence cutpoints
 #'      (between 0 and 1), peptides are binned by pooled prevalence
 #'      \deqn{
 #'        \frac{n_{g1}\hat p_{g1} + n_{g2}\hat p_{g2}}{n_{g1} + n_{g2}},
@@ -99,6 +100,11 @@
 #'      \eqn{T_{\mathrm{obs}}}. For example, if `strat_bins` includes `0.10`
 #'      and `0.20`, then peptides with pooled prevalence in (0.10, 0.20] share
 #'      a bin.
+#'
+#'    - If `aggregate_stat = "maxmean"`, the signed z-scores are split into
+#'      positive and negative parts, averaged within each set, and the dominant
+#'      direction is selected. If `strat_bins` is provided, the maxmean
+#'      statistic is computed per bin and the **mean** across bins is reported.
 #'
 #' 5. **Permutation scheme and p-value.**
 #'    A **two-sided** permutation p-value for the global shift is computed:
@@ -194,6 +200,9 @@
 #' @param stat_mode One of `c("diff", "asin", "score", "srlr", "mcnemar",
 #'   "srlr_paired")`, determining the peptide-level test statistic (see
 #'   Details). The paired-only modes require paired designs.
+#' @param aggregate_stat One of `c("stouffer", "maxmean")`, controlling how
+#'   peptide-level z-scores are aggregated into a single test statistic (see
+#'   Details).
 #' @param strat_bins Numeric vector of pooled prevalence cutpoints in [0, 1].
 #'   If `0`, no stratification is used (single global Stouffer statistic).
 #'   Otherwise, peptides are binned by pooled prevalence and the mean of
@@ -279,6 +288,7 @@ compute_delta <- function(
   B_permutations = 2000L,
   weight_mode = c("equal", "se_invvar", "n_eff_sqrt"),
   stat_mode = c("diff", "asin", "score", "srlr", "mcnemar", "srlr_paired"),
+  aggregate_stat = c("stouffer", "maxmean"),
   strat_bins = c(0.002, 0.005, 0.01, 0.02, 0.05, 0.10, 0.20, 0.50),
   winsor_z = 4.0,
   rank_feature_keep = NULL,
@@ -297,6 +307,7 @@ compute_delta <- function(
   chk::chk_true(B_permutations >= 100)
   weight_mode <- match.arg(weight_mode)
   stat_mode <- match.arg(stat_mode)
+  aggregate_stat <- match.arg(aggregate_stat)
   if (stat_mode %in% c("mcnemar", "srlr_paired") && is.null(paired_by)) {
     .ph_abort("stat_mode requires paired_by for paired designs.")
   }
@@ -812,6 +823,7 @@ compute_delta <- function(
       seed             = seed_i,
       weight_mode      = weight_mode,
       stat_mode        = stat_mode,
+      aggregate_stat   = aggregate_stat,
       strat_bins       = strat_bins,
       winsor_z         = winsor_z,
       design           = st$design

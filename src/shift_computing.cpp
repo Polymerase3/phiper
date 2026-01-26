@@ -109,6 +109,7 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
                                      double winsor_z,
                                      const std::string& weight_mode,
                                      const std::string& stat_mode,
+                                     const std::string& aggregate_stat,
                                      const std::vector<double>& strat_bins) {
   const int m = (int)p1.size();
   std::vector<double> z(m), w(m), delta(m);
@@ -200,7 +201,19 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
     std::fill(w.begin(), w.end(), 1.0);
   }
 
-  // Stouffer combine
+  auto maxmean_stat = [&](const std::vector<int>& idx) {
+    double sp = 0.0, sn = 0.0;
+    int cp = 0, cn = 0;
+    for (int i : idx) {
+      if (z[i] > 0.0) { sp += z[i]; ++cp; }
+      else if (z[i] < 0.0) { sn += -z[i]; ++cn; }
+    }
+    const double Splus = (cp > 0) ? (sp / (double)cp) : 0.0;
+    const double Sminus = (cn > 0) ? (sn / (double)cn) : 0.0;
+    return (Splus >= Sminus) ? Splus : -Sminus;
+  };
+
+  // Aggregate combine
   double T_obs = 0.0;
   bool use_strat = true;
   if (strat_bins.empty()) use_strat = false;
@@ -233,27 +246,46 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
 
       // bin & per-bin Stouffer
       int nb = (int)brks.size() - 1;
-      std::vector<double> bin_z;
-      bin_z.reserve(nb);
+      std::vector<double> bin_stat;
+      bin_stat.reserve(nb);
       for (int b = 0; b < nb; ++b) {
         const double L = brks[b], R = brks[b+1];
         double num = 0.0, den2 = 0.0; bool any=false;
+        std::vector<int> idx;
         for (int i = 0; i < m; ++i) {
           const double v = pp[i];
           const bool in = ((b == 0 ? (v >= L) : (v > L)) && (v <= R));
-          if (in) { num += w[i]*z[i]; den2 += w[i]*w[i]; any=true; }
+          if (in) {
+            if (aggregate_stat == "maxmean") {
+              idx.push_back(i);
+            } else {
+              num += w[i]*z[i];
+              den2 += w[i]*w[i];
+              any=true;
+            }
+          }
         }
-        bin_z.push_back(any ? (num / std::sqrt(std::max(den2, 1e-300))) : 0.0);
+        if (aggregate_stat == "maxmean") {
+          bin_stat.push_back(idx.empty() ? 0.0 : maxmean_stat(idx));
+        } else {
+          bin_stat.push_back(any ? (num / std::sqrt(std::max(den2, 1e-300))) : 0.0);
+        }
       }
-      // mean of bin-level z's
-      double s=0.0; for (double v: bin_z) s += v;
+      // mean of bin-level stats
+      double s=0.0; for (double v: bin_stat) s += v;
       T_obs = (nb>0) ? s / nb : 0.0;
     }
   }
   if (!use_strat) {
-    double num = 0.0, den2 = 0.0;
-    for (int i = 0; i < m; ++i) { num += w[i]*z[i]; den2 += w[i]*w[i]; }
-    T_obs = num / std::sqrt(std::max(den2, 1e-300));
+    if (aggregate_stat == "maxmean") {
+      std::vector<int> idx(m);
+      for (int i = 0; i < m; ++i) idx[i] = i;
+      T_obs = maxmean_stat(idx);
+    } else {
+      double num = 0.0, den2 = 0.0;
+      for (int i = 0; i < m; ++i) { num += w[i]*z[i]; den2 += w[i]*w[i]; }
+      T_obs = num / std::sqrt(std::max(den2, 1e-300));
+    }
   }
 
   // normalized weights
@@ -279,7 +311,7 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
  * @param hits_g1_paired, hits_g2_paired List: per-peptide IntegerVector of 1..P subject indices (PAIRED).
  * @param P int: number of paired subjects (PAIRED).
  * @param B, seed, winsor_z numeric.
- * @param weight_mode, stat_mode, design strings.
+ * @param weight_mode, stat_mode, aggregate_stat, design strings.
  * @param strat_bins Numeric vector of pooled prevalence cutpoints or 0 for no stratification.
  *
  * @return List with fields: n_peptides_used, m_eff, T_obs, T_null_mean, T_null_sd,
@@ -298,6 +330,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
                               const int seed,
                               const std::string& weight_mode,
                               const std::string& stat_mode,
+                              const std::string& aggregate_stat,
                               const Rcpp::NumericVector& strat_bins,
                               const double winsor_z,
                               const std::string& design) {
@@ -378,7 +411,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     n2.assign(mu, (double)P);
 
     // Observed T
-    CombineOut obs = combine_T_internal(p1, p2, x1, x2, n1, n2, b_vec, c_vec, winsor_z, weight_mode, stat_mode, strat_bins_vec);
+    CombineOut obs = combine_T_internal(p1, p2, x1, x2, n1, n2, b_vec, c_vec, winsor_z, weight_mode, stat_mode, aggregate_stat, strat_bins_vec);
 
     // Moments
     double max_delta = 0.0;  // max absolute delta
@@ -460,7 +493,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
       double Tb = 0.0;
       if (!p1b.empty()) {
         std::vector<double> n1b(p1b.size(), (double)P), n2b(p2b.size(), (double)P);
-        Tb = combine_T_internal(p1b, p2b, x1b, x2b, n1b, n2b, bb, cc, winsor_z, weight_mode, stat_mode, strat_bins_vec).T_obs;
+        Tb = combine_T_internal(p1b, p2b, x1b, x2b, n1b, n2b, bb, cc, winsor_z, weight_mode, stat_mode, aggregate_stat, strat_bins_vec).T_obs;
       }
 
       ++n_mom;
@@ -561,7 +594,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     }
 
     // Observed T
-    CombineOut obs = combine_T_internal(p1, p2, x1, x2, n1, n2, std::vector<double>(), std::vector<double>(), winsor_z, weight_mode, stat_mode, strat_bins_vec);
+    CombineOut obs = combine_T_internal(p1, p2, x1, x2, n1, n2, std::vector<double>(), std::vector<double>(), winsor_z, weight_mode, stat_mode, aggregate_stat, strat_bins_vec);
 
     // Moments
     double max_delta = 0.0;  // max absolute delta
@@ -645,7 +678,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
       if (!p1b.empty()) {
         n1b.assign(p1b.size(), (double)nA);
         n2b.assign(p2b.size(), (double)nB);
-        Tb = combine_T_internal(p1b, p2b, x1b, x2b, n1b, n2b, std::vector<double>(), std::vector<double>(), winsor_z, weight_mode, stat_mode, strat_bins_vec).T_obs;
+        Tb = combine_T_internal(p1b, p2b, x1b, x2b, n1b, n2b, std::vector<double>(), std::vector<double>(), winsor_z, weight_mode, stat_mode, aggregate_stat, strat_bins_vec).T_obs;
       }
 
       ++n_mom;
