@@ -52,6 +52,20 @@
 #'      where \eqn{\ell(p;x,n)=x\log p+(n-x)\log(1-p)} and
 #'      \eqn{\hat p_{gk}=x_k/n_k}, \eqn{\hat p=(x_1+x_2)/(n_1+n_2)}.
 #'
+#'    - `"mcnemar"` (paired-only): signed McNemar z based on discordant pairs
+#'      \eqn{b = \#(g1=1,g2=0)}, \eqn{c = \#(g1=0,g2=1)}:
+#'      \deqn{
+#'        z = \frac{b - c}{\sqrt{b + c}} .
+#'      }
+#'      If \eqn{b+c=0}, z is defined as 0.
+#'
+#'    - `"srlr_paired"` (paired-only): signed root deviance for the paired
+#'      binomial problem with \eqn{m=b+c}:
+#'      \deqn{
+#'        z = \mathrm{sign}(b-c)\sqrt{2\left[b\log\frac{2b}{m} + c\log\frac{2c}{m}\right]} .
+#'      }
+#'      Terms with \eqn{0\log 0} are defined as 0; if \eqn{m=0}, z is 0.
+#'
 #'    Each \eqn{z_i} is then **winsorized** to \eqn{\pm} `winsor_z`.
 #'
 #' 3. **Weights (`weight_mode`).**
@@ -177,8 +191,9 @@
 #' @param weight_mode One of `c("equal", "se_invvar", "n_eff_sqrt")`,
 #'   controlling how peptide-level z-scores are weighted in the Stouffer
 #'   combination (see Details).
-#' @param stat_mode One of `c("diff", "asin", "score", "srlr")`, determining
-#'   the peptide-level test statistic (see Details).
+#' @param stat_mode One of `c("diff", "asin", "score", "srlr", "mcnemar",
+#'   "srlr_paired")`, determining the peptide-level test statistic (see
+#'   Details). The paired-only modes require paired designs.
 #' @param strat_bins Numeric vector of pooled prevalence cutpoints in [0, 1].
 #'   If `0`, no stratification is used (single global Stouffer statistic).
 #'   Otherwise, peptides are binned by pooled prevalence and the mean of
@@ -207,8 +222,8 @@
 #' - `n_subjects_paired`: number of paired subjects used in a paired design
 #'   (or `NA` for unpaired).
 #' - `n_peptides_used`: number of peptides contributing to the test.
-#' - `m_eff`: effective number of peptides after prevalence filtering and
-#'   weighting (as returned by the C++ helper).
+#' - `m_eff`: effective number of peptides after weighting (as returned by the
+#'   C++ helper).
 #' - `T_obs`: observed Stouffer-type test statistic.
 #' - `p_perm`: two-sided permutation p-value.
 #' - `b`: number of permutations actually used (may be `< B_permutations` if
@@ -263,7 +278,7 @@ compute_delta <- function(
   interaction_sep = "::",
   B_permutations = 2000L,
   weight_mode = c("equal", "se_invvar", "n_eff_sqrt"),
-  stat_mode = c("diff", "asin", "score", "srlr"),
+  stat_mode = c("diff", "asin", "score", "srlr", "mcnemar", "srlr_paired"),
   strat_bins = c(0.002, 0.005, 0.01, 0.02, 0.05, 0.10, 0.20, 0.50),
   winsor_z = 4.0,
   rank_feature_keep = NULL,
@@ -282,6 +297,9 @@ compute_delta <- function(
   chk::chk_true(B_permutations >= 100)
   weight_mode <- match.arg(weight_mode)
   stat_mode <- match.arg(stat_mode)
+  if (stat_mode %in% c("mcnemar", "srlr_paired") && is.null(paired_by)) {
+    .ph_abort("stat_mode requires paired_by for paired designs.")
+  }
   chk::chk_numeric(strat_bins)
   if (!(length(strat_bins) == 1L && isTRUE(all.equal(strat_bins, 0)))) {
     chk::chk_true(all(is.finite(strat_bins)))

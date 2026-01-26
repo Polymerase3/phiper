@@ -15,7 +15,7 @@ compute_delta(
   interaction_sep = "::",
   B_permutations = 2000L,
   weight_mode = c("equal", "se_invvar", "n_eff_sqrt"),
-  stat_mode = c("diff", "asin", "score", "srlr"),
+  stat_mode = c("diff", "asin", "score", "srlr", "mcnemar", "srlr_paired"),
   strat_bins = c(0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5),
   winsor_z = 4,
   rank_feature_keep = NULL,
@@ -59,8 +59,9 @@ p-value. Default \code{2000L}. Must be at least 100.}
 controlling how peptide-level z-scores are weighted in the Stouffer
 combination (see Details).}
 
-\item{stat_mode}{One of \code{c("diff", "asin", "score", "srlr")}, determining
-the peptide-level test statistic (see Details).}
+\item{stat_mode}{One of \code{c("diff", "asin", "score", "srlr", "mcnemar",
+"srlr_paired")}, determining the peptide-level test statistic (see
+Details). The paired-only modes require paired designs.}
 
 \item{strat_bins}{Numeric vector of pooled prevalence cutpoints in [0, 1].
 If \code{0}, no stratification is used (single global Stouffer statistic).
@@ -95,8 +96,8 @@ groups compared.
 \item \code{n_subjects_paired}: number of paired subjects used in a paired design
 (or \code{NA} for unpaired).
 \item \code{n_peptides_used}: number of peptides contributing to the test.
-\item \code{m_eff}: effective number of peptides after prevalence filtering and
-weighting (as returned by the C++ helper).
+\item \code{m_eff}: effective number of peptides after weighting (as returned by
+the C++ helper).
 \item \code{T_obs}: observed Stouffer-type test statistic.
 \item \code{p_perm}: two-sided permutation p-value.
 \item \code{b}: number of permutations actually used (may be \verb{< B_permutations} if
@@ -146,13 +147,25 @@ using raw proportions \eqn{\tilde p_k = x_k / n_k} and pooled
 \item \code{"srlr"}: signed root likelihood ratio for \eqn{H_0: p_{g1}=p_{g2}}:
 \deqn{
        LR = 2\left[\ell(\hat p_{g1};x_1,n_1)+\ell(\hat p_{g2};x_2,n_2)
-                 -\ell(\hat p;x_1,n_1)-\ell(\hat p;x_2,n_2)\right],
+                -\ell(\hat p;x_1,n_1)-\ell(\hat p;x_2,n_2)\right],
      }
 \deqn{
        z = \mathrm{sign}(\hat p_{g2}-\hat p_{g1})\sqrt{LR},
      }
 where \eqn{\ell(p;x,n)=x\log p+(n-x)\log(1-p)} and
 \eqn{\hat p_{gk}=x_k/n_k}, \eqn{\hat p=(x_1+x_2)/(n_1+n_2)}.
+\item \code{"mcnemar"} (paired-only): signed McNemar z based on discordant
+pairs \eqn{b = \#(g1=1,g2=0)}, \eqn{c = \#(g1=0,g2=1)}:
+\deqn{
+       z = \frac{b - c}{\sqrt{b + c}} .
+     }
+If \eqn{b+c=0}, z is defined as 0.
+\item \code{"srlr_paired"} (paired-only): signed root deviance for the paired
+binomial problem with \eqn{m=b+c}:
+\deqn{
+       z = \mathrm{sign}(b-c)\sqrt{2\left[b\log\frac{2b}{m} + c\log\frac{2c}{m}\right]} .
+     }
+Terms with \eqn{0\log 0} are defined as 0; if \eqn{m=0}, z is 0.
 }
 
 Each \eqn{z_i} is then \strong{winsorized} to \eqn{\pm} \code{winsor_z}.
