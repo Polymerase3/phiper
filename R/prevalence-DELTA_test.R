@@ -618,7 +618,7 @@ compute_delta <- function(
       dplyr::select(group_col, group1, group2, design)
   }
 
-  # (f) master plan = rank-feature strata × contrasts (only strata with
+  # (f) master plan = rank-feature strata x contrasts (only strata with
   # peptides)
   master_plan <- tidyr::crossing(
     rf_counts |> dplyr::select(rank, feature, n_peptides),

@@ -51,7 +51,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_phiper_build_bitset_unpaired", (DL_FUNC) &_phiper_build_bitset_unpaired, 2},
-    {"_phiper_cpp_shift_contrast", (DL_FUNC) &_phiper_cpp_shift_contrast, 15},
+    {"_phiper_cpp_shift_contrast", (DL_FUNC) &_phiper_cpp_shift_contrast, 16},
     {NULL, NULL, 0}
 };
 
