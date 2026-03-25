@@ -15,7 +15,7 @@ compute_delta(
   interaction_sep = "::",
   B_permutations = 2000L,
   weight_mode = c("equal", "se_invvar", "n_eff_sqrt"),
-  stat_mode = c("diff", "asin", "score", "srlr"),
+  stat_mode = c("srlr", "diff", "asin", "score"),
   prev_strat = c("none", "decile"),
   winsor_z = 4,
   rank_feature_keep = NULL,
