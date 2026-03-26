@@ -62,6 +62,22 @@ static inline std::vector< std::vector<uint64_t> >
     return out;
   }
 
+// Welford's online algorithm for running mean and variance
+struct WelfordAccum {
+  int64_t n = 0;
+  double mean = 0.0;
+  double M2   = 0.0;
+  void digest(double x) {
+    ++n;
+    const double d  = x - mean;
+    mean += d / static_cast<double>(n);
+    M2   += d * (x - mean);
+  }
+  double variance() const {
+    return (n > 1) ? M2 / static_cast<double>(n - 1) : NA_REAL;
+  }
+};
+
 // Compute z, weights, T_obs exactly as in R helper
 struct CombineOut {
   double T_obs;
@@ -69,8 +85,67 @@ struct CombineOut {
   std::vector<double> delta;
 };
 
+static inline Rcpp::List make_perm_result(
+    int mu, double m_eff, double T_obs,
+    const WelfordAccum& acc, int b_hits, int B,
+    double max_delta, double frac_pos, double frac_pos_w)
+{
+  const double p_perm = (1.0 + (double)b_hits) / (1.0 + (double)B);
+  double T_null_mean = NA_REAL;
+  double T_null_sd   = NA_REAL;
+  if (acc.n > 0) {
+    T_null_mean = acc.mean;
+    double var_T = acc.variance();
+    if (var_T < 0.0 && var_T > -1e-15) var_T = 0.0;
+    if (var_T >= 0.0) T_null_sd = std::sqrt(var_T);
+  }
+  return Rcpp::List::create(
+    Rcpp::_["n_peptides_used"]  = mu,
+    Rcpp::_["m_eff"]            = m_eff,
+    Rcpp::_["T_obs"]            = T_obs,
+    Rcpp::_["T_null_mean"]      = T_null_mean,
+    Rcpp::_["T_null_sd"]        = T_null_sd,
+    Rcpp::_["b"]                = b_hits,
+    Rcpp::_["p_perm"]           = p_perm,
+    Rcpp::_["max_delta"]        = max_delta,
+    Rcpp::_["frac_delta_pos"]   = frac_pos,
+    Rcpp::_["frac_delta_pos_w"] = frac_pos_w
+  );
+}
+
+static inline double ll_binom(double x, double n, double p) {
+  if (p <= 0.0) {
+    return (x > 0.0) ? -std::numeric_limits<double>::infinity() : 0.0;
+  }
+  if (p >= 1.0) {
+    return ((n - x) > 0.0) ? -std::numeric_limits<double>::infinity() : 0.0;
+  }
+  double out = 0.0;
+  if (x > 0.0) out += x * std::log(p);
+  const double nx = n - x;
+  if (nx > 0.0) out += nx * std::log1p(-p);
+  return out;
+}
+
+static inline bool score_boundary(double x1, double n1, double x2, double n2) {
+  const double total = x1 + x2;
+  const double N = n1 + n2;
+  return (total <= 0.0) || (N > 0.0 && total >= N);
+}
+
+static inline double score_denom_from_counts(double x1, double n1,
+                                             double x2, double n2) {
+  const double N = n1 + n2;
+  if (N <= 0.0 || n1 <= 0.0 || n2 <= 0.0) return 0.0;
+  const double p0 = (x1 + x2) / N;
+  const double v = p0 * (1.0 - p0) * (1.0 / n1 + 1.0 / n2);
+  return (v > 0.0) ? std::sqrt(v) : 0.0;
+}
+
 static CombineOut combine_T_internal(const std::vector<double>& p1,
                                      const std::vector<double>& p2,
+                                     const std::vector<double>& x1,
+                                     const std::vector<double>& x2,
                                      const std::vector<double>& n1,
                                      const std::vector<double>& n2,
                                      double winsor_z,
@@ -87,6 +162,33 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
     if (stat_mode == "asin") {
       const double den = std::sqrt( 1.0/(4.0*std::max(n1[i],1.0)) + 1.0/(4.0*std::max(n2[i],1.0)) );
       z[i] = (std::asin(std::sqrt(p2[i])) - std::asin(std::sqrt(p1[i]))) / den;
+    } else if (stat_mode == "score" || stat_mode == "srlr") {
+      const double n1i = n1[i];
+      const double n2i = n2[i];
+      const double x1i = x1[i];
+      const double x2i = x2[i];
+
+      if (stat_mode == "score" && score_boundary(x1i, n1i, x2i, n2i)) {
+        z[i] = 0.0;
+      } else {
+        const double p1m = (n1i > 0.0) ? (x1i / n1i) : 0.0;
+        const double p2m = (n2i > 0.0) ? (x2i / n2i) : 0.0;
+        const long double lhs = (long double)x2i * (long double)n1i;
+        const long double rhs = (long double)x1i * (long double)n2i;
+        const double sign = (lhs > rhs) ? 1.0 : (lhs < rhs) ? -1.0 : 0.0;
+
+        if (stat_mode == "score") {
+          const double den = score_denom_from_counts(x1i, n1i, x2i, n2i);
+          z[i] = (den > 0.0) ? ((p2m - p1m) / den) : 0.0;
+        } else { // "srlr"
+          const double p0 = (n1i + n2i > 0.0) ? ((x1i + x2i) / (n1i + n2i)) : 0.0;
+          const double ll_alt  = ll_binom(x1i, n1i, p1m) + ll_binom(x2i, n2i, p2m);
+          const double ll_null = ll_binom(x1i, n1i, p0)  + ll_binom(x2i, n2i, p0);
+          double LR = 2.0 * (ll_alt - ll_null);
+          if (LR < 0.0 && LR > -1e-12) LR = 0.0;
+          z[i] = (LR > 0.0) ? (sign * std::sqrt(LR)) : 0.0;
+        }
+      }
     } else { // diff
       const double se = std::sqrt(p1[i]*(1.0-p1[i])/std::max(n1[i],1.0) + p2[i]*(1.0-p2[i])/std::max(n2[i],1.0));
       z[i] = d / std::max(se, 1e-12);
@@ -96,7 +198,18 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
   }
 
   // weights
-  if (weight_mode == "se_invvar" && stat_mode == "asin") {
+  if (weight_mode == "se_invvar" && stat_mode == "srlr") {
+    std::fill(w.begin(), w.end(), 1.0);
+  } else if (weight_mode == "se_invvar" && stat_mode == "score") {
+    for (int i = 0; i < m; ++i) {
+      if (score_boundary(x1[i], n1[i], x2[i], n2[i])) {
+        w[i] = 0.0;
+      } else {
+        const double den = score_denom_from_counts(x1[i], n1[i], x2[i], n2[i]);
+        w[i] = 1.0 / std::max(den, 1e-6);
+      }
+    }
+  } else if (weight_mode == "se_invvar" && stat_mode == "asin") {
     for (int i = 0; i < m; ++i) {
       w[i] = 1.0 / std::sqrt( 1.0/(4.0*std::max(n1[i],1.0)) + 1.0/(4.0*std::max(n2[i],1.0)) );
     }
@@ -179,11 +292,11 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
  * @param g1_rows, g2_rows IntegerVector (1-based): subject row indices per group (UNPAIRED).
  * @param hits_g1_paired, hits_g2_paired List: per-peptide IntegerVector of 1..P subject indices (PAIRED).
  * @param P int: number of paired subjects (PAIRED).
- * @param B, seed, smooth_eps_num, smooth_eps_den, min_max_prev, winsor_z numeric.
+ * @param B, seed, winsor_z numeric.
  * @param weight_mode, stat_mode, prev_strat, design strings.
  *
- * @return List with fields: n_peptides_used, m_eff, T_obs, T_null_sd, b, p_perm,
- *         max_delta, frac_delta_pos, frac_delta_pos_w.
+ * @return List with fields: n_peptides_used, m_eff, T_obs, T_null_mean, T_null_sd,
+ *         b, p_perm, max_delta, frac_delta_pos, frac_delta_pos_w.
  */
 // [[Rcpp::export]]
 Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
@@ -196,9 +309,6 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
                               const int P,
                               const int B,
                               const int seed,
-                              const double smooth_eps_num,
-                              const double smooth_eps_den,
-                              const double min_max_prev,
                               const std::string& weight_mode,
                               const std::string& stat_mode,
                               const std::string& prev_strat,
@@ -219,6 +329,8 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     std::vector< std::vector<uint64_t> > M2 = lists_to_masks(hits_g2_paired, n_words_p);
 
     // Observed counts x1=|S1|, x2=|S2|; n1=n2=P (constant)
+    std::vector<double> x1; x1.reserve(m);
+    std::vector<double> x2; x2.reserve(m);
     std::vector<double> p1; p1.reserve(m);
     std::vector<double> p2; p2.reserve(m);
     std::vector<double> n1(m, (double)P), n2(m, (double)P);
@@ -228,12 +340,13 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
       // popcount masks
       uint32_t s1 = 0, s2 = 0;
       for (int w = 0; w < n_words_p; ++w) { s1 += pc64(M1[i][w]); s2 += pc64(M2[i][w]); }
-      const double p1i = ( (double)s1 + smooth_eps_num ) / ( (double)P + smooth_eps_den * smooth_eps_num );
-      const double p2i = ( (double)s2 + smooth_eps_num ) / ( (double)P + smooth_eps_den * smooth_eps_num );
-      if (std::max(p1i, p2i) >= min_max_prev) {
-        keep_idx.push_back(i);
-        p1.push_back(p1i); p2.push_back(p2i);
-      }
+      const double x1i = (double)s1;
+      const double x2i = (double)s2;
+      const double p1i = x1i / (double)P;
+      const double p2i = x2i / (double)P;
+      keep_idx.push_back(i);
+      x1.push_back(x1i); x2.push_back(x2i);
+      p1.push_back(p1i); p2.push_back(p2i);
     }
 
     const int mu = (int)keep_idx.size();
@@ -242,6 +355,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         _["n_peptides_used"]  = 0L,
         _["m_eff"]            = NA_REAL,
         _["T_obs"]            = NA_REAL,
+        _["T_null_mean"]      = NA_REAL,
         _["T_null_sd"]        = NA_REAL,
         _["b"]                = 0L,
         _["p_perm"]           = NA_REAL,
@@ -256,7 +370,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     n2.assign(mu, (double)P);
 
     // Observed T
-    CombineOut obs = combine_T_internal(p1, p2, n1, n2, winsor_z, weight_mode, stat_mode, prev_strat);
+    CombineOut obs = combine_T_internal(p1, p2, x1, x2, n1, n2, winsor_z, weight_mode, stat_mode, prev_strat);
 
     // Moments
     double max_delta = 0.0;  // max absolute delta
@@ -282,7 +396,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
 
     int b_hits = 0;
     std::vector<uint64_t> Fmask(n_words_p, 0ULL); // flip mask
-    double sum_T = 0.0, sum_T2 = 0.0;
+    WelfordAccum acc;
 
     for (int b = 0; b < B; ++b) {
       // Build flip mask F over P subjects
@@ -297,6 +411,8 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
       // For each peptide, counts after flip:
       // x1' = pop(S1 & ~F) + pop(S2 & F)
       // x2' = pop(S2 & ~F) + pop(S1 & F)
+      std::vector<double> x1b; x1b.reserve(mu);
+      std::vector<double> x2b; x2b.reserve(mu);
       std::vector<double> p1b; p1b.reserve(mu);
       std::vector<double> p2b; p2b.reserve(mu);
 
@@ -312,45 +428,25 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         }
         const double x1p = (double)a + (double)b2;
         const double x2p = (double)c + (double)d;
-        const double pA  = (x1p + smooth_eps_num) / ((double)P + smooth_eps_den * smooth_eps_num);
-        const double pB  = (x2p + smooth_eps_num) / ((double)P + smooth_eps_den * smooth_eps_num);
-        if (std::max(pA, pB) >= min_max_prev) {
-          p1b.push_back(pA); p2b.push_back(pB);
-        }
+        const double pA  = x1p / (double)P;
+        const double pB  = x2p / (double)P;
+        x1b.push_back(x1p); x2b.push_back(x2p);
+        p1b.push_back(pA); p2b.push_back(pB);
       }
 
       double Tb = 0.0;
       if (!p1b.empty()) {
         std::vector<double> n1b(p1b.size(), (double)P), n2b(p2b.size(), (double)P);
-        Tb = combine_T_internal(p1b, p2b, n1b, n2b, winsor_z, weight_mode, stat_mode, prev_strat).T_obs;
+        Tb = combine_T_internal(p1b, p2b, x1b, x2b, n1b, n2b, winsor_z, weight_mode, stat_mode, prev_strat).T_obs;
       }
 
-      sum_T  += Tb;
-      sum_T2 += Tb * Tb;
+      acc.digest(Tb);
 
       if (std::fabs(Tb) >= std::fabs(obs.T_obs)) ++b_hits;
     }
 
-    const double p_perm = (1.0 + (double)b_hits) / (1.0 + (double)B);
-
-    double T_null_sd = NA_REAL;
-    if (B > 0) {
-      const double mean_T = sum_T / static_cast<double>(B);
-      double var_T = (sum_T2 / static_cast<double>(B)) - mean_T * mean_T;
-      if (var_T > 0.0) T_null_sd = std::sqrt(var_T);
-    }
-
-    return Rcpp::List::create(
-      _["n_peptides_used"]  = mu,
-      _["m_eff"]            = m_eff,
-      _["T_obs"]            = obs.T_obs,
-      _["T_null_sd"]        = T_null_sd,
-      _["b"]                = b_hits,
-      _["p_perm"]           = p_perm,
-      _["max_delta"]        = max_delta,
-      _["frac_delta_pos"]   = frac_pos,
-      _["frac_delta_pos_w"] = frac_pos_w
-    );
+    return make_perm_result(mu, m_eff, obs.T_obs, acc, b_hits, B,
+                            max_delta, frac_pos, frac_pos_w);
   }
 
   // --------------------------- UNPAIRED PATH ----------------------------------
@@ -377,6 +473,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         _["n_peptides_used"] = 0L,
         _["m_eff"] = NA_REAL,
         _["T_obs"] = NA_REAL,
+        _["T_null_mean"] = NA_REAL,
         _["T_null_sd"] = NA_REAL,
         _["b"] = NA_INTEGER,
         _["p_perm"] = NA_REAL,
@@ -386,19 +483,17 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
       );
     }
 
-    // Smoothed prevalences and filter by min_max_prev
+    // Prevalences
     std::vector<double> p1, p2, n1, n2;
     p1.reserve(m); p2.reserve(m); n1.reserve(m); n2.reserve(m);
     std::vector<int> keep_idx; keep_idx.reserve(m);
 
     for (int i = 0; i < m; ++i) {
-      const double p1i = (x1[i] + smooth_eps_num) / (n1_const + smooth_eps_den * smooth_eps_num);
-      const double p2i = (x2[i] + smooth_eps_num) / (n2_const + smooth_eps_den * smooth_eps_num);
-      if (std::max(p1i, p2i) >= min_max_prev) {
-        keep_idx.push_back(i);
-        p1.push_back(p1i); p2.push_back(p2i);
-        n1.push_back(n1_const); n2.push_back(n2_const);
-      }
+      const double p1i = x1[i] / n1_const;
+      const double p2i = x2[i] / n2_const;
+      keep_idx.push_back(i);
+      p1.push_back(p1i); p2.push_back(p2i);
+      n1.push_back(n1_const); n2.push_back(n2_const);
     }
 
     const int mu = (int)keep_idx.size();
@@ -407,6 +502,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         _["n_peptides_used"]  = 0L,
         _["m_eff"]            = NA_REAL,
         _["T_obs"]            = NA_REAL,
+        _["T_null_mean"]      = NA_REAL,
         _["T_null_sd"]        = NA_REAL,
         _["b"]                = 0L,
         _["p_perm"]           = NA_REAL,
@@ -417,7 +513,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     }
 
     // Observed T
-    CombineOut obs = combine_T_internal(p1, p2, n1, n2, winsor_z, weight_mode, stat_mode, prev_strat);
+    CombineOut obs = combine_T_internal(p1, p2, x1, x2, n1, n2, winsor_z, weight_mode, stat_mode, prev_strat);
 
     // Moments
     double max_delta = 0.0;  // max absolute delta
@@ -448,7 +544,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     int b_hits = 0;
     std::vector<int> choose_idx(nA);
     std::vector<uint64_t> mask_A(n_words), mask_B(n_words);
-    double sum_T = 0.0, sum_T2 = 0.0;
+    WelfordAccum acc;
 
     for (int b = 0; b < B; ++b) {
       // random split: sample nA indices for group A
@@ -477,7 +573,9 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         }
       }
 
-      // counts → smoothed p → filter → T_b
+      // counts --> p --> T_b
+      std::vector<double> x1b; x1b.reserve(mu);
+      std::vector<double> x2b; x2b.reserve(mu);
       std::vector<double> p1b; p1b.reserve(mu);
       std::vector<double> p2b; p2b.reserve(mu);
       std::vector<double> n1b(mu, (double)nA), n2b(mu, (double)nB);
@@ -487,46 +585,25 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         const int col0 = pep_cols[i_keep] - 1;
         const double xA = (double)count_hits_col(reinterpret_cast<const uint8_t*>(RAW(bitset_raw)), n_words, col0, mask_A);
         const double xB = (double)count_hits_col(reinterpret_cast<const uint8_t*>(RAW(bitset_raw)), n_words, col0, mask_B);
-        const double pA = (xA + smooth_eps_num) / (n1b[0] + smooth_eps_den * smooth_eps_num);
-        const double pB = (xB + smooth_eps_num) / (n2b[0] + smooth_eps_den * smooth_eps_num);
-        if (std::max(pA, pB) >= min_max_prev) {
-          p1b.push_back(pA); p2b.push_back(pB);
-        }
+        const double pA = xA / n1b[0];
+        const double pB = xB / n2b[0];
+        x1b.push_back(xA); x2b.push_back(xB);
+        p1b.push_back(pA); p2b.push_back(pB);
       }
 
       double Tb = 0.0;
       if (!p1b.empty()) {
         n1b.assign(p1b.size(), (double)nA);
         n2b.assign(p2b.size(), (double)nB);
-        Tb = combine_T_internal(p1b, p2b, n1b, n2b, winsor_z, weight_mode, stat_mode, prev_strat).T_obs;
+        Tb = combine_T_internal(p1b, p2b, x1b, x2b, n1b, n2b, winsor_z, weight_mode, stat_mode, prev_strat).T_obs;
       }
 
-      sum_T  += Tb;
-      sum_T2 += Tb * Tb;
+      acc.digest(Tb);
 
       if (std::fabs(Tb) >= std::fabs(obs.T_obs)) ++b_hits;
     }
 
-    const double p_perm = (1.0 + (double)b_hits) / (1.0 + (double)B);
-
-    double T_null_sd = NA_REAL;
-    if (B > 0) {
-      const double Bd = (double)B;
-      const double mean_T = sum_T / Bd;
-      double var_T = (sum_T2 / Bd) - mean_T * mean_T;
-      if (var_T > 0.0) T_null_sd = std::sqrt(var_T);
-    }
-
-    return Rcpp::List::create(
-      _["n_peptides_used"]  = mu,
-      _["m_eff"]            = m_eff,
-      _["T_obs"]            = obs.T_obs,
-      _["T_null_sd"]        = T_null_sd,
-      _["b"]                = b_hits,
-      _["p_perm"]           = p_perm,
-      _["max_delta"]        = max_delta,
-      _["frac_delta_pos"]   = frac_pos,
-      _["frac_delta_pos_w"] = frac_pos_w
-    );
+    return make_perm_result(mu, m_eff, obs.T_obs, acc, b_hits, B,
+                            max_delta, frac_pos, frac_pos_w);
   }
 }

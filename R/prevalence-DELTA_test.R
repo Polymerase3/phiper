@@ -10,15 +10,13 @@
 #' For each stratum `(rank, feature, group_col)` that defines an ordered pair of
 #' groups `(g1, g2)`, the procedure is:
 #'
-#' 1. **Smoothed peptide-level prevalences.**
-#'    For each peptide, smoothed prevalences in `g1` and `g2` are
+#' 1. **Peptide-level prevalences.**
+#'    For each peptide, prevalences in `g1` and `g2` are
 #'    \deqn{
-#'      \hat p_k = \frac{x_k + \varepsilon}{n_k + \lambda \varepsilon},\quad k \in \{g1, g2\},
+#'      \hat p_k = \frac{x_k}{n_k},\quad k \in \{g1, g2\},
 #'    }
-#'    where `x_k` is the number of samples with presence (`exist > 0`), `n_k`
-#'    is the number of distinct samples (or paired subjects), `\varepsilon` is
-#'    `smooth_eps_num`, and `\lambda` is `smooth_eps_den_mult`. Peptides with
-#'    \eqn{\max(\hat p_{g1}, \hat p_{g2}) <} `min_max_prev` are discarded.
+#'    where `x_k` is the number of samples with presence (`exist > 0`) and `n_k`
+#'    is the number of distinct samples (or paired subjects).
 #'
 #' 2. **Per-peptide effect and z-score (`stat_mode`).**
 #'
@@ -34,6 +32,25 @@
 #'        z = \frac{\arcsin \sqrt{\hat p_{g2}} - \arcsin \sqrt{\hat p_{g1}}}
 #'                 {\sqrt{1 / (4 n_{g1}) + 1 / (4 n_{g2})}} .
 #'      }
+#'
+#'    - `"score"`: pooled score z for equality of proportions (2×2 score test),
+#'      using raw proportions \eqn{\tilde p_k = x_k / n_k} and pooled
+#'      \eqn{\tilde p = (x_1 + x_2)/(n_1 + n_2)}:
+#'      \deqn{
+#'        z = \frac{\tilde p_{g2} - \tilde p_{g1}}
+#'                 {\sqrt{\tilde p(1-\tilde p)\left(1/n_{g1} + 1/n_{g2}\right)}} .
+#'      }
+#'
+#'    - `"srlr"`: signed root likelihood ratio for \eqn{H_0: p_{g1}=p_{g2}}:
+#'      \deqn{
+#'        LR = 2\left[\ell(\hat p_{g1};x_1,n_1)+\ell(\hat p_{g2};x_2,n_2)
+#'                  -\ell(\hat p;x_1,n_1)-\ell(\hat p;x_2,n_2)\right],
+#'      }
+#'      \deqn{
+#'        z = \mathrm{sign}(\hat p_{g2}-\hat p_{g1})\sqrt{LR},
+#'      }
+#'      where \eqn{\ell(p;x,n)=x\log p+(n-x)\log(1-p)} and
+#'      \eqn{\hat p_{gk}=x_k/n_k}, \eqn{\hat p=(x_1+x_2)/(n_1+n_2)}.
 #'
 #'    Each \eqn{z_i} is then **winsorized** to \eqn{\pm} `winsor_z`.
 #'
@@ -90,21 +107,8 @@
 #'    null.
 #'
 #' 6. **Multiplicity.**
-#'    For each `rank`, permutation p-values `p_perm` are adjusted with BH
-#'    (per-rank) to obtain `p_adj_rank`. A simple categorical summary is
-#'    returned in `category_rank_bh`.
-#'
-#' 7. **Optional summaries.**
-#'
-#'    - If `fold_change != "none"` and a column `fold_change` is present in
-#'      `x`, an aggregate of that column over the peptides and subjects in the
-#'      contrast is returned as `fold_change_<mode>` (`mode` = `"sum"`,
-#'      `"mean"`, `"max"`, `"median"`).
-#'
-#'    - If `cross_prev != "none"`, pooled peptide-level prevalences across
-#'      \code{g1} \eqn{\cup} \code{g2} are summarized with the same set of
-#'      reducers (`"sum"`,
-#'      `"mean"`, `"max"`, `"median"`) and returned as `cross_prev_<mode>`.
+#'    No multiple-testing correction is performed; `p_perm` is returned as
+#'    computed.
 #'
 #' **Input requirements.**
 #'
@@ -168,17 +172,11 @@
 #' @param interaction_sep Separator for interaction values. Default `"::"`.
 #' @param B_permutations Number of permutations `B` used for the permutation
 #'   p-value. Default `2000L`. Must be at least 100.
-#' @param smooth_eps_num Laplace numerator epsilon \eqn{\varepsilon} used to
-#'   smooth prevalence estimates. Default `0.5`.
-#' @param smooth_eps_den_mult Multiplicative factor \eqn{\lambda} applied to
-#'   the denominator epsilon in the smoothing formula. Default `2.0`.
-#' @param min_max_prev Minimum required value of `max(p1, p2)` for a peptide to
-#'   be retained in the analysis. Default `0.0` (no prevalence filter).
 #' @param weight_mode One of `c("equal", "se_invvar", "n_eff_sqrt")`,
 #'   controlling how peptide-level z-scores are weighted in the Stouffer
 #'   combination (see Details).
-#' @param stat_mode One of `c("diff", "asin")`, determining whether z-scores
-#'   are based on prevalence differences or the arcsin–sqrt transform.
+#' @param stat_mode One of `c("diff", "asin", "score", "srlr")`, determining
+#'   the peptide-level test statistic (see Details).
 #' @param prev_strat One of `c("none", "decile")`. If `"decile"`, the Stouffer
 #'   statistic is computed within prevalence deciles and the mean of
 #'   decile-level z-scores is used as the global test statistic.
@@ -195,15 +193,6 @@
 #'   overall) using the package's logging helpers.
 #' @param log_file Path to a log file used by the logging helpers if `log` is
 #'   `TRUE`. Default `"compute_delta.log"`.
-#' @param fold_change Character scalar specifying whether and how to summarize
-#'   a `fold_change` column (if present) over peptides and subjects in each
-#'   contrast. One of `c("none", "sum", "mean", "max", "median")`. If `"none"`,
-#'   no fold-change summary is returned.
-#' @param cross_prev Character scalar specifying whether and how to summarize
-#'   pooled peptide-level prevalences across \code{g1} \eqn{\cup} \code{g2} in
-#'   each contrast. One
-#'   of `c("none", "sum", "mean", "max", "median")`. If `"none"`, no
-#'   prevalence summary is returned.
 #'
 #' @return
 #' A tibble with one row per tested stratum:
@@ -221,16 +210,9 @@
 #' - `p_perm`: two-sided permutation p-value.
 #' - `b`: number of permutations actually used (may be `< B_permutations` if
 #'   early stopping is implemented in the C++ helper).
-#' - `p_adj_rank`: BH-adjusted p-value within each `rank`.
 #' - `max_delta`, `frac_delta_pos`, `frac_delta_pos_w`:
 #'   maximum absolute peptide-level prevalence difference
 #'   and unweighted/weighted fractions of positive peptide-level deltas.
-#' - `fold_change_<mode>`: optional fold-change summary if `fold_change != "none"`.
-#' - `cross_prev_<mode>`: optional pooled prevalence summary if
-#'   `cross_prev != "none"`.
-#' - `category_rank_bh`: simple categorical label summarizing BH significance
-#'   per rank (`"significant (BH, per rank)"`, `"nominal only"`, or
-#'   `"not significant"`).
 #'
 #' @examples
 #' \donttest{
@@ -277,19 +259,14 @@ compute_delta <- function(
   combine_cols = NULL,
   interaction_sep = "::",
   B_permutations = 2000L,
-  smooth_eps_num = 0.5,
-  smooth_eps_den_mult = 2.0,
-  min_max_prev = 0.0,
   weight_mode = c("equal", "se_invvar", "n_eff_sqrt"),
-  stat_mode = c("diff", "asin"),
+  stat_mode = c("srlr", "diff", "asin", "score"),
   prev_strat = c("none", "decile"),
   winsor_z = 4.0,
   rank_feature_keep = NULL,
   peptide_library = NULL,
   log = FALSE,
-  log_file = "compute_delta.log",
-  fold_change = c("none", "sum", "mean", "max", "median"),
-  cross_prev = c("none", "sum", "mean", "max", "median")
+  log_file = "compute_delta.log"
 ) {
   # --- 0) Argument validation -------------------------------------------------
   chk::chk_character(rank_cols)
@@ -300,8 +277,9 @@ compute_delta <- function(
   if (!is.null(paired_by)) chk::chk_string(paired_by)
   chk::chk_number(B_permutations)
   chk::chk_true(B_permutations >= 100)
-  fold_change <- match.arg(fold_change)
-  cross_prev <- match.arg(cross_prev)
+  weight_mode <- match.arg(weight_mode)
+  stat_mode <- match.arg(stat_mode)
+  prev_strat <- match.arg(prev_strat)
 
   # --- 1) Prepare data once ---------------------------------------------------
   # Required columns from `x`
@@ -311,7 +289,6 @@ compute_delta <- function(
   }
   need_cols <- unique(need_cols)
 
-  if (!identical(fold_change, "none")) need_cols <- c(need_cols, "fold_change")
   if (inherits(x, "phip_data")) {
     df_long <- x$data_long |>
       dplyr::select(tidyselect::any_of(need_cols))
@@ -807,9 +784,6 @@ compute_delta <- function(
       P                = as.integer(P),
       B                = as.integer(B_permutations),
       seed             = seed_i,
-      smooth_eps_num   = smooth_eps_num,
-      smooth_eps_den   = smooth_eps_den_mult,
-      min_max_prev     = min_max_prev,
       weight_mode      = weight_mode,
       stat_mode        = stat_mode,
       prev_strat       = prev_strat,
@@ -818,112 +792,6 @@ compute_delta <- function(
     )
     if (is.null(res)) {
       return(NULL)
-    }
-
-    # ---- optional fold_change summary (lazy-safe) ----
-    fc_val <- NA_real_
-    if (!identical(fold_change, "none")) {
-      # peptide IDs in this stratum:
-      pep_ids_here <- names(pep_col_map)[pep_cols]
-
-      # subjects in this contrast (both groups):
-      subj_rows_both <- c(g1_rows, g2_rows)
-      subj_ids_here <- subjects_order[unique(subj_rows_both)]
-
-      # lazy filter; if fold_change column is absent, this select will drop it
-      # silently
-      fc_tbl <- df_long |>
-        dplyr::filter(
-          .data$peptide_id %in% pep_ids_here,
-          .data$subject_id %in% subj_ids_here
-        ) |>
-        dplyr::select(tidyselect::any_of(c("fold_change"))) # no schema probing
-
-      # summarize only if fold_change actually flowed through
-      if ("fold_change" %in% names(fc_tbl)) {
-        # Prefer DB-side summarize; for 'median' fall back to R if backend lacks
-        # it
-        if (fold_change == "sum") {
-          fc_tbl <- dplyr::summarise(fc_tbl, v = sum(.data$fold_change,
-            na.rm = TRUE
-          ))
-        }
-        if (fold_change == "mean") {
-          fc_tbl <- dplyr::summarise(fc_tbl, v = mean(.data$fold_change,
-            na.rm = TRUE
-          ))
-        }
-        if (fold_change == "max") {
-          fc_tbl <- dplyr::summarise(fc_tbl, v = max(.data$fold_change,
-            na.rm = TRUE
-          ))
-        }
-        if (fold_change == "median") {
-          # dbplyr->DuckDB supports median; if not, collect minimal vector
-          fc_try <- try(
-            dplyr::summarise(fc_tbl,
-              v = stats::median(.data$fold_change,
-                na.rm = TRUE
-              )
-            ),
-            silent = TRUE
-          )
-          fc_tbl <- if (inherits(fc_try, "try-error")) {
-            tibble::tibble(v = stats::median(dplyr::collect(fc_tbl)$fold_change,
-              na.rm = TRUE
-            ))
-          } else {
-            fc_try
-          }
-        }
-        fc_val <- dplyr::pull(dplyr::collect(fc_tbl), v)[1] %||% NA_real_
-      }
-    }
-
-    # ---- optional cross-contrast prevalence summary (lazy-safe) ----
-    cp_val <- NA_real_
-    if (!identical(cross_prev, "none")) {
-      # peptides in this stratum and subjects in the contrast (both groups)
-      pep_ids_here <- names(pep_col_map)[pep_cols]
-      subj_rows_both <- c(g1_rows, g2_rows)
-      subj_ids_here <- subjects_order[unique(subj_rows_both)]
-
-      # build per-peptide prevalence pooled over g1 ∪ g2
-      cp_tbl <- df_long |>
-        dplyr::filter(
-          .data$peptide_id %in% pep_ids_here,
-          .data$subject_id %in% subj_ids_here
-        ) |>
-        dplyr::mutate(.exist = !!rlang::sym(exist_col) > 0L) |>
-        dplyr::group_by(.data$peptide_id) |>
-        dplyr::summarise(prev = mean(.exist, na.rm = TRUE), .groups = "drop")
-
-      # summarize prevalence vector by requested reducer
-      if (cross_prev == "sum") {
-        cp_tbl <- dplyr::summarise(cp_tbl, v = sum(.data$prev, na.rm = TRUE))
-      }
-      if (cross_prev == "mean") {
-        cp_tbl <- dplyr::summarise(cp_tbl, v = mean(.data$prev, na.rm = TRUE))
-      }
-      if (cross_prev == "max") {
-        cp_tbl <- dplyr::summarise(cp_tbl, v = max(.data$prev, na.rm = TRUE))
-      }
-      if (cross_prev == "median") {
-        cp_try <- try(
-          dplyr::summarise(cp_tbl,
-            v = stats::median(.data$prev, na.rm = TRUE)
-          ),
-          silent = TRUE
-        )
-        cp_tbl <- if (inherits(cp_try, "try-error")) {
-          tibble::tibble(v = stats::median(dplyr::collect(cp_tbl)$prev,
-            na.rm = TRUE
-          ))
-        } else {
-          cp_try
-        }
-      }
-      cp_val <- dplyr::pull(dplyr::collect(cp_tbl), v)[1] %||% NA_real_
     }
 
     row <- dplyr::bind_cols(
@@ -937,11 +805,15 @@ compute_delta <- function(
         n_peptides_used = as.integer(res$n_peptides_used),
         m_eff = as.numeric(res$m_eff),
         T_obs = as.numeric(res$T_obs),
+        T_null_mean = as.numeric(res$T_null_mean),
+        T_null_sd = as.numeric(res$T_null_sd),
         T_obs_stand = {
+          mean_null <- as.numeric(res$T_null_mean)
           sd_null <- as.numeric(res$T_null_sd)
-          ifelse(!is.na(sd_null) & sd_null > 0,
-                 as.numeric(res$T_obs) / sd_null,
-                 NA_real_
+          ifelse(
+            !is.na(mean_null) & !is.na(sd_null) & sd_null > 0,
+            (as.numeric(res$T_obs) - mean_null) / sd_null,
+            NA_real_
           )
         },
         Z_from_p = {
@@ -957,9 +829,7 @@ compute_delta <- function(
         p_perm = as.numeric(res$p_perm),
         max_delta       = as.numeric(res$max_delta),
         frac_delta_pos  = as.numeric(res$frac_delta_pos),
-        frac_delta_pos_w = as.numeric(res$frac_delta_pos_w),
-        !!paste0("fold_change_", fold_change) := fc_val,
-        !!paste0("cross_prev_", cross_prev) := cp_val
+        frac_delta_pos_w = as.numeric(res$frac_delta_pos_w)
       )
     )
 
@@ -1075,12 +945,11 @@ compute_delta <- function(
       group1 = character(), group2 = character(), design = character(),
       n_subjects_paired = integer(), n_peptides_used = integer(),
       m_eff = numeric(),
-      T_obs = numeric(), T_obs_stand = numeric(), Z_from_p = numeric(),
+      T_obs = numeric(), T_null_mean = numeric(), T_null_sd = numeric(),
+      T_obs_stand = numeric(), Z_from_p = numeric(),
       p_perm = numeric(), b = integer(),
-      p_adj_rank = numeric(),
       max_delta = numeric(), frac_delta_pos = numeric(),
-      frac_delta_pos_w = numeric(),
-      category_rank_bh = character()
+      frac_delta_pos_w = numeric()
     ))
   }
 
@@ -1091,28 +960,16 @@ compute_delta <- function(
       m_eff  = as.numeric(m_eff)
     )
 
-  # ---- p.adjust + final select/arrange ---------------------------------------
+  # ---- final select/arrange ---------------------------------------
   res <- res |>
-    dplyr::group_by(rank) |>
-    dplyr::mutate(p_adj_rank = stats::p.adjust(p_perm, method = "BH")) |>
-    dplyr::ungroup() |>
     dplyr::mutate(
-      category_rank_bh = dplyr::case_when(
-        !is.na(p_adj_rank) & p_adj_rank < 0.05 ~ "significant (BH, per rank)",
-        !is.na(p_perm) & p_perm < 0.05 ~ "nominal only",
-        TRUE ~ "not significant"
-      ),
       n_subjects_paired = dplyr::coalesce(.data$n_subjects_paired, NA_integer_)
     ) |>
     dplyr::select(
       rank, feature, group_col, group1, group2, design,
       n_subjects_paired, n_peptides_used, m_eff,
-      T_obs, T_obs_stand, Z_from_p, p_perm, b,
-      p_adj_rank,
-      max_delta, frac_delta_pos, frac_delta_pos_w,
-      dplyr::any_of(paste0("fold_change_", fold_change)),
-      dplyr::any_of(paste0("cross_prev_", cross_prev)),
-      category_rank_bh
+      T_obs, T_null_mean, T_null_sd, T_obs_stand, Z_from_p, p_perm, b,
+      max_delta, frac_delta_pos, frac_delta_pos_w
     ) |>
     dplyr::arrange(rank, feature, group_col, group1, group2)
 

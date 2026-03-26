@@ -32,7 +32,7 @@ forestplot(
 }
 \arguments{
 \item{results_tbl}{Data frame/tibble with at least: \code{rank, feature,
-group1, group2, design, T_obs, p_perm, p_adj_rank, category_rank_bh}.}
+group1, group2, design, T_obs, p_perm}.}
 
 \item{rank_of_interest}{Character scalar specifying the rank to plot (e.g.,
 \code{"species"}).}
@@ -47,8 +47,7 @@ group1, group2, design, T_obs, p_perm, p_adj_rank, category_rank_bh}.}
 
 \item{filter_significant}{Column name to filter on, or \code{"none"} to
 disable filtering. If the column is numeric, keep rows where \code{col <=
-  sig_level}; if character, keep rows where \code{col == "significant (BH,
-  per rank)"}.}
+  sig_level}.}
 
 \item{sig_level}{Significance threshold used when \code{filter_significant}
 is numeric. Default 0.05.}
@@ -140,10 +139,6 @@ results_tbl <- data.frame(
   design = "case-control",
   T_obs = rnorm(n, sd = 2),
   p_perm = runif(n),
-  p_adj_rank = stats::p.adjust(runif(n), method = "BH"),
-  category_rank_bh = ifelse(runif(n) < 0.2, "significant (BH, per rank)",
-    "ns"
-  ),
   T_obs_stand = rnorm(n),
   Z_from_p = qnorm(1 - runif(n) / 2) * sign(rnorm(n))
 )

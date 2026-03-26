@@ -14,19 +14,14 @@ compute_delta(
   combine_cols = NULL,
   interaction_sep = "::",
   B_permutations = 2000L,
-  smooth_eps_num = 0.5,
-  smooth_eps_den_mult = 2,
-  min_max_prev = 0,
   weight_mode = c("equal", "se_invvar", "n_eff_sqrt"),
-  stat_mode = c("diff", "asin"),
+  stat_mode = c("srlr", "diff", "asin", "score"),
   prev_strat = c("none", "decile"),
   winsor_z = 4,
   rank_feature_keep = NULL,
   peptide_library = NULL,
   log = FALSE,
-  log_file = "compute_delta.log",
-  fold_change = c("none", "sum", "mean", "max", "median"),
-  cross_prev = c("none", "sum", "mean", "max", "median")
+  log_file = "compute_delta.log"
 )
 }
 \arguments{
@@ -60,21 +55,12 @@ in future versions.}
 \item{B_permutations}{Number of permutations \code{B} used for the permutation
 p-value. Default \code{2000L}. Must be at least 100.}
 
-\item{smooth_eps_num}{Laplace numerator epsilon \eqn{\varepsilon} used to
-smooth prevalence estimates. Default \code{0.5}.}
-
-\item{smooth_eps_den_mult}{Multiplicative factor \eqn{\lambda} applied to
-the denominator epsilon in the smoothing formula. Default \code{2.0}.}
-
-\item{min_max_prev}{Minimum required value of \code{max(p1, p2)} for a peptide to
-be retained in the analysis. Default \code{0.0} (no prevalence filter).}
-
 \item{weight_mode}{One of \code{c("equal", "se_invvar", "n_eff_sqrt")},
 controlling how peptide-level z-scores are weighted in the Stouffer
 combination (see Details).}
 
-\item{stat_mode}{One of \code{c("diff", "asin")}, determining whether z-scores
-are based on prevalence differences or the arcsin–sqrt transform.}
+\item{stat_mode}{One of \code{c("diff", "asin", "score", "srlr")}, determining
+the peptide-level test statistic (see Details).}
 
 \item{prev_strat}{One of \code{c("none", "decile")}. If \code{"decile"}, the Stouffer
 statistic is computed within prevalence deciles and the mean of
@@ -97,17 +83,6 @@ overall) using the package's logging helpers.}
 
 \item{log_file}{Path to a log file used by the logging helpers if \code{log} is
 \code{TRUE}. Default \code{"compute_delta.log"}.}
-
-\item{fold_change}{Character scalar specifying whether and how to summarize
-a \code{fold_change} column (if present) over peptides and subjects in each
-contrast. One of \code{c("none", "sum", "mean", "max", "median")}. If \code{"none"},
-no fold-change summary is returned.}
-
-\item{cross_prev}{Character scalar specifying whether and how to summarize
-pooled peptide-level prevalences across \code{g1} \eqn{\cup} \code{g2} in
-each contrast. One
-of \code{c("none", "sum", "mean", "max", "median")}. If \code{"none"}, no
-prevalence summary is returned.}
 }
 \value{
 A tibble with one row per tested stratum:
@@ -125,16 +100,9 @@ weighting (as returned by the C++ helper).
 \item \code{p_perm}: two-sided permutation p-value.
 \item \code{b}: number of permutations actually used (may be \verb{< B_permutations} if
 early stopping is implemented in the C++ helper).
-\item \code{p_adj_rank}: BH-adjusted p-value within each \code{rank}.
 \item \code{max_delta}, \code{frac_delta_pos}, \code{frac_delta_pos_w}:
 maximum absolute peptide-level prevalence difference
 and unweighted/weighted fractions of positive peptide-level deltas.
-\item \verb{fold_change_<mode>}: optional fold-change summary if \code{fold_change != "none"}.
-\item \verb{cross_prev_<mode>}: optional pooled prevalence summary if
-\code{cross_prev != "none"}.
-\item \code{category_rank_bh}: simple categorical label summarizing BH significance
-per rank (\code{"significant (BH, per rank)"}, \code{"nominal only"}, or
-\code{"not significant"}).
 }
 }
 \description{
@@ -147,15 +115,13 @@ statistic and assessing significance via \strong{label permutation}.
 For each stratum \verb{(rank, feature, group_col)} that defines an ordered pair of
 groups \verb{(g1, g2)}, the procedure is:
 \enumerate{
-\item \strong{Smoothed peptide-level prevalences.}
-For each peptide, smoothed prevalences in \code{g1} and \code{g2} are
+\item \strong{Peptide-level prevalences.}
+For each peptide, prevalences in \code{g1} and \code{g2} are
 \deqn{
-     \hat p_k = \frac{x_k + \varepsilon}{n_k + \lambda \varepsilon},\quad k \in \{g1, g2\},
+     \hat p_k = \frac{x_k}{n_k},\quad k \in \{g1, g2\},
    }
-where \code{x_k} is the number of samples with presence (\code{exist > 0}), \code{n_k}
-is the number of distinct samples (or paired subjects), \verb{\\varepsilon} is
-\code{smooth_eps_num}, and \verb{\\lambda} is \code{smooth_eps_den_mult}. Peptides with
-\eqn{\max(\hat p_{g1}, \hat p_{g2}) <} \code{min_max_prev} are discarded.
+where \code{x_k} is the number of samples with presence (\code{exist > 0}) and \code{n_k}
+is the number of distinct samples (or paired subjects).
 \item \strong{Per-peptide effect and z-score (\code{stat_mode}).}
 \itemize{
 \item \code{"diff"}: effect \eqn{\Delta = \hat p_{g2} - \hat p_{g1}} with
@@ -169,6 +135,23 @@ and z-score \eqn{z = \Delta / SE} (with a small floor on \code{SE}).
        z = \frac{\arcsin \sqrt{\hat p_{g2}} - \arcsin \sqrt{\hat p_{g1}}}
                 {\sqrt{1 / (4 n_{g1}) + 1 / (4 n_{g2})}} .
      }
+\item \code{"score"}: pooled score z for equality of proportions (2×2 score test),
+using raw proportions \eqn{\tilde p_k = x_k / n_k} and pooled
+\eqn{\tilde p = (x_1 + x_2)/(n_1 + n_2)}:
+\deqn{
+       z = \frac{\tilde p_{g2} - \tilde p_{g1}}
+                {\sqrt{\tilde p(1-\tilde p)\left(1/n_{g1} + 1/n_{g2}\right)}} .
+     }
+\item \code{"srlr"}: signed root likelihood ratio for \eqn{H_0: p_{g1}=p_{g2}}:
+\deqn{
+       LR = 2\left[\ell(\hat p_{g1};x_1,n_1)+\ell(\hat p_{g2};x_2,n_2)
+                 -\ell(\hat p;x_1,n_1)-\ell(\hat p;x_2,n_2)\right],
+     }
+\deqn{
+       z = \mathrm{sign}(\hat p_{g2}-\hat p_{g1})\sqrt{LR},
+     }
+where \eqn{\ell(p;x,n)=x\log p+(n-x)\log(1-p)} and
+\eqn{\hat p_{gk}=x_k/n_k}, \eqn{\hat p=(x_1+x_2)/(n_1+n_2)}.
 }
 
 Each \eqn{z_i} is then \strong{winsorized} to \eqn{\pm} \code{winsor_z}.
@@ -223,20 +206,8 @@ With \eqn{B} permutations, the p-value is
 the standard add-one estimator that remains non-zero under the global
 null.
 \item \strong{Multiplicity.}
-For each \code{rank}, permutation p-values \code{p_perm} are adjusted with BH
-(per-rank) to obtain \code{p_adj_rank}. A simple categorical summary is
-returned in \code{category_rank_bh}.
-\item \strong{Optional summaries.}
-\itemize{
-\item If \code{fold_change != "none"} and a column \code{fold_change} is present in
-\code{x}, an aggregate of that column over the peptides and subjects in the
-contrast is returned as \verb{fold_change_<mode>} (\code{mode} = \code{"sum"},
-\code{"mean"}, \code{"max"}, \code{"median"}).
-\item If \code{cross_prev != "none"}, pooled peptide-level prevalences across
-\code{g1} \eqn{\cup} \code{g2} are summarized with the same set of
-reducers (\code{"sum"},
-\code{"mean"}, \code{"max"}, \code{"median"}) and returned as \verb{cross_prev_<mode>}.
-}
+No multiple-testing correction is performed; \code{p_perm} is returned as
+computed.
 }
 
 \strong{Input requirements.}

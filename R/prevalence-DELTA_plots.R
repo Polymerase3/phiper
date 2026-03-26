@@ -773,14 +773,12 @@ deltaplot_interactive <- function(
     if (!filter_significant %in% colnames(df_rk)) {
       .ph_abort(paste0("column '", filter_significant, "' not found"))
     }
-    if (is.numeric(df_rk[[filter_significant]])) {
-      df_rk <- dplyr::filter(df_rk, .data[[filter_significant]] <= sig_level)
-    } else {
-      df_rk <- dplyr::filter(
-        df_rk,
-        .data[[filter_significant]] == "significant (BH, per rank)"
-      )
+    if (!is.numeric(df_rk[[filter_significant]])) {
+      .ph_abort(paste0(
+        "column '", filter_significant, "' must be numeric for filtering"
+      ))
     }
+    df_rk <- dplyr::filter(df_rk, .data[[filter_significant]] <= sig_level)
   }
 
   if (identical(statistic_to_plot, "T")) {
@@ -891,7 +889,7 @@ deltaplot_interactive <- function(
 #' shift most strongly between the two groups for a given rank.
 #'
 #' @param results_tbl Data frame/tibble with at least: \code{rank, feature,
-#'   group1, group2, design, T_obs, p_perm, p_adj_rank, category_rank_bh}.
+#'   group1, group2, design, T_obs, p_perm}.
 #' @param rank_of_interest Character scalar specifying the rank to plot (e.g.,
 #'   \code{"species"}).
 #' @param statistic_to_plot Which statistic to rank/plot: \code{"T"} (raw
@@ -901,8 +899,7 @@ deltaplot_interactive <- function(
 #' @param n_pos_each Number of most positive features to show. Default 15.
 #' @param filter_significant Column name to filter on, or \code{"none"} to
 #'   disable filtering. If the column is numeric, keep rows where \code{col <=
-#'   sig_level}; if character, keep rows where \code{col == "significant (BH,
-#'   per rank)"}.
+#'   sig_level}.
 #' @param sig_level Significance threshold used when \code{filter_significant}
 #'   is numeric. Default 0.05.
 #' @param left_label Text for the left arrow/side label.
@@ -967,10 +964,6 @@ deltaplot_interactive <- function(
 #'   design = "case-control",
 #'   T_obs = rnorm(n, sd = 2),
 #'   p_perm = runif(n),
-#'   p_adj_rank = stats::p.adjust(runif(n), method = "BH"),
-#'   category_rank_bh = ifelse(runif(n) < 0.2, "significant (BH, per rank)",
-#'     "ns"
-#'   ),
 #'   T_obs_stand = rnorm(n),
 #'   Z_from_p = qnorm(1 - runif(n) / 2) * sign(rnorm(n))
 #' )
@@ -1023,7 +1016,7 @@ forestplot <- function(
   # ---- required columns ------------------------------------------------------
   need_cols <- c(
     "rank", "feature", "group1", "group2", "design",
-    "T_obs", "p_perm", "p_adj_rank", "category_rank_bh"
+    "T_obs", "p_perm"
   )
   miss <- setdiff(need_cols, colnames(results_tbl))
   if (length(miss)) {
@@ -1258,7 +1251,7 @@ forestplot <- function(
 #' \code{Z_from_p} (signed Z from permutation p-values).
 #'
 #' @param results_tbl Data frame/tibble with at least: \code{rank, feature,
-#'   group1, group2, design, T_obs, p_perm, p_adj_rank, category_rank_bh}.
+#'   group1, group2, design, T_obs, p_perm}.
 #' @param rank_of_interest Character scalar specifying the rank to plot (e.g.,
 #'   \code{"species"}).
 #' @param statistic_to_plot Which statistic to rank/plot: \code{"T"} (raw
@@ -1268,8 +1261,7 @@ forestplot <- function(
 #' @param n_pos_each Number of most positive features to show. Default 15.
 #' @param filter_significant Column name to filter on, or \code{"none"} to
 #'   disable filtering. If the column is numeric, keep rows where \code{col <=
-#'   sig_level}; if character, keep rows where \code{col == "significant (BH,
-#'   per rank)"}.
+#'   sig_level}.
 #' @param sig_level Significance threshold used when \code{filter_significant}
 #'   is numeric. Default 0.05.
 #' @param left_label Text for the left arrow/side label.
@@ -1306,10 +1298,6 @@ forestplot <- function(
 #'     design = "case-control",
 #'     T_obs = rnorm(n, sd = 2),
 #'     p_perm = runif(n),
-#'     p_adj_rank = stats::p.adjust(runif(n), method = "BH"),
-#'     category_rank_bh = ifelse(runif(n) < 0.2, "significant (BH, per rank)",
-#'       "ns"
-#'     ),
 #'     T_obs_stand = rnorm(n),
 #'     Z_from_p = qnorm(1 - runif(n) / 2) * sign(rnorm(n))
 #'   )
@@ -1362,7 +1350,7 @@ forestplot_interactive <- function(
   # ---- Required columns ------------------------------------------------------
   need_cols <- c(
     "rank", "feature", "group1", "group2", "design",
-    "T_obs", "p_perm", "p_adj_rank", "category_rank_bh"
+    "T_obs", "p_perm"
   )
   miss <- setdiff(need_cols, colnames(results_tbl))
   if (length(miss)) {
@@ -1421,12 +1409,6 @@ forestplot_interactive <- function(
     df_plot$n_peptides_used <- NA_integer_
   }
 
-  df_plot$padj_hover <- if ("padj_wbh" %in% names(df_plot)) {
-    df_plot$padj_wbh
-  } else {
-    if ("p_adj_rank" %in% names(df_plot)) df_plot$p_adj_rank else NA_real_
-  }
-
   df_plot$interpretation <- ifelse(
     df_plot$stat_val < 0, paste("More in", df_plot$group1),
     ifelse(df_plot$stat_val > 0,
@@ -1437,17 +1419,14 @@ forestplot_interactive <- function(
 
   hover_text <- sprintf(
     "Feature: %s<br>n_peptides_used: %s<br>%s:
-    %s<br>Interpretation: %s<br>padj_wbh: %s",
+    %s<br>Interpretation: %s",
     df_plot$feature,
     ifelse(is.na(df_plot$n_peptides_used), "NA",
       format(df_plot$n_peptides_used, big.mark = ",")
     ),
     stat_title_short,
     format(round(df_plot$stat_val, 4), nsmall = 4),
-    df_plot$interpretation,
-    ifelse(is.na(df_plot$padj_hover), "NA",
-      formatC(df_plot$padj_hover, format = "e", digits = 2)
-    )
+    df_plot$interpretation
   )
 
   # ---- Color mapping ---------------------------------------------------------

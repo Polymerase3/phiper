@@ -1,3 +1,15 @@
+# phiper 0.2.6
+
+- compute_delta: added stat_mode options "score" (pooled score z) and "srlr"
+  (signed root likelihood ratio) using raw counts.
+- compute_delta: removed smoothing, prevalence filtering, BH adjustment, and
+  fold_change/cross_prev summaries; outputs now include T_null_mean and
+  T_null_sd and standardized T_obs uses the null mean and sample SD.
+- shift_computing: null variance uses Welford's algorithm with sample variance
+  in permutation loops.
+- prevalence-DELTA plots/tests updated to drop BH/categorical dependencies and
+  use numeric-only filtering where applicable.
+
 # phiper 0.2.5
 
 - Removed 10 unused package dependencies (data.table, fs, htmltools, purrr, 

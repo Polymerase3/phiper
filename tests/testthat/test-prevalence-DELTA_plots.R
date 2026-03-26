@@ -88,9 +88,6 @@ testthat::test_that("forestplot returns top/bottom features and color scaling", 
     design = "case-control",
     T_obs = seq(-2, 2, length.out = n),
     p_perm = seq(0.01, 0.50, length.out = n),
-    p_adj_rank = seq(0.01, 0.50, length.out = n),
-    category_rank_bh = ifelse(seq(0.01, 0.50, length.out = n) < 0.2,
-                              "significant (BH, per rank)", "ns"),
     T_obs_stand = seq(-1, 1, length.out = n),
     Z_from_p = seq(-1.5, 1.5, length.out = n)
   )
@@ -116,14 +113,6 @@ testthat::test_that("forestplot returns top/bottom features and color scaling", 
   )
   testthat::expect_true(all(res_sig$data$p_perm <= 0.2))
 
-  res_cat <- forestplot(
-    results_tbl,
-    rank_of_interest = "species",
-    statistic_to_plot = "T",
-    filter_significant = "category_rank_bh"
-  )
-  testthat::expect_true(all(res_cat$data$category_rank_bh == "significant (BH, per rank)"))
-
   if (requireNamespace("vdiffr", quietly = TRUE)) {
     vdiffr::expect_doppelganger("forestplot-basic", res$plot)
   }
@@ -140,9 +129,6 @@ testthat::test_that("forestplot_interactive returns plotly output", {
     design = "case-control",
     T_obs = seq(-2, 2, length.out = n),
     p_perm = seq(0.01, 0.50, length.out = n),
-    p_adj_rank = seq(0.01, 0.50, length.out = n),
-    category_rank_bh = ifelse(seq(0.01, 0.50, length.out = n) < 0.2,
-                              "significant (BH, per rank)", "ns"),
     T_obs_stand = seq(-1, 1, length.out = n),
     Z_from_p = seq(-1.5, 1.5, length.out = n)
   )
@@ -213,9 +199,6 @@ testthat::test_that(".ph_forestplot_prepare returns expected structure", {
     design = "case-control",
     T_obs = seq(-1, 1, length.out = n),
     p_perm = seq(0.01, 0.50, length.out = n),
-    p_adj_rank = seq(0.01, 0.50, length.out = n),
-    category_rank_bh = ifelse(seq(0.01, 0.50, length.out = n) < 0.2,
-                              "significant (BH, per rank)", "ns"),
     T_obs_stand = seq(-0.5, 0.5, length.out = n),
     Z_from_p = seq(-1, 1, length.out = n)
   )
@@ -341,8 +324,6 @@ testthat::test_that("forestplot input validation and labels update", {
     design = "case-control",
     T_obs = c(-1, -0.5, 0.5, 1),
     p_perm = c(0.1, 0.2, 0.3, 0.4),
-    p_adj_rank = c(0.1, 0.2, 0.3, 0.4),
-    category_rank_bh = c("ns", "ns", "ns", "ns"),
     T_obs_stand = c(-1, -0.5, 0.5, 1),
     Z_from_p = c(-1, -0.5, 0.5, 1)
   )
@@ -372,9 +353,7 @@ testthat::test_that(".ph_forestplot_prepare handles missing stats", {
     group2 = "B",
     design = "case-control",
     T_obs = c(-1, 1),
-    p_perm = c(0.1, 0.2),
-    p_adj_rank = c(0.1, 0.2),
-    category_rank_bh = c("ns", "ns")
+    p_perm = c(0.1, 0.2)
   )
   testthat::expect_error(
     phiper:::.ph_forestplot_prepare(
@@ -412,8 +391,6 @@ testthat::test_that("forestplot_interactive returns placeholder when empty", {
     design = "case-control",
     T_obs = c(-1, 1),
     p_perm = c(0.1, 0.2),
-    p_adj_rank = c(0.1, 0.2),
-    category_rank_bh = c("ns", "ns"),
     T_obs_stand = c(-1, 1),
     Z_from_p = c(-1, 1)
   )
