@@ -33,7 +33,7 @@ Depends:
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
-URL: https://github.com/Polymerase3/phiper
+URL: https://github.com/Polymerase3/phiper, https://polymerase3.github.io/phiper/
 BugReports: https://github.com/Polymerase3/phiper/issues
 SystemRequirements: C++17
 LinkingTo: Rcpp, RcppParallel
