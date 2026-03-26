@@ -203,7 +203,7 @@
 #' @param aggregate_stat One of `c("stouffer", "maxmean")`, controlling how
 #'   peptide-level z-scores are aggregated into a single test statistic (see
 #'   Details).
-#' @param strat_bins Numeric vector of pooled prevalence cutpoints in [0, 1].
+#' @param strat_bins Numeric vector of pooled prevalence cutpoints in (0, 1).
 #'   If `0`, no stratification is used (single global Stouffer statistic).
 #'   Otherwise, peptides are binned by pooled prevalence and the mean of
 #'   bin-level z-scores is used as the global test statistic.

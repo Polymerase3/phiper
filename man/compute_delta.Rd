@@ -67,7 +67,7 @@ Details). The paired-only modes require paired designs.}
 peptide-level z-scores are aggregated into a single test statistic (see
 Details).}
 
-\item{strat_bins}{Numeric vector of pooled prevalence cutpoints in \link{0, 1}.
+\item{strat_bins}{Numeric vector of pooled prevalence cutpoints in (0, 1).
 If \code{0}, no stratification is used (single global Stouffer statistic).
 Otherwise, peptides are binned by pooled prevalence and the mean of
 bin-level z-scores is used as the global test statistic.}
