@@ -287,7 +287,7 @@ compute_delta <- function(
   interaction_sep = "::",
   B_permutations = 2000L,
   weight_mode = c("equal", "se_invvar", "n_eff_sqrt"),
-  stat_mode = c("diff", "asin", "score", "srlr", "mcnemar", "srlr_paired"),
+  stat_mode = c("srlr", "diff", "asin", "score", "mcnemar", "srlr_paired"),
   aggregate_stat = c("stouffer", "maxmean"),
   strat_bins = c(0.002, 0.005, 0.01, 0.02, 0.05, 0.10, 0.20, 0.50),
   winsor_z = 4.0,

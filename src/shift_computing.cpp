@@ -62,12 +62,56 @@ static inline std::vector< std::vector<uint64_t> >
     return out;
   }
 
+// Welford's online algorithm for running mean and variance
+struct WelfordAccum {
+  int64_t n = 0;
+  double mean = 0.0;
+  double M2   = 0.0;
+  void digest(double x) {
+    ++n;
+    const double d  = x - mean;
+    mean += d / static_cast<double>(n);
+    M2   += d * (x - mean);
+  }
+  double variance() const {
+    return (n > 1) ? M2 / static_cast<double>(n - 1) : NA_REAL;
+  }
+};
+
 // Compute z, weights, T_obs exactly as in R helper
 struct CombineOut {
   double T_obs;
   std::vector<double> w_norm;
   std::vector<double> delta;
 };
+
+static inline Rcpp::List make_perm_result(
+    int mu, double m_eff, double T_obs,
+    const WelfordAccum& acc, int b_hits, int B,
+    double max_delta, double frac_pos, double frac_pos_w)
+{
+  const double p_perm = (1.0 + (double)b_hits) / (1.0 + (double)B);
+  double T_null_mean = NA_REAL;
+  double T_null_sd   = NA_REAL;
+  if (acc.n > 0) {
+    T_null_mean = acc.mean;
+    double var_T = acc.variance();
+    if (var_T < 0.0 && var_T > -1e-15) var_T = 0.0;
+    if (var_T >= 0.0) T_null_sd = std::sqrt(var_T);
+  }
+  return Rcpp::List::create(
+    Rcpp::_["n_peptides_used"]  = mu,
+    Rcpp::_["m_eff"]            = m_eff,
+    Rcpp::_["T_obs"]            = T_obs,
+    Rcpp::_["T_null_mean"]      = T_null_mean,
+    Rcpp::_["T_null_sd"]        = T_null_sd,
+    Rcpp::_["b"]                = b_hits,
+    Rcpp::_["p_perm"]           = p_perm,
+    Rcpp::_["max_delta"]        = max_delta,
+    Rcpp::_["frac_delta_pos"]   = frac_pos,
+    Rcpp::_["frac_delta_pos_w"] = frac_pos_w
+  );
+}
 
 static inline double ll_binom(double x, double n, double p) {
   if (p <= 0.0) {
@@ -437,9 +481,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
 
     int b_hits = 0;
     std::vector<uint64_t> Fmask(n_words_p, 0ULL); // flip mask
-    int64_t n_mom = 0;
-    double mean_T = 0.0;
-    double M2_T = 0.0;
+    WelfordAccum acc;
 
     for (int b = 0; b < B; ++b) {
       // Build flip mask F over P subjects
@@ -496,38 +538,13 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         Tb = combine_T_internal(p1b, p2b, x1b, x2b, n1b, n2b, bb, cc, winsor_z, weight_mode, stat_mode, aggregate_stat, strat_bins_vec).T_obs;
       }
 
-      ++n_mom;
-      const double delta = Tb - mean_T;
-      mean_T += delta / static_cast<double>(n_mom);
-      const double delta2 = Tb - mean_T;
-      M2_T += delta * delta2;
+      acc.digest(Tb);
 
       if (std::fabs(Tb) >= std::fabs(obs.T_obs)) ++b_hits;
     }
 
-    const double p_perm = (1.0 + (double)b_hits) / (1.0 + (double)B);
-
-    double T_null_mean = NA_REAL;
-    double T_null_sd = NA_REAL;
-    if (n_mom > 0) {
-      T_null_mean = mean_T;
-      double var_T = (n_mom > 1) ? (M2_T / static_cast<double>(n_mom - 1)) : NA_REAL;
-      if (var_T < 0.0 && var_T > -1e-15) var_T = 0.0;
-      if (var_T >= 0.0) T_null_sd = std::sqrt(var_T);
-    }
-
-    return Rcpp::List::create(
-      _["n_peptides_used"]  = mu,
-      _["m_eff"]            = m_eff,
-      _["T_obs"]            = obs.T_obs,
-      _["T_null_mean"]      = T_null_mean,
-      _["T_null_sd"]        = T_null_sd,
-      _["b"]                = b_hits,
-      _["p_perm"]           = p_perm,
-      _["max_delta"]        = max_delta,
-      _["frac_delta_pos"]   = frac_pos,
-      _["frac_delta_pos_w"] = frac_pos_w
-    );
+    return make_perm_result(mu, m_eff, obs.T_obs, acc, b_hits, B,
+                            max_delta, frac_pos, frac_pos_w);
   }
 
   // --------------------------- UNPAIRED PATH ----------------------------------
@@ -625,9 +642,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     int b_hits = 0;
     std::vector<int> choose_idx(nA);
     std::vector<uint64_t> mask_A(n_words), mask_B(n_words);
-    int64_t n_mom = 0;
-    double mean_T = 0.0;
-    double M2_T = 0.0;
+    WelfordAccum acc;
 
     for (int b = 0; b < B; ++b) {
       // random split: sample nA indices for group A
@@ -681,37 +696,12 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         Tb = combine_T_internal(p1b, p2b, x1b, x2b, n1b, n2b, std::vector<double>(), std::vector<double>(), winsor_z, weight_mode, stat_mode, aggregate_stat, strat_bins_vec).T_obs;
       }
 
-      ++n_mom;
-      const double delta = Tb - mean_T;
-      mean_T += delta / static_cast<double>(n_mom);
-      const double delta2 = Tb - mean_T;
-      M2_T += delta * delta2;
+      acc.digest(Tb);
 
       if (std::fabs(Tb) >= std::fabs(obs.T_obs)) ++b_hits;
     }
 
-    const double p_perm = (1.0 + (double)b_hits) / (1.0 + (double)B);
-
-    double T_null_mean = NA_REAL;
-    double T_null_sd = NA_REAL;
-    if (n_mom > 0) {
-      T_null_mean = mean_T;
-      double var_T = (n_mom > 1) ? (M2_T / static_cast<double>(n_mom - 1)) : NA_REAL;
-      if (var_T < 0.0 && var_T > -1e-15) var_T = 0.0;
-      if (var_T >= 0.0) T_null_sd = std::sqrt(var_T);
-    }
-
-    return Rcpp::List::create(
-      _["n_peptides_used"]  = mu,
-      _["m_eff"]            = m_eff,
-      _["T_obs"]            = obs.T_obs,
-      _["T_null_mean"]      = T_null_mean,
-      _["T_null_sd"]        = T_null_sd,
-      _["b"]                = b_hits,
-      _["p_perm"]           = p_perm,
-      _["max_delta"]        = max_delta,
-      _["frac_delta_pos"]   = frac_pos,
-      _["frac_delta_pos_w"] = frac_pos_w
-    );
+    return make_perm_result(mu, m_eff, obs.T_obs, acc, b_hits, B,
+                            max_delta, frac_pos, frac_pos_w);
   }
 }
