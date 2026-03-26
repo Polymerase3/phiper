@@ -288,10 +288,9 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
       brks.insert(brks.end(), cuts.begin(), cuts.end());
       brks.push_back(1.0);
 
-      // bin & per-bin Stouffer
+      // bin & per-bin Stouffer — only non-empty bins contribute to the mean
       int nb = (int)brks.size() - 1;
-      std::vector<double> bin_stat;
-      bin_stat.reserve(nb);
+      double s = 0.0; int n_nonempty = 0;
       for (int b = 0; b < nb; ++b) {
         const double L = brks[b], R = brks[b+1];
         double num = 0.0, den2 = 0.0; bool any=false;
@@ -310,14 +309,13 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
           }
         }
         if (aggregate_stat == "maxmean") {
-          bin_stat.push_back(idx.empty() ? 0.0 : maxmean_stat(idx));
+          if (!idx.empty()) { s += maxmean_stat(idx); ++n_nonempty; }
         } else {
-          bin_stat.push_back(any ? (num / std::sqrt(std::max(den2, 1e-300))) : 0.0);
+          if (any) { s += num / std::sqrt(std::max(den2, 1e-300)); ++n_nonempty; }
         }
       }
-      // mean of bin-level stats
-      double s=0.0; for (double v: bin_stat) s += v;
-      T_obs = (nb>0) ? s / nb : 0.0;
+      // mean over non-empty bins only
+      T_obs = (n_nonempty > 0) ? s / n_nonempty : 0.0;
     }
   }
   if (!use_strat) {
