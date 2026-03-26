@@ -1,3 +1,14 @@
+# phiper 0.2.7
+
+- compute_delta: added `maxmean` (Efron-type) as a test statistic option.
+- compute_delta: added prevalence bins for the test statistic computation.
+- compute_delta: `srlr` is now the default test statistic.
+- Implemented McNemar test and paired signed root likelihood ratio statistic for
+  paired designs.
+- Welford's online algorithm refactored into its own class; added a wrapper for
+  post-permutation output generation.
+- Docs and R CMD CHECK fixes.
+
 # phiper 0.2.6
 
 - compute_delta: added stat_mode options "score" (pooled score z) and "srlr"

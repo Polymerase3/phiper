@@ -52,6 +52,20 @@
 #'      where \eqn{\ell(p;x,n)=x\log p+(n-x)\log(1-p)} and
 #'      \eqn{\hat p_{gk}=x_k/n_k}, \eqn{\hat p=(x_1+x_2)/(n_1+n_2)}.
 #'
+#'    - `"mcnemar"` (paired-only): signed McNemar z based on discordant pairs
+#'      \eqn{b = \#(g1=1,g2=0)}, \eqn{c = \#(g1=0,g2=1)}:
+#'      \deqn{
+#'        z = \frac{b - c}{\sqrt{b + c}} .
+#'      }
+#'      If \eqn{b+c=0}, z is defined as 0.
+#'
+#'    - `"srlr_paired"` (paired-only): signed root deviance for the paired
+#'      binomial problem with \eqn{m=b+c}:
+#'      \deqn{
+#'        z = \mathrm{sign}(b-c)\sqrt{2\left[b\log\frac{2b}{m} + c\log\frac{2c}{m}\right]} .
+#'      }
+#'      Terms with \eqn{0\log 0} are defined as 0; if \eqn{m=0}, z is 0.
+#'
 #'    Each \eqn{z_i} is then **winsorized** to \eqn{\pm} `winsor_z`.
 #'
 #' 3. **Weights (`weight_mode`).**
@@ -66,23 +80,31 @@
 #'      i.e. the square root of the expected number of positives across both
 #'      groups.
 #'
-#' 4. **Combine into a single test statistic (Stouffer).**
+#' 4. **Combine into a single test statistic (`aggregate_stat`).**
 #'    Let \eqn{w_i} be the weights and \eqn{z_i} the peptide-level z-scores.
 #'
-#'    - If `prev_strat = "none"`:
+#'    - If `aggregate_stat = "stouffer"` and `strat_bins = 0`:
 #'      \deqn{
 #'        T_{\mathrm{obs}} =
 #'          \frac{\sum_i w_i z_i}{\sqrt{\sum_i w_i^2}} .
 #'      }
 #'
-#'    - If `prev_strat = "decile"`: peptides are binned into deciles of pooled
-#'      prevalence
+#'    - If `aggregate_stat = "stouffer"` and `strat_bins` is a numeric vector
+#'      of pooled prevalence cutpoints
+#'      (between 0 and 1), peptides are binned by pooled prevalence
 #'      \deqn{
 #'        \frac{n_{g1}\hat p_{g1} + n_{g2}\hat p_{g2}}{n_{g1} + n_{g2}},
 #'      }
-#'      a Stouffer statistic \eqn{T_b} is computed within each bin, and the
+#'      a Stouffer statistic \eqn{T_b} is computed within each bin. The
 #'      **mean** of the bin-level z-scores is reported as
-#'      \eqn{T_{\mathrm{obs}}}.
+#'      \eqn{T_{\mathrm{obs}}}. For example, if `strat_bins` includes `0.10`
+#'      and `0.20`, then peptides with pooled prevalence in (0.10, 0.20] share
+#'      a bin.
+#'
+#'    - If `aggregate_stat = "maxmean"`, the signed z-scores are split into
+#'      positive and negative parts, averaged within each set, and the dominant
+#'      direction is selected. If `strat_bins` is provided, the maxmean
+#'      statistic is computed per bin and the **mean** across bins is reported.
 #'
 #' 5. **Permutation scheme and p-value.**
 #'    A **two-sided** permutation p-value for the global shift is computed:
@@ -175,11 +197,16 @@
 #' @param weight_mode One of `c("equal", "se_invvar", "n_eff_sqrt")`,
 #'   controlling how peptide-level z-scores are weighted in the Stouffer
 #'   combination (see Details).
-#' @param stat_mode One of `c("diff", "asin", "score", "srlr")`, determining
-#'   the peptide-level test statistic (see Details).
-#' @param prev_strat One of `c("none", "decile")`. If `"decile"`, the Stouffer
-#'   statistic is computed within prevalence deciles and the mean of
-#'   decile-level z-scores is used as the global test statistic.
+#' @param stat_mode One of `c("diff", "asin", "score", "srlr", "mcnemar",
+#'   "srlr_paired")`, determining the peptide-level test statistic (see
+#'   Details). The paired-only modes require paired designs.
+#' @param aggregate_stat One of `c("stouffer", "maxmean")`, controlling how
+#'   peptide-level z-scores are aggregated into a single test statistic (see
+#'   Details).
+#' @param strat_bins Numeric vector of pooled prevalence cutpoints in (0, 1).
+#'   If `0`, no stratification is used (single global Stouffer statistic).
+#'   Otherwise, peptides are binned by pooled prevalence and the mean of
+#'   bin-level z-scores is used as the global test statistic.
 #' @param winsor_z Winsorization threshold applied to peptide-level z-scores.
 #'   Values beyond `±winsor_z` are truncated. Default `4.0`.
 #' @param rank_feature_keep Optional **named list** mapping `rank` to a vector
@@ -204,8 +231,8 @@
 #' - `n_subjects_paired`: number of paired subjects used in a paired design
 #'   (or `NA` for unpaired).
 #' - `n_peptides_used`: number of peptides contributing to the test.
-#' - `m_eff`: effective number of peptides after prevalence filtering and
-#'   weighting (as returned by the C++ helper).
+#' - `m_eff`: effective number of peptides after weighting (as returned by the
+#'   C++ helper).
 #' - `T_obs`: observed Stouffer-type test statistic.
 #' - `p_perm`: two-sided permutation p-value.
 #' - `b`: number of permutations actually used (may be `< B_permutations` if
@@ -242,7 +269,7 @@
 #'   B_permutations     = 500L,  # smaller for speed
 #'   weight_mode        = "n_eff_sqrt",
 #'   stat_mode          = "asin",
-#'   prev_strat         = "none",
+#'   strat_bins         = 0,
 #'   winsor_z           = Inf,
 #'   rank_feature_keep  = list(species = NULL),
 #'   log                = FALSE
@@ -260,8 +287,9 @@ compute_delta <- function(
   interaction_sep = "::",
   B_permutations = 2000L,
   weight_mode = c("equal", "se_invvar", "n_eff_sqrt"),
-  stat_mode = c("srlr", "diff", "asin", "score"),
-  prev_strat = c("none", "decile"),
+  stat_mode = c("srlr", "diff", "asin", "score", "mcnemar", "srlr_paired"),
+  aggregate_stat = c("stouffer", "maxmean"),
+  strat_bins = c(0.002, 0.005, 0.01, 0.02, 0.05, 0.10, 0.20, 0.50),
   winsor_z = 4.0,
   rank_feature_keep = NULL,
   peptide_library = NULL,
@@ -279,7 +307,16 @@ compute_delta <- function(
   chk::chk_true(B_permutations >= 100)
   weight_mode <- match.arg(weight_mode)
   stat_mode <- match.arg(stat_mode)
-  prev_strat <- match.arg(prev_strat)
+  aggregate_stat <- match.arg(aggregate_stat)
+  if (stat_mode %in% c("mcnemar", "srlr_paired") && is.null(paired_by)) {
+    .ph_abort("stat_mode requires paired_by for paired designs.")
+  }
+  chk::chk_numeric(strat_bins)
+  if (!(length(strat_bins) == 1L && isTRUE(all.equal(strat_bins, 0)))) {
+    chk::chk_true(all(is.finite(strat_bins)))
+    chk::chk_true(all(strat_bins >= 0 & strat_bins <= 1))
+    strat_bins <- sort(unique(as.numeric(strat_bins)))
+  }
 
   # --- 1) Prepare data once ---------------------------------------------------
   # Required columns from `x`
@@ -581,7 +618,7 @@ compute_delta <- function(
       dplyr::select(group_col, group1, group2, design)
   }
 
-  # (f) master plan = rank-feature strata × contrasts (only strata with
+  # (f) master plan = rank-feature strata x contrasts (only strata with
   # peptides)
   master_plan <- tidyr::crossing(
     rf_counts |> dplyr::select(rank, feature, n_peptides),
@@ -786,7 +823,8 @@ compute_delta <- function(
       seed             = seed_i,
       weight_mode      = weight_mode,
       stat_mode        = stat_mode,
-      prev_strat       = prev_strat,
+      aggregate_stat   = aggregate_stat,
+      strat_bins       = strat_bins,
       winsor_z         = winsor_z,
       design           = st$design
     )

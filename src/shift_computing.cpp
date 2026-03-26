@@ -148,10 +148,13 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
                                      const std::vector<double>& x2,
                                      const std::vector<double>& n1,
                                      const std::vector<double>& n2,
+                                     const std::vector<double>& b,
+                                     const std::vector<double>& c,
                                      double winsor_z,
                                      const std::string& weight_mode,
                                      const std::string& stat_mode,
-                                     const std::string& prev_strat) {
+                                     const std::string& aggregate_stat,
+                                     const std::vector<double>& strat_bins) {
   const int m = (int)p1.size();
   std::vector<double> z(m), w(m), delta(m);
 
@@ -159,7 +162,23 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
   for (int i = 0; i < m; ++i) {
     const double d = p2[i] - p1[i];
     delta[i] = d;
-    if (stat_mode == "asin") {
+    if (stat_mode == "mcnemar") {
+      if ((int)b.size() != m || (int)c.size() != m) stop("mcnemar: b/c length mismatch.");
+      const double m_dc = b[i] + c[i];
+      z[i] = (m_dc > 0.0) ? ((b[i] - c[i]) / std::sqrt(m_dc)) : 0.0;
+    } else if (stat_mode == "srlr_paired") {
+      if ((int)b.size() != m || (int)c.size() != m) stop("srlr_paired: b/c length mismatch.");
+      const double m_dc = b[i] + c[i];
+      if (m_dc <= 0.0) {
+        z[i] = 0.0;
+      } else {
+        const double t1 = (b[i] > 0.0) ? (b[i] * std::log((2.0 * b[i]) / m_dc)) : 0.0;
+        const double t2 = (c[i] > 0.0) ? (c[i] * std::log((2.0 * c[i]) / m_dc)) : 0.0;
+        const double LR = 2.0 * (t1 + t2);
+        const double sign = (b[i] > c[i]) ? 1.0 : (b[i] < c[i]) ? -1.0 : 0.0;
+        z[i] = (LR > 0.0) ? (sign * std::sqrt(LR)) : 0.0;
+      }
+    } else if (stat_mode == "asin") {
       const double den = std::sqrt( 1.0/(4.0*std::max(n1[i],1.0)) + 1.0/(4.0*std::max(n2[i],1.0)) );
       z[i] = (std::asin(std::sqrt(p2[i])) - std::asin(std::sqrt(p1[i]))) / den;
     } else if (stat_mode == "score" || stat_mode == "srlr") {
@@ -226,48 +245,89 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
     std::fill(w.begin(), w.end(), 1.0);
   }
 
-  // Stouffer combine
+  auto maxmean_stat = [&](const std::vector<int>& idx) {
+    double sp = 0.0, sn = 0.0;
+    int cp = 0, cn = 0;
+    for (int i : idx) {
+      if (z[i] > 0.0) { sp += z[i]; ++cp; }
+      else if (z[i] < 0.0) { sn += -z[i]; ++cn; }
+    }
+    const double Splus = (cp > 0) ? (sp / (double)cp) : 0.0;
+    const double Sminus = (cn > 0) ? (sn / (double)cn) : 0.0;
+    return (Splus >= Sminus) ? Splus : -Sminus;
+  };
+
+  // Aggregate combine
   double T_obs = 0.0;
-  if (prev_strat == "decile") {
+  bool use_strat = true;
+  if (strat_bins.empty()) use_strat = false;
+  if (strat_bins.size() == 1 && strat_bins[0] == 0.0) use_strat = false;
+
+  if (use_strat) {
     // pooled prevalence
     std::vector<double> pp(m);
     for (int i = 0; i < m; ++i) pp[i] = (n1[i]*p1[i] + n2[i]*p2[i]) / std::max(n1[i] + n2[i], 1.0);
 
-    // quantile breaks (approximate type 7)
-    std::vector<double> sorted = pp;
-    std::sort(sorted.begin(), sorted.end());
-    std::vector<double> brks; brks.reserve(11);
-    for (int k = 0; k <= 10; ++k) {
-      double q = k/10.0;
-      double pos = q * (m - 1);
-      int lo = (int)std::floor(pos);
-      int hi = (int)std::ceil(pos);
-      double v = (lo == hi) ? sorted[lo] : (sorted[lo] + (pos - lo) * (sorted[hi] - sorted[lo]));
-      if (brks.empty() || v > brks.back()) brks.push_back(v); // unique
+    // fixed cutpoints (0 < v < 1), with 0/1 boundaries added
+    std::vector<double> cuts;
+    cuts.reserve(strat_bins.size());
+    for (double v : strat_bins) {
+      if (std::isfinite(v) && v > 0.0 && v < 1.0) cuts.push_back(v);
     }
-    if (brks.size() < 2) brks = {sorted.front(), sorted.back()};
+    if (cuts.empty()) {
+      use_strat = false;
+    } else {
+      std::sort(cuts.begin(), cuts.end());
+      cuts.erase(std::unique(cuts.begin(), cuts.end()), cuts.end());
+    }
 
-    // bin & per-bin Stouffer
-    int nb = (int)brks.size() - 1;
-    std::vector<double> bin_z;
-    bin_z.reserve(nb);
-    for (int b = 0; b < nb; ++b) {
-      const double L = brks[b], R = brks[b+1];
-      double num = 0.0, den2 = 0.0; bool any=false;
-      for (int i = 0; i < m; ++i) {
-        const double v = pp[i];
-        const bool in = ( (b==0 ? (v >= L) : (v > L)) && ( (b==nb-1 ? (v <= R) : (v < R)) ) );
-        if (in) { num += w[i]*z[i]; den2 += w[i]*w[i]; any=true; }
+    if (use_strat) {
+      std::vector<double> brks;
+      brks.reserve(cuts.size() + 2);
+      brks.push_back(0.0);
+      brks.insert(brks.end(), cuts.begin(), cuts.end());
+      brks.push_back(1.0);
+
+      // bin & per-bin Stouffer — only non-empty bins contribute to the mean
+      int nb = (int)brks.size() - 1;
+      double s = 0.0; int n_nonempty = 0;
+      for (int b = 0; b < nb; ++b) {
+        const double L = brks[b], R = brks[b+1];
+        double num = 0.0, den2 = 0.0; bool any=false;
+        std::vector<int> idx;
+        for (int i = 0; i < m; ++i) {
+          const double v = pp[i];
+          const bool in = ((b == 0 ? (v >= L) : (v > L)) && (v <= R));
+          if (in) {
+            if (aggregate_stat == "maxmean") {
+              idx.push_back(i);
+            } else {
+              num += w[i]*z[i];
+              den2 += w[i]*w[i];
+              any=true;
+            }
+          }
+        }
+        if (aggregate_stat == "maxmean") {
+          if (!idx.empty()) { s += maxmean_stat(idx); ++n_nonempty; }
+        } else {
+          if (any) { s += num / std::sqrt(std::max(den2, 1e-300)); ++n_nonempty; }
+        }
       }
-      bin_z.push_back(any ? (num / std::sqrt(std::max(den2, 1e-300))) : 0.0);
+      // mean over non-empty bins only
+      T_obs = (n_nonempty > 0) ? s / n_nonempty : 0.0;
     }
-    // mean of bin-level z's
-    double s=0.0; for (double v: bin_z) s += v;
-    T_obs = (nb>0) ? s / nb : 0.0;
-  } else {
-    double num = 0.0, den2 = 0.0;
-    for (int i = 0; i < m; ++i) { num += w[i]*z[i]; den2 += w[i]*w[i]; }
-    T_obs = num / std::sqrt(std::max(den2, 1e-300));
+  }
+  if (!use_strat) {
+    if (aggregate_stat == "maxmean") {
+      std::vector<int> idx(m);
+      for (int i = 0; i < m; ++i) idx[i] = i;
+      T_obs = maxmean_stat(idx);
+    } else {
+      double num = 0.0, den2 = 0.0;
+      for (int i = 0; i < m; ++i) { num += w[i]*z[i]; den2 += w[i]*w[i]; }
+      T_obs = num / std::sqrt(std::max(den2, 1e-300));
+    }
   }
 
   // normalized weights
@@ -293,7 +353,8 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
  * @param hits_g1_paired, hits_g2_paired List: per-peptide IntegerVector of 1..P subject indices (PAIRED).
  * @param P int: number of paired subjects (PAIRED).
  * @param B, seed, winsor_z numeric.
- * @param weight_mode, stat_mode, prev_strat, design strings.
+ * @param weight_mode, stat_mode, aggregate_stat, design strings.
+ * @param strat_bins Numeric vector of pooled prevalence cutpoints or 0 for no stratification.
  *
  * @return List with fields: n_peptides_used, m_eff, T_obs, T_null_mean, T_null_sd,
  *         b, p_perm, max_delta, frac_delta_pos, frac_delta_pos_w.
@@ -311,9 +372,16 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
                               const int seed,
                               const std::string& weight_mode,
                               const std::string& stat_mode,
-                              const std::string& prev_strat,
+                              const std::string& aggregate_stat,
+                              const Rcpp::NumericVector& strat_bins,
                               const double winsor_z,
                               const std::string& design) {
+  std::vector<double> strat_bins_vec = Rcpp::as<std::vector<double> >(strat_bins);
+  const bool paired_only_stat = (stat_mode == "mcnemar" || stat_mode == "srlr_paired");
+
+  if (paired_only_stat && design != "paired") {
+    stop("stat_mode requires paired design: %s", stat_mode);
+  }
 
   // --------------------------- PAIRED PATH -----------------------------------
   if (design == "paired") {
@@ -333,13 +401,24 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     std::vector<double> x2; x2.reserve(m);
     std::vector<double> p1; p1.reserve(m);
     std::vector<double> p2; p2.reserve(m);
+    std::vector<double> b_vec; if (paired_only_stat) b_vec.reserve(m);
+    std::vector<double> c_vec; if (paired_only_stat) c_vec.reserve(m);
     std::vector<double> n1(m, (double)P), n2(m, (double)P);
     std::vector<int> keep_idx; keep_idx.reserve(m);
 
     for (int i = 0; i < m; ++i) {
       // popcount masks
-      uint32_t s1 = 0, s2 = 0;
-      for (int w = 0; w < n_words_p; ++w) { s1 += pc64(M1[i][w]); s2 += pc64(M2[i][w]); }
+      uint32_t s1 = 0, s2 = 0, b = 0, c = 0;
+      for (int w = 0; w < n_words_p; ++w) {
+        const uint64_t S1 = M1[i][w];
+        const uint64_t S2 = M2[i][w];
+        s1 += pc64(S1);
+        s2 += pc64(S2);
+        if (paired_only_stat) {
+          b += pc64(S1 & ~S2);
+          c += pc64(~S1 & S2);
+        }
+      }
       const double x1i = (double)s1;
       const double x2i = (double)s2;
       const double p1i = x1i / (double)P;
@@ -347,6 +426,10 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
       keep_idx.push_back(i);
       x1.push_back(x1i); x2.push_back(x2i);
       p1.push_back(p1i); p2.push_back(p2i);
+      if (paired_only_stat) {
+        b_vec.push_back((double)b);
+        c_vec.push_back((double)c);
+      }
     }
 
     const int mu = (int)keep_idx.size();
@@ -370,7 +453,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     n2.assign(mu, (double)P);
 
     // Observed T
-    CombineOut obs = combine_T_internal(p1, p2, x1, x2, n1, n2, winsor_z, weight_mode, stat_mode, prev_strat);
+    CombineOut obs = combine_T_internal(p1, p2, x1, x2, n1, n2, b_vec, c_vec, winsor_z, weight_mode, stat_mode, aggregate_stat, strat_bins_vec);
 
     // Moments
     double max_delta = 0.0;  // max absolute delta
@@ -415,16 +498,25 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
       std::vector<double> x2b; x2b.reserve(mu);
       std::vector<double> p1b; p1b.reserve(mu);
       std::vector<double> p2b; p2b.reserve(mu);
+      std::vector<double> bb; if (paired_only_stat) bb.reserve(mu);
+      std::vector<double> cc; if (paired_only_stat) cc.reserve(mu);
 
       for (int k = 0; k < mu; ++k) {
         const int i = keep_idx[k];
         uint32_t a = 0, b2 = 0, c = 0, d = 0; // temp counts
+        uint32_t b_disc = 0, c_disc = 0;
         for (int w = 0; w < n_words_p; ++w) {
           const uint64_t S1 = M1[i][w], S2 = M2[i][w], F = Fmask[w];
           a += pc64(S1 & ~F);
           b2 += pc64(S2 &  F);
           c += pc64(S2 & ~F);
           d += pc64(S1 &  F);
+          if (paired_only_stat) {
+            const uint64_t S1p = (S1 & ~F) | (S2 & F);
+            const uint64_t S2p = (S2 & ~F) | (S1 & F);
+            b_disc += pc64(S1p & ~S2p);
+            c_disc += pc64(~S1p & S2p);
+          }
         }
         const double x1p = (double)a + (double)b2;
         const double x2p = (double)c + (double)d;
@@ -432,12 +524,16 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         const double pB  = x2p / (double)P;
         x1b.push_back(x1p); x2b.push_back(x2p);
         p1b.push_back(pA); p2b.push_back(pB);
+        if (paired_only_stat) {
+          bb.push_back((double)b_disc);
+          cc.push_back((double)c_disc);
+        }
       }
 
       double Tb = 0.0;
       if (!p1b.empty()) {
         std::vector<double> n1b(p1b.size(), (double)P), n2b(p2b.size(), (double)P);
-        Tb = combine_T_internal(p1b, p2b, x1b, x2b, n1b, n2b, winsor_z, weight_mode, stat_mode, prev_strat).T_obs;
+        Tb = combine_T_internal(p1b, p2b, x1b, x2b, n1b, n2b, bb, cc, winsor_z, weight_mode, stat_mode, aggregate_stat, strat_bins_vec).T_obs;
       }
 
       acc.digest(Tb);
@@ -513,7 +609,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     }
 
     // Observed T
-    CombineOut obs = combine_T_internal(p1, p2, x1, x2, n1, n2, winsor_z, weight_mode, stat_mode, prev_strat);
+    CombineOut obs = combine_T_internal(p1, p2, x1, x2, n1, n2, std::vector<double>(), std::vector<double>(), winsor_z, weight_mode, stat_mode, aggregate_stat, strat_bins_vec);
 
     // Moments
     double max_delta = 0.0;  // max absolute delta
@@ -595,7 +691,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
       if (!p1b.empty()) {
         n1b.assign(p1b.size(), (double)nA);
         n2b.assign(p2b.size(), (double)nB);
-        Tb = combine_T_internal(p1b, p2b, x1b, x2b, n1b, n2b, winsor_z, weight_mode, stat_mode, prev_strat).T_obs;
+        Tb = combine_T_internal(p1b, p2b, x1b, x2b, n1b, n2b, std::vector<double>(), std::vector<double>(), winsor_z, weight_mode, stat_mode, aggregate_stat, strat_bins_vec).T_obs;
       }
 
       acc.digest(Tb);

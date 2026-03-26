@@ -15,8 +15,9 @@ compute_delta(
   interaction_sep = "::",
   B_permutations = 2000L,
   weight_mode = c("equal", "se_invvar", "n_eff_sqrt"),
-  stat_mode = c("srlr", "diff", "asin", "score"),
-  prev_strat = c("none", "decile"),
+  stat_mode = c("srlr", "diff", "asin", "score", "mcnemar", "srlr_paired"),
+  aggregate_stat = c("stouffer", "maxmean"),
+  strat_bins = c(0.002, 0.005, 0.01, 0.02, 0.05, 0.10, 0.20, 0.50),
   winsor_z = 4,
   rank_feature_keep = NULL,
   peptide_library = NULL,
@@ -59,12 +60,17 @@ p-value. Default \code{2000L}. Must be at least 100.}
 controlling how peptide-level z-scores are weighted in the Stouffer
 combination (see Details).}
 
-\item{stat_mode}{One of \code{c("diff", "asin", "score", "srlr")}, determining
-the peptide-level test statistic (see Details).}
+\item{stat_mode}{One of \code{c("diff", "asin", "score", "srlr", "mcnemar", "srlr_paired")}, determining the peptide-level test statistic (see
+Details). The paired-only modes require paired designs.}
 
-\item{prev_strat}{One of \code{c("none", "decile")}. If \code{"decile"}, the Stouffer
-statistic is computed within prevalence deciles and the mean of
-decile-level z-scores is used as the global test statistic.}
+\item{aggregate_stat}{One of \code{c("stouffer", "maxmean")}, controlling how
+peptide-level z-scores are aggregated into a single test statistic (see
+Details).}
+
+\item{strat_bins}{Numeric vector of pooled prevalence cutpoints in (0, 1).
+If \code{0}, no stratification is used (single global Stouffer statistic).
+Otherwise, peptides are binned by pooled prevalence and the mean of
+bin-level z-scores is used as the global test statistic.}
 
 \item{winsor_z}{Winsorization threshold applied to peptide-level z-scores.
 Values beyond \verb{±winsor_z} are truncated. Default \code{4.0}.}
@@ -94,8 +100,8 @@ groups compared.
 \item \code{n_subjects_paired}: number of paired subjects used in a paired design
 (or \code{NA} for unpaired).
 \item \code{n_peptides_used}: number of peptides contributing to the test.
-\item \code{m_eff}: effective number of peptides after prevalence filtering and
-weighting (as returned by the C++ helper).
+\item \code{m_eff}: effective number of peptides after weighting (as returned by the
+C++ helper).
 \item \code{T_obs}: observed Stouffer-type test statistic.
 \item \code{p_perm}: two-sided permutation p-value.
 \item \code{b}: number of permutations actually used (may be \verb{< B_permutations} if
@@ -152,6 +158,18 @@ using raw proportions \eqn{\tilde p_k = x_k / n_k} and pooled
      }
 where \eqn{\ell(p;x,n)=x\log p+(n-x)\log(1-p)} and
 \eqn{\hat p_{gk}=x_k/n_k}, \eqn{\hat p=(x_1+x_2)/(n_1+n_2)}.
+\item \code{"mcnemar"} (paired-only): signed McNemar z based on discordant pairs
+\eqn{b = \#(g1=1,g2=0)}, \eqn{c = \#(g1=0,g2=1)}:
+\deqn{
+       z = \frac{b - c}{\sqrt{b + c}} .
+     }
+If \eqn{b+c=0}, z is defined as 0.
+\item \code{"srlr_paired"} (paired-only): signed root deviance for the paired
+binomial problem with \eqn{m=b+c}:
+\deqn{
+       z = \mathrm{sign}(b-c)\sqrt{2\left[b\log\frac{2b}{m} + c\log\frac{2c}{m}\right]} .
+     }
+Terms with \eqn{0\log 0} are defined as 0; if \eqn{m=0}, z is 0.
 }
 
 Each \eqn{z_i} is then \strong{winsorized} to \eqn{\pm} \code{winsor_z}.
@@ -167,22 +185,29 @@ Each \eqn{z_i} is then \strong{winsorized} to \eqn{\pm} \code{winsor_z}.
 i.e. the square root of the expected number of positives across both
 groups.
 }
-\item \strong{Combine into a single test statistic (Stouffer).}
+\item \strong{Combine into a single test statistic (\code{aggregate_stat}).}
 Let \eqn{w_i} be the weights and \eqn{z_i} the peptide-level z-scores.
 \itemize{
-\item If \code{prev_strat = "none"}:
+\item If \code{aggregate_stat = "stouffer"} and \code{strat_bins = 0}:
 \deqn{
        T_{\mathrm{obs}} =
          \frac{\sum_i w_i z_i}{\sqrt{\sum_i w_i^2}} .
      }
-\item If \code{prev_strat = "decile"}: peptides are binned into deciles of pooled
-prevalence
+\item If \code{aggregate_stat = "stouffer"} and \code{strat_bins} is a numeric vector
+of pooled prevalence cutpoints
+(between 0 and 1), peptides are binned by pooled prevalence
 \deqn{
        \frac{n_{g1}\hat p_{g1} + n_{g2}\hat p_{g2}}{n_{g1} + n_{g2}},
      }
-a Stouffer statistic \eqn{T_b} is computed within each bin, and the
+a Stouffer statistic \eqn{T_b} is computed within each bin. The
 \strong{mean} of the bin-level z-scores is reported as
-\eqn{T_{\mathrm{obs}}}.
+\eqn{T_{\mathrm{obs}}}. For example, if \code{strat_bins} includes \code{0.10}
+and \code{0.20}, then peptides with pooled prevalence in (0.10, 0.20] share
+a bin.
+\item If \code{aggregate_stat = "maxmean"}, the signed z-scores are split into
+positive and negative parts, averaged within each set, and the dominant
+direction is selected. If \code{strat_bins} is provided, the maxmean
+statistic is computed per bin and the \strong{mean} across bins is reported.
 }
 \item \strong{Permutation scheme and p-value.}
 A \strong{two-sided} permutation p-value for the global shift is computed:
@@ -284,7 +309,7 @@ res <- compute_delta(
   B_permutations     = 500L,  # smaller for speed
   weight_mode        = "n_eff_sqrt",
   stat_mode          = "asin",
-  prev_strat         = "none",
+  strat_bins         = 0,
   winsor_z           = Inf,
   rank_feature_keep  = list(species = NULL),
   log                = FALSE
