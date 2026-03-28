@@ -51,6 +51,11 @@
 #' @param abundance_agg One of `"mean"` (default), `"sum"`, or `"max"`. Used
 #'   only in `mode = "abundance"` when `rank != "peptide_id"` to aggregate
 #'   peptide-level abundances within each rank category.
+#' @param metrics Character vector of diversity metrics to compute. Any subset
+#'   of: `"richness"`, `"shannon"`, `"simpson"`, `"pielou_evenness"`,
+#'   `"berger_parker"`. Defaults to all five. Output columns follow the
+#'   canonical names: `richness`, `shannon_diversity`, `simpson_diversity`,
+#'   `pielou_evenness`, `berger_parker_dominance`.
 #' @param shannon_base One of `"ln"`, `"log2"`, `"log10"`; reporting base for
 #'   the Shannon index (via base change from natural log).
 #' @param carry_cols Optional character vector of extra columns to carry forward
@@ -65,10 +70,9 @@
 #' @return A **named list** of data frames with S3 class
 #'   `"phip_alpha_diversity"`. Each element (per `group_col`, plus optional
 #'   interaction or `"all_samples"`) contains: `rank`, `sample_id`, the grouping
-#'   column (or `group` when `group_cols = NULL`), any `carry_cols`, and the
-#'   metrics: `richness`, `shannon_diversity`, `simpson_diversity`,
-#'   `pielou_evenness` (`NA` when richness <= 1), and
-#'   `berger_parker_dominance` (`NA` when richness == 0).
+#'   column (or `group` when `group_cols = NULL`), any `carry_cols`, and one
+#'   column per requested metric (see `metrics`). `pielou_evenness` is `NA`
+#'   when richness <= 1; `berger_parker_dominance` is `NA` when richness == 0.
 #'
 #' @examples
 #' pd <- load_example_data()
@@ -115,6 +119,7 @@ compute_alpha_diversity <- function(x,
                                     abundance_col = NULL,
                                     threshold = NULL,
                                     abundance_agg = c("mean", "sum", "max"),
+                                    metrics = .alpha_metric_names,
                                     shannon_base = c("ln", "log2", "log10"),
                                     carry_cols = NULL,
                                     group_interaction = FALSE,
@@ -131,9 +136,10 @@ compute_alpha_diversity <- function(x,
     )
     shannon_base <- shannon_log
   }
-  shannon_base <- match.arg(shannon_base)
-  mode         <- match.arg(mode)
+  shannon_base  <- match.arg(shannon_base)
+  mode          <- match.arg(mode)
   abundance_agg <- match.arg(abundance_agg)
+  metrics       <- match.arg(metrics, .alpha_metric_names, several.ok = TRUE)
 
   # -- mode-specific validation --------------------------------------------------
   .ph_check_cond(mode == "binary" && !is.null(abundance_col),
@@ -278,7 +284,7 @@ compute_alpha_diversity <- function(x,
             group_col = NULL, ranks = ranks,
             mode = mode, abundance_col = abundance_col,
             threshold = threshold, abundance_agg = abundance_agg,
-            shannon_base = shannon_base,
+            metrics = metrics, shannon_base = shannon_base,
             carry_cols = carry_cols, map_provider = map_provider
           )
 
@@ -328,6 +334,7 @@ compute_alpha_diversity <- function(x,
       attr(out_list, "abundance_col")    <- abundance_col
       attr(out_list, "threshold")        <- threshold
       attr(out_list, "abundance_agg")    <- abundance_agg
+      attr(out_list, "metrics")          <- metrics
       attr(out_list, "shannon_base")     <- shannon_base
       attr(out_list, "interaction")      <- isTRUE(group_interaction)
       attr(out_list, "interaction_only") <- isTRUE(interaction_only)
@@ -365,6 +372,7 @@ compute_alpha_diversity <- function(x,
                                      abundance_col = NULL,
                                      threshold = NULL,
                                      abundance_agg = c("mean", "sum", "max"),
+                                     metrics = .alpha_metric_names,
                                      shannon_base = c("ln", "log2", "log10"),
                                      carry_cols = NULL,
                                      map_provider) {
@@ -477,35 +485,25 @@ compute_alpha_diversity <- function(x,
 
     pc <- dplyr::collect(per_cat)
 
-    # diversity by sample
+    # diversity by sample — driven by the metric registry
     if (nrow(pc)) {
       by_sample <- pc |>
         dplyr::group_by(sample_id, cohort) |>
-        dplyr::summarise(
-          richness      = dplyr::n_distinct(rank_val),
-          H_ln          = { p <- n / sum(n); -sum(p * log(p)) },
-          simpson       = { p <- n / sum(n); 1 - sum(p * p) },
-          evenness      = { S <- dplyr::n_distinct(rank_val)
-                            H <- { p <- n / sum(n); -sum(p * log(p)) }
-                            if (S > 1L) H / log(S) else NA_real_ },
-          berger_parker = max(n) / sum(n),
-          .groups = "drop"
-        ) |>
-        dplyr::mutate(
-          shannon  = H_ln / ln_base,
-          evenness = dplyr::if_else(is.na(evenness), NA_real_, evenness / ln_base)
-        ) |>
-        dplyr::select(-H_ln)
+        dplyr::group_modify(~ {
+          n_vec <- .x$n
+          vals  <- vapply(metrics, function(m) {
+            .alpha_metric_fns[[m]](n_vec, ln_base = ln_base)
+          }, numeric(1))
+          tibble::as_tibble_row(vals)
+        }) |>
+        dplyr::ungroup()
     } else {
-      by_sample <- tibble::tibble(
-        sample_id     = character(0),
-        cohort        = character(0),
-        richness      = integer(0),
-        shannon       = numeric(0),
-        simpson       = numeric(0),
-        evenness      = numeric(0),
-        berger_parker = numeric(0)
-      )
+      empty_cols <- stats::setNames(rep(list(numeric(0)), length(metrics)), metrics)
+      by_sample  <- rlang::inject(tibble::tibble(
+        sample_id = character(0),
+        cohort    = character(0),
+        !!!empty_cols
+      ))
     }
 
     # join the lazy all-samples roster with the local by_sample tibble;
@@ -513,24 +511,23 @@ compute_alpha_diversity <- function(x,
     out <- all_samples_lazy |>
       dplyr::left_join(by_sample, by = c("sample_id", "cohort"), copy = TRUE) |>
       dplyr::collect() |>
-      dplyr::mutate(
-        richness      = tidyr::replace_na(richness, 0L),
-        shannon       = tidyr::replace_na(shannon, 0),
-        simpson       = tidyr::replace_na(simpson, 0),
-        evenness      = evenness,
-        berger_parker = berger_parker
-      ) |>
       dplyr::mutate(rank = rank_name, .before = 1)
 
     names(out) <- .norm_names(names(out))
 
-    out |>
-      dplyr::rename(
-        shannon_diversity       = shannon,
-        simpson_diversity       = simpson,
-        pielou_evenness         = evenness,
-        berger_parker_dominance = berger_parker
-      )
+    # fill zeros for metrics where S=0 means 0, keep NA for undefined ones
+    for (m in intersect(metrics, .zero_fill_metrics)) {
+      out[[m]] <- tidyr::replace_na(out[[m]], if (m == "richness") 0L else 0)
+    }
+
+    # apply canonical output column names (e.g. shannon -> shannon_diversity)
+    to_rename <- .alpha_metric_output_names[metrics]
+    to_rename <- to_rename[to_rename != names(to_rename)]
+    if (length(to_rename)) {
+      out <- dplyr::rename(out, !!!stats::setNames(names(to_rename), to_rename))
+    }
+
+    out
   }
 
   res <- do.call(dplyr::bind_rows, lapply(ranks, compute_one_rank))
@@ -544,3 +541,57 @@ compute_alpha_diversity <- function(x,
 
   res
 }
+
+# ==============================================================================
+# Alpha diversity metric registry
+#
+# Each entry in .alpha_metric_fns is a function(n, ln_base, ...) -> numeric(1).
+#   n        : numeric vector of per-rank-val counts for one sample
+#   ln_base  : log base conversion factor (from .phip_ln_base); functions that
+#              don't use it accept it silently via ...
+# ==============================================================================
+
+.alpha_metric_fns <- list(
+
+  richness = function(n, ...) length(n),
+
+  shannon = function(n, ln_base = 1, ...) {
+    p <- n / sum(n)
+    -sum(p * log(p)) / ln_base
+  },
+
+  simpson = function(n, ...) {
+    p <- n / sum(n)
+    1 - sum(p^2)
+  },
+
+  pielou_evenness = function(n, ln_base = 1, ...) {
+    S <- length(n)
+    if (S <= 1L) return(NA_real_)
+    p <- n / sum(n)
+    H <- -sum(p * log(p))
+    (H / log(S)) / ln_base
+  },
+
+  berger_parker = function(n, ...) {
+    max(n) / sum(n)
+  }
+)
+
+# canonical names available for the `metrics` parameter
+.alpha_metric_names <- names(.alpha_metric_fns)
+
+# registry name -> output column name
+.alpha_metric_output_names <- c(
+  richness        = "richness",
+  shannon         = "shannon_diversity",
+  simpson         = "simpson_diversity",
+  pielou_evenness = "pielou_evenness",
+  berger_parker   = "berger_parker_dominance"
+)
+
+# metrics filled with 0 when a sample has no enriched peptides (S = 0)
+.zero_fill_metrics <- c("richness", "shannon", "simpson")
+
+# metrics kept as NA when a sample has no enriched peptides (undefined, not 0)
+.na_keep_metrics <- c("pielou_evenness", "berger_parker")
