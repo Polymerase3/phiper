@@ -131,7 +131,7 @@ You can also compute and visualize alpha diversity for different groups
 or subgroups of interest. `phiper` is organized into analysis modules:
 for each module you typically get a computation function (for example,
 `compute_alpha()`) and one or more plotting functions (for
-example, `plot_alpha_diversity()`). This pattern repeats across the
+example, `plot_alpha()`). This pattern repeats across the
 analysis modules.
 
 For alpha diversity specifically:
@@ -174,7 +174,7 @@ head(alpha)
 You can then plot the results:
 
 ``` r
-plot_alpha_diversity(
+plot_alpha(
   alpha,
   metric    = "richness",
   group_col = "phip_interaction"

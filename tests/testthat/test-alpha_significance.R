@@ -318,40 +318,40 @@ testthat::test_that("requesting absent metric raises informative error", {
 })
 
 # ---------------------------------------------------------------------------
-# 23. plot_alpha_diversity accepts significance object without error
+# 23. plot_alpha accepts significance object without error
 # ---------------------------------------------------------------------------
-testthat::test_that("plot_alpha_diversity accepts significance= without error", {
+testthat::test_that("plot_alpha accepts significance= without error", {
   df  <- .make_alpha_df()
   sig <- compute_alpha_significance(df, group_col = "group", metric = "richness")
   testthat::expect_no_error(
-    plot_alpha_diversity(df, metric = "richness", group_col = "group",
+    plot_alpha(df, metric = "richness", group_col = "group",
                         significance = sig, show_significance = FALSE)
   )
 })
 
 # ---------------------------------------------------------------------------
-# 24. plot_alpha_diversity new metrics accepted
+# 24. plot_alpha new metrics accepted
 # ---------------------------------------------------------------------------
-testthat::test_that("plot_alpha_diversity accepts pielou_evenness metric", {
+testthat::test_that("plot_alpha accepts pielou_evenness metric", {
   df <- .make_alpha_df()
-  p  <- plot_alpha_diversity(df, metric = "pielou_evenness", group_col = "group")
+  p  <- plot_alpha(df, metric = "pielou_evenness", group_col = "group")
   testthat::expect_s3_class(p, "ggplot")
 })
 
-testthat::test_that("plot_alpha_diversity accepts berger_parker_dominance metric", {
+testthat::test_that("plot_alpha accepts berger_parker_dominance metric", {
   df <- .make_alpha_df()
-  p  <- plot_alpha_diversity(df, metric = "berger_parker_dominance",
+  p  <- plot_alpha(df, metric = "berger_parker_dominance",
                              group_col = "group")
   testthat::expect_s3_class(p, "ggplot")
 })
 
 # ---------------------------------------------------------------------------
-# 25. plot_alpha_diversity ... param ignored silently
+# 25. plot_alpha ... param ignored silently
 # ---------------------------------------------------------------------------
-testthat::test_that("plot_alpha_diversity ... ignored silently", {
+testthat::test_that("plot_alpha ... ignored silently", {
   df <- .make_alpha_df()
   testthat::expect_no_error(
-    plot_alpha_diversity(df, metric = "richness", group_col = "group",
+    plot_alpha(df, metric = "richness", group_col = "group",
                         unknown_future_param = 42)
   )
 })

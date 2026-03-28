@@ -203,7 +203,7 @@ plot_enrichment_counts <- function(phip_data,
 }
 
 # ==============================================================================
-# plot_alpha_diversity() — single exported function for precomputed alpha data
+# plot_alpha() — single exported function for precomputed alpha data
 # (output of compute_alpha)
 # ==============================================================================
 
@@ -270,10 +270,10 @@ plot_enrichment_counts <- function(phip_data,
 #' @examples
 #' \dontrun{
 #' # precomputed alpha (list) -> boxplot per group
-#' p <- plot_alpha_diversity(alpha_list, metric = "richness", group_col = "Cohort")
+#' p <- plot_alpha(alpha_list, metric = "richness", group_col = "Cohort")
 #'
 #' # only the interaction table (if available)
-#' p_int <- plot_alpha_diversity(
+#' p_int <- plot_alpha(
 #'   alpha_list,
 #'   metric = "shannon_diversity",
 #'   group_col = "Cohort * timepoint",
@@ -281,7 +281,7 @@ plot_enrichment_counts <- function(phip_data,
 #' )
 #' }
 #' @export
-plot_alpha_diversity <- function(
+plot_alpha <- function(
     x,
     metric = c("richness", "shannon_diversity", "simpson_diversity",
                "pielou_evenness", "berger_parker_dominance"),
@@ -517,10 +517,10 @@ plot_alpha_diversity <- function(
 #' Plot alpha diversity (precomputed) — interactive (plotly)
 #'
 #' @description
-#' native plotly version of `plot_alpha_diversity()`. mirrors the ggplot look:
+#' native plotly version of `plot_alpha()`. mirrors the ggplot look:
 #' per-group boxplots with jittered points and optional faceting by rank.
 #'
-#' @inheritParams plot_alpha_diversity
+#' @inheritParams plot_alpha
 #' @param custom_colors named character vector of hex colors for groups (like ggplot scale_fill_manual()).
 #' @param x_order optional character vector with desired group order (levels).
 #' @param x_labels optional named character vector mapping group -> label (used on x axis).
@@ -536,10 +536,10 @@ plot_alpha_diversity <- function(
 #' @return A plotly htmlwidget.
 #' @examples
 #' \dontrun{
-#' plot_alpha_diversity_interactive(df, metric = "richness", group_col = "group")
+#' plot_alpha_interactive(df, metric = "richness", group_col = "group")
 #' }
 #' @export
-plot_alpha_diversity_interactive <- function(
+plot_alpha_interactive <- function(
     x,
     metric = c("richness", "shannon_diversity", "simpson_diversity",
                "pielou_evenness", "berger_parker_dominance"),
