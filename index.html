@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,6 +38,12 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
+<li><a class="dropdown-item" href="articles/alpha-diversity.html">Alpha Diversity Analysis in PhIP-seq</a></li>
+  </ul>
+</li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -152,7 +158,7 @@
 <div class="section level3">
 <h3 id="alpha-diversity">Alpha diversity<a class="anchor" aria-label="anchor" href="#alpha-diversity"></a>
 </h3>
-<p>You can also compute and visualize alpha diversity for different groups or subgroups of interest. <code>phiper</code> is organized into analysis modules: for each module you typically get a computation function (for example, <code><a href="reference/compute_alpha.html">compute_alpha()</a></code>) and one or more plotting functions (for example, <code><a href="reference/plot_alpha_diversity.html">plot_alpha_diversity()</a></code>). This pattern repeats across the analysis modules.</p>
+<p>You can also compute and visualize alpha diversity for different groups or subgroups of interest. <code>phiper</code> is organized into analysis modules: for each module you typically get a computation function (for example, <code><a href="reference/compute_alpha.html">compute_alpha()</a></code>) and one or more plotting functions (for example, <code><a href="reference/plot_alpha.html">plot_alpha()</a></code>). This pattern repeats across the analysis modules.</p>
 <p>For alpha diversity specifically:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">alpha</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/compute_alpha.html">compute_alpha</a></span><span class="op">(</span></span>
@@ -189,7 +195,7 @@
 <span><span class="co">#&gt; # ℹ 1 more variable: shannon_diversity &lt;dbl&gt;</span></span></code></pre></div>
 <p>You can then plot the results:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/plot_alpha_diversity.html">plot_alpha_diversity</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="reference/plot_alpha.html">plot_alpha</a></span><span class="op">(</span></span>
 <span>  <span class="va">alpha</span>,</span>
 <span>  metric    <span class="op">=</span> <span class="st">"richness"</span>,</span>
 <span>  group_col <span class="op">=</span> <span class="st">"phip_interaction"</span></span>

@@ -13,7 +13,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -22,6 +22,10 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/alpha-diversity.html">Alpha Diversity Analysis in PhIP-seq</a></li>
+  </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -44,6 +48,45 @@
       <small>Source: <a href="https://github.com/Polymerase3/phiper/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.3.2" id="phiper-032">phiper 0.3.2<a class="anchor" aria-label="anchor" href="#phiper-032"></a></h2>
+<div class="section level3">
+<h3 id="new-functions-0-3-2">New functions<a class="anchor" aria-label="anchor" href="#new-functions-0-3-2"></a></h3>
+<ul><li>
+<code><a href="../reference/compute_alpha_significance.html">compute_alpha_significance()</a></code>: runs global (Kruskal-Wallis or one-way ANOVA) and pairwise (Wilcoxon or Tukey HSD) hypothesis tests on every <code>(rank, metric)</code> combination returned by <code><a href="../reference/compute_alpha.html">compute_alpha()</a></code>. Returns a <code>"phip_alpha_significance"</code> list with <code>$global</code> (statistic, p-value, test) and <code>$pairwise</code> (p_raw, p_adj, Cohen’s d, significance stars) tibbles. Supports <code>p_adjust_method</code> (default <code>"BH"</code>) and subsetting via <code>metric</code> / <code>rank</code> arguments. Group column is inferred automatically when not supplied.</li>
+<li>
+<code><a href="../reference/plot_alpha_significance.html">plot_alpha_significance()</a></code>: visualises pairwise results either as a filtered tibble (<code>type = "table"</code>) or a symmetric Cohen’s d heatmap with significance stars (<code>type = "heatmap"</code>). Accepts <code>metric</code>, <code>rank</code>, and <code>p_threshold</code> arguments to focus on a single comparison.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="changes-to-plot_alpha-and-plot_alpha_interactive-0-3-2">Changes to <code>plot_alpha()</code> and <code>plot_alpha_interactive()</code>
+<a class="anchor" aria-label="anchor" href="#changes-to-plot_alpha-and-plot_alpha_interactive-0-3-2"></a></h3>
+<ul><li>
+<code>metric</code> now also accepts <code>"pielou_evenness"</code> and <code>"berger_parker_dominance"</code>, matching all five indices added to <code><a href="../reference/compute_alpha.html">compute_alpha()</a></code> in 0.3.1.</li>
+<li>New significance-bracket parameters: <code>significance</code>, <code>show_significance</code>, <code>sig_p_threshold</code>, <code>sig_step_increase</code>, <code>sig_tip_length</code>. Pass a <code>"phip_alpha_significance"</code> object and set <code>show_significance = TRUE</code> to overlay pairwise brackets via <code>ggsignif</code> (optional dependency). Non-significant pairs are automatically omitted.</li>
+<li>Added <code>...</code> (reserved; ignored) for forward-compatibility.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="font-bundling-0-3-2">Font bundling<a class="anchor" aria-label="anchor" href="#font-bundling-0-3-2"></a></h3>
+<ul><li>Montserrat Regular, Bold, and Italic TTF files are now shipped in <code>inst/fonts/</code>, so <code><a href="../reference/phip_use_montserrat.html">phip_use_montserrat()</a></code> works offline without a Google Fonts connection.</li>
+<li>
+<code><a href="../reference/phip_use_montserrat.html">phip_use_montserrat()</a></code> tries the local bundle first; falls back to <code><a href="https://rdrr.io/pkg/sysfonts/man/font_add_google.html" class="external-link">sysfonts::font_add_google()</a></code> only when the local files are absent.</li>
+<li>Package registers the font at load time via <code>.onLoad()</code> (showtext rendering remains opt-in; call <code><a href="../reference/phip_use_montserrat.html">phip_use_montserrat()</a></code> explicitly to enable it).</li>
+</ul></div>
+<div class="section level3">
+<h3 id="tests-0-3-2">Tests<a class="anchor" aria-label="anchor" href="#tests-0-3-2"></a></h3>
+<ul><li>New <code>test-alpha_significance.R</code>: 56 tests covering <code><a href="../reference/compute_alpha_significance.html">compute_alpha_significance()</a></code> (global/pairwise tests, p-adjustment, Cohen’s d, metric/rank subsetting, group inference, single-group edge case) and <code><a href="../reference/plot_alpha_significance.html">plot_alpha_significance()</a></code> (table and heatmap modes, error paths). Line coverage: 89.91% → 99.54%.</li>
+<li>New <code>test-alpha_plots.R</code>: 63 tests covering all five metrics (static and interactive), faceting, group/rank filtering, custom colours, y-range, x-ordering, factor group columns, significance brackets, and <code><a href="../reference/plot_enrichment_counts.html">plot_enrichment_counts()</a></code>. Line coverage: 14.88% → 94.57%.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="documentation-0-3-2">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-3-2"></a></h3>
+<ul><li>New vignette <code>alpha-diversity</code> demonstrating the full alpha diversity pipeline: loading data, <code><a href="../reference/compute_alpha.html">compute_alpha()</a></code> (binary, threshold, and abundance modes), <code><a href="../reference/plot_alpha.html">plot_alpha()</a></code>, <code><a href="../reference/compute_alpha_significance.html">compute_alpha_significance()</a></code>, <code><a href="../reference/plot_alpha_significance.html">plot_alpha_significance()</a></code>, and significance brackets on box plots.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="dependencies-0-3-2">Dependencies<a class="anchor" aria-label="anchor" href="#dependencies-0-3-2"></a></h3>
+<ul><li>Added <code>ggsignif</code> and <code>rmarkdown</code> to <code>Suggests</code>.</li>
+<li>Added <code>VignetteBuilder: knitr</code>.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.1" id="phiper-031">phiper 0.3.1<a class="anchor" aria-label="anchor" href="#phiper-031"></a></h2>
 <div class="section level3">

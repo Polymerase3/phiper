@@ -5,6 +5,9 @@
 - [`compute_alpha()`](https://polymerase3.github.io/phiper/reference/compute_alpha.md)
   : Compute alpha diversity per sample / group across ranks
 
+- [`compute_alpha_significance()`](https://polymerase3.github.io/phiper/reference/compute_alpha_significance.md)
+  : Compute statistical significance of alpha diversity between groups
+
 - [`compute_capscale()`](https://polymerase3.github.io/phiper/reference/compute_capscale.md)
   : Constrained Ordination (db-rda / cap) on Distance Matrix
 
@@ -69,12 +72,15 @@
 - [`phip_use_montserrat()`](https://polymerase3.github.io/phiper/reference/phip_use_montserrat.md)
   : Register and enable the Montserrat font for plotting (showtext)
 
-- [`plot_alpha_diversity()`](https://polymerase3.github.io/phiper/reference/plot_alpha_diversity.md)
+- [`plot_alpha()`](https://polymerase3.github.io/phiper/reference/plot_alpha.md)
   : Plot alpha diversity (richness/Shannon/Simpson) from precomputed
   results
 
-- [`plot_alpha_diversity_interactive()`](https://polymerase3.github.io/phiper/reference/plot_alpha_diversity_interactive.md)
+- [`plot_alpha_interactive()`](https://polymerase3.github.io/phiper/reference/plot_alpha_interactive.md)
   : Plot alpha diversity (precomputed) — interactive (plotly)
+
+- [`plot_alpha_significance()`](https://polymerase3.github.io/phiper/reference/plot_alpha_significance.md)
+  : Visualise alpha diversity significance results
 
 - [`plot_cap()`](https://polymerase3.github.io/phiper/reference/plot_cap.md)
   : Plot CAP/db-RDA Results (Constrained Ordination)

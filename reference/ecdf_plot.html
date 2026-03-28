@@ -21,7 +21,7 @@ annotates median shifts and a Kolmogorov-Smirnov (KS) test summary."></head><bod
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -30,6 +30,10 @@ annotates median shifts and a Kolmogorov-Smirnov (KS) test summary."></head><bod
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/alpha-diversity.html">Alpha Diversity Analysis in PhIP-seq</a></li>
+  </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -157,10 +161,10 @@ and p-value along with the median difference.</p>
 <span class="r-in"><span>  group_cols <span class="op">=</span> <span class="va">group_col</span>,</span></span>
 <span class="r-in"><span>  collect    <span class="op">=</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:05:42] INFO  prevalence_compare (per-rank fdr)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [14:59:15] INFO  prevalence_compare (per-rank fdr)</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Unknown or uninitialised column: `peptide_library`.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Unknown or uninitialised column: `meta`.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:05:42] INFO  preparing input data</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [14:59:15] INFO  preparing input data</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    - ranks: peptide_id</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    - group_cols: group</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    - exist_col: exist</span>
@@ -168,25 +172,25 @@ and p-value along with the median difference.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    - collect: TRUE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    - pop_k_min: 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    - paired: FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:05:42] INFO  ranks resolved</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [14:59:15] INFO  ranks resolved</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    - - available: peptide_id</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:05:42] INFO  grouping universes</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [14:59:15] INFO  grouping universes</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    - - per-column only: group</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:05:42] INFO  computing cohort sizes (n) per universe</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:05:42] INFO  computing presence per sample via k-of-n rule</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:05:42] INFO  counting present samples per feature (pop, non-paired)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:05:43] INFO  fdr accounting</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [14:59:15] INFO  computing cohort sizes (n) per universe</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [14:59:15] INFO  computing presence per sample via k-of-n rule</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [14:59:15] INFO  counting present samples per feature (pop, non-paired)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [14:59:16] INFO  fdr accounting</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    - pool per rank: peptide_id=5</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    - universes: group (k=2, pairs=1)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    - pairs across universes (sum): 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    - total tests m per rank = pool * pairs: peptide_id=5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:05:43] INFO  building pairwise comparisons</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:05:44] OK    materialized duckdb table</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                    - name: ph_prev_20260328_130543</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [14:59:16] INFO  building pairwise comparisons</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [14:59:17] OK    materialized duckdb table</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                    - name: ph_prev_20260328_145916</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    - computing p-values (fisher-only); then fdr per rank (bh /</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                      wbh)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:05:44] OK    prevalence_compare (per-rank fdr) - done</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; elapsed: 2.296s</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [14:59:17] OK    prevalence_compare (per-rank fdr) - done</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; elapsed: 2.351s</span>
 <span class="r-in"><span><span class="va">prev_tbl</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">prev_res</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">pair_tbl</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">prev_tbl</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"group1"</span>, <span class="st">"group2"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">group_pair</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">pair_tbl</span><span class="op">$</span><span class="va">group1</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, <span class="va">pair_tbl</span><span class="op">$</span><span class="va">group2</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span><span class="op">)</span></span></span>

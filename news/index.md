@@ -1,5 +1,85 @@
 # Changelog
 
+## phiper 0.3.2
+
+### New functions
+
+- [`compute_alpha_significance()`](https://polymerase3.github.io/phiper/reference/compute_alpha_significance.md):
+  runs global (Kruskal-Wallis or one-way ANOVA) and pairwise (Wilcoxon
+  or Tukey HSD) hypothesis tests on every `(rank, metric)` combination
+  returned by
+  [`compute_alpha()`](https://polymerase3.github.io/phiper/reference/compute_alpha.md).
+  Returns a `"phip_alpha_significance"` list with `$global` (statistic,
+  p-value, test) and `$pairwise` (p_raw, p_adj, Cohen’s d, significance
+  stars) tibbles. Supports `p_adjust_method` (default `"BH"`) and
+  subsetting via `metric` / `rank` arguments. Group column is inferred
+  automatically when not supplied.
+- [`plot_alpha_significance()`](https://polymerase3.github.io/phiper/reference/plot_alpha_significance.md):
+  visualises pairwise results either as a filtered tibble
+  (`type = "table"`) or a symmetric Cohen’s d heatmap with significance
+  stars (`type = "heatmap"`). Accepts `metric`, `rank`, and
+  `p_threshold` arguments to focus on a single comparison.
+
+### Changes to `plot_alpha()` and `plot_alpha_interactive()`
+
+- `metric` now also accepts `"pielou_evenness"` and
+  `"berger_parker_dominance"`, matching all five indices added to
+  [`compute_alpha()`](https://polymerase3.github.io/phiper/reference/compute_alpha.md)
+  in 0.3.1.
+- New significance-bracket parameters: `significance`,
+  `show_significance`, `sig_p_threshold`, `sig_step_increase`,
+  `sig_tip_length`. Pass a `"phip_alpha_significance"` object and set
+  `show_significance = TRUE` to overlay pairwise brackets via `ggsignif`
+  (optional dependency). Non-significant pairs are automatically
+  omitted.
+- Added `...` (reserved; ignored) for forward-compatibility.
+
+### Font bundling
+
+- Montserrat Regular, Bold, and Italic TTF files are now shipped in
+  `inst/fonts/`, so
+  [`phip_use_montserrat()`](https://polymerase3.github.io/phiper/reference/phip_use_montserrat.md)
+  works offline without a Google Fonts connection.
+- [`phip_use_montserrat()`](https://polymerase3.github.io/phiper/reference/phip_use_montserrat.md)
+  tries the local bundle first; falls back to
+  [`sysfonts::font_add_google()`](https://rdrr.io/pkg/sysfonts/man/font_add_google.html)
+  only when the local files are absent.
+- Package registers the font at load time via `.onLoad()` (showtext
+  rendering remains opt-in; call
+  [`phip_use_montserrat()`](https://polymerase3.github.io/phiper/reference/phip_use_montserrat.md)
+  explicitly to enable it).
+
+### Tests
+
+- New `test-alpha_significance.R`: 56 tests covering
+  [`compute_alpha_significance()`](https://polymerase3.github.io/phiper/reference/compute_alpha_significance.md)
+  (global/pairwise tests, p-adjustment, Cohen’s d, metric/rank
+  subsetting, group inference, single-group edge case) and
+  [`plot_alpha_significance()`](https://polymerase3.github.io/phiper/reference/plot_alpha_significance.md)
+  (table and heatmap modes, error paths). Line coverage: 89.91% →
+  99.54%.
+- New `test-alpha_plots.R`: 63 tests covering all five metrics (static
+  and interactive), faceting, group/rank filtering, custom colours,
+  y-range, x-ordering, factor group columns, significance brackets, and
+  [`plot_enrichment_counts()`](https://polymerase3.github.io/phiper/reference/plot_enrichment_counts.md).
+  Line coverage: 14.88% → 94.57%.
+
+### Documentation
+
+- New vignette `alpha-diversity` demonstrating the full alpha diversity
+  pipeline: loading data,
+  [`compute_alpha()`](https://polymerase3.github.io/phiper/reference/compute_alpha.md)
+  (binary, threshold, and abundance modes),
+  [`plot_alpha()`](https://polymerase3.github.io/phiper/reference/plot_alpha.md),
+  [`compute_alpha_significance()`](https://polymerase3.github.io/phiper/reference/compute_alpha_significance.md),
+  [`plot_alpha_significance()`](https://polymerase3.github.io/phiper/reference/plot_alpha_significance.md),
+  and significance brackets on box plots.
+
+### Dependencies
+
+- Added `ggsignif` and `rmarkdown` to `Suggests`.
+- Added `VignetteBuilder: knitr`.
+
 ## phiper 0.3.1
 
 ### Changes to `compute_alpha`

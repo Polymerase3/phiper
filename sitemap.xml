@@ -2,10 +2,13 @@
 <url><loc>https://polymerase3.github.io/phiper/404.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/CONTRIBUTING.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/LICENSE.html</loc></url>
+<url><loc>https://polymerase3.github.io/phiper/articles/alpha-diversity.html</loc></url>
+<url><loc>https://polymerase3.github.io/phiper/articles/index.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/authors.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/index.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/news/index.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/compute_alpha.html</loc></url>
+<url><loc>https://polymerase3.github.io/phiper/reference/compute_alpha_significance.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/compute_capscale.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/compute_delta.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/compute_dispersion.html</loc></url>
@@ -46,8 +49,9 @@
 <url><loc>https://polymerase3.github.io/phiper/reference/phip_palette.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/phip_use_montserrat.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/phiper-package.html</loc></url>
-<url><loc>https://polymerase3.github.io/phiper/reference/plot_alpha_diversity.html</loc></url>
-<url><loc>https://polymerase3.github.io/phiper/reference/plot_alpha_diversity_interactive.html</loc></url>
+<url><loc>https://polymerase3.github.io/phiper/reference/plot_alpha.html</loc></url>
+<url><loc>https://polymerase3.github.io/phiper/reference/plot_alpha_interactive.html</loc></url>
+<url><loc>https://polymerase3.github.io/phiper/reference/plot_alpha_significance.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/plot_cap.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/plot_dispersion.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/plot_enrichment_counts.html</loc></url>

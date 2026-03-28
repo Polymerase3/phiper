@@ -130,10 +130,10 @@ prev_res <- ph_prevalence_compare(
   group_cols = group_col,
   collect    = TRUE
 )
-#> [13:05:34] INFO  prevalence_compare (per-rank fdr)
+#> [14:59:07] INFO  prevalence_compare (per-rank fdr)
 #> Warning: Unknown or uninitialised column: `peptide_library`.
 #> Warning: Unknown or uninitialised column: `meta`.
-#> [13:05:34] INFO  preparing input data
+#> [14:59:07] INFO  preparing input data
 #>                    - ranks: peptide_id
 #>                    - group_cols: group
 #>                    - exist_col: exist
@@ -141,25 +141,25 @@ prev_res <- ph_prevalence_compare(
 #>                    - collect: TRUE
 #>                    - pop_k_min: 1
 #>                    - paired: FALSE
-#> [13:05:34] INFO  ranks resolved
+#> [14:59:07] INFO  ranks resolved
 #>                    - - available: peptide_id
-#> [13:05:35] INFO  grouping universes
+#> [14:59:07] INFO  grouping universes
 #>                    - - per-column only: group
-#> [13:05:35] INFO  computing cohort sizes (n) per universe
-#> [13:05:35] INFO  computing presence per sample via k-of-n rule
-#> [13:05:35] INFO  counting present samples per feature (pop, non-paired)
-#> [13:05:35] INFO  fdr accounting
+#> [14:59:07] INFO  computing cohort sizes (n) per universe
+#> [14:59:07] INFO  computing presence per sample via k-of-n rule
+#> [14:59:07] INFO  counting present samples per feature (pop, non-paired)
+#> [14:59:08] INFO  fdr accounting
 #>                    - pool per rank: peptide_id=5
 #>                    - universes: group (k=2, pairs=1)
 #>                    - pairs across universes (sum): 1
 #>                    - total tests m per rank = pool * pairs: peptide_id=5
-#> [13:05:35] INFO  building pairwise comparisons
-#> [13:05:36] OK    materialized duckdb table
-#>                    - name: ph_prev_20260328_130535
+#> [14:59:08] INFO  building pairwise comparisons
+#> [14:59:09] OK    materialized duckdb table
+#>                    - name: ph_prev_20260328_145908
 #>                    - computing p-values (fisher-only); then fdr per rank (bh /
 #>                      wbh)
-#> [13:05:37] OK    prevalence_compare (per-rank fdr) - done
-#>                  -> elapsed: 2.233s
+#> [14:59:09] OK    prevalence_compare (per-rank fdr) - done
+#>                  -> elapsed: 2.263s
 prev_tbl <- as.data.frame(prev_res)
 pair_tbl <- unique(prev_tbl[, c("group1", "group2")])
 group_pair <- c(pair_tbl$group1[1], pair_tbl$group2[1])
@@ -170,7 +170,7 @@ p <- deltaplot(
   group_labels = group_pair,
   y_label = "Delta prevalence (group2 - group1)"
 )
-#> [13:05:37] INFO  Preparing delta prevalence plot.
+#> [14:59:09] INFO  Preparing delta prevalence plot.
 
 print(p)
 
