@@ -1,0 +1,675 @@
+---
+title: "Alpha Diversity Analysis in PhIP-seq"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+    number_sections: false
+vignette: >
+  %\VignetteIndexEntry{Alpha Diversity Analysis in PhIP-seq}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse  = TRUE,
+  comment   = "#>",
+  fig.width = 7,
+  fig.height = 4.5,
+  warning   = FALSE,
+  message   = FALSE
+)
+```
+
+## Overview
+
+Alpha diversity quantifies the **within-sample** variety of reactive peptides.
+In PhIP-seq, each sample's enrichment profile can be characterised by how many
+unique peptide species are enriched (richness), how evenly that enrichment is
+distributed (evenness), or how dominated it is by a single peptide
+(dominance). These properties change across disease conditions, timepoints, and
+patient subgroups, making alpha diversity a useful summary statistic for
+exploratory analysis and hypothesis testing.
+
+This vignette walks through the complete alpha diversity workflow in **phiper**:
+
+1. Computing diversity metrics with `compute_alpha()`
+2. Visualising distributions with `plot_alpha_diversity()` and
+   `plot_alpha_diversity_interactive()`
+3. Testing group differences with `compute_alpha_significance()`
+4. Summarising statistical results with `plot_alpha_significance()`
+
+---
+
+## Setup
+
+```{r load}
+library(phiper)
+```
+
+Load the bundled example dataset. It contains two patient groups (`A`, `B`)
+measured at two timepoints (`T1`, `T2`).
+
+```{r data}
+pd <- load_example_data()
+pd
+```
+
+---
+
+## Computing alpha diversity
+
+### Basic usage: peptide-level diversity by group
+
+The workhorse function is `compute_alpha()`. At minimum, supply your
+`<phip_data>` object, the grouping column(s), and the rank(s) at which
+diversity should be computed.
+
+```{r compute-basic}
+alpha_group <- compute_alpha(
+  pd,
+  group_cols = "group",
+  ranks      = "peptide_id"
+)
+```
+
+The result is a **named list** with S3 class `"phip_alpha_diversity"`. Each
+element is one data frame — one per `group_col` plus, optionally, an
+interaction element.
+
+```{r result-structure}
+class(alpha_group)
+names(alpha_group)
+head(alpha_group$group)
+```
+
+### What's in the output?
+
+Each row is one `(sample, rank)` pair. The five diversity columns are:
+
+| Column | Metric | Notes |
+|---|---|---|
+| `richness` | Number of enriched peptides | Integer; 0 for empty samples |
+| `shannon_diversity` | Shannon entropy H | Base configurable; `NA` impossible |
+| `simpson_diversity` | Simpson index (1 − Σp²) | Range [0, 1) |
+| `pielou_evenness` | Pielou's J = H / ln(S) | `NA` when richness ≤ 1 |
+| `berger_parker_dominance` | max(p) | `NA` when richness = 0 |
+
+```{r output-cols}
+names(alpha_group$group)
+```
+
+### Multiple grouping columns
+
+Pass a character vector to `group_cols` to get one result per group variable.
+
+```{r compute-multi}
+alpha_both <- compute_alpha(
+  pd,
+  group_cols = c("group", "timepoint"),
+  ranks      = "peptide_id"
+)
+names(alpha_both)
+```
+
+### Multiple ranks
+
+Ranks are columns in the peptide library — for example `peptide_id` for
+peptide-level diversity, or `family` / `genus` for taxonomic-level diversity.
+
+```{r compute-ranks}
+alpha_tax <- compute_alpha(
+  pd,
+  group_cols = "group",
+  ranks      = c("peptide_id", "family", "genus")
+)
+# Each element now has rows for all three ranks
+dplyr::count(alpha_tax$group, rank)
+```
+
+### Group interactions
+
+Set `group_interaction = TRUE` to also compute diversity on the combined
+`group × timepoint` label. Set `interaction_only = TRUE` to skip per-variable
+tables and return only the interaction.
+
+```{r compute-interaction}
+alpha_inter <- compute_alpha(
+  pd,
+  group_cols        = c("group", "timepoint"),
+  ranks             = "peptide_id",
+  group_interaction = TRUE
+)
+names(alpha_inter)
+
+# Returns only the interaction table
+alpha_inter_only <- compute_alpha(
+  pd,
+  group_cols        = c("group", "timepoint"),
+  ranks             = "peptide_id",
+  group_interaction = TRUE,
+  interaction_only  = TRUE
+)
+names(alpha_inter_only)
+```
+
+### Selecting a metric subset
+
+If you only need richness and Shannon diversity, pass the `metrics` argument.
+This is faster and keeps the output tidy.
+
+```{r compute-subset}
+alpha_light <- compute_alpha(
+  pd,
+  group_cols = "group",
+  ranks      = "peptide_id",
+  metrics    = c("richness", "shannon")
+)
+names(alpha_light$group)
+```
+
+### Shannon base
+
+By default, Shannon diversity is computed in natural log (nats). Use
+`shannon_base = "log2"` (bits) or `"log10"` (hartleys) for comparability with
+other tools.
+
+```{r shannon-base}
+alpha_ln   <- compute_alpha(pd, group_cols = "group", ranks = "peptide_id",
+                             metrics = "shannon", shannon_base = "ln")
+alpha_log2 <- compute_alpha(pd, group_cols = "group", ranks = "peptide_id",
+                             metrics = "shannon", shannon_base = "log2")
+
+# log2 values are ln values divided by ln(2)
+head(alpha_ln$group$shannon_diversity / log(2) - alpha_log2$group$shannon_diversity, 3)
+```
+
+### Presence modes
+
+`mode` controls what `n` represents in every diversity formula:
+
+| Mode | Rule | Required argument |
+|---|---|---|
+| `"binary"` (default) | `exist > 0` | — |
+| `"threshold"` | `abundance_col > threshold` | `threshold` |
+| `"abundance"` | raw `abundance_col` value | `abundance_col` |
+
+#### `mode = "binary"` (default)
+
+Binary mode uses the pre-computed `exist` flag. A peptide counts as present
+whenever `exist > 0`.
+
+```{r mode-binary}
+alpha_bin <- compute_alpha(
+  pd,
+  group_cols = "group",
+  ranks      = "peptide_id",
+  mode       = "binary",
+  metrics    = "richness"
+)
+summary(alpha_bin$group$richness)
+```
+
+#### `mode = "threshold"`
+
+Threshold mode re-defines "present" using a continuous abundance column
+(`fold_change` by default). Only peptides whose fold-change exceeds `threshold`
+are counted. Raising the threshold sharpens the definition of a "hit" and
+typically reduces richness.
+
+```{r mode-threshold}
+# Loose threshold: fold_change > 10
+alpha_thr10 <- compute_alpha(
+  pd,
+  group_cols = "group",
+  ranks      = "peptide_id",
+  mode       = "threshold",
+  threshold  = 10,
+  metrics    = "richness"
+)
+
+# Strict threshold: fold_change > 100
+alpha_thr100 <- compute_alpha(
+  pd,
+  group_cols = "group",
+  ranks      = "peptide_id",
+  mode       = "threshold",
+  threshold  = 100,
+  metrics    = "richness"
+)
+
+# Richness drops as the threshold increases
+data.frame(
+  mode      = c("binary", "threshold > 10", "threshold > 100"),
+  mean_richness = c(
+    mean(alpha_bin$group$richness),
+    mean(alpha_thr10$group$richness),
+    mean(alpha_thr100$group$richness)
+  )
+)
+```
+
+Supply `abundance_col` to use a different column than `fold_change`:
+
+```{r mode-threshold-col, eval=FALSE}
+alpha_thr_counts <- compute_alpha(
+  pd,
+  group_cols    = "group",
+  ranks         = "peptide_id",
+  mode          = "threshold",
+  abundance_col = "counts_hits",
+  threshold     = 50
+)
+```
+
+#### `mode = "abundance"`
+
+Abundance mode does not binarise. Instead, `n` for each peptide is its raw
+value in `abundance_col`. Diversity metrics are computed from these continuous
+weights, making richness equivalent to the count of peptides with non-zero
+abundance and Shannon diversity a weighted entropy.
+
+> **Tip.** Abundance mode operates on a local data frame rather than a
+> DuckDB-backed table. Collect the relevant columns first with `dplyr::collect()`
+> before passing them to `compute_alpha()`.
+
+```{r mode-abundance}
+# Collect the long table to a local data frame
+dl <- dplyr::collect(pd$data_long)
+
+alpha_abund <- compute_alpha(
+  dl,
+  group_cols    = "group",
+  ranks         = "peptide_id",
+  mode          = "abundance",
+  abundance_col = "fold_change",
+  metrics       = c("richness", "shannon", "simpson")
+)
+head(alpha_abund$group[, c("sample_id", "group", "richness",
+                            "shannon_diversity", "simpson_diversity")])
+```
+
+Compare mean Shannon diversity under binary vs. abundance mode: the
+abundance-weighted version is typically lower because a few dominant peptides
+drive the distribution.
+
+```{r mode-compare}
+data.frame(
+  mode          = c("binary", "abundance (fold_change)"),
+  mean_shannon  = c(
+    mean(alpha_bin$group$shannon_diversity),
+    mean(alpha_abund$group$shannon_diversity)
+  )
+)
+```
+
+When aggregating to a higher rank (e.g. `family`), `abundance_agg` controls
+how peptide-level values are reduced within each rank category:
+
+```{r mode-abundance-agg, eval=FALSE}
+# Sum fold-changes across all peptides per family (collected data frame)
+alpha_abund_fam <- compute_alpha(
+  dl,
+  group_cols    = "group",
+  ranks         = "family",
+  mode          = "abundance",
+  abundance_col = "fold_change",
+  abundance_agg = "sum"   # or "mean" (default) or "max"
+)
+```
+
+### Accessing result attributes
+
+Metadata about the computation is stored as attributes.
+
+```{r attributes}
+attr(alpha_group, "ranks")
+attr(alpha_group, "mode")
+attr(alpha_group, "metrics")
+attr(alpha_group, "n_samples")
+```
+
+---
+
+## Visualising alpha diversity
+
+### `plot_alpha_diversity()` — static boxplots
+
+Pass the result of `compute_alpha()` to `plot_alpha_diversity()`. The minimum
+required argument beyond `x` is the name of the metric to plot.
+
+```{r plot-basic}
+plot_alpha_diversity(
+  alpha_group,
+  metric    = "richness",
+  group_col = "group"
+)
+```
+
+### All five metrics
+
+```{r plot-all-metrics, fig.height=3}
+for (m in c("richness", "shannon_diversity", "simpson_diversity",
+            "pielou_evenness", "berger_parker_dominance")) {
+  print(plot_alpha_diversity(alpha_group, metric = m, group_col = "group"))
+}
+```
+
+### Faceting across multiple ranks
+
+When diversity was computed at multiple ranks, set `facet_by_rank = TRUE` (the
+default) to get one panel per rank.
+
+> **Note on this toy example.** The peptides shipped with `load_example_data()`
+> are synthetic identifiers that do not map to any entry in the peptide library.
+> As a result, all taxonomic rank columns (`family`, `genus`, …) are empty for
+> every peptide, so richness at those ranks is 0 for all samples. In a real
+> PhIP-seq experiment where peptides carry proper library annotations, each rank
+> would show non-zero diversity reflecting the taxonomic breadth of each
+> patient's reactivity.
+
+```{r plot-facets}
+plot_alpha_diversity(
+  alpha_tax,
+  metric        = "richness",
+  group_col     = "group",
+  facet_by_rank = TRUE,
+  ncol          = 3
+)
+```
+
+Disable faceting and restrict to a single rank with `filter_ranks`.
+
+```{r plot-filter-rank}
+plot_alpha_diversity(
+  alpha_tax,
+  metric        = "richness",
+  group_col     = "group",
+  filter_ranks  = "peptide_id",
+  facet_by_rank = FALSE
+)
+```
+
+### Filtering and ordering groups
+
+Use `filter_groups` to keep a subset and `x_order` to control axis order.
+
+```{r plot-filter-order}
+plot_alpha_diversity(
+  alpha_both$timepoint,
+  metric        = "shannon_diversity",
+  group_col     = "timepoint",
+  filter_groups = c("T1", "T2"),
+  x_order       = c("T1", "T2"),
+  x_labels      = c(T1 = "Baseline", T2 = "Follow-up")
+)
+```
+
+### Customising appearance
+
+Simpson diversity values in this dataset are tightly clustered near 1 (range
+0.993–0.997). Setting `y_range` to the actual data range rather than the
+theoretical `c(0, 1)` reveals the within-group spread that would otherwise be
+invisible.
+
+```{r plot-custom}
+plot_alpha_diversity(
+  alpha_group,
+  metric        = "simpson_diversity",
+  group_col     = "group",
+  custom_colors = c(A = "#E41A1C", B = "#377EB8"),
+  y_range       = c(0.99, 1),
+  x_tickangle   = 30,
+  show_grids    = FALSE,
+  point_size    = 2.5,
+  point_alpha   = 0.6
+)
+```
+
+### Plotting the interaction table
+
+When `group_interaction = TRUE`, the interaction element stores the combined
+label in a column called `phip_interaction`.
+
+```{r plot-interaction}
+plot_alpha_diversity(
+  alpha_inter,
+  metric           = "richness",
+  group_col        = "phip_interaction",
+  interaction_only = TRUE
+)
+```
+
+### `plot_alpha_diversity_interactive()` — plotly
+
+The interactive version mirrors the static API and returns a plotly widget,
+making it suitable for HTML reports and Shiny apps.
+
+```{r plot-interactive, eval=FALSE}
+plot_alpha_diversity_interactive(
+  alpha_group,
+  metric    = "richness",
+  group_col = "group"
+)
+```
+
+All display parameters — `custom_colors`, `x_order`, `y_range`, `filter_groups`,
+`facet_by_rank` — behave identically to the static version.
+
+---
+
+## Statistical testing
+
+`compute_alpha_significance()` runs **global** and **pairwise** hypothesis tests
+on every `(rank, metric)` combination in the alpha diversity result.
+
+### Default: Kruskal-Wallis + Wilcoxon
+
+```{r significance}
+sig <- compute_alpha_significance(
+  alpha_group,
+  group_col = "group"
+)
+sig
+```
+
+The return value is a list of class `"phip_alpha_significance"` with two
+tibbles.
+
+#### Global test
+
+One row per `(rank, metric)`:
+
+```{r sig-global}
+sig$global
+```
+
+#### Pairwise comparisons
+
+One row per `(rank, metric, pair)` with raw and adjusted p-values, Cohen's d,
+and significance stars:
+
+```{r sig-pairwise}
+sig$pairwise
+```
+
+### Choosing the test
+
+```{r sig-anova-tukey}
+sig_anova <- compute_alpha_significance(
+  alpha_group,
+  group_col     = "group",
+  global_test   = "anova",
+  pairwise_test = "tukey"
+)
+sig_anova$global
+```
+
+### p-value adjustment
+
+Any method accepted by `p.adjust()` is supported:
+
+```{r sig-padj}
+sig_bonf <- compute_alpha_significance(
+  alpha_group,
+  group_col       = "group",
+  p_adjust_method = "bonferroni"
+)
+sig_bonf$pairwise[, c("metric", "group1", "group2", "p_raw", "p_adj", "stars")]
+```
+
+### Restricting to a subset of metrics
+
+```{r sig-subset}
+sig_rich <- compute_alpha_significance(
+  alpha_group,
+  group_col = "group",
+  metric    = c("richness", "shannon_diversity")
+)
+sig_rich$global
+```
+
+### Multi-rank significance
+
+When alpha was computed at multiple ranks, significance is tested at every
+rank automatically:
+
+```{r sig-multirank}
+sig_tax <- compute_alpha_significance(
+  alpha_tax,
+  group_col = "group",
+  metric    = "richness"
+)
+dplyr::select(sig_tax$global, rank, metric, statistic, p_value)
+```
+
+---
+
+## Visualising significance
+
+`plot_alpha_significance()` offers two display modes.
+
+### Table mode
+
+Returns the filtered pairwise tibble — useful for including in reports or
+further processing:
+
+```{r sig-table}
+plot_alpha_significance(
+  sig,
+  metric      = "richness",
+  type        = "table",
+  p_threshold = 0.05
+)
+```
+
+Set `p_threshold = 1` to retrieve all pairs regardless of significance.
+
+```{r sig-table-all}
+plot_alpha_significance(
+  sig,
+  metric      = "richness",
+  type        = "table",
+  p_threshold = 1
+)
+```
+
+### Heatmap mode
+
+Produces a Cohen's d heatmap with significance stars overlaid. Non-significant
+pairs (p_adj > threshold) are shown in grey.
+
+```{r sig-heatmap}
+plot_alpha_significance(
+  sig,
+  metric      = "richness",
+  type        = "heatmap",
+  p_threshold = 1     # show all pairs; colour by effect size
+)
+```
+
+### Heatmap across metrics
+
+Loop over metrics to produce one heatmap per metric:
+
+```{r sig-heatmap-loop, eval=FALSE}
+for (m in attr(sig, "metrics")) {
+  print(
+    plot_alpha_significance(sig, metric = m, type = "heatmap", p_threshold = 1)
+  )
+}
+```
+
+---
+
+## Significance brackets on boxplots
+
+Pass a `"phip_alpha_significance"` object to `plot_alpha_diversity()` via the
+`significance` argument, and set `show_significance = TRUE` to overlay pairwise
+brackets automatically. The `ggsignif` package must be installed.
+
+```{r brackets, eval=requireNamespace("ggsignif", quietly = TRUE)}
+plot_alpha_diversity(
+  alpha_group,
+  metric            = "richness",
+  group_col         = "group",
+  significance      = sig,
+  show_significance = TRUE,
+  sig_p_threshold   = 0.05
+)
+```
+
+Tune the bracket geometry with `sig_step_increase` and `sig_tip_length`:
+
+```{r brackets-tuned, eval=requireNamespace("ggsignif", quietly = TRUE)}
+plot_alpha_diversity(
+  alpha_group,
+  metric            = "shannon_diversity",
+  group_col         = "group",
+  significance      = sig,
+  show_significance = TRUE,
+  sig_p_threshold   = 0.1,
+  sig_step_increase = 0.08,
+  sig_tip_length    = 0.005
+)
+```
+
+---
+
+## Putting it all together
+
+A typical analysis runs in four steps:
+
+```{r full-pipeline, eval=FALSE}
+# 1. Compute diversity at peptide and family level
+alpha <- compute_alpha(
+  pd,
+  group_cols        = c("group", "timepoint"),
+  ranks             = c("peptide_id", "family"),
+  group_interaction = TRUE
+)
+
+# 2. Visualise
+plot_alpha_diversity(alpha, metric = "richness",    group_col = "group")
+plot_alpha_diversity(alpha, metric = "pielou_evenness", group_col = "timepoint",
+                     x_order = c("T1", "T2"),
+                     x_labels = c(T1 = "Baseline", T2 = "Follow-up"))
+
+# 3. Test
+sig <- compute_alpha_significance(alpha, group_col = "group")
+
+# 4. Report
+sig$global
+plot_alpha_significance(sig, type = "heatmap", p_threshold = 1)
+plot_alpha_diversity(alpha, metric = "richness", group_col = "group",
+                     significance = sig, show_significance = TRUE)
+```
+
+---
+
+## Session info
+
+```{r session-info}
+sessionInfo()
+```
