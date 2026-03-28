@@ -64,7 +64,10 @@
 #'   `group_cols` (default `FALSE`).
 #' @param interaction_only Logical; if `TRUE`, return only the interaction table
 #'   (requires `group_interaction = TRUE` and at least two `group_cols`).
-#' @param interaction_sep Separator used for the interaction label (default `" * "`).
+#' @param interaction_sep Separator used for the interaction label (default
+#'   `" * "`). The resulting string (e.g. `"GroupA * T1"`) becomes both a list
+#'   name and a value in the output column, so choose a separator that does not
+#'   appear in your group levels.
 #' @param shannon_log Deprecated. Use `shannon_base` instead.
 #'
 #' @return A **named list** of data frames with S3 class
@@ -207,6 +210,8 @@ compute_alpha_diversity <- function(x,
         )
         return(NULL)
       }
+      # select before distinct: deduplicates on (peptide_id, rank_val) only,
+      # not on extra peplib columns that would otherwise survive distinct()
       peplib_main |>
         dplyr::select(peptide_id, rank_val = .data[[rank_name]]) |>
         dplyr::distinct()
@@ -242,6 +247,8 @@ compute_alpha_diversity <- function(x,
         )
         return(NULL)
       }
+      # select two cols before distinct: guards against extra columns
+      # in tbl that would otherwise prevent deduplication on (peptide_id, rank_val)
       tibble::tibble(
         peptide_id = tbl$peptide_id,
         rank_val   = tbl[[rank_name]]
@@ -339,6 +346,10 @@ compute_alpha_diversity <- function(x,
       attr(out_list, "interaction")      <- isTRUE(group_interaction)
       attr(out_list, "interaction_only") <- isTRUE(interaction_only)
       attr(out_list, "interaction_sep")  <- interaction_sep
+      attr(out_list, "n_samples")        <- tbl |>
+        dplyr::distinct(sample_id) |>
+        dplyr::collect() |>
+        nrow()
 
       out_list
     },
@@ -445,10 +456,12 @@ compute_alpha_diversity <- function(x,
   # light normalization of column names — defined once, reused per rank
   .norm_names <- function(x) gsub("[^a-z0-9]+", "_", tolower(x))
 
-  # all-samples roster computed once as a lazy query (collected inside the join)
+  # all-samples roster: collected once before the rank loop to avoid repeated
+  # temp-table uploads inside copy = TRUE joins (table is small: ~samples rows)
   keep_cols <- intersect(c("sample_id", "cohort", carry_cols), colnames(tbl))
-  all_samples_lazy <- tbl |>
-    dplyr::distinct(dplyr::across(dplyr::all_of(keep_cols)))
+  all_samples_local <- tbl |>
+    dplyr::distinct(dplyr::across(dplyr::all_of(keep_cols))) |>
+    dplyr::collect()
 
   # aggregation function for abundance mode at higher ranks
   agg_fn <- switch(abundance_agg, sum = sum, mean = mean, max = max)
@@ -506,11 +519,8 @@ compute_alpha_diversity <- function(x,
       ))
     }
 
-    # join the lazy all-samples roster with the local by_sample tibble;
-    # copy = TRUE uploads by_sample to the same connection for the join
-    out <- all_samples_lazy |>
-      dplyr::left_join(by_sample, by = c("sample_id", "cohort"), copy = TRUE) |>
-      dplyr::collect() |>
+    out <- all_samples_local |>
+      dplyr::left_join(by_sample, by = c("sample_id", "cohort")) |>
       dplyr::mutate(rank = rank_name, .before = 1)
 
     names(out) <- .norm_names(names(out))
@@ -530,7 +540,14 @@ compute_alpha_diversity <- function(x,
     out
   }
 
-  res <- do.call(dplyr::bind_rows, lapply(ranks, compute_one_rank))
+  rank_results <- lapply(ranks, compute_one_rank)
+  .ph_check_cond(
+    all(vapply(rank_results, is.null, logical(1))),
+    "No valid ranks found.",
+    step    = "rank validation",
+    bullets = sprintf("requested: %s", paste(.ph_add_quotes(ranks, 1L), collapse = ", "))
+  )
+  res <- do.call(dplyr::bind_rows, rank_results)
 
   # rename cohort back to either "group" (no grouping) or the original column
   if (is.null(group_col)) {
