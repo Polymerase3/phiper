@@ -128,19 +128,9 @@ compute_alpha_diversity <- function(x,
       }
     }
 
-    # attach peplib on main and prepare a mapper from peptide_id -> rank_val
-    peplib_main <- .ensure_peplib_on_main(x)
+    # prepare a mapper from peptide_id -> rank_val using the attached peplib
+    peplib_main <- x$peptide_library
     peplib_cols <- colnames(peplib_main)
-    .ph_log_info(
-      "Peptide library attached on main connection",
-      bullets = c(
-        sprintf(
-          "available columns: %s%s",
-          paste(utils::head(peplib_cols, 8), collapse = ", "),
-          if (length(peplib_cols) > 8) sprintf(" ...(+%d)", length(peplib_cols) - 8) else ""
-        )
-      )
-    )
 
     map_provider <- function(rank_name) {
       # return two columns: peptide_id, rank_val (or NULL to skip with warning)
