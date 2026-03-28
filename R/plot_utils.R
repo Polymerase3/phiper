@@ -106,13 +106,26 @@ phip_use_montserrat <- function(family = "Montserrat",
     return(invisible(family))
   }
 
-  # Try to add from Google; ignore errors if it already exists or offline.
-  try(
-    {
-      sysfonts::font_add_google(name = "Montserrat", family = family)
-    },
-    silent = TRUE
-  )
+  # Try bundled local fonts first; fall back to Google Fonts if not found.
+  local_regular <- system.file("fonts", "Montserrat-Regular.ttf", package = "phiper")
+  if (nzchar(local_regular) && file.exists(local_regular)) {
+    local_bold   <- system.file("fonts", "Montserrat-Bold.ttf",   package = "phiper")
+    local_italic <- system.file("fonts", "Montserrat-Italic.ttf", package = "phiper")
+    try(
+      sysfonts::font_add(
+        family  = family,
+        regular = local_regular,
+        bold    = if (nzchar(local_bold)   && file.exists(local_bold))   local_bold   else NULL,
+        italic  = if (nzchar(local_italic) && file.exists(local_italic)) local_italic else NULL
+      ),
+      silent = TRUE
+    )
+  } else {
+    try(
+      sysfonts::font_add_google(name = "Montserrat", family = family),
+      silent = TRUE
+    )
+  }
 
   if (isTRUE(enable)) {
     showtext::showtext_auto(enable = TRUE)
