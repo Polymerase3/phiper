@@ -1,3 +1,21 @@
+# phiper 0.3.1
+
+## Changes to `compute_alpha_diversity`
+
+- Added `pielou_evenness` and `berger_parker_dominance` to the output (NA for
+  samples with richness ≤ 1 and richness = 0 respectively).
+- New `metrics` parameter: request any subset of the five indices; defaults to
+  all five.
+- New `mode` parameter (`"binary"`, `"threshold"`, `"abundance"`) replaces
+  `fc_threshold`. `"abundance"` mode uses raw values from `abundance_col` with
+  optional `abundance_agg` (`"mean"`, `"sum"`, `"max"`) at higher ranks.
+- `shannon_log` renamed to `shannon_base`; old name still works with a
+  deprecation warning.
+- Performance: all-samples roster now collected once before the rank loop
+  instead of re-queried per rank.
+- Hardening: all-invalid ranks now aborts with an informative error instead of
+  silently returning empty output; `n_samples` attribute added to the result.
+
 # phiper 0.3.0
 
 ## Major changes
