@@ -60,7 +60,7 @@ statistic and p-value with the median difference.
 \donttest{
 library(dplyr)
 library(rlang)
-ps <- phip_load_example_data("small_mixture")
+ps <- load_example_data("small_mixture")
 
 # pick the grouping column
 group_col <- "group"

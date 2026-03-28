@@ -89,7 +89,7 @@ and/or large peptide sets.
 }
 \examples{
 # build an example <phip_data> object from the package example dataset
-ps <- phip_load_example_data("small_mixture")
+ps <- load_example_data("small_mixture")
 
 # compute distances (needs either 'parallelDist' or 'vegan')
 val_col <- "fold_change"

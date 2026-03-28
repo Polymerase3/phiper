@@ -201,7 +201,7 @@ scatter_static <- function(df,
           dplyr::distinct(peptide_id, .keep_all = TRUE) %>%
           dplyr::collect()
       } else {
-        get_peptide_meta() %>%
+        get_peptide_library() %>%
           dplyr::select("peptide_id", tidyselect::all_of(color_by)) %>%
           dplyr::distinct(peptide_id, .keep_all = TRUE) %>%
           dplyr::collect()
@@ -542,7 +542,7 @@ scatter_interactive <- function(df,
             dplyr::distinct(peptide_id, .keep_all = TRUE) %>%
             dplyr::collect()
         } else {
-          get_peptide_meta() %>%
+          get_peptide_library() %>%
             dplyr::select("peptide_id", tidyselect::all_of(color_by)) %>%
             dplyr::distinct(peptide_id, .keep_all = TRUE) %>%
             dplyr::collect()
@@ -940,7 +940,7 @@ scatter_interactive <- function(df,
           dplyr::distinct(peptide_id, .keep_all = TRUE) %>%
           dplyr::collect()
       } else {
-        pm <- get_peptide_meta() %>%
+        pm <- get_peptide_library() %>%
           dplyr::select("peptide_id", tidyselect::all_of(color_by)) %>%
           dplyr::distinct(peptide_id, .keep_all = TRUE) %>%
           dplyr::collect()

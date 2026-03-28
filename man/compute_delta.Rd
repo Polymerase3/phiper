@@ -284,7 +284,7 @@ results; each contrast draws its own seed from the global RNG state.
 \examples{
 \donttest{
 # Load example PhIP-Seq data shipped with the package
-pd <- phip_load_example_data()
+pd <- load_example_data()
 
 # Small unpaired subset with a mock peptide library
 pd_filt <- pd |>

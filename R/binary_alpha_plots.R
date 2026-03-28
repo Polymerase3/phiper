@@ -45,7 +45,7 @@
 #'
 #' @examples
 #' # per-group plots
-#' pd <- phip_load_example_data()
+#' pd <- load_example_data()
 #' p <- plot_enrichment_counts(pd, group_cols = c("group","timepoint"))
 #'
 #' # add interaction plot
@@ -95,7 +95,7 @@ plot_enrichment_counts <- function(phip_data,
     step = if (is.null(group_cols)) {
       "group_cols: <none>"
     } else {
-      sprintf("group_cols: %s", paste(add_quotes(group_cols, 1L), collapse = ", "))
+      sprintf("group_cols: %s", paste(.ph_add_quotes(group_cols, 1L), collapse = ", "))
     },
     expr = {
       tbl <- x$data_long
@@ -120,7 +120,7 @@ plot_enrichment_counts <- function(phip_data,
           .ph_abort(
             headline = "Missing grouping columns in data_long.",
             step = "input validation",
-            bullets = sprintf("missing: %s", paste(add_quotes(missing_gcs, 1L), collapse = ", "))
+            bullets = sprintf("missing: %s", paste(.ph_add_quotes(missing_gcs, 1L), collapse = ", "))
           )
         }
       }
@@ -333,15 +333,15 @@ plot_alpha_diversity <- function(
       need_metric <- metric
       if (!need_metric %in% names(alpha_df)) {
         .ph_abort("metric column not found in alpha data.", step = "input validation",
-                  bullets = sprintf("missing: %s", add_quotes(need_metric, 1L)))
+                  bullets = sprintf("missing: %s", .ph_add_quotes(need_metric, 1L)))
       }
       if (!is.null(group_col) && !group_col %in% names(alpha_df)) {
         .ph_abort("grouping column not found in alpha data.", step = "input validation",
-                  bullets = sprintf("group_col: %s", add_quotes(group_col, 1L)))
+                  bullets = sprintf("group_col: %s", .ph_add_quotes(group_col, 1L)))
       }
       if (!is.null(rank_col) && !rank_col %in% names(alpha_df)) {
         .ph_warn("rank column not found; disabling faceting by rank.", step = "input validation",
-                 bullets = sprintf("rank_col: %s", add_quotes(rank_col, 1L)))
+                 bullets = sprintf("rank_col: %s", .ph_add_quotes(rank_col, 1L)))
         rank_col <- NULL
       }
 
@@ -552,15 +552,15 @@ plot_alpha_diversity_interactive <- function(
       need_metric <- metric
       if (!need_metric %in% names(alpha_df)) {
         .ph_abort("metric column not found in alpha data.", step = "input validation",
-                  bullets = sprintf("missing: %s", add_quotes(need_metric, 1L)))
+                  bullets = sprintf("missing: %s", .ph_add_quotes(need_metric, 1L)))
       }
       if (!is.null(group_col) && !group_col %in% names(alpha_df)) {
         .ph_abort("grouping column not found in alpha data.", step = "input validation",
-                  bullets = sprintf("group_col: %s", add_quotes(group_col, 1L)))
+                  bullets = sprintf("group_col: %s", .ph_add_quotes(group_col, 1L)))
       }
       if (!is.null(rank_col) && !rank_col %in% names(alpha_df)) {
         .ph_warn("rank column not found; disabling faceting by rank.", step = "input validation",
-                 bullets = sprintf("rank_col: %s", add_quotes(rank_col, 1L)))
+                 bullets = sprintf("rank_col: %s", .ph_add_quotes(rank_col, 1L)))
         rank_col <- NULL
       }
 
@@ -797,7 +797,7 @@ plot_alpha_diversity_interactive <- function(
         .ph_abort(
           headline = "missing required columns for plotting.",
           step     = "input validation",
-          bullets  = sprintf("missing: %s", paste(add_quotes(miss, 1L), collapse = ", "))
+          bullets  = sprintf("missing: %s", paste(.ph_add_quotes(miss, 1L), collapse = ", "))
         )
       }
 

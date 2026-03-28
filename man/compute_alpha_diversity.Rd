@@ -87,7 +87,7 @@ with labels joined by \code{interaction_sep}.
 }
 }
 \examples{
-pd <- phip_load_example_data()
+pd <- load_example_data()
 # phip_data input: peptide-level diversity by group
 out <- compute_alpha_diversity(
   pd, group_cols = "group", ranks = "peptide_id"

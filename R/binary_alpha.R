@@ -51,7 +51,7 @@
 #'   metrics: `richness`, `shannon_diversity`, `simpson_diversity`.
 #'
 #' @examples
-#' pd <- phip_load_example_data()
+#' pd <- load_example_data()
 #' # phip_data input: peptide-level diversity by group
 #' out <- compute_alpha_diversity(
 #'   pd, group_cols = "group", ranks = "peptide_id"
@@ -123,7 +123,7 @@ compute_alpha_diversity <- function(x,
         .ph_abort(
           headline = "Grouping columns not found in data_long.",
           step = "input validation",
-          bullets = sprintf("missing: %s", paste(add_quotes(miss_gc, 1L), collapse = ", "))
+          bullets = sprintf("missing: %s", paste(.ph_add_quotes(miss_gc, 1L), collapse = ", "))
         )
       }
     }
@@ -148,7 +148,7 @@ compute_alpha_diversity <- function(x,
         .ph_warn(
           headline = "Rank not found in peptide_library (skipping).",
           step     = "rank mapping",
-          bullets  = sprintf("rank: %s", add_quotes(rank_name, 1L))
+          bullets  = sprintf("rank: %s", .ph_add_quotes(rank_name, 1L))
         )
         return(NULL)
       }
@@ -167,7 +167,7 @@ compute_alpha_diversity <- function(x,
         .ph_abort(
           headline = "Grouping columns not found in data.frame.",
           step = "input validation",
-          bullets = sprintf("missing: %s", paste(add_quotes(miss_gc, 1L), collapse = ", "))
+          bullets = sprintf("missing: %s", paste(.ph_add_quotes(miss_gc, 1L), collapse = ", "))
         )
       }
     }
@@ -178,7 +178,7 @@ compute_alpha_diversity <- function(x,
         .ph_warn(
           headline = "Rank not found in data.frame (skipping).",
           step     = "rank mapping",
-          bullets  = sprintf("rank: %s", add_quotes(rank_name, 1L))
+          bullets  = sprintf("rank: %s", .ph_add_quotes(rank_name, 1L))
         )
         return(NULL)
       }
@@ -212,8 +212,8 @@ compute_alpha_diversity <- function(x,
     headline = sprintf("Computing alpha diversity (%s)",
                        if (inherits(x, "phip_data")) "<phip_data>" else "data.frame"),
     step = paste0(
-      "group_cols: ", if (is.null(group_cols)) "<none>" else paste(add_quotes(group_cols, 1L), collapse = ", "),
-      "; ranks: ", paste(add_quotes(ranks, 1L), collapse = ", ")
+      "group_cols: ", if (is.null(group_cols)) "<none>" else paste(.ph_add_quotes(group_cols, 1L), collapse = ", "),
+      "; ranks: ", paste(.ph_add_quotes(ranks, 1L), collapse = ", ")
     ),
     expr = {
       out_list <- list()
@@ -319,7 +319,7 @@ compute_alpha_diversity <- function(x,
     .ph_abort(
       headline = "Missing required columns.",
       step = "input validation",
-      bullets = sprintf("missing: %s", paste(add_quotes(miss, 1L), collapse = ", "))
+      bullets = sprintf("missing: %s", paste(.ph_add_quotes(miss, 1L), collapse = ", "))
     )
   }
 

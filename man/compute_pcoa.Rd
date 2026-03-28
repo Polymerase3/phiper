@@ -58,7 +58,7 @@ correction is applied via \code{vegan::wcmdscale(add = ...)}.
 \donttest{
 # compute a distance matrix with an attached abundance matrix
 # build an example <phip_data> object from the package example dataset
-ps <- phip_load_example_data("small_mixture")
+ps <- load_example_data("small_mixture")
 
 # compute distances (needs either 'parallelDist' or 'vegan')
 val_col <- "fold_change"

@@ -72,7 +72,7 @@
 #'
 #' @examples
 #' # build an example <phip_data> object from the package example dataset
-#' ps <- phip_load_example_data("small_mixture")
+#' ps <- load_example_data("small_mixture")
 #'
 #' # compute distances (needs either 'parallelDist' or 'vegan')
 #' val_col <- "fold_change"
@@ -508,7 +508,7 @@ compute_distance <- function(ps,
 #' \donttest{
 #' # compute a distance matrix with an attached abundance matrix
 #' # build an example <phip_data> object from the package example dataset
-#' ps <- phip_load_example_data("small_mixture")
+#' ps <- load_example_data("small_mixture")
 #'
 #' # compute distances (needs either 'parallelDist' or 'vegan')
 #' val_col <- "fold_change"
@@ -719,7 +719,7 @@ compute_pcoa <- function(dist_obj,
 #' \donttest{
 #' # compute a distance matrix with an attached abundance matrix
 #' # build an example <phip_data> object from the package example dataset
-#' ps <- phip_load_example_data("small_mixture")
+#' ps <- load_example_data("small_mixture")
 #'
 #' # compute distances (needs either 'parallelDist' or 'vegan')
 #' val_col <- "fold_change"
@@ -836,7 +836,7 @@ compute_pcoa_feature_associations <- function(
 #'
 #' @examples
 #' \donttest{
-#' ps <- phip_load_example_data("small_mixture")
+#' ps <- load_example_data("small_mixture")
 #'
 #' # compute distance matrix
 #' val_col <- "fold_change"
@@ -1265,7 +1265,7 @@ compute_capscale <- function(dist_obj,
 #'
 #' @examples
 #' \donttest{
-#' ps <- phip_load_example_data("small_mixture")
+#' ps <- load_example_data("small_mixture")
 #'
 #' # compute distance matrix
 #' val_col <- "fold_change"
@@ -1821,7 +1821,7 @@ compute_permanova <- function(dist_obj,
 #'
 #' @examples
 #' \donttest{
-#' ps <- phip_load_example_data("small_mixture")
+#' ps <- load_example_data("small_mixture")
 #'
 #' # compute distance matrix
 #' val_col <- "fold_change"
@@ -2298,7 +2298,7 @@ compute_dispersion <- function(dist_obj,
 #' @examples
 #' \donttest{
 #' # Build example phip_data object
-#' ps <- phip_load_example_data("small_mixture")
+#' ps <- load_example_data("small_mixture")
 #'
 #' # Compute distance matrix
 #' val_col <- "fold_change"

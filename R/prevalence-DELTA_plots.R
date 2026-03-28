@@ -49,7 +49,7 @@
 #' \donttest{
 #' library(dplyr)
 #' library(rlang)
-#' ps <- phip_load_example_data("small_mixture")
+#' ps <- load_example_data("small_mixture")
 #'
 #' # pick the grouping column
 #' group_col <- "group"
@@ -116,44 +116,44 @@ deltaplot <- function(
     chk::chk_numeric(arrow_head_length_mm)
     chk::chk_numeric(arrow_x_frac)
   }
-  .chk_cond(
+  .ph_check_cond(
     condition = !is.data.frame(d),
     error_message = "prev_tbl must be a data.frame or tibble."
   )
-  .chk_cond(
+  .ph_check_cond(
     condition = !is.null(group_pair_values) && length(group_pair_values) != 2L,
     error_message = "group_pair_values must be length-2 vector: c(g1, g2)."
   )
-  .chk_cond(
+  .ph_check_cond(
     condition = !is.null(group_labels) && length(group_labels) != 2L,
     error_message = "group_labels must be length-2 vector:
     c(label_g1, label_g2)."
   )
-  .chk_cond(
+  .ph_check_cond(
     condition = !is.numeric(point_jitter_width) || point_jitter_width < 0,
     error_message = "point_jitter_width must be a non-negative number."
   )
-  .chk_cond(
+  .ph_check_cond(
     condition = !is.numeric(point_jitter_height) || point_jitter_height < 0,
     error_message = "point_jitter_height must be a non-negative number."
   )
-  .chk_cond(
+  .ph_check_cond(
     condition = !is.numeric(point_alpha) || point_alpha < 0 || point_alpha > 1,
     error_message = "point_alpha must be between 0 and 1."
   )
-  .chk_cond(
+  .ph_check_cond(
     condition = !is.numeric(point_size) || point_size <= 0,
     error_message = "point_size must be a positive number."
   )
-  .chk_cond(
+  .ph_check_cond(
     condition = !is.numeric(smooth_k) || smooth_k < 1,
     error_message = "smooth_k must be a positive number."
   )
-  .chk_cond(
+  .ph_check_cond(
     condition = !is.numeric(arrow_head_length_mm) || arrow_head_length_mm <= 0,
     error_message = "arrow_head_length_mm must be a positive number."
   )
-  .chk_cond(
+  .ph_check_cond(
     condition = !is.numeric(arrow_x_frac) || arrow_x_frac <= 0 ||
       arrow_x_frac > 1,
     error_message = "arrow_x_frac must be in (0, 1]."
@@ -378,7 +378,7 @@ deltaplot <- function(
 #' \donttest{
 #' library(dplyr)
 #' library(rlang)
-#' ps <- phip_load_example_data("small_mixture")
+#' ps <- load_example_data("small_mixture")
 #'
 #' # pick the grouping column
 #' group_col <- "group"
@@ -445,56 +445,56 @@ deltaplot_interactive <- function(
     chk::chk_numeric(point_jitter_width)
     chk::chk_numeric(point_jitter_height)
   }
-  .chk_cond(
+  .ph_check_cond(
     condition = !is.data.frame(prev_tbl),
     error_message = "prev_tbl must be a data.frame or tibble."
   )
-  .chk_cond(
+  .ph_check_cond(
     condition = !is.null(group_pair_values) && length(group_pair_values) != 2L,
     error_message = "group_pair_values must be length-2 vector: c(g1, g2)."
   )
-  .chk_cond(
+  .ph_check_cond(
     condition = !is.null(group_labels) && length(group_labels) != 2L,
     error_message = "group_labels must be length-2 vector:
     c(label_g1, label_g2)."
   )
-  .chk_cond(
+  .ph_check_cond(
     condition = !is.numeric(point_alpha) || point_alpha < 0 || point_alpha > 1,
     error_message = "point_alpha must be between 0 and 1."
   )
-  .chk_cond(
+  .ph_check_cond(
     condition = !is.numeric(point_size) || point_size <= 0,
     error_message = "point_size must be a positive number."
   )
-  .chk_cond(
+  .ph_check_cond(
     condition = !is.numeric(smooth_k) || smooth_k < 1,
     error_message = "smooth_k must be a positive number."
   )
-  .chk_cond(
+  .ph_check_cond(
     condition = !is.numeric(arrow_x_frac) || arrow_x_frac <= 0 ||
       arrow_x_frac > 1,
     error_message = "arrow_x_frac must be in (0, 1]."
   )
-  .chk_cond(
+  .ph_check_cond(
     condition = !is.numeric(arrow_length_frac) || arrow_length_frac <= 0 ||
       arrow_length_frac > 1,
     error_message = "arrow_length_frac must be in (0, 1]."
   )
-  .chk_cond(
+  .ph_check_cond(
     condition = !is.numeric(label_x_gap_frac) || label_x_gap_frac < 0 ||
       label_x_gap_frac > 1,
     error_message = "label_x_gap_frac must be between 0 and 1."
   )
-  .chk_cond(
+  .ph_check_cond(
     condition = !is.numeric(label_y_gap_frac) || label_y_gap_frac < 0 ||
       label_y_gap_frac > 1,
     error_message = "label_y_gap_frac must be between 0 and 1."
   )
-  .chk_cond(
+  .ph_check_cond(
     condition = !is.numeric(point_jitter_width) || point_jitter_width < 0,
     error_message = "point_jitter_width must be a non-negative number."
   )
-  .chk_cond(
+  .ph_check_cond(
     condition = !is.numeric(point_jitter_height) || point_jitter_height < 0,
     error_message = "point_jitter_height must be a non-negative number."
   )
@@ -1633,7 +1633,7 @@ forestplot_interactive <- function(
 #' \donttest{
 #' library(dplyr)
 #' library(rlang)
-#' ps <- phip_load_example_data("small_mixture")
+#' ps <- load_example_data("small_mixture")
 #'
 #' # pick the grouping column
 #' group_col <- "group"
@@ -1691,23 +1691,23 @@ ecdf_plot <- function(
     chk::chk_logical(show_median_lines)
     chk::chk_logical(show_ks_test)
   }
-  .chk_cond(
+  .ph_check_cond(
     condition = !is.data.frame(prev_tbl),
     error_message = "prev_tbl must be a data.frame or tibble."
   )
-  .chk_cond(
+  .ph_check_cond(
     condition = !is.null(group_pair_values) && length(group_pair_values) != 2L,
     error_message = "group_pair_values must be length-2 vector: c(g1, g2)."
   )
-  .chk_cond(
+  .ph_check_cond(
     condition = !is.null(group_labels) && length(group_labels) != 2L,
     error_message = "group_labels must be length-2 vector."
   )
-  .chk_cond(
+  .ph_check_cond(
     condition = !is.numeric(line_width_pt) || line_width_pt <= 0,
     error_message = "line_width_pt must be a positive number."
   )
-  .chk_cond(
+  .ph_check_cond(
     condition = !is.numeric(line_alpha) || line_alpha < 0 || line_alpha > 1,
     error_message = "line_alpha must be between 0 and 1."
   )
@@ -1887,7 +1887,7 @@ ecdf_plot <- function(
 #' \donttest{
 #' library(dplyr)
 #' library(rlang)
-#' ps <- phip_load_example_data("small_mixture")
+#' ps <- load_example_data("small_mixture")
 #'
 #' # pick the grouping column
 #' group_col <- "group"
@@ -1944,23 +1944,23 @@ ecdf_plot_interactive <- function(
     chk::chk_logical(show_median_lines)
     chk::chk_logical(show_ks_test)
   }
-  .chk_cond(
+  .ph_check_cond(
     condition = !is.data.frame(prev_tbl),
     error_message = "prev_tbl must be a data.frame or tibble."
   )
-  .chk_cond(
+  .ph_check_cond(
     condition = !is.null(group_pair_values) && length(group_pair_values) != 2L,
     error_message = "group_pair_values must be length-2 vector: c(g1, g2)."
   )
-  .chk_cond(
+  .ph_check_cond(
     condition = !is.null(group_labels) && length(group_labels) != 2L,
     error_message = "group_labels must be length-2 vector."
   )
-  .chk_cond(
+  .ph_check_cond(
     condition = !is.numeric(line_width_px) || line_width_px <= 0,
     error_message = "line_width_px must be a positive number."
   )
-  .chk_cond(
+  .ph_check_cond(
     condition = !is.numeric(line_alpha) || line_alpha < 0 || line_alpha > 1,
     error_message = "line_alpha must be between 0 and 1."
   )

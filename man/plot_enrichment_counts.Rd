@@ -72,7 +72,7 @@ requires \code{group_interaction = TRUE} and at least two \code{group_cols}).
 }
 \examples{
 # per-group plots
-pd <- phip_load_example_data()
+pd <- load_example_data()
 p <- plot_enrichment_counts(pd, group_cols = c("group","timepoint"))
 
 # add interaction plot

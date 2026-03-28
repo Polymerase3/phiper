@@ -94,7 +94,7 @@ result but will have \code{NA} values for those metadata columns.
 \examples{
 \donttest{
 # Build example phip_data object
-ps <- phip_load_example_data("small_mixture")
+ps <- load_example_data("small_mixture")
 
 # Compute distance matrix
 val_col <- "fold_change"

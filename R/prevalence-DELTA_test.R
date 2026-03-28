@@ -244,7 +244,7 @@
 #' @examples
 #' \donttest{
 #' # Load example PhIP-Seq data shipped with the package
-#' pd <- phip_load_example_data()
+#' pd <- load_example_data()
 #'
 #' # Small unpaired subset with a mock peptide library
 #' pd_filt <- pd |>
@@ -468,16 +468,16 @@ compute_delta <- function(
     } else if (inherits(x, "phip_data") && !is.null(x$peptide_library)) {
       lib_src <- x$peptide_library
     } else if (rlang::is_installed("phiper") &&
-      "get_peptide_meta" %in% getNamespaceExports("phiper")) {
+      "get_peptide_library" %in% getNamespaceExports("phiper")) {
       # auto-fetch from phiper if available
-      lib_src <- phiper::get_peptide_meta()
+      lib_src <- phiper::get_peptide_library()
     } else {
       .ph_abort(
         "Peptide library required for non-peptide ranks.",
         bullets = c(
           "- Provide `peptide_library` with the needed columns,",
           "- Or attach a peptide_library to `x` (phip_data),",
-          "- Or ensure phiper::get_peptide_meta() is available."
+          "- Or ensure `get_peptide_library()` is available."
         )
       )
     }
