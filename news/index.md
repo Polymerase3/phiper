@@ -1,5 +1,45 @@
 # Changelog
 
+## phiper 0.3.0
+
+### Major changes
+
+- Extracted all data-import, class construction, and low-level utility
+  code into the new **phiperio** package. `phiper` now declares
+  `phiperio` as a hard dependency and re-exports its user-facing
+  functions (`load_example_data`, `get_example_path`) so existing
+  workflows require no changes.
+- Removed all functions that moved to phiperio: `phip_convert`,
+  `phip_convert_legacy`, `new_phip_data`, `expand_phip_data`,
+  `phip_data_join`, `validate_phip_data`, `disconnect`,
+  `get_comparisons`, `phip_example_path`, `phip_load_example_data`, and
+  the full logging / validation helper suite (`add_quotes`, `word_list`,
+  `.chk_*`).
+- Internal logging and validation now use the unified phiperio helpers
+  (`.ph_abort`, `.ph_warn`, `.ph_log_info`, `.ph_with_timing`,
+  `.ph_check_cond`, `.ph_add_quotes`, `.ph_word_list`, `.ph_check_path`,
+  `.ph_check_extension`, `.ph_check_null_default`).
+- `get_peptide_meta()` renamed to `get_peptide_library()` throughout, in
+  line with the phiperio API.
+- `compute_alpha_diversity`: restored efficient same-connection peptide
+  library handling via `.ph_peplib_on_main()` (DuckDB ATTACH fast path
+  with [`copy_to()`](https://dplyr.tidyverse.org/reference/copy_to.html)
+  fallback).
+
+### Internal
+
+- R source files renamed to follow the new `<domain>_compute` /
+  `<domain>_plots` convention: `binary_alpha` → `alpha_compute`,
+  `binary_alpha_plots` → `alpha_plots`, `binary_beta` → `beta_compute`,
+  `binary_beta_plots` → `beta_plots`, `prevalence-DELTA_test` →
+  `delta_compute`, `prevalence-DELTA_plots` → `delta_plots`,
+  `prevalence-POP-test` → `pop_compute`, `prevalence-POP_plots` →
+  `pop_plots`, `plot-utils` → `plot_utils`. Test files renamed
+  accordingly.
+- Naming conventions for source files and functions documented in
+  `CONTRIBUTING.md`: exported functions use plain `snake_case`; all
+  internal helpers use the `.ph_` prefix.
+
 ## phiper 0.2.7
 
 - compute_delta: added `maxmean` (Efron-type) as a test statistic

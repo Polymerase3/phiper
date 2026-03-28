@@ -67,7 +67,7 @@ PCA loadings unless distances are Euclidean and derived compatibly.
 # \donttest{
 # compute a distance matrix with an attached abundance matrix
 # build an example <phip_data> object from the package example dataset
-ps <- phip_load_example_data("small_mixture")
+ps <- load_example_data("small_mixture")
 
 # compute distances (needs either 'parallelDist' or 'vegan')
 val_col <- "fold_change"
@@ -78,24 +78,24 @@ d <- compute_distance(
   distance = "jaccard",
   n_threads = 2L
 )
-#> [10:23:15] INFO  building abundance matrix from `ps` using `fold_change`.
-#> [10:23:15] INFO  building pivot spec (sample_id x peptide_id).
-#> [10:23:15] INFO  Collecting long table (sample_id, peptide_id, value).
+#> [11:24:37] INFO  building abundance matrix from `ps` using `fold_change`.
+#> [11:24:37] INFO  building pivot spec (sample_id x peptide_id).
+#> [11:24:37] INFO  Collecting long table (sample_id, peptide_id, value).
 #>                  -> compute_distance
-#> [10:23:15] INFO  Pivoting to wide abundance matrix in R.
+#> [11:24:37] INFO  Pivoting to wide abundance matrix in R.
 #>                  -> compute_distance
-#> [10:23:15] INFO  abundance matrix has 43 samples and 5 features after
+#> [11:24:37] INFO  abundance matrix has 43 samples and 5 features after
 #>                  preprocessing.
-#> [10:23:15] INFO  auto normalization selected -> using relative
-#> [10:23:15] INFO  computing distance: jaccard
-#> [10:23:15] INFO  distance matrix computation complete.
+#> [11:24:37] INFO  auto normalization selected -> using relative
+#> [11:24:37] INFO  computing distance: jaccard
+#> [11:24:37] INFO  distance matrix computation complete.
 
 # Compute PCoA vectors on these distances
 pcoa_res <- compute_pcoa(d, neg_correction = "none", n_axes = 3L)
-#> [10:23:15] INFO  performing principal coordinates analysis
-#> [10:23:15] INFO  extracting sample coordinates.
-#> [10:23:15] INFO  summarizing eigenvalues and variance explained.
-#> [10:23:15] INFO  pcoa analysis complete.
+#> [11:24:37] INFO  performing principal coordinates analysis
+#> [11:24:37] INFO  extracting sample coordinates.
+#> [11:24:37] INFO  summarizing eigenvalues and variance explained.
+#> [11:24:37] INFO  pcoa analysis complete.
 
 feature_associations <- compute_pcoa_feature_associations(d, pcoa_res)
 feature_associations

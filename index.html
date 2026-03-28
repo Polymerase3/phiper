@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.7</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -85,31 +85,15 @@
 <div class="section level3">
 <h3 id="importing-the-data">Importing the data<a class="anchor" aria-label="anchor" href="#importing-the-data"></a>
 </h3>
-<p>Because the data are relatively large, they are stored in a <code>.parquet</code> file. You can obtain the file path with:</p>
+<p>A ready-to-use example dataset is bundled with <code>phiperio</code>. Load it directly with:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/Polymerase3/phiper" class="external-link">phiper</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">phip_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/phip_example_path.html">phip_example_path</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>You can then import the data with:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">ps</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/phip_convert.html">phip_convert</a></span><span class="op">(</span></span>
-<span>  data_long_path    <span class="op">=</span> <span class="va">phip_path</span>,</span>
-<span>  backend           <span class="op">=</span> <span class="st">"duckdb"</span>,</span>
-<span>  peptide_library   <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  subject_id        <span class="op">=</span> <span class="st">"subject_id"</span>,</span>
-<span>  peptide_id        <span class="op">=</span> <span class="st">"peptide_id"</span>,</span>
-<span>  sample_id         <span class="op">=</span> <span class="st">"sample_id"</span>,</span>
-<span>  exist             <span class="op">=</span> <span class="st">"exist"</span>,</span>
-<span>  timepoint         <span class="op">=</span> <span class="st">"timepoint_factor"</span>,</span>
-<span>  fold_change       <span class="op">=</span> <span class="st">"fold_change"</span>,</span>
-<span>  materialise_table <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  auto_expand       <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  n_cores           <span class="op">=</span> <span class="fl">5</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">ps</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/load_example_data.html">load_example_data</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>You can inspect the data:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ps</span><span class="op">$</span><span class="va">data_long</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -123,8 +107,8 @@
 <span><span class="co">#&gt; 5 B_T1_1    1          B     T1    10087          1              1        1245</span></span>
 <span><span class="co">#&gt; # ℹ 1 more variable: fold_change &lt;dbl&gt;</span></span></code></pre></div>
 <p>You can also inspect the current version of the peptide library maintained by the Vogl lab:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/get_peptide_library.html">get_peptide_library</a></span><span class="op">(</span><span class="va">ps</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">get_peptide_library</span><span class="op">(</span><span class="va">ps</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # A tibble: 5 × 30</span></span>
@@ -146,7 +130,7 @@
 <h3 id="plotting-peptide-counts">Plotting peptide counts<a class="anchor" aria-label="anchor" href="#plotting-peptide-counts"></a>
 </h3>
 <p>You can easily plot peptide counts using the <code><a href="reference/plot_enrichment_counts.html">plot_enrichment_counts()</a></code> function:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/plot_enrichment_counts.html">plot_enrichment_counts</a></span><span class="op">(</span></span>
 <span>  <span class="va">ps</span>,</span>
 <span>  group_cols        <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"group"</span>, <span class="st">"time"</span><span class="op">)</span>,</span>
@@ -170,7 +154,7 @@
 </h3>
 <p>You can also compute and visualize alpha diversity for different groups or subgroups of interest. <code>phiper</code> is organized into analysis modules: for each module you typically get a computation function (for example, <code><a href="reference/compute_alpha_diversity.html">compute_alpha_diversity()</a></code>) and one or more plotting functions (for example, <code><a href="reference/plot_alpha_diversity.html">plot_alpha_diversity()</a></code>). This pattern repeats across the analysis modules.</p>
 <p>For alpha diversity specifically:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">alpha</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/compute_alpha_diversity.html">compute_alpha_diversity</a></span><span class="op">(</span></span>
 <span>  <span class="va">ps</span>,</span>
 <span>  group_cols        <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"group"</span>, <span class="st">"time"</span><span class="op">)</span>,</span>
@@ -204,7 +188,7 @@
 <span><span class="co">#&gt; # ℹ 70 more rows</span></span>
 <span><span class="co">#&gt; # ℹ 1 more variable: shannon_diversity &lt;dbl&gt;</span></span></code></pre></div>
 <p>You can then plot the results:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/plot_alpha_diversity.html">plot_alpha_diversity</a></span><span class="op">(</span></span>
 <span>  <span class="va">alpha</span>,</span>
 <span>  metric    <span class="op">=</span> <span class="st">"richness"</span>,</span>

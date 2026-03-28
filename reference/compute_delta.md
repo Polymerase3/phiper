@@ -21,7 +21,7 @@ compute_delta(
   weight_mode = c("equal", "se_invvar", "n_eff_sqrt"),
   stat_mode = c("srlr", "diff", "asin", "score", "mcnemar", "srlr_paired"),
   aggregate_stat = c("stouffer", "maxmean"),
-  strat_bins = c(0.002, 0.005, 0.01, 0.02, 0.05, 0.10, 0.20, 0.50),
+  strat_bins = c(0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5),
   winsor_z = 4,
   rank_feature_keep = NULL,
   peptide_library = NULL,
@@ -121,9 +121,7 @@ compute_delta(
   Optional data frame providing peptide annotations for non-peptide
   ranks. Must at least contain `peptide_id` and all requested
   `rank_cols` besides `"peptide_id"`. If `NULL`, the function falls back
-  to `x$peptide_library` or
-  [`phiper::get_peptide_meta()`](https://polymerase3.github.io/phiper/reference/get_peptide_meta.md)
-  if available.
+  to `x$peptide_library` or `get_peptide_library()` (from phiperio).
 
 - log:
 
@@ -290,11 +288,8 @@ required. It is resolved in the following order:
 2.  `x$peptide_library` if `x` is a `phip_data` with an attached
     library.
 
-3.  [`phiper::get_peptide_meta()`](https://polymerase3.github.io/phiper/reference/get_peptide_meta.md)
-    if available (i.e. `phiper` is installed and exports this function).
-
-If none of these are available, the function aborts with an informative
-error.
+3.  `get_peptide_library()` from phiperio (always available as a
+    dependency).
 
 ## Parallelization
 
@@ -323,7 +318,7 @@ its own seed from the global RNG state.
 ``` r
 # \donttest{
 # Load example PhIP-Seq data shipped with the package
-pd <- phip_load_example_data()
+pd <- load_example_data()
 
 # Small unpaired subset with a mock peptide library
 pd_filt <- pd |>

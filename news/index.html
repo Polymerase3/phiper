@@ -13,7 +13,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.7</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -44,6 +44,24 @@
       <small>Source: <a href="https://github.com/Polymerase3/phiper/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.3.0" id="phiper-030">phiper 0.3.0<a class="anchor" aria-label="anchor" href="#phiper-030"></a></h2>
+<div class="section level3">
+<h3 id="major-changes-0-3-0">Major changes<a class="anchor" aria-label="anchor" href="#major-changes-0-3-0"></a></h3>
+<ul><li>Extracted all data-import, class construction, and low-level utility code into the new <strong>phiperio</strong> package. <code>phiper</code> now declares <code>phiperio</code> as a hard dependency and re-exports its user-facing functions (<code>load_example_data</code>, <code>get_example_path</code>) so existing workflows require no changes.</li>
+<li>Removed all functions that moved to phiperio: <code>phip_convert</code>, <code>phip_convert_legacy</code>, <code>new_phip_data</code>, <code>expand_phip_data</code>, <code>phip_data_join</code>, <code>validate_phip_data</code>, <code>disconnect</code>, <code>get_comparisons</code>, <code>phip_example_path</code>, <code>phip_load_example_data</code>, and the full logging / validation helper suite (<code>add_quotes</code>, <code>word_list</code>, <code>.chk_*</code>).</li>
+<li>Internal logging and validation now use the unified phiperio helpers (<code>.ph_abort</code>, <code>.ph_warn</code>, <code>.ph_log_info</code>, <code>.ph_with_timing</code>, <code>.ph_check_cond</code>, <code>.ph_add_quotes</code>, <code>.ph_word_list</code>, <code>.ph_check_path</code>, <code>.ph_check_extension</code>, <code>.ph_check_null_default</code>).</li>
+<li>
+<code>get_peptide_meta()</code> renamed to <code>get_peptide_library()</code> throughout, in line with the phiperio API.</li>
+<li>
+<code>compute_alpha_diversity</code>: restored efficient same-connection peptide library handling via <code>.ph_peplib_on_main()</code> (DuckDB ATTACH fast path with <code><a href="https://dplyr.tidyverse.org/reference/copy_to.html" class="external-link">copy_to()</a></code> fallback).</li>
+</ul></div>
+<div class="section level3">
+<h3 id="internal-0-3-0">Internal<a class="anchor" aria-label="anchor" href="#internal-0-3-0"></a></h3>
+<ul><li>R source files renamed to follow the new <code>&lt;domain&gt;_compute</code> / <code>&lt;domain&gt;_plots</code> convention: <code>binary_alpha</code> → <code>alpha_compute</code>, <code>binary_alpha_plots</code> → <code>alpha_plots</code>, <code>binary_beta</code> → <code>beta_compute</code>, <code>binary_beta_plots</code> → <code>beta_plots</code>, <code>prevalence-DELTA_test</code> → <code>delta_compute</code>, <code>prevalence-DELTA_plots</code> → <code>delta_plots</code>, <code>prevalence-POP-test</code> → <code>pop_compute</code>, <code>prevalence-POP_plots</code> → <code>pop_plots</code>, <code>plot-utils</code> → <code>plot_utils</code>. Test files renamed accordingly.</li>
+<li>Naming conventions for source files and functions documented in <code>CONTRIBUTING.md</code>: exported functions use plain <code>snake_case</code>; all internal helpers use the <code>.ph_</code> prefix.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.2.7" id="phiper-027">phiper 0.2.7<a class="anchor" aria-label="anchor" href="#phiper-027"></a></h2>
 <ul><li>compute_delta: added <code>maxmean</code> (Efron-type) as a test statistic option.</li>

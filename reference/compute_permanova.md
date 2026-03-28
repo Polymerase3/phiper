@@ -129,7 +129,7 @@ P-values are optionally adjusted within each contrast scope (e.g.,
 
 ``` r
 # \donttest{
-ps <- phip_load_example_data("small_mixture")
+ps <- load_example_data("small_mixture")
 
 # compute distance matrix
 val_col <- "fold_change"
@@ -140,17 +140,17 @@ dist_bc <- compute_distance(
   distance = "jaccard",
   n_threads = 2L
 )
-#> [10:23:15] INFO  building abundance matrix from `ps` using `fold_change`.
-#> [10:23:15] INFO  building pivot spec (sample_id x peptide_id).
-#> [10:23:15] INFO  Collecting long table (sample_id, peptide_id, value).
+#> [11:24:37] INFO  building abundance matrix from `ps` using `fold_change`.
+#> [11:24:37] INFO  building pivot spec (sample_id x peptide_id).
+#> [11:24:37] INFO  Collecting long table (sample_id, peptide_id, value).
 #>                  -> compute_distance
-#> [10:23:15] INFO  Pivoting to wide abundance matrix in R.
+#> [11:24:37] INFO  Pivoting to wide abundance matrix in R.
 #>                  -> compute_distance
-#> [10:23:15] INFO  abundance matrix has 43 samples and 5 features after
+#> [11:24:37] INFO  abundance matrix has 43 samples and 5 features after
 #>                  preprocessing.
-#> [10:23:15] INFO  auto normalization selected -> using relative
-#> [10:23:15] INFO  computing distance: jaccard
-#> [10:23:15] INFO  distance matrix computation complete.
+#> [11:24:37] INFO  auto normalization selected -> using relative
+#> [11:24:37] INFO  computing distance: jaccard
+#> [11:24:37] INFO  distance matrix computation complete.
 
 permanova_res <- compute_permanova(
   dist_bc,
@@ -158,16 +158,16 @@ permanova_res <- compute_permanova(
   group_col = "group",
   time_col  = "timepoint"
 )
-#> [10:23:15] INFO  preparing distance labels and metadata.
-#> Warning: [10:23:15] WARN  column `subject_id` found in `ps`, but `subject_col` is NULL;
+#> [11:24:37] INFO  preparing distance labels and metadata.
+#> Warning: [11:24:37] WARN  column `subject_id` found in `ps`, but `subject_col` is NULL;
 #>                  repeated-measures stratification is disabled.
-#> [10:23:15] INFO  building metadata from `ps`.
-#> [10:23:15] INFO  filtering samples with missing grouping variables.
-#> [10:23:15] INFO  subsetting distance matrix to complete cases.
-#> [10:23:15] INFO  preparing global permanova model.
-#> [10:23:15] INFO  running global permanova
+#> [11:24:37] INFO  building metadata from `ps`.
+#> [11:24:37] INFO  filtering samples with missing grouping variables.
+#> [11:24:37] INFO  subsetting distance matrix to complete cases.
+#> [11:24:37] INFO  preparing global permanova model.
+#> [11:24:37] INFO  running global permanova
 #>                    - model: d_resp ~ group
-#> [10:23:16] INFO  running pairwise permanova contrasts.
+#> [11:24:37] INFO  running pairwise permanova contrasts.
 #> Warning: number of items to replace is not a multiple of replacement length
 
 permanova_res2 <- compute_permanova(
@@ -177,16 +177,16 @@ permanova_res2 <- compute_permanova(
   time_col  = "timepoint",
   p_adjust  = "BH"
 )
-#> [10:23:16] INFO  preparing distance labels and metadata.
-#> Warning: [10:23:16] WARN  column `subject_id` found in `ps`, but `subject_col` is NULL;
+#> [11:24:37] INFO  preparing distance labels and metadata.
+#> Warning: [11:24:37] WARN  column `subject_id` found in `ps`, but `subject_col` is NULL;
 #>                  repeated-measures stratification is disabled.
-#> [10:23:16] INFO  building metadata from `ps`.
-#> [10:23:16] INFO  filtering samples with missing grouping variables.
-#> [10:23:16] INFO  subsetting distance matrix to complete cases.
-#> [10:23:16] INFO  preparing global permanova model.
-#> [10:23:16] INFO  running global permanova
+#> [11:24:37] INFO  building metadata from `ps`.
+#> [11:24:37] INFO  filtering samples with missing grouping variables.
+#> [11:24:37] INFO  subsetting distance matrix to complete cases.
+#> [11:24:37] INFO  preparing global permanova model.
+#> [11:24:37] INFO  running global permanova
 #>                    - model: d_resp ~ group
-#> [10:23:16] INFO  running pairwise permanova contrasts.
+#> [11:24:37] INFO  running pairwise permanova contrasts.
 #> Warning: number of items to replace is not a multiple of replacement length
 # }
 ```

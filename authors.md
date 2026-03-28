@@ -16,12 +16,12 @@ Source:
 [`DESCRIPTION`](https://github.com/Polymerase3/phiper/blob/main/DESCRIPTION)
 
 Kolek M (2026). *phiper: Automated PhIP-seq Analysis and Reporting*. R
-package version 0.2.7, <https://github.com/Polymerase3/phiper>.
+package version 0.3.0, <https://github.com/Polymerase3/phiper>.
 
     @Manual{,
       title = {phiper: Automated PhIP-seq Analysis and Reporting},
       author = {Mateusz Kolek},
       year = {2026},
-      note = {R package version 0.2.7},
+      note = {R package version 0.3.0},
       url = {https://github.com/Polymerase3/phiper},
     }

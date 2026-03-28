@@ -82,7 +82,7 @@ A list of class `"beta_dispersion"` with:
 
 ``` r
 # \donttest{
-ps <- phip_load_example_data("small_mixture")
+ps <- load_example_data("small_mixture")
 
 # compute distance matrix
 val_col <- "fold_change"
@@ -93,17 +93,17 @@ dist_bc <- compute_distance(
   distance = "jaccard",
   n_threads = 2L
 )
-#> [10:23:14] INFO  building abundance matrix from `ps` using `fold_change`.
-#> [10:23:14] INFO  building pivot spec (sample_id x peptide_id).
-#> [10:23:14] INFO  Collecting long table (sample_id, peptide_id, value).
+#> [11:24:36] INFO  building abundance matrix from `ps` using `fold_change`.
+#> [11:24:36] INFO  building pivot spec (sample_id x peptide_id).
+#> [11:24:36] INFO  Collecting long table (sample_id, peptide_id, value).
 #>                  -> compute_distance
-#> [10:23:14] INFO  Pivoting to wide abundance matrix in R.
+#> [11:24:36] INFO  Pivoting to wide abundance matrix in R.
 #>                  -> compute_distance
-#> [10:23:14] INFO  abundance matrix has 43 samples and 5 features after
+#> [11:24:36] INFO  abundance matrix has 43 samples and 5 features after
 #>                  preprocessing.
-#> [10:23:14] INFO  auto normalization selected -> using relative
-#> [10:23:14] INFO  computing distance: jaccard
-#> [10:23:14] INFO  distance matrix computation complete.
+#> [11:24:36] INFO  auto normalization selected -> using relative
+#> [11:24:36] INFO  computing distance: jaccard
+#> [11:24:36] INFO  distance matrix computation complete.
 
 dispersion_res <- compute_dispersion(
   dist_bc,
@@ -112,11 +112,11 @@ dispersion_res <- compute_dispersion(
   time_col  = "timepoint",
   p_adjust  = "BH"
 )
-#> [10:23:14] INFO  preparing distance labels and metadata.
-#> [10:23:14] INFO  building metadata from `ps`.
-#> [10:23:14] INFO  filtering samples with missing grouping variables.
-#> [10:23:14] INFO  computing global dispersion tests.
-#> [10:23:15] INFO  running pairwise dispersion contrasts.
+#> [11:24:36] INFO  preparing distance labels and metadata.
+#> [11:24:36] INFO  building metadata from `ps`.
+#> [11:24:36] INFO  filtering samples with missing grouping variables.
+#> [11:24:36] INFO  computing global dispersion tests.
+#> [11:24:36] INFO  running pairwise dispersion contrasts.
 dispersion_res$tests
 #> # A tibble: 1 × 6
 #>   scope contrast term       p_value p_adjust n_perm

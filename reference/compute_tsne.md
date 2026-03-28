@@ -119,7 +119,7 @@ t-SNE result but will have `NA` values for those metadata columns.
 ``` r
 # \donttest{
 # Build example phip_data object
-ps <- phip_load_example_data("small_mixture")
+ps <- load_example_data("small_mixture")
 
 # Compute distance matrix
 val_col <- "fold_change"
@@ -131,16 +131,16 @@ d <- compute_distance(
   distance = "bray",
   n_threads = 2L
 )
-#> [10:23:16] INFO  building abundance matrix from `ps` using `fold_change`.
-#> [10:23:16] INFO  building pivot spec (sample_id x peptide_id).
-#> [10:23:16] INFO  Collecting long table (sample_id, peptide_id, value).
+#> [11:24:38] INFO  building abundance matrix from `ps` using `fold_change`.
+#> [11:24:38] INFO  building pivot spec (sample_id x peptide_id).
+#> [11:24:38] INFO  Collecting long table (sample_id, peptide_id, value).
 #>                  -> compute_distance
-#> [10:23:16] INFO  Pivoting to wide abundance matrix in R.
+#> [11:24:38] INFO  Pivoting to wide abundance matrix in R.
 #>                  -> compute_distance
-#> [10:23:16] INFO  abundance matrix has 43 samples and 5 features after
+#> [11:24:38] INFO  abundance matrix has 43 samples and 5 features after
 #>                  preprocessing.
-#> [10:23:16] INFO  computing distance: bray
-#> [10:23:16] INFO  distance matrix computation complete.
+#> [11:24:38] INFO  computing distance: bray
+#> [11:24:38] INFO  distance matrix computation complete.
 
 # Compute t-SNE embeddings
 tsne_res <- compute_tsne(
@@ -151,12 +151,12 @@ tsne_res <- compute_tsne(
   meta_cols = c("subject_id", "timepoint"),
   seed = 42
 )
-#> Warning: [10:23:16] WARN  Perplexity (15) is high for n = 43; reducing to 14.
-#> [10:23:16] INFO  Running t-SNE with dims = 3, perplexity = 14 on 43 samples
+#> Warning: [11:24:38] WARN  Perplexity (15) is high for n = 43; reducing to 14.
+#> [11:24:38] INFO  Running t-SNE with dims = 3, perplexity = 14 on 43 samples
 #>                  (distance input).
-#> [10:23:16] INFO  Attaching metadata columns to t-SNE result: subject_id,
+#> [11:24:38] INFO  Attaching metadata columns to t-SNE result: subject_id,
 #>                  timepoint
-#> [10:23:16] INFO  t-SNE embedding computation finished.
+#> [11:24:38] INFO  t-SNE embedding computation finished.
 
 # View results
 head(tsne_res)

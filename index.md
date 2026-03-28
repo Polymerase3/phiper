@@ -31,34 +31,15 @@ without any biological interpretation.
 
 ### Importing the data
 
-Because the data are relatively large, they are stored in a `.parquet`
-file. You can obtain the file path with:
+A ready-to-use example dataset is bundled with `phiperio`. Load it
+directly with:
 
 ``` r
 library(phiper)
 library(dplyr)
 library(ggplot2)
 
-phip_path <- phip_example_path()
-```
-
-You can then import the data with:
-
-``` r
-ps <- phip_convert(
-  data_long_path    = phip_path,
-  backend           = "duckdb",
-  peptide_library   = TRUE,
-  subject_id        = "subject_id",
-  peptide_id        = "peptide_id",
-  sample_id         = "sample_id",
-  exist             = "exist",
-  timepoint         = "timepoint_factor",
-  fold_change       = "fold_change",
-  materialise_table = TRUE,
-  auto_expand       = FALSE,
-  n_cores           = 5
-)
+ps <- load_example_data()
 ```
 
 You can inspect the data:

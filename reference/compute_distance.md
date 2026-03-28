@@ -112,7 +112,7 @@ calculation (rows are samples, columns are features).
 
 ``` r
 # build an example <phip_data> object from the package example dataset
-ps <- phip_load_example_data("small_mixture")
+ps <- load_example_data("small_mixture")
 
 # compute distances (needs either 'parallelDist' or 'vegan')
 val_col <- "fold_change"
@@ -124,16 +124,16 @@ d <- compute_distance(
   distance = "bray",
   n_threads = 2L
 )
-#> [10:23:15] INFO  building abundance matrix from `ps` using `fold_change`.
-#> [10:23:15] INFO  building pivot spec (sample_id x peptide_id).
-#> [10:23:15] INFO  Collecting long table (sample_id, peptide_id, value).
+#> [11:24:37] INFO  building abundance matrix from `ps` using `fold_change`.
+#> [11:24:37] INFO  building pivot spec (sample_id x peptide_id).
+#> [11:24:37] INFO  Collecting long table (sample_id, peptide_id, value).
 #>                  -> compute_distance
-#> [10:23:15] INFO  Pivoting to wide abundance matrix in R.
+#> [11:24:37] INFO  Pivoting to wide abundance matrix in R.
 #>                  -> compute_distance
-#> [10:23:15] INFO  abundance matrix has 43 samples and 5 features after
+#> [11:24:37] INFO  abundance matrix has 43 samples and 5 features after
 #>                  preprocessing.
-#> [10:23:15] INFO  computing distance: bray
-#> [10:23:15] INFO  distance matrix computation complete.
+#> [11:24:37] INFO  computing distance: bray
+#> [11:24:37] INFO  distance matrix computation complete.
 
 a <- attr(d, "abundances")
 a[1:min(5, nrow(a)), 1:min(5, ncol(a)), drop = FALSE]

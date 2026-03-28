@@ -13,7 +13,7 @@
 
     <a class="navbar-brand me-2" href="index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.7</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -77,6 +77,45 @@
 <li><p>We use <a href="https://cran.r-project.org/package=roxygen2" class="external-link">roxygen2</a>, with <a href="https://cran.r-project.org/web/packages/roxygen2/vignettes/rd-formatting.html" class="external-link">Markdown syntax</a>, for documentation.</p></li>
 <li><p>We use <a href="https://cran.r-project.org/package=testthat" class="external-link">testthat</a> for unit tests. Contributions with test cases included are easier to accept.</p></li>
 </ul></div>
+<div class="section level3">
+<h3 id="naming-conventions">Naming conventions<a class="anchor" aria-label="anchor" href="#naming-conventions"></a></h3>
+<div class="section level4">
+<h4 id="source-files-r">Source files (<code>R/</code>)<a class="anchor" aria-label="anchor" href="#source-files-r"></a></h4>
+<p>Each analysis domain is split across exactly two files:</p>
+<table class="table"><thead><tr class="header"><th>File</th>
+<th>Purpose</th>
+</tr></thead><tbody><tr class="odd"><td><code>&lt;domain&gt;_compute.R</code></td>
+<td>Statistical computation functions</td>
+</tr><tr class="even"><td><code>&lt;domain&gt;_plots.R</code></td>
+<td>Visualisation functions</td>
+</tr></tbody></table><p>Current domains: <code>alpha</code>, <code>beta</code>, <code>delta</code>, <code>pop</code>. Shared helpers live in <code>utils.R</code>, <code>plot_utils.R</code>, and <code>zzz.R</code>.</p>
+<p>Test files mirror source files: <code>tests/testthat/test-&lt;domain&gt;_compute.R</code> and <code>test-&lt;domain&gt;_plots.R</code>.</p>
+</div>
+<div class="section level4">
+<h4 id="function-names">Function names<a class="anchor" aria-label="anchor" href="#function-names"></a></h4>
+<table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr class="header"><th>Kind</th>
+<th>Convention</th>
+<th>Example</th>
+</tr></thead><tbody><tr class="odd"><td>Exported user-facing</td>
+<td>
+<code>snake_case</code> verb + noun</td>
+<td>
+<code>compute_alpha_diversity</code>, <code>plot_enrichment_counts</code>
+</td>
+</tr><tr class="even"><td>Internal helper (phiper)</td>
+<td><code>.ph_&lt;noun&gt;</code></td>
+<td><code>.ph_peplib_on_main</code></td>
+</tr><tr class="odd"><td>Internal helper (phiperio, copied)</td>
+<td><code>.ph_&lt;noun&gt;</code></td>
+<td>
+<code>.ph_abort</code>, <code>.ph_with_timing</code>
+</td>
+</tr><tr class="even"><td>S3 method</td>
+<td><code>&lt;generic&gt;.&lt;class&gt;</code></td>
+<td><code>print.phip_data</code></td>
+</tr></tbody></table><p>Key rules: - All internal helpers must start with <code>.ph_</code> — this makes them easy to grep and clearly distinguishes them from exported functions. - Exported functions never start with a dot. - Avoid <code>phip_</code> prefixes for new exports; that convention was retired when the phiperio split happened (0.3.0). Use plain descriptive names instead.</p>
+</div>
+</div>
 </div>
 </div>
 

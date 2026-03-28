@@ -2,11 +2,6 @@
 
 ## All functions
 
-- [`add_exist()`](https://polymerase3.github.io/phiper/reference/add_exist.md)
-  :
-
-  Ensure an existence flag (all ones) on `data_long`
-
 - [`compute_alpha_diversity()`](https://polymerase3.github.io/phiper/reference/compute_alpha_diversity.md)
   : Compute alpha diversity per sample / group across ranks
 
@@ -41,9 +36,6 @@
 - [`deltaplot_interactive()`](https://polymerase3.github.io/phiper/reference/deltaplot_interactive.md)
   : Interactive Delta-prevalence vs Pooled Prevalence
 
-- [`disconnect()`](https://polymerase3.github.io/phiper/reference/disconnect.md)
-  : Disconnect backend database connections
-
 - [`.as_prev_result()`](https://polymerase3.github.io/phiper/reference/dot-as_prev_result.md)
   :
 
@@ -55,75 +47,21 @@
 - [`ecdf_plot_interactive()`](https://polymerase3.github.io/phiper/reference/ecdf_plot_interactive.md)
   : ECDF of Per-peptide Prevalence for Two Groups
 
-- [`expand_phip_data()`](https://polymerase3.github.io/phiper/reference/expand_phip_data.md)
-  :
-
-  Expand to a full `sample_id * peptide_id` grid
-
-- [`export_parquet()`](https://polymerase3.github.io/phiper/reference/export_parquet.md)
-  : Export a phip_data Table to Parquet
-
 - [`forestplot()`](https://polymerase3.github.io/phiper/reference/forestplot.md)
   : Forest Plot of Top/Bottom Raw Stouffer T by Rank
 
 - [`forestplot_interactive()`](https://polymerase3.github.io/phiper/reference/forestplot_interactive.md)
   : Interactive Forest Plot of Top/Bottom DELTA/Stouffer Statistics
 
-- [`get_comparisons()`](https://polymerase3.github.io/phiper/reference/get_comparisons.md)
-  : Retrieve the comparisons definition table
+- [`get_example_path()`](https://polymerase3.github.io/phiper/reference/get_example_path.md)
+  : Path to Example PhIP-Seq Datasets
 
-- [`get_counts()`](https://polymerase3.github.io/phiper/reference/get_counts.md)
-  : Retrieve the main PhIP-Seq counts table
-
-- [`get_meta()`](https://polymerase3.github.io/phiper/reference/get_meta.md)
-  : Retrieve the metadata list
-
-- [`get_peptide_library()`](https://polymerase3.github.io/phiper/reference/get_peptide_library.md)
-  : Retrieve the peptide-library annotation table
-
-- [`get_peptide_meta()`](https://polymerase3.github.io/phiper/reference/get_peptide_meta.md)
-  : Retrieve the peptide metadata table into DuckDB, forcing atomic
-  types
-
-- [`merge(`*`<phip_data>`*`)`](https://polymerase3.github.io/phiper/reference/merge.phip_data.md)
-  :
-
-  Merge or join a `phip_data` object
-
-- [`new_phip_data()`](https://polymerase3.github.io/phiper/reference/new_phip_data.md)
-  :
-
-  Construct a **phip_data** object
+- [`load_example_data()`](https://polymerase3.github.io/phiper/reference/load_example_data.md)
+  : Load Example PhIP-Seq Dataset as \<phip_data\>
 
 - [`ph_prevalence_compare()`](https://polymerase3.github.io/phiper/reference/ph_prevalence_compare.md)
   : Prevalence by group with pairwise tests (POP; per-rank FDR; BH &
   weighted BH)
-
-- [`phip_convert()`](https://polymerase3.github.io/phiper/reference/phip_convert.md)
-  :
-
-  Convert raw PhIP-Seq output into a `phip_data` object
-
-- [`phip_convert_legacy()`](https://polymerase3.github.io/phiper/reference/phip_convert_legacy.md)
-  :
-
-  Convert legacy Carlos-style input to a modern **phip_data** object
-
-- [`left_join(`*`<phip_data>`*`)`](https://polymerase3.github.io/phiper/reference/phip_data_join.md)
-  [`right_join(`*`<phip_data>`*`)`](https://polymerase3.github.io/phiper/reference/phip_data_join.md)
-  [`inner_join(`*`<phip_data>`*`)`](https://polymerase3.github.io/phiper/reference/phip_data_join.md)
-  [`full_join(`*`<phip_data>`*`)`](https://polymerase3.github.io/phiper/reference/phip_data_join.md)
-  [`semi_join(`*`<phip_data>`*`)`](https://polymerase3.github.io/phiper/reference/phip_data_join.md)
-  [`anti_join(`*`<phip_data>`*`)`](https://polymerase3.github.io/phiper/reference/phip_data_join.md)
-  :
-
-  dplyr joins for `phip_data`
-
-- [`phip_example_path()`](https://polymerase3.github.io/phiper/reference/phip_example_path.md)
-  : Path to example PhIP-Seq datasets shipped with phiper
-
-- [`phip_load_example_data()`](https://polymerase3.github.io/phiper/reference/phip_load_example_data.md)
-  : Load Example PhIP-Seq Dataset as \<phip_data\>
 
 - [`phip_palette`](https://polymerase3.github.io/phiper/reference/phip_palette.md)
   : PHIP default colour palette

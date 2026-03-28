@@ -19,7 +19,7 @@ statistic and assessing significance via label permutation."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.7</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -47,7 +47,7 @@ statistic and assessing significance via label permutation."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Global Shift in Peptide-level Prevalence via Subject-level Permutation</h1>
-      <small class="dont-index">Source: <a href="https://github.com/Polymerase3/phiper/blob/main/R/prevalence-DELTA_test.R" class="external-link"><code>R/prevalence-DELTA_test.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/Polymerase3/phiper/blob/main/R/delta_compute.R" class="external-link"><code>R/delta_compute.R</code></a></small>
       <div class="d-none name"><code>compute_delta.Rd</code></div>
     </div>
 
@@ -73,7 +73,7 @@ statistic and assessing significance via <strong>label permutation</strong>.</p>
 <span>  weight_mode <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"equal"</span>, <span class="st">"se_invvar"</span>, <span class="st">"n_eff_sqrt"</span><span class="op">)</span>,</span>
 <span>  stat_mode <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"srlr"</span>, <span class="st">"diff"</span>, <span class="st">"asin"</span>, <span class="st">"score"</span>, <span class="st">"mcnemar"</span>, <span class="st">"srlr_paired"</span><span class="op">)</span>,</span>
 <span>  aggregate_stat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"stouffer"</span>, <span class="st">"maxmean"</span><span class="op">)</span>,</span>
-<span>  strat_bins <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.002</span>, <span class="fl">0.005</span>, <span class="fl">0.01</span>, <span class="fl">0.02</span>, <span class="fl">0.05</span>, <span class="fl">0.10</span>, <span class="fl">0.20</span>, <span class="fl">0.50</span><span class="op">)</span>,</span>
+<span>  strat_bins <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.002</span>, <span class="fl">0.005</span>, <span class="fl">0.01</span>, <span class="fl">0.02</span>, <span class="fl">0.05</span>, <span class="fl">0.1</span>, <span class="fl">0.2</span>, <span class="fl">0.5</span><span class="op">)</span>,</span>
 <span>  winsor_z <span class="op">=</span> <span class="fl">4</span>,</span>
 <span>  rank_feature_keep <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  peptide_library <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -173,7 +173,7 @@ tested; others are dropped after the peptide-level pivot.</p></dd>
 <dd><p>Optional data frame providing peptide annotations for
 non-peptide ranks. Must at least contain <code>peptide_id</code> and all requested
 <code>rank_cols</code> besides <code>"peptide_id"</code>. If <code>NULL</code>, the function falls back to
-<code>x$peptide_library</code> or <code><a href="get_peptide_meta.html">phiper::get_peptide_meta()</a></code> if available.</p></dd>
+<code>x$peptide_library</code> or <code>get_peptide_library()</code> (from phiperio).</p></dd>
 
 
 <dt id="arg-log">log<a class="anchor" aria-label="anchor" href="#arg-log"></a></dt>
@@ -321,11 +321,8 @@ peptide library (see <code>peptide_library</code> below).</p></li>
 <p>When <code>rank_cols</code> includes non-<code>"peptide_id"</code> ranks, a peptide library is
 required. It is resolved in the following order:</p><ol><li><p>The explicit <code>peptide_library</code> argument.</p></li>
 <li><p><code>x$peptide_library</code> if <code>x</code> is a <code>phip_data</code> with an attached library.</p></li>
-<li><p><code><a href="get_peptide_meta.html">phiper::get_peptide_meta()</a></code> if available (i.e. <code>phiper</code> is installed and
-exports this function).</p></li>
-</ol><p>If none of these are available, the function aborts with an informative
-error.</p>
-    </div>
+<li><p><code>get_peptide_library()</code> from phiperio (always available as a dependency).</p></li>
+</ol></div>
     <div class="section level2">
     <h2 id="parallelization">Parallelization<a class="anchor" aria-label="anchor" href="#parallelization"></a></h2>
 
@@ -347,7 +344,7 @@ results; each contrast draws its own seed from the global RNG state.</p>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="co"># Load example PhIP-Seq data shipped with the package</span></span></span>
-<span class="r-in"><span><span class="va">pd</span> <span class="op">&lt;-</span> <span class="fu"><a href="phip_load_example_data.html">phip_load_example_data</a></span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">pd</span> <span class="op">&lt;-</span> <span class="fu"><a href="load_example_data.html">load_example_data</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Small unpaired subset with a mock peptide library</span></span></span>
 <span class="r-in"><span><span class="va">pd_filt</span> <span class="op">&lt;-</span> <span class="va">pd</span> <span class="op">|&gt;</span></span></span>

@@ -27,7 +27,7 @@ and/or large peptide sets.'></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.7</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,7 +55,7 @@ and/or large peptide sets.'></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Compute Pairwise Sample Distances</h1>
-      <small class="dont-index">Source: <a href="https://github.com/Polymerase3/phiper/blob/main/R/binary_beta.R" class="external-link"><code>R/binary_beta.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/Polymerase3/phiper/blob/main/R/beta_compute.R" class="external-link"><code>R/beta_compute.R</code></a></small>
       <div class="d-none name"><code>compute_distance.Rd</code></div>
     </div>
 
@@ -151,7 +151,7 @@ calculation (rows are samples, columns are features).</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># build an example &lt;phip_data&gt; object from the package example dataset</span></span></span>
-<span class="r-in"><span><span class="va">ps</span> <span class="op">&lt;-</span> <span class="fu"><a href="phip_load_example_data.html">phip_load_example_data</a></span><span class="op">(</span><span class="st">"small_mixture"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ps</span> <span class="op">&lt;-</span> <span class="fu"><a href="load_example_data.html">load_example_data</a></span><span class="op">(</span><span class="st">"small_mixture"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># compute distances (needs either 'parallelDist' or 'vegan')</span></span></span>
 <span class="r-in"><span><span class="va">val_col</span> <span class="op">&lt;-</span> <span class="st">"fold_change"</span></span></span>
@@ -163,16 +163,16 @@ calculation (rows are samples, columns are features).</p>
 <span class="r-in"><span>  distance <span class="op">=</span> <span class="st">"bray"</span>,</span></span>
 <span class="r-in"><span>  n_threads <span class="op">=</span> <span class="fl">2L</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [10:23:15] INFO  building abundance matrix from `ps` using `fold_change`.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [10:23:15] INFO  building pivot spec (sample_id x peptide_id).</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [10:23:15] INFO  Collecting long table (sample_id, peptide_id, value).</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [11:24:37] INFO  building abundance matrix from `ps` using `fold_change`.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [11:24:37] INFO  building pivot spec (sample_id x peptide_id).</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [11:24:37] INFO  Collecting long table (sample_id, peptide_id, value).</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; compute_distance</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [10:23:15] INFO  Pivoting to wide abundance matrix in R.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [11:24:37] INFO  Pivoting to wide abundance matrix in R.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; compute_distance</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [10:23:15] INFO  abundance matrix has 43 samples and 5 features after</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [11:24:37] INFO  abundance matrix has 43 samples and 5 features after</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                  preprocessing.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [10:23:15] INFO  computing distance: bray</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [10:23:15] INFO  distance matrix computation complete.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [11:24:37] INFO  computing distance: bray</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [11:24:37] INFO  distance matrix computation complete.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">a</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">d</span>, <span class="st">"abundances"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">a</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="fl">5</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">a</span><span class="op">)</span><span class="op">)</span>, <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="fl">5</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">a</span><span class="op">)</span><span class="op">)</span>, drop <span class="op">=</span> <span class="cn">FALSE</span><span class="op">]</span></span></span>

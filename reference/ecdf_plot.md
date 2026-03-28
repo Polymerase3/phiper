@@ -88,7 +88,7 @@ the KS statistic and p-value along with the median difference.
 # \donttest{
 library(dplyr)
 library(rlang)
-ps <- phip_load_example_data("small_mixture")
+ps <- load_example_data("small_mixture")
 
 # pick the grouping column
 group_col <- "group"
@@ -99,10 +99,10 @@ prev_res <- ph_prevalence_compare(
   group_cols = group_col,
   collect    = TRUE
 )
-#> [10:23:24] INFO  prevalence_compare (per-rank fdr)
+#> [11:24:47] INFO  prevalence_compare (per-rank fdr)
 #> Warning: Unknown or uninitialised column: `peptide_library`.
 #> Warning: Unknown or uninitialised column: `meta`.
-#> [10:23:24] INFO  preparing input data
+#> [11:24:47] INFO  preparing input data
 #>                    - ranks: peptide_id
 #>                    - group_cols: group
 #>                    - exist_col: exist
@@ -110,25 +110,25 @@ prev_res <- ph_prevalence_compare(
 #>                    - collect: TRUE
 #>                    - pop_k_min: 1
 #>                    - paired: FALSE
-#> [10:23:24] INFO  ranks resolved
+#> [11:24:47] INFO  ranks resolved
 #>                    - - available: peptide_id
-#> [10:23:24] INFO  grouping universes
+#> [11:24:47] INFO  grouping universes
 #>                    - - per-column only: group
-#> [10:23:24] INFO  computing cohort sizes (n) per universe
-#> [10:23:24] INFO  computing presence per sample via k-of-n rule
-#> [10:23:24] INFO  counting present samples per feature (pop, non-paired)
-#> [10:23:24] INFO  fdr accounting
+#> [11:24:47] INFO  computing cohort sizes (n) per universe
+#> [11:24:47] INFO  computing presence per sample via k-of-n rule
+#> [11:24:47] INFO  counting present samples per feature (pop, non-paired)
+#> [11:24:47] INFO  fdr accounting
 #>                    - pool per rank: peptide_id=5
 #>                    - universes: group (k=2, pairs=1)
 #>                    - pairs across universes (sum): 1
 #>                    - total tests m per rank = pool * pairs: peptide_id=5
-#> [10:23:24] INFO  building pairwise comparisons
-#> [10:23:26] OK    materialized duckdb table
-#>                    - name: ph_prev_20260326_102324
+#> [11:24:47] INFO  building pairwise comparisons
+#> [11:24:49] OK    materialized duckdb table
+#>                    - name: ph_prev_20260328_112447
 #>                    - computing p-values (fisher-only); then fdr per rank (bh /
 #>                      wbh)
-#> [10:23:26] OK    prevalence_compare (per-rank fdr) - done
-#>                  -> elapsed: 2.196s
+#> [11:24:49] OK    prevalence_compare (per-rank fdr) - done
+#>                  -> elapsed: 2.443s
 prev_tbl <- as.data.frame(prev_res)
 pair_tbl <- unique(prev_tbl[, c("group1", "group2")])
 group_pair <- c(pair_tbl$group1[1], pair_tbl$group2[1])
