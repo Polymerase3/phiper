@@ -340,6 +340,14 @@ compute_alpha_diversity <- function(x,
     .ph_abort("`ranks` must be a non-empty character vector of exact column names.")
   }
 
+  # light normalization of column names — defined once, reused per rank
+  .norm_names <- function(x) gsub("[^a-z0-9]+", "_", tolower(x))
+
+  # all-samples roster computed once as a lazy query (collected inside the join)
+  keep_cols <- intersect(c("sample_id", "cohort", carry_cols), colnames(tbl))
+  all_samples_lazy <- tbl |>
+    dplyr::distinct(dplyr::across(dplyr::all_of(keep_cols)))
+
   # compute per-rank
   compute_one_rank <- function(rank_name) {
     # map peptide_id -> rank_val; for "peptide_id" it's identity
@@ -380,15 +388,11 @@ compute_alpha_diversity <- function(x,
       )
     }
 
-    # carry through requested columns (if present) for completeness
-    keep_cols <- c("sample_id", "cohort", carry_cols)
-    keep_cols <- intersect(keep_cols, colnames(tbl))
-    all_samples <- tbl |>
-      dplyr::distinct(dplyr::across(dplyr::all_of(keep_cols))) |>
-      dplyr::collect()
-
-    out <- all_samples |>
-      dplyr::left_join(by_sample, by = c("sample_id", "cohort")) |>
+    # join the lazy all-samples roster with the local by_sample tibble;
+    # copy = TRUE uploads by_sample to the same connection for the join
+    out <- all_samples_lazy |>
+      dplyr::left_join(by_sample, by = c("sample_id", "cohort"), copy = TRUE) |>
+      dplyr::collect() |>
       dplyr::mutate(
         richness = tidyr::replace_na(richness, 0L),
         shannon  = tidyr::replace_na(shannon, 0),
@@ -396,9 +400,7 @@ compute_alpha_diversity <- function(x,
       ) |>
       dplyr::mutate(rank = rank_name, .before = 1)
 
-    # light normalization of names
-    norm <- function(x) gsub("[^a-z0-9]+", "_", tolower(x))
-    names(out) <- norm(names(out))
+    names(out) <- .norm_names(names(out))
 
     out |>
       dplyr::rename(
