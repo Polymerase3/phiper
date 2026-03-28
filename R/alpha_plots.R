@@ -204,20 +204,20 @@ plot_enrichment_counts <- function(phip_data,
 
 # ==============================================================================
 # plot_alpha_diversity() — single exported function for precomputed alpha data
-# (output of compute_alpha_diversity)
+# (output of compute_alpha)
 # ==============================================================================
 
 #' Plot alpha diversity (richness/Shannon/Simpson) from precomputed results
 #'
 #' @description
 #' Plot alpha diversity metrics from the precomputed output of
-#' [compute_alpha_diversity()]. Supports filtering groups/ranks and optional
+#' [compute_alpha()]. Supports filtering groups/ranks and optional
 #' faceting by rank. If the input contains an interaction table, you can request
 #' only that via `interaction_only = TRUE`.
 #'
 #' @details
 #' - `x` can be:
-#'   - the named list returned by [compute_alpha_diversity()] (class
+#'   - the named list returned by [compute_alpha()] (class
 #'     `"phip_alpha_diversity"`), or
 #'   - a single data frame taken from that list.
 #' - when `interaction_only = TRUE`, the function tries to select the element
@@ -225,7 +225,7 @@ plot_enrichment_counts <- function(phip_data,
 #'   found, it falls back to the first element whose name contains the separator.
 #'
 #' @param x a `"phip_alpha_diversity"` list (output of
-#'   [compute_alpha_diversity()]) or a single alpha-diversity data frame.
+#'   [compute_alpha()]) or a single alpha-diversity data frame.
 #' @param metric one of `"richness"`, `"shannon_diversity"`, `"simpson_diversity"`.
 #' @param group_col name of the grouping column in the alpha table
 #'   (default `"group"` when `group_cols = NULL` in the computation step).
@@ -237,7 +237,7 @@ plot_enrichment_counts <- function(phip_data,
 #' @param ncol integer; number of columns in facet wrap (default `2`).
 #' @param facet_scales `"fixed"`, `"free_x"`, `"free_y"`, or `"free"`.
 #' @param interaction_only logical; if `TRUE`, plot only the interaction table
-#'   (when available in `x`). useful when `compute_alpha_diversity()` was run
+#'   (when available in `x`). useful when `compute_alpha()` was run
 #'   with `group_interaction = TRUE`.
 #' @param interaction_sep character; separator used to join interaction labels.
 #'   default is taken from `attr(x, "interaction_sep")` if present, otherwise `" * "`.

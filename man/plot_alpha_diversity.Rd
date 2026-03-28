@@ -31,7 +31,7 @@ plot_alpha_diversity(
 }
 \arguments{
 \item{x}{a \code{"phip_alpha_diversity"} list (output of
-\code{\link[=compute_alpha_diversity]{compute_alpha_diversity()}}) or a single alpha-diversity data frame.}
+\code{\link[=compute_alpha]{compute_alpha()}}) or a single alpha-diversity data frame.}
 
 \item{metric}{one of \code{"richness"}, \code{"shannon_diversity"}, \code{"simpson_diversity"}.}
 
@@ -53,7 +53,7 @@ plot_alpha_diversity(
 \item{facet_scales}{\code{"fixed"}, \code{"free_x"}, \code{"free_y"}, or \code{"free"}.}
 
 \item{interaction_only}{logical; if \code{TRUE}, plot only the interaction table
-(when available in \code{x}). useful when \code{compute_alpha_diversity()} was run
+(when available in \code{x}). useful when \code{compute_alpha()} was run
 with \code{group_interaction = TRUE}.}
 
 \item{interaction_sep}{character; separator used to join interaction labels.
@@ -84,7 +84,7 @@ a \code{ggplot} object.
 }
 \description{
 Plot alpha diversity metrics from the precomputed output of
-\code{\link[=compute_alpha_diversity]{compute_alpha_diversity()}}. Supports filtering groups/ranks and optional
+\code{\link[=compute_alpha]{compute_alpha()}}. Supports filtering groups/ranks and optional
 faceting by rank. If the input contains an interaction table, you can request
 only that via \code{interaction_only = TRUE}.
 }
@@ -92,7 +92,7 @@ only that via \code{interaction_only = TRUE}.
 \itemize{
 \item \code{x} can be:
 \itemize{
-\item the named list returned by \code{\link[=compute_alpha_diversity]{compute_alpha_diversity()}} (class
+\item the named list returned by \code{\link[=compute_alpha]{compute_alpha()}} (class
 \code{"phip_alpha_diversity"}), or
 \item a single data frame taken from that list.
 }

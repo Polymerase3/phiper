@@ -1,4 +1,4 @@
-# tests/testthat/test-compute_alpha_diversity.R
+# tests/testthat/test-compute_alpha.R
 
 .pick_peplib_rank <- function(ps) {
   lib_cols <- tryCatch(colnames(ps$peptide_library),
@@ -42,12 +42,12 @@
   cache_env$val
 }
 
-testthat::test_that("compute_alpha_diversity works on example phip_data with interaction", {
+testthat::test_that("compute_alpha works on example phip_data with interaction", {
   info <- .get_ps_small_for_alpha()
   ps <- info$ps
   tp_col <- info$tp_col
 
-  out <- compute_alpha_diversity(
+  out <- compute_alpha(
     ps,
     group_cols = c("group", tp_col),
     ranks = "peptide_id",
@@ -83,7 +83,7 @@ testthat::test_that("compute_alpha_diversity works on example phip_data with int
   testthat::expect_identical(attr(out, "interaction_sep"), " * ")
 })
 
-testthat::test_that("compute_alpha_diversity handles full_cross pruning and
+testthat::test_that("compute_alpha handles full_cross pruning and
                     peplib ranks", {
   info <- .get_ps_small_for_alpha()
   ps <- info$ps
@@ -92,7 +92,7 @@ testthat::test_that("compute_alpha_diversity handles full_cross pruning and
   ps_full$meta$full_cross <- TRUE
   ps_full$meta$exist_prop <- 0.25
 
-  out <- compute_alpha_diversity(
+  out <- compute_alpha(
     ps_full,
     group_cols = "group",
     ranks = "peptide_id"
@@ -102,7 +102,7 @@ testthat::test_that("compute_alpha_diversity handles full_cross pruning and
 
   rank_col <- .pick_peplib_rank(ps_full)
 
-  out2 <- compute_alpha_diversity(
+  out2 <- compute_alpha(
     ps_full,
     group_cols = "group",
     ranks = c("peptide_id", rank_col)
@@ -111,13 +111,13 @@ testthat::test_that("compute_alpha_diversity handles full_cross pruning and
   testthat::expect_true(all(c("peptide_id", rank_col) %in% out2$group$rank))
 })
 
-testthat::test_that("compute_alpha_diversity supports interaction_only and
+testthat::test_that("compute_alpha supports interaction_only and
                     fold-change presence", {
   info <- .get_ps_small_for_alpha()
   ps <- info$ps
   tp_col <- info$tp_col
 
-  out <- compute_alpha_diversity(
+  out <- compute_alpha(
     ps,
     group_cols = c("group", tp_col),
     ranks = "peptide_id",
@@ -138,12 +138,12 @@ testthat::test_that("compute_alpha_diversity supports interaction_only and
   testthat::expect_true(all(res$rank == "peptide_id"))
 })
 
-testthat::test_that("compute_alpha_diversity handles data.frame input without
+testthat::test_that("compute_alpha handles data.frame input without
                     grouping", {
   info <- .get_ps_small_for_alpha()
   df_small <- dplyr::collect(info$ps$data_long)
 
-  out <- compute_alpha_diversity(
+  out <- compute_alpha(
     df_small,
     group_cols = NULL,
     ranks = "peptide_id"
@@ -157,7 +157,7 @@ testthat::test_that("compute_alpha_diversity handles data.frame input without
   testthat::expect_true(all(res$group == "All samples"))
 })
 
-testthat::test_that("compute_alpha_diversity handles empty presence sets", {
+testthat::test_that("compute_alpha handles empty presence sets", {
   df_empty <- tibble::tibble(
     sample_id = c("s1", "s2"),
     peptide_id = c("p1", "p2"),
@@ -165,7 +165,7 @@ testthat::test_that("compute_alpha_diversity handles empty presence sets", {
     group = "A"
   )
 
-  out <- compute_alpha_diversity(
+  out <- compute_alpha(
     df_empty,
     group_cols = NULL,
     ranks = "peptide_id"
@@ -177,13 +177,13 @@ testthat::test_that("compute_alpha_diversity handles empty presence sets", {
   testthat::expect_true(all(res$simpson_diversity == 0))
 })
 
-testthat::test_that("compute_alpha_diversity carries extra columns on
+testthat::test_that("compute_alpha carries extra columns on
                     data.frame input", {
   info <- .get_ps_small_for_alpha()
   tp_col <- info$tp_col
   df_small <- dplyr::collect(info$ps$data_long)
 
-  out <- compute_alpha_diversity(
+  out <- compute_alpha(
     df_small,
     group_cols = "group",
     ranks = "peptide_id",
@@ -194,13 +194,13 @@ testthat::test_that("compute_alpha_diversity carries extra columns on
   testthat::expect_true(tp_col %in% names(out$group))
 })
 
-testthat::test_that("compute_alpha_diversity validates inputs and ranks", {
+testthat::test_that("compute_alpha validates inputs and ranks", {
   info <- .get_ps_small_for_alpha()
   tp_col <- info$tp_col
   df_small <- dplyr::collect(info$ps$data_long)
 
   testthat::expect_error(
-    compute_alpha_diversity(
+    compute_alpha(
       info$ps,
       group_cols = c("group", tp_col),
       ranks = "peptide_id",
@@ -210,7 +210,7 @@ testthat::test_that("compute_alpha_diversity validates inputs and ranks", {
   )
 
   testthat::expect_error(
-    compute_alpha_diversity(
+    compute_alpha(
       df_small,
       group_cols = "not_a_col",
       ranks = "peptide_id"
@@ -219,7 +219,7 @@ testthat::test_that("compute_alpha_diversity validates inputs and ranks", {
   )
 
   testthat::expect_error(
-    compute_alpha_diversity(
+    compute_alpha(
       info$ps,
       group_cols = "not_a_col",
       ranks = "peptide_id"
@@ -228,7 +228,7 @@ testthat::test_that("compute_alpha_diversity validates inputs and ranks", {
   )
 
   testthat::expect_error(
-    compute_alpha_diversity(
+    compute_alpha(
       df_small,
       group_cols = NULL,
       ranks = character(0)
@@ -237,7 +237,7 @@ testthat::test_that("compute_alpha_diversity validates inputs and ranks", {
   )
 
   testthat::expect_warning(
-    compute_alpha_diversity(
+    compute_alpha(
       df_small,
       group_cols = "group",
       ranks = c("peptide_id", "not_a_rank")
@@ -248,7 +248,7 @@ testthat::test_that("compute_alpha_diversity validates inputs and ranks", {
   df_no_fc <- dplyr::select(df_small, -fold_change)
 
   testthat::expect_error(
-    compute_alpha_diversity(
+    compute_alpha(
       df_no_fc,
       group_cols = NULL,
       ranks = "peptide_id",
@@ -258,7 +258,7 @@ testthat::test_that("compute_alpha_diversity validates inputs and ranks", {
   )
 
   testthat::expect_error(
-    compute_alpha_diversity(
+    compute_alpha(
       list(),
       group_cols = NULL,
       ranks = "peptide_id"
@@ -267,13 +267,13 @@ testthat::test_that("compute_alpha_diversity validates inputs and ranks", {
   )
 })
 
-testthat::test_that("compute_alpha_diversity handles data.frame rank mapping", {
+testthat::test_that("compute_alpha handles data.frame rank mapping", {
   info <- .get_ps_small_for_alpha()
   df_small <- dplyr::collect(info$ps$data_long)
 
   df_small$family <- substr(df_small$peptide_id, 1L, 1L)
 
-  out <- compute_alpha_diversity(
+  out <- compute_alpha(
     df_small,
     group_cols = "group",
     ranks = c("peptide_id", "family"),
@@ -283,11 +283,11 @@ testthat::test_that("compute_alpha_diversity handles data.frame rank mapping", {
   testthat::expect_true(all(c("peptide_id", "family") %in% out$group$rank))
 })
 
-testthat::test_that("compute_alpha_diversity `metrics` subset produces only requested columns", {
+testthat::test_that("compute_alpha `metrics` subset produces only requested columns", {
   info <- .get_ps_small_for_alpha()
   df_small <- dplyr::collect(info$ps$data_long)
 
-  out <- compute_alpha_diversity(
+  out <- compute_alpha(
     df_small,
     group_cols = NULL,
     ranks = "peptide_id",
@@ -302,11 +302,11 @@ testthat::test_that("compute_alpha_diversity `metrics` subset produces only requ
   testthat::expect_identical(attr(out, "metrics"), c("richness", "shannon"))
 })
 
-testthat::test_that("compute_alpha_diversity single metric works and stores attribute", {
+testthat::test_that("compute_alpha single metric works and stores attribute", {
   info <- .get_ps_small_for_alpha()
   df_small <- dplyr::collect(info$ps$data_long)
 
-  out <- compute_alpha_diversity(
+  out <- compute_alpha(
     df_small,
     group_cols = "group",
     ranks = "peptide_id",
@@ -318,11 +318,11 @@ testthat::test_that("compute_alpha_diversity single metric works and stores attr
   testthat::expect_identical(attr(out, "metrics"), "richness")
 })
 
-testthat::test_that("compute_alpha_diversity returns pielou_evenness and berger_parker_dominance", {
+testthat::test_that("compute_alpha returns pielou_evenness and berger_parker_dominance", {
   info <- .get_ps_small_for_alpha()
   df_small <- dplyr::collect(info$ps$data_long)
 
-  out <- compute_alpha_diversity(
+  out <- compute_alpha(
     df_small,
     group_cols = NULL,
     ranks = "peptide_id"
@@ -343,7 +343,7 @@ testthat::test_that("pielou_evenness is NA when richness == 1", {
     peptide_id = "p1",
     exist      = 1L
   )
-  out <- compute_alpha_diversity(df_one, group_cols = NULL, ranks = "peptide_id")
+  out <- compute_alpha(df_one, group_cols = NULL, ranks = "peptide_id")
   res <- out$all_samples
   testthat::expect_equal(res$richness, 1L)
   testthat::expect_true(is.na(res$pielou_evenness))
@@ -357,13 +357,13 @@ testthat::test_that("empty presence set gives NA for pielou_evenness and berger_
     peptide_id = c("p1", "p2"),
     exist      = 0L
   )
-  out <- compute_alpha_diversity(df_empty, group_cols = NULL, ranks = "peptide_id")
+  out <- compute_alpha(df_empty, group_cols = NULL, ranks = "peptide_id")
   res <- out$all_samples
   testthat::expect_true(all(is.na(res$pielou_evenness)))
   testthat::expect_true(all(is.na(res$berger_parker_dominance)))
 })
 
-testthat::test_that("compute_alpha_diversity mode = 'abundance' uses raw values", {
+testthat::test_that("compute_alpha mode = 'abundance' uses raw values", {
   df <- tibble::tibble(
     sample_id  = c("s1", "s1", "s2", "s2"),
     peptide_id = c("p1", "p2", "p1", "p2"),
@@ -371,7 +371,7 @@ testthat::test_that("compute_alpha_diversity mode = 'abundance' uses raw values"
     counts_hits = c(100L, 10L, 5L, 5L)
   )
 
-  out <- compute_alpha_diversity(
+  out <- compute_alpha(
     df,
     group_cols = NULL,
     ranks = "peptide_id",
@@ -389,7 +389,7 @@ testthat::test_that("compute_alpha_diversity mode = 'abundance' uses raw values"
   testthat::expect_equal(s2$berger_parker_dominance, 0.5,        tolerance = 1e-9)
 })
 
-testthat::test_that("compute_alpha_diversity mode = 'abundance' with higher-rank aggregation", {
+testthat::test_that("compute_alpha mode = 'abundance' with higher-rank aggregation", {
   df <- tibble::tibble(
     sample_id  = rep("s1", 4),
     peptide_id = c("p1", "p2", "p3", "p4"),
@@ -398,7 +398,7 @@ testthat::test_that("compute_alpha_diversity mode = 'abundance' with higher-rank
     family     = c("A", "A", "B", "B")
   )
 
-  out <- compute_alpha_diversity(
+  out <- compute_alpha(
     df,
     group_cols = NULL,
     ranks = "family",
@@ -418,11 +418,11 @@ testthat::test_that("mode validation: threshold requires threshold scalar", {
     sample_id = "s1", peptide_id = "p1", exist = 1L, fold_change = 2
   )
   testthat::expect_error(
-    compute_alpha_diversity(df, ranks = "peptide_id", mode = "threshold"),
+    compute_alpha(df, ranks = "peptide_id", mode = "threshold"),
     regexp = "(?i)threshold.*scalar"
   )
   testthat::expect_error(
-    compute_alpha_diversity(df, ranks = "peptide_id",
+    compute_alpha(df, ranks = "peptide_id",
                             mode = "threshold", threshold = c(1, 2)),
     regexp = "(?i)threshold.*scalar"
   )
@@ -433,7 +433,7 @@ testthat::test_that("mode validation: abundance requires abundance_col", {
     sample_id = "s1", peptide_id = "p1", exist = 1L, counts_hits = 5L
   )
   testthat::expect_error(
-    compute_alpha_diversity(df, ranks = "peptide_id", mode = "abundance"),
+    compute_alpha(df, ranks = "peptide_id", mode = "abundance"),
     regexp = "(?i)abundance_col.*scalar"
   )
 })
@@ -443,7 +443,7 @@ testthat::test_that("abundance_col not present in data triggers error", {
     sample_id = "s1", peptide_id = "p1", exist = 1L
   )
   testthat::expect_error(
-    compute_alpha_diversity(df, ranks = "peptide_id",
+    compute_alpha(df, ranks = "peptide_id",
                             mode = "abundance", abundance_col = "no_such_col"),
     regexp = "(?i)not found"
   )
@@ -454,12 +454,12 @@ testthat::test_that("binary mode warns when abundance_col or threshold supplied"
     sample_id = "s1", peptide_id = "p1", exist = 1L, counts_hits = 5L
   )
   testthat::expect_warning(
-    compute_alpha_diversity(df, ranks = "peptide_id",
+    compute_alpha(df, ranks = "peptide_id",
                             mode = "binary", abundance_col = "counts_hits"),
     regexp = "(?i)ignored"
   )
   testthat::expect_warning(
-    compute_alpha_diversity(df, ranks = "peptide_id",
+    compute_alpha(df, ranks = "peptide_id",
                             mode = "binary", threshold = 1),
     regexp = "(?i)ignored"
   )
@@ -470,7 +470,7 @@ testthat::test_that("abundance mode warns when threshold supplied", {
     sample_id = "s1", peptide_id = "p1", exist = 1L, counts_hits = 5L
   )
   testthat::expect_warning(
-    compute_alpha_diversity(df, ranks = "peptide_id",
+    compute_alpha(df, ranks = "peptide_id",
                             mode = "abundance", abundance_col = "counts_hits",
                             threshold = 1),
     regexp = "(?i)ignored"
@@ -482,7 +482,7 @@ testthat::test_that("all-NULL ranks aborts with informative error", {
     sample_id = "s1", peptide_id = "p1", exist = 1L
   )
   testthat::expect_error(
-    compute_alpha_diversity(df, ranks = c("not_col_1", "not_col_2")),
+    compute_alpha(df, ranks = c("not_col_1", "not_col_2")),
     regexp = "(?i)no valid ranks"
   )
 })
@@ -492,7 +492,7 @@ testthat::test_that("n_samples attribute is set correctly", {
   df_small <- dplyr::collect(info$ps$data_long)
   n_expected <- dplyr::n_distinct(df_small$sample_id)
 
-  out <- compute_alpha_diversity(df_small, group_cols = NULL, ranks = "peptide_id")
+  out <- compute_alpha(df_small, group_cols = NULL, ranks = "peptide_id")
 
   testthat::expect_identical(attr(out, "n_samples"), n_expected)
 })
@@ -502,7 +502,7 @@ testthat::test_that("custom interaction_sep is reflected in list names and colum
   tp_col <- info$tp_col
   df_small <- dplyr::collect(info$ps$data_long)
 
-  out <- compute_alpha_diversity(
+  out <- compute_alpha(
     df_small,
     group_cols = c("group", tp_col),
     ranks = "peptide_id",
@@ -516,11 +516,11 @@ testthat::test_that("custom interaction_sep is reflected in list names and colum
   testthat::expect_true(all(grepl(":", out[[combo_nm]]$phip_interaction)))
 })
 
-testthat::test_that("compute_alpha_diversity group_cols = NULL on phip_data", {
+testthat::test_that("compute_alpha group_cols = NULL on phip_data", {
   info <- .get_ps_small_for_alpha()
   ps <- info$ps
 
-  out <- compute_alpha_diversity(ps, group_cols = NULL, ranks = "peptide_id")
+  out <- compute_alpha(ps, group_cols = NULL, ranks = "peptide_id")
 
   testthat::expect_s3_class(out, "phip_alpha_diversity")
   testthat::expect_identical(names(out), "all_samples")
@@ -534,11 +534,11 @@ testthat::test_that("shannon_base log2 and log10 give different values than ln",
     exist      = 1L
   )
 
-  out_ln   <- compute_alpha_diversity(df, group_cols = NULL, ranks = "peptide_id",
+  out_ln   <- compute_alpha(df, group_cols = NULL, ranks = "peptide_id",
                                       shannon_base = "ln",    metrics = "shannon")
-  out_log2 <- compute_alpha_diversity(df, group_cols = NULL, ranks = "peptide_id",
+  out_log2 <- compute_alpha(df, group_cols = NULL, ranks = "peptide_id",
                                       shannon_base = "log2",  metrics = "shannon")
-  out_log10 <- compute_alpha_diversity(df, group_cols = NULL, ranks = "peptide_id",
+  out_log10 <- compute_alpha(df, group_cols = NULL, ranks = "peptide_id",
                                        shannon_base = "log10", metrics = "shannon")
 
   h_ln   <- out_ln$all_samples$shannon_diversity

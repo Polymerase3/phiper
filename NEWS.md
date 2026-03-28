@@ -1,6 +1,6 @@
 # phiper 0.3.1
 
-## Changes to `compute_alpha_diversity`
+## Changes to `compute_alpha`
 
 - Added `pielou_evenness` and `berger_parker_dominance` to the output (NA for
   samples with richness ≤ 1 and richness = 0 respectively).
@@ -36,7 +36,7 @@
   `.ph_check_extension`, `.ph_check_null_default`).
 - `get_peptide_meta()` renamed to `get_peptide_library()` throughout, in line
   with the phiperio API.
-- `compute_alpha_diversity`: restored efficient same-connection peptide library
+- `compute_alpha`: restored efficient same-connection peptide library
   handling via `.ph_peplib_on_main()` (DuckDB ATTACH fast path with
   `copy_to()` fallback).
 

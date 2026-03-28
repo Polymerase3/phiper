@@ -80,12 +80,12 @@
 #' @examples
 #' pd <- load_example_data()
 #' # phip_data input: peptide-level diversity by group
-#' out <- compute_alpha_diversity(
+#' out <- compute_alpha(
 #'   pd, group_cols = "group", ranks = "peptide_id"
 #' )
 #'
 #' # include interaction of multiple grouping variables
-#' out2 <- compute_alpha_diversity(
+#' out2 <- compute_alpha(
 #'   pd,
 #'   group_cols = c("group", "timepoint"),
 #'   ranks = c("peptide_id", "family", "genus"),
@@ -93,7 +93,7 @@
 #' )
 #'
 #' # interaction only (returns a single element named "group * timepoint")
-#' out3 <- compute_alpha_diversity(
+#' out3 <- compute_alpha(
 #'   pd,
 #'   group_cols = c("group", "timepoint"),
 #'   ranks = "peptide_id",
@@ -103,19 +103,19 @@
 #'
 #' \dontrun{
 #' # data.frame input: ranks must be columns in the data
-#' out_df <- compute_alpha_diversity(
+#' out_df <- compute_alpha(
 #'   df_long, group_cols = NULL, ranks = "peptide_id"
 #' )
 #' }
 #'
 #' # threshold mode: presence = fold_change > 1.5
-#' out_thr <- compute_alpha_diversity(
+#' out_thr <- compute_alpha(
 #'   pd, group_cols = "group", ranks = "peptide_id",
 #'   mode = "threshold", threshold = 1.5
 #' )
 #'
 #' @export
-compute_alpha_diversity <- function(x,
+compute_alpha <- function(x,
                                     group_cols = NULL,
                                     ranks = "peptide_id",
                                     mode = c("binary", "threshold", "abundance"),
