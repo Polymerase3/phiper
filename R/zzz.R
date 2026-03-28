@@ -7,6 +7,7 @@
 #' @importFrom Rcpp evalCpp
 #' @importFrom RcppParallel setThreadOptions
 #' @importFrom dplyr %>%
+#' @import phiperio
 ## usethis namespace: end
 NULL
 
