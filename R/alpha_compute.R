@@ -154,6 +154,15 @@ compute_alpha <- function(x,
     mode == "threshold" && (is.null(threshold) || !is.numeric(threshold) || length(threshold) != 1L),
     "`threshold` must be a numeric scalar when mode = 'threshold'.", step = "argument validation"
   )
+  .ph_check_cond(
+    mode == "threshold" && is.numeric(threshold) && length(threshold) == 1L && !is.finite(threshold),
+    "`threshold` must be finite (not NA or Inf) when mode = 'threshold'.", step = "argument validation"
+  )
+  .ph_check_cond(
+    mode == "threshold" && !is.null(abundance_col) &&
+      (!is.character(abundance_col) || length(abundance_col) != 1L),
+    "`abundance_col` must be a character scalar when mode = 'threshold'.", step = "argument validation"
+  )
 
   .ph_check_cond(
     mode == "abundance" && (is.null(abundance_col) || !is.character(abundance_col) || length(abundance_col) != 1L),

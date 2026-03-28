@@ -440,6 +440,22 @@ testthat::test_that("mode validation: threshold requires threshold scalar", {
                             mode = "threshold", threshold = c(1, 2)),
     regexp = "(?i)threshold.*scalar"
   )
+  testthat::expect_error(
+    compute_alpha(df, ranks = "peptide_id",
+                  mode = "threshold", threshold = NA_real_),
+    regexp = "(?i)finite"
+  )
+  testthat::expect_error(
+    compute_alpha(df, ranks = "peptide_id",
+                  mode = "threshold", threshold = Inf),
+    regexp = "(?i)finite"
+  )
+  testthat::expect_error(
+    compute_alpha(df, ranks = "peptide_id",
+                  mode = "threshold", threshold = 1.5,
+                  abundance_col = c("fold_change", "fold_change")),
+    regexp = "(?i)abundance_col.*scalar"
+  )
 })
 
 testthat::test_that("mode validation: abundance requires abundance_col", {
