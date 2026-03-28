@@ -226,7 +226,8 @@ plot_enrichment_counts <- function(phip_data,
 #'
 #' @param x a `"phip_alpha_diversity"` list (output of
 #'   [compute_alpha()]) or a single alpha-diversity data frame.
-#' @param metric one of `"richness"`, `"shannon_diversity"`, `"simpson_diversity"`.
+#' @param metric one of `"richness"`, `"shannon_diversity"`, `"simpson_diversity"`,
+#'   `"pielou_evenness"`, or `"berger_parker_dominance"`.
 #' @param group_col name of the grouping column in the alpha table
 #'   (default `"group"` when `group_cols = NULL` in the computation step).
 #' @param rank_col name of the rank column (default `"rank"`).
@@ -251,6 +252,18 @@ plot_enrichment_counts <- function(phip_data,
 #' @param x_labels Optional named character vector mapping x-axis labels.
 #' @param y_range Optional numeric length-2 vector for y-axis limits.
 #' @param x_tickangle Numeric; x-axis label angle in degrees.
+#' @param significance Optional `"phip_alpha_significance"` object from
+#'   [compute_alpha_significance()]; used to add significance brackets when
+#'   `show_significance = TRUE`.
+#' @param show_significance Logical; if `TRUE` and `significance` is supplied,
+#'   add pairwise significance brackets via `ggsignif` (package must be
+#'   installed). Default `FALSE`.
+#' @param sig_p_threshold Numeric; only pairs with `p_adj <= sig_p_threshold`
+#'   receive a bracket. Default `0.05`.
+#' @param sig_step_increase Numeric; vertical step between stacked brackets.
+#'   Passed to [ggsignif::geom_signif()]. Default `0.05`.
+#' @param sig_tip_length Numeric; length of bracket tips. Default `0.01`.
+#' @param ... Reserved for future extensions; ignored.
 #'
 #' @return a `ggplot` object.
 #'
@@ -270,7 +283,8 @@ plot_enrichment_counts <- function(phip_data,
 #' @export
 plot_alpha_diversity <- function(
     x,
-    metric = c("richness", "shannon_diversity", "simpson_diversity"),
+    metric = c("richness", "shannon_diversity", "simpson_diversity",
+               "pielou_evenness", "berger_parker_dominance"),
     group_col = "group",
     rank_col = "rank",
     filter_groups = NULL,
@@ -291,7 +305,13 @@ plot_alpha_diversity <- function(
     x_order      = NULL,
     x_labels     = NULL,
     y_range      = NULL,
-    x_tickangle  = 0
+    x_tickangle  = 0,
+    significance      = NULL,
+    show_significance = FALSE,
+    sig_p_threshold   = 0.05,
+    sig_step_increase = 0.05,
+    sig_tip_length    = 0.01,
+    ...
 ) {
   .data  <- rlang::.data
   metric <- tolower(match.arg(metric))
@@ -356,9 +376,12 @@ plot_alpha_diversity <- function(
       # ---- labels --------------------------------------------------------------
       ylab <- switch(
         need_metric,
-        richness          = "Richness",
-        shannon_diversity = "Shannon diversity",
-        simpson_diversity = "Simpson diversity (1 - \u03A3 p^2)"
+        richness                = "Richness",
+        shannon_diversity       = "Shannon diversity",
+        simpson_diversity       = "Simpson diversity (1 - \u03A3 p^2)",
+        pielou_evenness         = "Pielou's evenness (J')",
+        berger_parker_dominance = "Berger-Parker dominance",
+        need_metric
       )
 
       # ---- small theme helper (non-invasive to your theme_phip) ---------------
@@ -456,6 +479,35 @@ plot_alpha_diversity <- function(
                                      ncol = ncol, scales = facet_scales)
       }
 
+      # significance brackets
+      if (isTRUE(show_significance) && !is.null(significance) &&
+          inherits(significance, "phip_alpha_significance") &&
+          requireNamespace("ggsignif", quietly = TRUE)) {
+        cur_rank <- if (!is.null(rank_col) && rank_col %in% names(alpha_df)) {
+          unique(alpha_df[[rank_col]])[1L]
+        } else {
+          NULL
+        }
+        sig_pw <- significance$pairwise
+        if (!is.null(cur_rank) && "rank" %in% names(sig_pw)) {
+          sig_pw <- dplyr::filter(sig_pw, .data$rank == !!cur_rank)
+        }
+        if ("metric" %in% names(sig_pw)) {
+          sig_pw <- dplyr::filter(sig_pw, .data$metric == !!need_metric)
+        }
+        sig_pw <- dplyr::filter(sig_pw, .data$p_adj <= !!sig_p_threshold)
+        if (nrow(sig_pw) > 0L) {
+          sig_pairs_list <- lapply(seq_len(nrow(sig_pw)), function(i) c(sig_pw$group1[i], sig_pw$group2[i]))
+          p <- p + ggsignif::geom_signif(
+            comparisons   = sig_pairs_list,
+            annotations   = sig_pw$stars,
+            step_increase = sig_step_increase,
+            tip_length    = sig_tip_length,
+            textsize      = 3.5
+          )
+        }
+      }
+
       p
     },
     verbose = .ph_opt("verbose", TRUE)
@@ -489,7 +541,8 @@ plot_alpha_diversity <- function(
 #' @export
 plot_alpha_diversity_interactive <- function(
     x,
-    metric = c("richness", "shannon_diversity", "simpson_diversity"),
+    metric = c("richness", "shannon_diversity", "simpson_diversity",
+               "pielou_evenness", "berger_parker_dominance"),
     group_col = "group",
     rank_col = "rank",
     filter_groups = NULL,
@@ -511,7 +564,8 @@ plot_alpha_diversity_interactive <- function(
     point_alpha  = 0.85,
     text_size    = 12,
     font_family  = "Montserrat",
-    show_grids   = TRUE
+    show_grids   = TRUE,
+    ...
 ) {
   .data  <- rlang::.data
   metric <- tolower(match.arg(metric))
@@ -575,9 +629,12 @@ plot_alpha_diversity_interactive <- function(
       # ------------ helpers ------------
       ylab <- switch(
         need_metric,
-        richness          = "Richness",
-        shannon_diversity = "Shannon diversity",
-        simpson_diversity = "Simpson diversity (1 - \u03A3 p^2)"
+        richness                = "Richness",
+        shannon_diversity       = "Shannon diversity",
+        simpson_diversity       = "Simpson diversity (1 - \u03A3 p^2)",
+        pielou_evenness         = "Pielou's evenness (J')",
+        berger_parker_dominance = "Berger-Parker dominance",
+        need_metric
       )
       .as_rgba <- function(col, alpha = 0.6) {
         if (is.null(col)) return(NULL)

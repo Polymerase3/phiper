@@ -6,7 +6,8 @@
 \usage{
 plot_alpha_diversity(
   x,
-  metric = c("richness", "shannon_diversity", "simpson_diversity"),
+  metric = c("richness", "shannon_diversity", "simpson_diversity", "pielou_evenness",
+    "berger_parker_dominance"),
   group_col = "group",
   rank_col = "rank",
   filter_groups = NULL,
@@ -26,14 +27,21 @@ plot_alpha_diversity(
   x_order = NULL,
   x_labels = NULL,
   y_range = NULL,
-  x_tickangle = 0
+  x_tickangle = 0,
+  significance = NULL,
+  show_significance = FALSE,
+  sig_p_threshold = 0.05,
+  sig_step_increase = 0.05,
+  sig_tip_length = 0.01,
+  ...
 )
 }
 \arguments{
 \item{x}{a \code{"phip_alpha_diversity"} list (output of
 \code{\link[=compute_alpha]{compute_alpha()}}) or a single alpha-diversity data frame.}
 
-\item{metric}{one of \code{"richness"}, \code{"shannon_diversity"}, \code{"simpson_diversity"}.}
+\item{metric}{one of \code{"richness"}, \code{"shannon_diversity"}, \code{"simpson_diversity"},
+\code{"pielou_evenness"}, or \code{"berger_parker_dominance"}.}
 
 \item{group_col}{name of the grouping column in the alpha table
 (default \code{"group"} when \code{group_cols = NULL} in the computation step).}
@@ -78,6 +86,24 @@ default is taken from \code{attr(x, "interaction_sep")} if present, otherwise \c
 \item{y_range}{Optional numeric length-2 vector for y-axis limits.}
 
 \item{x_tickangle}{Numeric; x-axis label angle in degrees.}
+
+\item{significance}{Optional \code{"phip_alpha_significance"} object from
+\code{\link[=compute_alpha_significance]{compute_alpha_significance()}}; used to add significance brackets when
+\code{show_significance = TRUE}.}
+
+\item{show_significance}{Logical; if \code{TRUE} and \code{significance} is supplied,
+add pairwise significance brackets via \code{ggsignif} (package must be
+installed). Default \code{FALSE}.}
+
+\item{sig_p_threshold}{Numeric; only pairs with \code{p_adj <= sig_p_threshold}
+receive a bracket. Default \code{0.05}.}
+
+\item{sig_step_increase}{Numeric; vertical step between stacked brackets.
+Passed to \code{\link[ggsignif:stat_signif]{ggsignif::geom_signif()}}. Default \code{0.05}.}
+
+\item{sig_tip_length}{Numeric; length of bracket tips. Default \code{0.01}.}
+
+\item{...}{Reserved for future extensions; ignored.}
 }
 \value{
 a \code{ggplot} object.

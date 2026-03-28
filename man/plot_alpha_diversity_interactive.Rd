@@ -6,7 +6,8 @@
 \usage{
 plot_alpha_diversity_interactive(
   x,
-  metric = c("richness", "shannon_diversity", "simpson_diversity"),
+  metric = c("richness", "shannon_diversity", "simpson_diversity", "pielou_evenness",
+    "berger_parker_dominance"),
   group_col = "group",
   rank_col = "rank",
   filter_groups = NULL,
@@ -27,14 +28,16 @@ plot_alpha_diversity_interactive(
   point_alpha = 0.85,
   text_size = 12,
   font_family = "Montserrat",
-  show_grids = TRUE
+  show_grids = TRUE,
+  ...
 )
 }
 \arguments{
 \item{x}{a \code{"phip_alpha_diversity"} list (output of
 \code{\link[=compute_alpha]{compute_alpha()}}) or a single alpha-diversity data frame.}
 
-\item{metric}{one of \code{"richness"}, \code{"shannon_diversity"}, \code{"simpson_diversity"}.}
+\item{metric}{one of \code{"richness"}, \code{"shannon_diversity"}, \code{"simpson_diversity"},
+\code{"pielou_evenness"}, or \code{"berger_parker_dominance"}.}
 
 \item{group_col}{name of the grouping column in the alpha table
 (default \code{"group"} when \code{group_cols = NULL} in the computation step).}
@@ -81,6 +84,8 @@ default is taken from \code{attr(x, "interaction_sep")} if present, otherwise \c
 \item{font_family}{Character; font family for plot text.}
 
 \item{show_grids}{Logical; whether to show panel grid lines.}
+
+\item{...}{Reserved for future extensions; ignored.}
 }
 \value{
 A plotly htmlwidget.
