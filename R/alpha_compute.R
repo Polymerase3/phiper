@@ -174,6 +174,8 @@ compute_alpha <- function(x,
   # -- choose data table and mapping provider depending on input class ----------
   if (inherits(x, "phip_data")) {
     tbl <- x$data_long
+    # roster kept on unpruned source so samples with all-zero exist are retained
+    tbl_roster <- tbl
 
     # log + prune full-cross rows (exist == 0) early to reduce volume
     if (isTRUE(x$meta$full_cross) && ("exist" %in% colnames(tbl))) {
@@ -228,6 +230,7 @@ compute_alpha <- function(x,
 
   } else if (is.data.frame(x)) {
     tbl <- x
+    tbl_roster <- tbl
 
     # validate grouping columns if provided
     if (!is.null(group_cols) && length(group_cols)) {
@@ -301,7 +304,8 @@ compute_alpha <- function(x,
             mode = mode, abundance_col = abundance_col,
             threshold = threshold, abundance_agg = abundance_agg,
             metrics = metrics, shannon_base = shannon_base,
-            carry_cols = carry_cols, map_provider = map_provider
+            carry_cols = carry_cols, map_provider = map_provider,
+            tbl_roster = tbl_roster
           )
 
       } else {
@@ -315,7 +319,8 @@ compute_alpha <- function(x,
                 mode = mode, abundance_col = abundance_col,
                 threshold = threshold, abundance_agg = abundance_agg,
                 metrics = metrics, shannon_base = shannon_base,
-                carry_cols = carry_cols, map_provider = map_provider
+                carry_cols = carry_cols, map_provider = map_provider,
+                tbl_roster = tbl_roster
               )
           }
         }
@@ -328,6 +333,10 @@ compute_alpha <- function(x,
             tbl,
             !!rlang::sym(inter_col) := paste(!!!rlang::syms(group_cols), sep = interaction_sep)
           )
+          tbl_roster_inter <- dplyr::mutate(
+            tbl_roster,
+            !!rlang::sym(inter_col) := paste(!!!rlang::syms(group_cols), sep = interaction_sep)
+          )
 
           out_list[[combo_nm]] <-
             .compute_alpha_for_group(
@@ -336,7 +345,8 @@ compute_alpha <- function(x,
               mode = mode, abundance_col = abundance_col,
               threshold = threshold, abundance_agg = abundance_agg,
               metrics = metrics, shannon_base = shannon_base,
-              carry_cols = carry_cols, map_provider = map_provider
+              carry_cols = carry_cols, map_provider = map_provider,
+              tbl_roster = tbl_roster_inter
             )
         }
       }
@@ -355,7 +365,7 @@ compute_alpha <- function(x,
       attr(out_list, "interaction")      <- isTRUE(group_interaction)
       attr(out_list, "interaction_only") <- isTRUE(interaction_only)
       attr(out_list, "interaction_sep")  <- interaction_sep
-      attr(out_list, "n_samples")        <- tbl |>
+      attr(out_list, "n_samples")        <- tbl_roster |>
         dplyr::distinct(sample_id) |>
         dplyr::collect() |>
         nrow()
@@ -395,7 +405,8 @@ compute_alpha <- function(x,
                                      metrics = .alpha_metric_names,
                                      shannon_base = c("ln", "log2", "log10"),
                                      carry_cols = NULL,
-                                     map_provider) {
+                                     map_provider,
+                                     tbl_roster = tbl) {
   .data <- rlang::.data
   mode         <- match.arg(mode)
   abundance_agg <- match.arg(abundance_agg)
@@ -418,12 +429,13 @@ compute_alpha <- function(x,
     bullets = sprintf("missing: %s", paste(.ph_add_quotes(miss, 1L), collapse = ", "))
   )
 
-  # unified cohort column (character)
-  tbl <- if (is.null(group_col)) {
-    dplyr::mutate(tbl, cohort = "All samples")
-  } else {
-    dplyr::mutate(tbl, cohort = .data[[group_col]])
+  # unified cohort column (character) — applied to both tbl and tbl_roster
+  add_cohort <- function(t) {
+    if (is.null(group_col)) dplyr::mutate(t, cohort = "All samples")
+    else                    dplyr::mutate(t, cohort = .data[[group_col]])
   }
+  tbl        <- add_cohort(tbl)
+  tbl_roster <- add_cohort(tbl_roster)
 
   # presence rule / filtering
   pres_tbl <- switch(mode,
@@ -465,10 +477,10 @@ compute_alpha <- function(x,
   # light normalization of column names — defined once, reused per rank
   .norm_names <- function(x) gsub("[^a-z0-9]+", "_", tolower(x))
 
-  # all-samples roster: collected once before the rank loop to avoid repeated
-  # temp-table uploads inside copy = TRUE joins (table is small: ~samples rows)
-  keep_cols <- intersect(c("sample_id", "cohort", carry_cols), colnames(tbl))
-  all_samples_local <- tbl |>
+  # all-samples roster: built from tbl_roster (unpruned) so samples with all
+  # exist==0 are retained; collected once before the rank loop
+  keep_cols <- intersect(c("sample_id", "cohort", carry_cols), colnames(tbl_roster))
+  all_samples_local <- tbl_roster |>
     dplyr::distinct(dplyr::across(dplyr::all_of(keep_cols))) |>
     dplyr::collect()
 

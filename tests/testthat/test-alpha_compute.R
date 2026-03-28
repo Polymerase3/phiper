@@ -83,6 +83,26 @@ testthat::test_that("compute_alpha works on example phip_data with interaction",
   testthat::expect_identical(attr(out, "interaction_sep"), " * ")
 })
 
+testthat::test_that("full_cross: sample with all exist==0 appears with richness=0 and is counted in n_samples", {
+  # Build a minimal phip_data-like scenario using a data.frame with an
+  # all-zero sample to exercise the same roster/pruning logic
+  df <- tibble::tibble(
+    sample_id  = c("s_zero", "s_zero", "s_has", "s_has"),
+    peptide_id = c("p1", "p2", "p1", "p2"),
+    exist      = c(0L, 0L, 1L, 0L)
+  )
+
+  out <- compute_alpha(df, group_cols = NULL, ranks = "peptide_id")
+  res <- out$all_samples
+
+  # s_zero must appear in output
+  testthat::expect_true("s_zero" %in% res$sample_id)
+  # s_zero richness should be 0, not NA
+  testthat::expect_equal(res$richness[res$sample_id == "s_zero"], 0L)
+  # n_samples counts both samples
+  testthat::expect_equal(attr(out, "n_samples"), 2L)
+})
+
 testthat::test_that("compute_alpha handles full_cross pruning and
                     peplib ranks", {
   info <- .get_ps_small_for_alpha()
