@@ -472,6 +472,35 @@ testthat::test_that("significance brackets: no rank col in sig_pw skips rank fil
   testthat::expect_s3_class(p, "ggplot")
 })
 
+testthat::test_that("show_significance=TRUE + multi-rank facet aborts with clear message", {
+  testthat::skip_if_not_installed("ggsignif")
+  df  <- .make_plot_df_multirank()
+  sig <- compute_alpha_significance(df, group_col = "group", metric = "richness")
+  sig$pairwise$p_adj <- 0.001
+  sig$pairwise$stars <- "***"
+  testthat::expect_error(
+    plot_alpha(df, metric = "richness", group_col = "group",
+               facet_by_rank = TRUE,
+               significance = sig, show_significance = TRUE),
+    regexp = "filter_ranks"
+  )
+})
+
+testthat::test_that("significance brackets: mismatched groups are silently dropped", {
+  testthat::skip_if_not_installed("ggsignif")
+  df  <- .make_plot_df()
+  sig <- compute_alpha_significance(df, group_col = "group", metric = "richness")
+  # Inject a pair referencing a group that doesn't exist in the plot
+  sig$pairwise$group2 <- "NonExistentGroup"
+  sig$pairwise$p_adj  <- 0.001
+  sig$pairwise$stars  <- "***"
+  # Should not error — mismatched pair is dropped before geom_signif()
+  p <- plot_alpha(df, metric = "richness", group_col = "group",
+                  significance = sig, show_significance = TRUE,
+                  sig_p_threshold = 0.05)
+  testthat::expect_s3_class(p, "ggplot")
+})
+
 # ===========================================================================
 # plot_enrichment_counts() — uses phip_data
 # ===========================================================================

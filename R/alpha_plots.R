@@ -483,6 +483,22 @@ plot_alpha <- function(
       if (isTRUE(show_significance) && !is.null(significance) &&
           inherits(significance, "phip_alpha_significance") &&
           requireNamespace("ggsignif", quietly = TRUE)) {
+
+        # geom_signif() cannot apply different annotations per facet from a
+        # single layer, so multi-rank faceting with brackets is not supported.
+        is_multi_rank <- isTRUE(facet_by_rank) &&
+          !is.null(rank_col) && rank_col %in% names(alpha_df) &&
+          length(unique(alpha_df[[rank_col]])) > 1L
+        if (is_multi_rank) {
+          .ph_abort(
+            paste0(
+              "`show_significance = TRUE` is not supported when faceting ",
+              "across multiple ranks. ",
+              "Set `filter_ranks` to a single rank or `facet_by_rank = FALSE`."
+            )
+          )
+        }
+
         cur_rank <- if (!is.null(rank_col) && rank_col %in% names(alpha_df)) {
           unique(alpha_df[[rank_col]])[1L]
         } else {
@@ -496,6 +512,14 @@ plot_alpha <- function(
           sig_pw <- dplyr::filter(sig_pw, .data$metric == !!need_metric)
         }
         sig_pw <- dplyr::filter(sig_pw, .data$p_adj <= !!sig_p_threshold)
+
+        # Drop pairs whose groups are not present in the current plot to avoid
+        # runtime errors from a mismatched significance object.
+        sig_pw <- dplyr::filter(
+          sig_pw,
+          .data$group1 %in% group_levels & .data$group2 %in% group_levels
+        )
+
         if (nrow(sig_pw) > 0L) {
           sig_pairs_list <- lapply(seq_len(nrow(sig_pw)), function(i) c(sig_pw$group1[i], sig_pw$group2[i]))
           p <- p + ggsignif::geom_signif(
