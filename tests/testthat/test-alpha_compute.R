@@ -121,8 +121,8 @@ testthat::test_that("compute_alpha_diversity supports interaction_only and
     ps,
     group_cols = c("group", tp_col),
     ranks = "peptide_id",
-    fc_threshold = 1.5,
-    shannon_log = "log10",
+    mode = "threshold", threshold = 1.5,
+    shannon_base = "log10",
     group_interaction = TRUE,
     interaction_only = TRUE
   )
@@ -130,8 +130,8 @@ testthat::test_that("compute_alpha_diversity supports interaction_only and
   combo_nm <- paste(c("group", tp_col), collapse = " * ")
   testthat::expect_identical(names(out), combo_nm)
   testthat::expect_true(isTRUE(attr(out, "interaction_only")))
-  testthat::expect_identical(attr(out, "fc_threshold"), 1.5)
-  testthat::expect_identical(attr(out, "shannon_log"), "log10")
+  testthat::expect_identical(attr(out, "threshold"), 1.5)
+  testthat::expect_identical(attr(out, "shannon_base"), "log10")
 
   res <- out[[combo_nm]]
   testthat::expect_true(all(c("phip_interaction", "richness") %in% names(res)))
@@ -252,7 +252,7 @@ testthat::test_that("compute_alpha_diversity validates inputs and ranks", {
       df_no_fc,
       group_cols = NULL,
       ranks = "peptide_id",
-      fc_threshold = 1.5
+      mode = "threshold", threshold = 1.5
     ),
     regexp = "(?i)missing required columns"
   )

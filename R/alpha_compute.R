@@ -1,8 +1,9 @@
 #' @title Compute alpha diversity per sample / group across ranks
 #'
 #' @description
-#' Computes **richness**, **Shannon**, and **Simpson** diversity per sample and
-#' per grouping variable at one or more **ranks** (columns describing peptides).
+#' Computes **richness**, **Shannon**, **Simpson**, **Pielou's evenness**, and
+#' **Berger-Parker dominance** per sample and per grouping variable at one or
+#' more **ranks** (columns describing peptides).
 #'
 #' @details
 #' ## Ranks
@@ -12,9 +13,17 @@
 #'   lineage/taxa fields).
 #' - For `data.frame`: columns present on your long count table.
 #'
-#' ## Presence rule
-#' - Default: `exist > 0`.
-#' - If `fc_threshold` is numeric, presence is `fold_change > fc_threshold`.
+#' ## Modes
+#' The `mode` parameter controls what `n` represents in every diversity formula:
+#' - `"binary"` (default): presence = `exist > 0`. `n` = count of distinct
+#'   enriched peptides per `(sample, rank_val)`.
+#' - `"threshold"`: presence = `abundance_col > threshold`. `n` = count of
+#'   peptides passing the threshold. `threshold` is required; `abundance_col`
+#'   defaults to `"fold_change"` when `NULL`.
+#' - `"abundance"`: no binarisation. `abundance_col` is required. At
+#'   `rank = "peptide_id"`, `n` = the raw abundance value per peptide. At
+#'   higher ranks, peptides are aggregated within each `(sample, rank_val)`
+#'   using `abundance_agg` (`"mean"`, `"sum"`, or `"max"`).
 #'
 #' ## Grouping, interactions, and interaction-only mode
 #' - `group_cols` can be a character vector; the return value is a **named list**
@@ -32,10 +41,18 @@
 #'   aggregate (non-facetted) table. All columns must be present on the input.
 #' @param ranks Character vector of **exact column names** to aggregate by.
 #'   Typical values: `"peptide_id"` or taxonomy/lineage columns.
-#' @param fc_threshold Numeric or `NULL`. If `NULL` (default), presence is
-#'   `exist > 0`. If numeric, presence is `fold_change > fc_threshold`.
-#' @param shannon_log One of `"ln"`, `"log2"`, `"log10"`; reporting base for the
-#'   Shannon index (via base change from natural log).
+#' @param mode One of `"binary"` (default), `"threshold"`, or `"abundance"`.
+#'   Controls how per-category counts are computed; see **Modes** in Details.
+#' @param abundance_col Character scalar naming the abundance column. Required
+#'   for `mode = "abundance"`; optional for `mode = "threshold"` (defaults to
+#'   `"fold_change"`); ignored for `mode = "binary"`.
+#' @param threshold Numeric scalar. Required for `mode = "threshold"`. Ignored
+#'   for other modes.
+#' @param abundance_agg One of `"mean"` (default), `"sum"`, or `"max"`. Used
+#'   only in `mode = "abundance"` when `rank != "peptide_id"` to aggregate
+#'   peptide-level abundances within each rank category.
+#' @param shannon_base One of `"ln"`, `"log2"`, `"log10"`; reporting base for
+#'   the Shannon index (via base change from natural log).
 #' @param carry_cols Optional character vector of extra columns to carry forward
 #'   into the output if present (e.g. sample metadata in your table).
 #' @param group_interaction Logical; also compute the interaction of all
@@ -43,12 +60,15 @@
 #' @param interaction_only Logical; if `TRUE`, return only the interaction table
 #'   (requires `group_interaction = TRUE` and at least two `group_cols`).
 #' @param interaction_sep Separator used for the interaction label (default `" * "`).
+#' @param shannon_log Deprecated. Use `shannon_base` instead.
 #'
 #' @return A **named list** of data frames with S3 class
 #'   `"phip_alpha_diversity"`. Each element (per `group_col`, plus optional
 #'   interaction or `"all_samples"`) contains: `rank`, `sample_id`, the grouping
 #'   column (or `group` when `group_cols = NULL`), any `carry_cols`, and the
-#'   metrics: `richness`, `shannon_diversity`, `simpson_diversity`.
+#'   metrics: `richness`, `shannon_diversity`, `simpson_diversity`,
+#'   `pielou_evenness` (`NA` when richness <= 1), and
+#'   `berger_parker_dominance` (`NA` when richness == 0).
 #'
 #' @examples
 #' pd <- load_example_data()
@@ -81,23 +101,57 @@
 #' )
 #' }
 #'
-#' # presence via fold-change
-#' out_fc <- compute_alpha_diversity(
-#'   pd, group_cols = "group", ranks = "peptide_id", fc_threshold = 1.5
+#' # threshold mode: presence = fold_change > 1.5
+#' out_thr <- compute_alpha_diversity(
+#'   pd, group_cols = "group", ranks = "peptide_id",
+#'   mode = "threshold", threshold = 1.5
 #' )
 #'
 #' @export
 compute_alpha_diversity <- function(x,
                                     group_cols = NULL,
                                     ranks = "peptide_id",
-                                    fc_threshold = NULL,
-                                    shannon_log = c("ln", "log2", "log10"),
+                                    mode = c("binary", "threshold", "abundance"),
+                                    abundance_col = NULL,
+                                    threshold = NULL,
+                                    abundance_agg = c("mean", "sum", "max"),
+                                    shannon_base = c("ln", "log2", "log10"),
                                     carry_cols = NULL,
                                     group_interaction = FALSE,
                                     interaction_only = FALSE,
-                                    interaction_sep = " * ") {
+                                    interaction_sep = " * ",
+                                    shannon_log = NULL) {
   .data <- rlang::.data
-  shannon_log <- match.arg(shannon_log)
+
+  # -- deprecation shim for shannon_log -----------------------------------------
+  if (!is.null(shannon_log)) {
+    .ph_warn(
+      headline = "`shannon_log` is deprecated; use `shannon_base` instead.",
+      step = "argument check"
+    )
+    shannon_base <- shannon_log
+  }
+  shannon_base <- match.arg(shannon_base)
+  mode         <- match.arg(mode)
+  abundance_agg <- match.arg(abundance_agg)
+
+  # -- mode-specific validation --------------------------------------------------
+  .ph_check_cond(mode == "binary" && !is.null(abundance_col),
+    "`abundance_col` is ignored in mode = 'binary'.", error = FALSE, step = "argument check")
+  .ph_check_cond(mode == "binary" && !is.null(threshold),
+    "`threshold` is ignored in mode = 'binary'.", error = FALSE, step = "argument check")
+
+  .ph_check_cond(
+    mode == "threshold" && (is.null(threshold) || !is.numeric(threshold) || length(threshold) != 1L),
+    "`threshold` must be a numeric scalar when mode = 'threshold'.", step = "argument validation"
+  )
+
+  .ph_check_cond(
+    mode == "abundance" && (is.null(abundance_col) || !is.character(abundance_col) || length(abundance_col) != 1L),
+    "`abundance_col` must be a character scalar when mode = 'abundance'.", step = "argument validation"
+  )
+  .ph_check_cond(mode == "abundance" && !is.null(threshold),
+    "`threshold` is ignored in mode = 'abundance'.", error = FALSE, step = "argument check")
 
   # -- choose data table and mapping provider depending on input class ----------
   if (inherits(x, "phip_data")) {
@@ -119,14 +173,19 @@ compute_alpha_diversity <- function(x,
     # validate grouping columns if provided
     if (!is.null(group_cols) && length(group_cols)) {
       miss_gc <- setdiff(group_cols, colnames(tbl))
-      if (length(miss_gc)) {
-        .ph_abort(
-          headline = "Grouping columns not found in data_long.",
-          step = "input validation",
-          bullets = sprintf("missing: %s", paste(.ph_add_quotes(miss_gc, 1L), collapse = ", "))
-        )
-      }
+      .ph_check_cond(
+        length(miss_gc) > 0L,
+        "Grouping columns not found in data_long.",
+        step = "input validation",
+        bullets = sprintf("missing: %s", paste(.ph_add_quotes(miss_gc, 1L), collapse = ", "))
+      )
     }
+
+    .ph_check_cond(
+      !is.null(abundance_col) && !(abundance_col %in% colnames(tbl)),
+      sprintf("`abundance_col` '%s' not found in data_long.", abundance_col),
+      step = "input validation"
+    )
 
     # attach peplib on main connection and prepare a mapper peptide_id -> rank_val
     peplib_main <- .ph_peplib_on_main(x)
@@ -153,14 +212,19 @@ compute_alpha_diversity <- function(x,
     # validate grouping columns if provided
     if (!is.null(group_cols) && length(group_cols)) {
       miss_gc <- setdiff(group_cols, colnames(tbl))
-      if (length(miss_gc)) {
-        .ph_abort(
-          headline = "Grouping columns not found in data.frame.",
-          step = "input validation",
-          bullets = sprintf("missing: %s", paste(.ph_add_quotes(miss_gc, 1L), collapse = ", "))
-        )
-      }
+      .ph_check_cond(
+        length(miss_gc) > 0L,
+        "Grouping columns not found in data.frame.",
+        step = "input validation",
+        bullets = sprintf("missing: %s", paste(.ph_add_quotes(miss_gc, 1L), collapse = ", "))
+      )
     }
+
+    .ph_check_cond(
+      !is.null(abundance_col) && !(abundance_col %in% colnames(tbl)),
+      sprintf("`abundance_col` '%s' not found in data.frame.", abundance_col),
+      step = "input validation"
+    )
 
     # mapping for data.frame uses columns already in tbl
     map_provider <- function(rank_name) {
@@ -184,18 +248,16 @@ compute_alpha_diversity <- function(x,
   }
 
   # -- enforce interaction_only preconditions -----------------------------------
-  if (isTRUE(interaction_only)) {
-    if (!isTRUE(group_interaction) || is.null(group_cols) || length(group_cols) < 2L) {
-      .ph_abort(
-        headline = "`interaction_only = TRUE` requires an interaction.",
-        step = "argument validation",
-        bullets = c(
-          "set group_interaction = TRUE",
-          "provide at least two grouping columns in group_cols"
-        )
-      )
-    }
-  }
+  .ph_check_cond(
+    isTRUE(interaction_only) &&
+      (!isTRUE(group_interaction) || is.null(group_cols) || length(group_cols) < 2L),
+    "`interaction_only = TRUE` requires an interaction.",
+    step = "argument validation",
+    bullets = c(
+      "set group_interaction = TRUE",
+      "provide at least two grouping columns in group_cols"
+    )
+  )
 
   # -- compute ------------------------------------------------------------------
   .ph_with_timing(
@@ -214,20 +276,23 @@ compute_alpha_diversity <- function(x,
           .compute_alpha_for_group(
             tbl,
             group_col = NULL, ranks = ranks,
-            fc_threshold = fc_threshold, shannon_log = shannon_log,
+            mode = mode, abundance_col = abundance_col,
+            threshold = threshold, abundance_agg = abundance_agg,
+            shannon_base = shannon_base,
             carry_cols = carry_cols, map_provider = map_provider
           )
 
       } else {
         # grouping case
         if (!isTRUE(interaction_only)) {
-          # per-group tables unless interaction-only is requested
           for (gc in group_cols) {
             out_list[[gc]] <-
               .compute_alpha_for_group(
                 tbl,
                 group_col = gc, ranks = ranks,
-                fc_threshold = fc_threshold, shannon_log = shannon_log,
+                mode = mode, abundance_col = abundance_col,
+                threshold = threshold, abundance_agg = abundance_agg,
+                shannon_base = shannon_base,
                 carry_cols = carry_cols, map_provider = map_provider
               )
           }
@@ -242,12 +307,13 @@ compute_alpha_diversity <- function(x,
             !!rlang::sym(inter_col) := paste(!!!rlang::syms(group_cols), sep = interaction_sep)
           )
 
-          # if interaction_only = TRUE -> we only populate this element
           out_list[[combo_nm]] <-
             .compute_alpha_for_group(
               tbl_inter,
               group_col = inter_col, ranks = ranks,
-              fc_threshold = fc_threshold, shannon_log = shannon_log,
+              mode = mode, abundance_col = abundance_col,
+              threshold = threshold, abundance_agg = abundance_agg,
+              shannon_base = shannon_base,
               carry_cols = carry_cols, map_provider = map_provider
             )
         }
@@ -256,11 +322,14 @@ compute_alpha_diversity <- function(x,
       # normalize to tibble + add class/attributes
       out_list <- lapply(out_list, tibble::as_tibble)
       class(out_list) <- c("phip_alpha_diversity", class(out_list))
-      attr(out_list, "group_cols")     <- group_cols
-      attr(out_list, "ranks")          <- unique(ranks)
-      attr(out_list, "fc_threshold")   <- fc_threshold
-      attr(out_list, "shannon_log")    <- shannon_log
-      attr(out_list, "interaction")    <- isTRUE(group_interaction)
+      attr(out_list, "group_cols")       <- group_cols
+      attr(out_list, "ranks")            <- unique(ranks)
+      attr(out_list, "mode")             <- mode
+      attr(out_list, "abundance_col")    <- abundance_col
+      attr(out_list, "threshold")        <- threshold
+      attr(out_list, "abundance_agg")    <- abundance_agg
+      attr(out_list, "shannon_base")     <- shannon_base
+      attr(out_list, "interaction")      <- isTRUE(group_interaction)
       attr(out_list, "interaction_only") <- isTRUE(interaction_only)
       attr(out_list, "interaction_sep")  <- interaction_sep
 
@@ -275,9 +344,9 @@ compute_alpha_diversity <- function(x,
 # ------------------------------------------------------------------------------
 
 # natural->base-b change factor for shannon (H_b = H_ln / ln(b))
-.phip_ln_base <- function(shannon_log = c("ln", "log2", "log10")) {
-  shannon_log <- match.arg(shannon_log)
-  switch(shannon_log,
+.phip_ln_base <- function(shannon_base = c("ln", "log2", "log10")) {
+  shannon_base <- match.arg(shannon_base)
+  switch(shannon_base,
     ln    = 1.0,
     log2  = log(2),
     log10 = log(10)
@@ -286,32 +355,40 @@ compute_alpha_diversity <- function(x,
 
 # engine used by the exported function
 # - tbl: counts table (lazy or local) containing sample_id, peptide_id, exist,
-#        optional fold_change, and an optional single "group_col"
+#        optional fold_change/abundance_col, and an optional single "group_col"
 # - map_provider(rank_name): returns a two-column table (peptide_id, rank_val),
 #        lazy on same con (phip_data) or local tibble (data.frame); NULL -> skip
 .compute_alpha_for_group <- function(tbl,
                                      group_col = NULL,
                                      ranks,
-                                     fc_threshold = NULL,
-                                     shannon_log = c("ln", "log2", "log10"),
+                                     mode = c("binary", "threshold", "abundance"),
+                                     abundance_col = NULL,
+                                     threshold = NULL,
+                                     abundance_agg = c("mean", "sum", "max"),
+                                     shannon_base = c("ln", "log2", "log10"),
                                      carry_cols = NULL,
                                      map_provider) {
   .data <- rlang::.data
-  shannon_log <- match.arg(shannon_log)
-  ln_base <- .phip_ln_base(shannon_log)
+  mode         <- match.arg(mode)
+  abundance_agg <- match.arg(abundance_agg)
+  shannon_base <- match.arg(shannon_base)
+  ln_base      <- .phip_ln_base(shannon_base)
 
   # validate required columns
   need <- c("sample_id", "peptide_id", "exist")
-  if (!is.null(fc_threshold)) need <- union(need, "fold_change")
-  if (!is.null(group_col))    need <- union(need, group_col)
-  miss <- setdiff(need, colnames(tbl))
-  if (length(miss)) {
-    .ph_abort(
-      headline = "Missing required columns.",
-      step = "input validation",
-      bullets = sprintf("missing: %s", paste(.ph_add_quotes(miss, 1L), collapse = ", "))
-    )
+  if (mode == "threshold") {
+    need <- union(need, abundance_col %||% "fold_change")
+  } else if (mode == "abundance") {
+    need <- union(need, abundance_col)
   }
+  if (!is.null(group_col)) need <- union(need, group_col)
+  miss <- setdiff(need, colnames(tbl))
+  .ph_check_cond(
+    length(miss) > 0L,
+    "Missing required columns.",
+    step = "input validation",
+    bullets = sprintf("missing: %s", paste(.ph_add_quotes(miss, 1L), collapse = ", "))
+  )
 
   # unified cohort column (character)
   tbl <- if (is.null(group_col)) {
@@ -320,25 +397,42 @@ compute_alpha_diversity <- function(x,
     dplyr::mutate(tbl, cohort = .data[[group_col]])
   }
 
-  # presence rule
-  pres_tbl <- if (is.null(fc_threshold)) {
-    dplyr::filter(tbl, .data$exist > 0)
-  } else {
-    dplyr::filter(tbl, .data$fold_change > !!fc_threshold)
-  }
+  # presence rule / filtering
+  pres_tbl <- switch(mode,
+    binary = dplyr::filter(tbl, .data$exist > 0),
+    threshold = {
+      col <- abundance_col %||% "fold_change"
+      dplyr::filter(tbl, .data[[col]] > !!threshold)
+    },
+    abundance = dplyr::filter(tbl, .data[[abundance_col]] > 0)
+  )
 
-  # distinct present tuples
-  pres_min <- pres_tbl |>
-    dplyr::transmute(sample_id = .data$sample_id,
-                     peptide_id = .data$peptide_id,
-                     cohort = .data$cohort) |>
-    dplyr::distinct()
+  # distinct present tuples (carry .abundance for abundance mode)
+  pres_min <- if (mode == "abundance") {
+    pres_tbl |>
+      dplyr::transmute(
+        sample_id  = .data$sample_id,
+        peptide_id = .data$peptide_id,
+        cohort     = .data$cohort,
+        .abundance = .data[[abundance_col]]
+      ) |>
+      dplyr::distinct()
+  } else {
+    pres_tbl |>
+      dplyr::transmute(
+        sample_id  = .data$sample_id,
+        peptide_id = .data$peptide_id,
+        cohort     = .data$cohort
+      ) |>
+      dplyr::distinct()
+  }
 
   # validate ranks
   ranks <- unique(ranks)
-  if (!length(ranks) || !is.character(ranks)) {
-    .ph_abort("`ranks` must be a non-empty character vector of exact column names.")
-  }
+  .ph_check_cond(
+    !length(ranks) || !is.character(ranks),
+    "`ranks` must be a non-empty character vector of exact column names."
+  )
 
   # light normalization of column names — defined once, reused per rank
   .norm_names <- function(x) gsub("[^a-z0-9]+", "_", tolower(x))
@@ -348,12 +442,20 @@ compute_alpha_diversity <- function(x,
   all_samples_lazy <- tbl |>
     dplyr::distinct(dplyr::across(dplyr::all_of(keep_cols)))
 
+  # aggregation function for abundance mode at higher ranks
+  agg_fn <- switch(abundance_agg, sum = sum, mean = mean, max = max)
+
   # compute per-rank
   compute_one_rank <- function(rank_name) {
     # map peptide_id -> rank_val; for "peptide_id" it's identity
     if (identical(rank_name, "peptide_id")) {
-      ranked <- pres_min |>
-        dplyr::transmute(sample_id, cohort, rank_val = peptide_id)
+      ranked <- if (mode == "abundance") {
+        pres_min |>
+          dplyr::transmute(sample_id, cohort, rank_val = peptide_id, .abundance)
+      } else {
+        pres_min |>
+          dplyr::transmute(sample_id, cohort, rank_val = peptide_id)
+      }
     } else {
       map_tbl <- map_provider(rank_name)
       if (is.null(map_tbl)) return(NULL)
@@ -363,9 +465,15 @@ compute_alpha_diversity <- function(x,
     }
 
     # counts per (sample, cohort, rank_val)
-    per_cat <- ranked |>
-      dplyr::group_by(sample_id, cohort, rank_val) |>
-      dplyr::summarise(n = dplyr::n(), .groups = "drop")
+    per_cat <- if (mode != "abundance") {
+      ranked |>
+        dplyr::group_by(sample_id, cohort, rank_val) |>
+        dplyr::summarise(n = dplyr::n(), .groups = "drop")
+    } else {
+      ranked |>
+        dplyr::group_by(sample_id, cohort, rank_val) |>
+        dplyr::summarise(n = agg_fn(.data$.abundance, na.rm = TRUE), .groups = "drop")
+    }
 
     pc <- dplyr::collect(per_cat)
 
@@ -374,17 +482,29 @@ compute_alpha_diversity <- function(x,
       by_sample <- pc |>
         dplyr::group_by(sample_id, cohort) |>
         dplyr::summarise(
-          richness = dplyr::n_distinct(rank_val),
-          H_ln = { p <- n / sum(n); -sum(p * log(p)) },
-          simpson = { p <- n / sum(n); 1 - sum(p * p) },
+          richness      = dplyr::n_distinct(rank_val),
+          H_ln          = { p <- n / sum(n); -sum(p * log(p)) },
+          simpson       = { p <- n / sum(n); 1 - sum(p * p) },
+          evenness      = { S <- dplyr::n_distinct(rank_val)
+                            H <- { p <- n / sum(n); -sum(p * log(p)) }
+                            if (S > 1L) H / log(S) else NA_real_ },
+          berger_parker = max(n) / sum(n),
           .groups = "drop"
         ) |>
-        dplyr::mutate(shannon = H_ln / ln_base) |>
+        dplyr::mutate(
+          shannon  = H_ln / ln_base,
+          evenness = dplyr::if_else(is.na(evenness), NA_real_, evenness / ln_base)
+        ) |>
         dplyr::select(-H_ln)
     } else {
       by_sample <- tibble::tibble(
-        sample_id = character(0), cohort = character(0),
-        richness = integer(0), shannon = numeric(0), simpson = numeric(0)
+        sample_id     = character(0),
+        cohort        = character(0),
+        richness      = integer(0),
+        shannon       = numeric(0),
+        simpson       = numeric(0),
+        evenness      = numeric(0),
+        berger_parker = numeric(0)
       )
     }
 
@@ -394,9 +514,11 @@ compute_alpha_diversity <- function(x,
       dplyr::left_join(by_sample, by = c("sample_id", "cohort"), copy = TRUE) |>
       dplyr::collect() |>
       dplyr::mutate(
-        richness = tidyr::replace_na(richness, 0L),
-        shannon  = tidyr::replace_na(shannon, 0),
-        simpson  = tidyr::replace_na(simpson, 0)
+        richness      = tidyr::replace_na(richness, 0L),
+        shannon       = tidyr::replace_na(shannon, 0),
+        simpson       = tidyr::replace_na(simpson, 0),
+        evenness      = evenness,
+        berger_parker = berger_parker
       ) |>
       dplyr::mutate(rank = rank_name, .before = 1)
 
@@ -404,8 +526,10 @@ compute_alpha_diversity <- function(x,
 
     out |>
       dplyr::rename(
-        shannon_diversity = shannon,
-        simpson_diversity = simpson
+        shannon_diversity       = shannon,
+        simpson_diversity       = simpson,
+        pielou_evenness         = evenness,
+        berger_parker_dominance = berger_parker
       )
   }
 
