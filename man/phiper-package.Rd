@@ -12,6 +12,7 @@ Provides an end-to-end toolkit for Phage ImmunoPrecipitation- sequencing (PhIP-s
 Useful links:
 \itemize{
   \item \url{https://github.com/Polymerase3/phiper}
+  \item \url{https://polymerase3.github.io/phiper/}
   \item Report bugs at \url{https://github.com/Polymerase3/phiper/issues}
 }
 

@@ -12,18 +12,18 @@
   hit_file = NULL,
   timepoints_file = NULL,
   extra_cols = NULL,
-  comparisons_file = NULL,
   output_dir = NULL,
   data_long_path = NULL,
   peptide_library = TRUE,
   n_cores = NULL,
   materialise_table = NULL,
   auto_expand = NULL,
+  sample_id_from_filenames = NULL,
   config_yaml = NULL
 )
 }
 \arguments{
-\item{exist_file, fold_change_file, input_file, hit_file, samples_file, timepoints_file, comparisons_file}{Character paths (relative or absolute) to the respective CSV/Parquet inputs.
+\item{exist_file, fold_change_file, input_file, hit_file, samples_file, timepoints_file}{Character paths (relative or absolute) to the respective CSV/Parquet inputs.
 \code{NULL} means "not supplied".}
 
 \item{extra_cols}{Character vector of extra metadata columns to keep; may be

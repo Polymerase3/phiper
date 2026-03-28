@@ -40,10 +40,43 @@ Each PR should include the appropriate version bump in `DESCRIPTION` and a match
 
 ### Code style
 
-*   New code should follow the tidyverse [style guide](https://style.tidyverse.org). 
-    You can use [Air](https://posit-dev.github.io/air/) to apply this style, but please don't restyle code that has nothing to do with your PR.  
+*   New code should follow the tidyverse [style guide](https://style.tidyverse.org).
+    You can use [Air](https://posit-dev.github.io/air/) to apply this style, but please don't restyle code that has nothing to do with your PR.
 
-*  We use [roxygen2](https://cran.r-project.org/package=roxygen2), with [Markdown syntax](https://cran.r-project.org/web/packages/roxygen2/vignettes/rd-formatting.html), for documentation.  
+*  We use [roxygen2](https://cran.r-project.org/package=roxygen2), with [Markdown syntax](https://cran.r-project.org/web/packages/roxygen2/vignettes/rd-formatting.html), for documentation.
 
-*  We use [testthat](https://cran.r-project.org/package=testthat) for unit tests. 
-   Contributions with test cases included are easier to accept.  
+*  We use [testthat](https://cran.r-project.org/package=testthat) for unit tests.
+   Contributions with test cases included are easier to accept.
+
+### Naming conventions
+
+#### Source files (`R/`)
+
+Each analysis domain is split across exactly two files:
+
+| File | Purpose |
+|---|---|
+| `<domain>_compute.R` | Statistical computation functions |
+| `<domain>_plots.R` | Visualisation functions |
+
+Current domains: `alpha`, `beta`, `delta`, `pop`. Shared helpers live in
+`utils.R`, `plot_utils.R`, and `zzz.R`.
+
+Test files mirror source files: `tests/testthat/test-<domain>_compute.R` and
+`test-<domain>_plots.R`.
+
+#### Function names
+
+| Kind | Convention | Example |
+|---|---|---|
+| Exported user-facing | `snake_case` verb + noun | `compute_alpha_diversity`, `plot_enrichment_counts` |
+| Internal helper (phiper) | `.ph_<noun>` | `.ph_peplib_on_main` |
+| Internal helper (phiperio, copied) | `.ph_<noun>` | `.ph_abort`, `.ph_with_timing` |
+| S3 method | `<generic>.<class>` | `print.phip_data` |
+
+Key rules:
+- All internal helpers must start with `.ph_` — this makes them easy to grep
+  and clearly distinguishes them from exported functions.
+- Exported functions never start with a dot.
+- Avoid `phip_` prefixes for new exports; that convention was retired when the
+  phiperio split happened (0.3.0). Use plain descriptive names instead.

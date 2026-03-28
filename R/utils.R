@@ -1,27 +1,42 @@
 # ==============================================================================
-# phiper logging utilities (ASCII only; based on the chk and cli packages)
+# phiperio logging utilities (ASCII only; based on the chk and cli packages)
 # ==============================================================================
 # ---- user-tweakable globals (set via options() in .onLoad or zzz.R) ----------
 # options(
-#   phiper.log.verbose   = TRUE,
-#   phiper.log.time_fmt  = "%Y-%m-%d %H:%M:%S",
-#   phiper.log.width     = getOption("width", 80)
+#   phiperio.log.verbose   = TRUE,
+#   phiperio.log.time_fmt  = "%Y-%m-%d %H:%M:%S",
+#   phiperio.log.width     = getOption("width", 80)
 # )
 
+# ==============================================================================
+# LOGGING: OPTIONS + FORMATTING
+# ==============================================================================
+#' @title Internal helper: .ph_opt
+#' @description Read a phiperio logging option with a fallback default.
+#' @keywords internal
 .ph_opt <- function(key,
                     default = NULL) {
-  getOption(paste0("phiper.log.", key), default)
+  getOption(paste0("phiperio.log.", key), default)
 }
 
+#' @title Internal helper: .ph_now
+#' @description Return the current time formatted for log prefixes.
+#' @keywords internal
 .ph_now <- function() {
   format(Sys.time(), .ph_opt("time_fmt", "%H:%M:%S"))
 }
 
+#' @title Internal helper: .ph_base_prefix
+#' @description Build the base log prefix for a given level label.
+#' @keywords internal
 .ph_base_prefix <- function(level = "INFO") {
   sprintf("[%s] %-5s ", .ph_now(), toupper(level)[1])
 }
 
 # wraps the text nicely, regardless of the console width
+#' @title Internal helper: .ph_wrap
+#' @description Wrap text to the configured width, preserving the prefix.
+#' @keywords internal
 .ph_wrap <- function(text,
                      prefix) {
   w <- .ph_opt("width", getOption("width", 80))
@@ -35,6 +50,9 @@
 # Compose multi-depth message lines
 # currently the maximal supported log depth is 3:
 # headline (required), step (optional), bullets (optional chr vec)
+#' @title Internal helper: .ph_compose_lines
+#' @description Compose multi-line log output with headline, step, and bullets.
+#' @keywords internal
 .ph_compose_lines <- function(level,
                               headline,
                               step = NULL,
@@ -59,8 +77,13 @@
   out
 }
 
-# ---- Public logging helpers --------------------------------------------------
+# ==============================================================================
+# LOGGING: EMITTERS
+# ==============================================================================
 ## monitor task progress
+#' @title Internal helper: .ph_log_info
+#' @description Emit an INFO log block if verbose logging is enabled.
+#' @keywords internal
 .ph_log_info <- function(headline,
                          step = NULL,
                          bullets = NULL,
@@ -74,6 +97,9 @@
 }
 
 ## monitor task progression
+#' @title Internal helper: .ph_log_ok
+#' @description Emit an OK log block if verbose logging is enabled.
+#' @keywords internal
 .ph_log_ok <- function(headline,
                        step = NULL,
                        bullets = NULL,
@@ -87,6 +113,9 @@
 }
 
 # Warnings/errors via chk, but formatted to match the style of the logger
+#' @title Internal helper: .ph_warn
+#' @description Emit a WARN log block using chk when available.
+#' @keywords internal
 .ph_warn <- function(headline, step = NULL, bullets = NULL, ...) {
   lines <- .ph_compose_lines("WARN", headline, step, bullets)
   msg <- paste(lines, collapse = "\n")
@@ -98,6 +127,9 @@
   invisible(lines)
 }
 
+#' @title Internal helper: .ph_abort
+#' @description Emit an ERROR log block and abort execution.
+#' @keywords internal
 .ph_abort <- function(headline, step = NULL, bullets = NULL, ...) {
   lines <- .ph_compose_lines("ERROR", headline, step, bullets)
   msg <- paste(lines, collapse = "\n")
@@ -108,47 +140,23 @@
   }
 }
 
-# ---- Back-compaibility (vecmatch) --------------------------------------------
-# drop-in replacement for older .msg() funct
-.msg <- function(verbose, ...) {
-  if (isTRUE(verbose)) .ph_log_info(headline = paste(...))
-  invisible(NULL)
-}
-
-# original conditional helper to not break down older code
-# upgraded to the unified phiper style
-.chk_cond <- function(condition,
-                      error_message,
-                      error = TRUE,
-                      step = NULL,
-                      bullets = NULL,
-                      ...) {
-  # log nopthing
-  if (!isTRUE(condition)) {
-    return(invisible(FALSE))
-  }
-
-  # print error and abort exec
-  if (isTRUE(error)) {
-    .ph_abort(headline = error_message, step = step, bullets = bullets, ...)
-  } else {
-    # print warning and go on
-    .ph_warn(headline = error_message, step = step, bullets = bullets, ...)
-  }
-  invisible(TRUE)
-}
-
-# ---- timing helper for sections ----------------------------------------------
-## many tasks in phiper can be long/take a while; it was important to have the
+# ==============================================================================
+# LOGGING: TIMING
+# ==============================================================================
+## many tasks in phiperio can be long/take a while; it was important to have the
 ## infos on timing - this func wraps a task to get a start/end pair in the same
 ## style
+#' @title Internal helper: .ph_with_timing
+#' @description Conditionally raise a formatted warning or error.
+#' @keywords internal
 .ph_with_timing <- function(headline,
                             step = NULL,
                             bullets = NULL,
                             expr,
                             verbose = .ph_opt("verbose", TRUE)) {
   t0 <- Sys.time()
-  .ph_log_info(headline = headline, step = step, bullets = bullets, verbose = verbose)
+  .ph_log_info(headline = headline, step = step, bullets = bullets,
+               verbose = verbose)
 
   res <- tryCatch(
     {
@@ -168,16 +176,54 @@
 }
 
 # ==============================================================================
-# phiper checks + additional helpers (ASCII-only, unified with phiper logger)
-# it depends on: .ph_abort(), .ph_warn(), .chk_cond(), word_list(), add_quotes()
+# VALIDATION / CHECKS (unified with phiperio logger)
 # ==============================================================================
 
-# -- check if filename has given extension ------------------------------------
+# original conditional helper to not break down older code
+# upgraded to the unified phiperio style
+#' @title Internal helper: .ph_check_cond
+#' @description Execute an expression with start/stop timing logs.
+#' @keywords internal
+.ph_check_cond <- function(condition,
+                           error_message,
+                           error = TRUE,
+                           step = NULL,
+                           bullets = NULL,
+                           ...) {
+  # log nopthing
+  if (!isTRUE(condition)) {
+    return(invisible(FALSE))
+  }
+
+  # print error and abort exec
+  if (isTRUE(error)) {
+    .ph_abort(headline = error_message, step = step, bullets = bullets, ...)
+  } else {
+    # print warning and go on
+    .ph_warn(headline = error_message, step = step, bullets = bullets, ...)
+  }
+  invisible(TRUE)
+}
+
+#' @title Internal helper: .ph_check_pd
+#' @description Validate that an object is a phip_data instance.
+#' @keywords internal
+.ph_check_pd <- function(obj) {
+  .ph_check_cond(
+    !inherits(obj, "phip_data"),
+    "`x` must be a <phip_data> object."
+  )
+}
+
+# -- check if filename has given extension -------------------------------------
 # comes in handy when loading .csv or .parquet; provide filename and vector of
 # extensions to check (eg c(".csv", ".parquet"))
-.chk_extension <- function(name,
-                           x_name,
-                           ext_vec) {
+#' @title Internal helper: .ph_check_extension
+#' @description Validate a filename extension against an allowed set.
+#' @keywords internal
+.ph_check_extension <- function(name,
+                                x_name,
+                                ext_vec) {
   if (is.null(ext_vec) || !length(ext_vec)) {
     return(invisible(TRUE))
   }
@@ -201,10 +247,10 @@
       headline = sprintf("Invalid file extension for `%s`.", x_name),
       step = sprintf("validating path: %s", name),
       bullets = c(
-        sprintf("got: %s", add_quotes(got, 2L)),
+        sprintf("got: %s", .ph_add_quotes(got, 2L)),
         sprintf(
           "allowed: %s",
-          word_list(add_quotes(norm(ext_vec), 2L), and_or = "or")
+          .ph_word_list(.ph_add_quotes(norm(ext_vec), 2L), and_or = "or")
         )
       )
     )
@@ -213,15 +259,18 @@
 }
 
 # -- check if NULL and replace with default when TRUE (warn in unified style) --
-.chk_null_default <- function(x,
-                              x_name,
-                              method,
-                              default) {
+#' @title Internal helper: .ph_check_null_default
+#' @description Replace NULL with a default, logging a warning.
+#' @keywords internal
+.ph_check_null_default <- function(x,
+                                   x_name,
+                                   method,
+                                   default) {
   if (is.null(x)) {
     # format the default for print
     fmt <- function(v) {
       if (is.character(v) && length(v) == 1L) {
-        return(add_quotes(v, 2L))
+        return(.ph_add_quotes(v, 2L))
       }
       if (is.atomic(v) && length(v) == 1L) {
         return(as.character(v))
@@ -232,7 +281,7 @@
     # generate warning and the replace
     .ph_warn(
       headline = sprintf("Argument `%s` missing; using default.", x_name),
-      step     = sprintf("method: %s", add_quotes(method, 2L)),
+      step     = sprintf("method: %s", .ph_add_quotes(method, 2L)),
       bullets  = sprintf("default: %s", fmt(default))
     )
     x <- default
@@ -241,12 +290,15 @@
 }
 
 # -- validate path to file -----------------------------------------------------
-.chk_path <- function(path,
-                      arg_name,
-                      extension,
-                      is_dir = FALSE) {
+#' @title Internal helper: .ph_check_path
+#' @description Validate a file or directory path (and optional extension).
+#' @keywords internal
+.ph_check_path <- function(path,
+                           arg_name,
+                           extension,
+                           is_dir = FALSE) {
   ## error when path not a string
-  .chk_cond(
+  .ph_check_cond(
     !chk::vld_string(path),
     sprintf("`%s` must be a character scalar.", arg_name),
     step    = "path validation",
@@ -255,14 +307,14 @@
 
   ## error when path does not exist
   if (is_dir) {
-    .chk_cond(
+    .ph_check_cond(
       !chk::vld_dir(path),
       sprintf("Folder for `%s` does not exist.", arg_name),
       step    = "path validation",
       bullets = sprintf("path: %s", path)
     )
   } else {
-    .chk_cond(
+    .ph_check_cond(
       !chk::vld_file(path),
       sprintf("File for `%s` does not exist.", arg_name),
       step    = "path validation",
@@ -272,15 +324,16 @@
 
   # optionally extension check if provided
   if (!missing(extension) && length(extension)) {
-      ## error when both is_dir and extension are given
-      .chk_cond(
-        is_dir,
-        sprintf("Can't check if `%s` is both a valid direcotry and has a certain extension", arg_name),
-        step    = "path validation",
-        bullets = sprintf("path: %s", path)
-      )
+    ## error when both is_dir and extension are given
+    .ph_check_cond(
+      is_dir,
+      sprintf("Can't check if `%s` is both a valid direcotry and has a
+                certain extension", arg_name),
+      step    = "path validation",
+      bullets = sprintf("path: %s", path)
+    )
 
-    .chk_extension(
+    .ph_check_extension(
       path,
       arg_name,
       extension
@@ -290,12 +343,19 @@
   invisible(TRUE)
 }
 
+# ==============================================================================
+# STRING FORMATTING
+# ==============================================================================
 # -- clean wordlists for message generation ------------------------------------
 # for multiple arguments/values
-word_list <- function(word_list = NULL,
-                      and_or = "and",
-                      is_are = FALSE,
-                      quotes = FALSE) {
+#' @title Internal helper: .ph_word_list
+#' @description Build a human-readable list from a character vector, with
+#'   optional quoting and conjunction handling.
+#' @keywords internal
+.ph_word_list <- function(word_list = NULL,
+                          and_or = "and",
+                          is_are = FALSE,
+                          quotes = FALSE) {
   # Make "a and b" / "a, b, and c"; optionally append "is/are".
   word_list <- setdiff(word_list, c(NA_character_, ""))
 
@@ -305,7 +365,7 @@ word_list <- function(word_list = NULL,
     return(out)
   }
 
-  word_list <- add_quotes(word_list, quotes)
+  word_list <- .ph_add_quotes(word_list, quotes)
 
   len_wl <- length(word_list)
 
@@ -339,8 +399,12 @@ word_list <- function(word_list = NULL,
 # -- quoting helper (unified error style) --------------------------------------
 # define number of quotes you want --> for printing logs/messages/warnings
 # or define the quotes itself as a string
-add_quotes <- function(x,
-                       quotes = 2L) {
+#' @title Internal helper: .ph_add_quotes
+#' @description Wrap character values in quotes for log output. Supports
+#'   FALSE/TRUE, 0/1/2, or a single-character quote string.
+#' @keywords internal
+.ph_add_quotes <- function(x,
+                           quotes = 2L) {
   if (isFALSE(quotes)) {
     return(x)
   }
@@ -353,7 +417,7 @@ add_quotes <- function(x,
   if (!chk::vld_count(quotes) || quotes > 2) {
     .ph_abort(
       headline = "Invalid `quotes` argument.",
-      step = "formatting add_quotes()",
+      step = "formatting .ph_add_quotes()",
       bullets = c(
         "allowed: FALSE, TRUE, 0, 1, 2, or a single-character string",
         sprintf("got class: %s", paste(class(quotes), collapse = "/"))
@@ -370,6 +434,9 @@ add_quotes <- function(x,
   sprintf('"%s"', x)
 }
 
+# ==============================================================================
+# OPERATORS
+# ==============================================================================
 # -- not-in operator -----------------------------------------------------------
 `%nin%` <- function(x, inx) {
   !(x %in% inx)
@@ -380,178 +447,8 @@ add_quotes <- function(x,
 
 
 # ==============================================================================
-# database helpers
+# PATH RESOLUTION (FAST-FAIL)
 # ==============================================================================
-# ensure peptide_library is queryable from the SAME connection as data_long
-.ensure_peplib_on_main <- function(x, schema_alias = "peplib") {
-  main_con <- dbplyr::remote_con(x$data_long)
-  pep_con <- if (!is.null(x$meta$peptide_con)) {
-    x$meta$peptide_con
-  } else {
-    dbplyr::remote_con(x$peptide_library)
-  }
-
-  # try zero-copy ATTACH when both are DuckDB
-  if (inherits(main_con, "duckdb_connection") &&
-    inherits(pep_con, "duckdb_connection")) {
-    pep_db_path <- try(pep_con@driver@dbdir, silent = TRUE)
-    if (!inherits(pep_db_path, "try-error") &&
-      is.character(pep_db_path) &&
-      nzchar(pep_db_path)) {
-      # ATTACH (ignore "already attached")
-      try(
-        DBI::dbExecute(
-          main_con,
-          sprintf(
-            "ATTACH '%s' AS %s;",
-            pep_db_path,
-            schema_alias
-          )
-        ),
-        silent = TRUE
-      )
-
-      # Detect base table name (fallback: "peptide_meta")
-      base_name <- tryCatch(
-        {
-          nm <- dbplyr::remote_name(x$peptide_library)
-          if (is.null(nm) || !nzchar(nm)) {
-            "peptide_meta"
-          } else {
-            sub("^.*\\.", "", nm)
-          }
-        },
-        error = function(e) "peptide_meta"
-      )
-
-      # Try both two-part and three-part references
-      try_tbl <- function(sql_expr) {
-        tryCatch(dplyr::tbl(main_con, dbplyr::sql(sql_expr)),
-          error = function(e) NULL
-        )
-      }
-
-      candidates <- c(
-        sprintf("SELECT * FROM %s.%s", schema_alias, base_name),
-        sprintf("SELECT * FROM %s.main.%s", schema_alias, base_name)
-      )
-
-      for (q in candidates) {
-        out <- try_tbl(q)
-        if (!is.null(out)) {
-          return(out)
-        }
-      }
-      # If both fail, we’ll fall through to the copy_to() fallback below.
-    }
-  }
-
-  # Fallback: copy peptidelib into main_con as a TEMP table
-  peplib_local <- dplyr::collect(x$peptide_library)
-  tmp_name <- paste0("peptide_meta_tmp_", as.integer(Sys.time()))
-  dplyr::copy_to(main_con, peplib_local, tmp_name,
-    temporary = TRUE,
-    overwrite = TRUE
-  )
-}
-
-#' @title Path to example PhIP-Seq datasets shipped with phiper
-#'
-#' @param name Character scalar. Name of the example dataset.
-#'   Currently supported: `"phip_mixture"`.
-#'
-#' @return A character scalar with an absolute path to the file.
-#'
-#' @examples
-#' sim_path <- phip_example_path("phip_mixture")
-#' # phip_obj <- phip_convert(sim_path)
-#'
-#' @export
-phip_example_path <- function(name = c("phip_mixture")) {
-  name <- match.arg(name)
-  fname <- switch(
-    name,
-    phip_mixture = "phip_mixture.parquet"
-  )
-
-  path <- system.file("extdata", fname, package = "phiper")
-  if (path == "") {
-    stop("File ", fname, " not found in extdata/", call. = FALSE)
-  }
-  path
-}
-
-#' @title Load Example PhIP-Seq Dataset as <phip_data>
-#'
-#' @description
-#' Convenience helper to quickly load a shipped example dataset ("phip_mixture") into a `<phip_data>` object,
-#' suitable for downstream analysis and visualization. This function wraps \code{\link{phip_convert}},
-#' automatically supplying the correct parameters for the included example data.
-#'
-#' @param name Character scalar. Name of the shipped example dataset.
-#'  Currently supported: \code{"phip_mixture"}, \code{"small_mixture"}.
-#'
-#' @return A `<phip_data>` object created from the chosen example dataset.
-#'
-#' @examples
-#' # Load the example data shipped with the package:
-#' ex <- phip_load_example_data()
-#' # ex is now a <phip_data> object ready for analysis
-#'
-#' # Specify the dataset name explicitly
-#' ex2 <- phip_load_example_data("small_mixture")
-#'
-#' # Use with plotting functions
-#' p = plot_enrichment_counts(ex, group_cols = "timepoint")
-#'
-#' @export
-phip_load_example_data <- local({
-  cache_env <- new.env(parent = emptyenv())
-  cache_env$loaded <- list()
-
-  function(name = c("phip_mixture", "small_mixture")) {
-    name <- match.arg(name)
-
-    # Check if already in cache
-    if (name %in% names(cache_env$loaded)) return(cache_env$loaded[[name]])
-
-    if (name == "small_mixture") {
-      ps <- phip_load_example_data(name = "phip_mixture")
-
-      # small subset for speed: 5 peptides at time t1
-      keep_pep <- c("16627", "5243", "24799", "16196", "18003")
-      dat_cols <- dplyr::tbl_vars(ps$data_long)
-      tp_col <- "timepoint"
-        
-      ps <- ps |>
-        dplyr::filter(
-          peptide_id %in% keep_pep,
-          !!rlang::sym(tp_col) == "T1"
-        ) |>
-        dplyr::collect()
-      
-    } else {
-      ps <- phip_convert(
-        data_long_path = phip_example_path(name),
-        peptide_library = TRUE,
-        subject_id = "subject_id",
-        peptide_id = "peptide_id",
-        sample_id  = "sample_id",
-        exist      = "exist",
-        timepoint  = "time",
-        fold_change= "fold_change",
-        materialise_table = TRUE,
-        auto_expand = FALSE,
-        n_cores = 5
-      )
-    }
-
-    cache_env$loaded[[name]] <- ps
-    ps
-  }
-})
-
-
 #' @title Resolve legacy-import paths and perform fast-fail argument checks
 #'
 #' @description Combines explicit arguments with a YAML config (if given),
@@ -571,7 +468,7 @@ phip_load_example_data <- local({
 #'  All deeper table-content validation is deferred to `phip_data` class
 #'  validation.
 #'
-#' @param exist_file,fold_change_file,input_file,hit_file,samples_file,timepoints_file,comparisons_file
+#' @param exist_file,fold_change_file,input_file,hit_file,samples_file,timepoints_file
 #'  Character paths (relative or absolute) to the respective CSV/Parquet inputs.
 #'  `NULL` means "not supplied".
 #' @param extra_cols Character vector of extra metadata columns to keep; may be
@@ -593,13 +490,13 @@ phip_load_example_data <- local({
     hit_file = NULL,
     timepoints_file = NULL,
     extra_cols = NULL,
-    comparisons_file = NULL,
     output_dir = NULL, # deprecated
     data_long_path = NULL,
     peptide_library = TRUE,
     n_cores = NULL,
     materialise_table = NULL,
     auto_expand = NULL,
+    sample_id_from_filenames = NULL,
     config_yaml = NULL
 ) {
   ## ------------------------------------------------------------------------ ##
@@ -623,7 +520,7 @@ phip_load_example_data <- local({
     dirname(abs_path(data_long_path))
   } else {
     # 3) Otherwise require at least a samples_file (or exist_file)
-    .chk_cond(
+    .ph_check_cond(
       is.null(samples_file) && is.null(exist_file),
       "When neither 'config_yaml' nor 'data_long_path' is provided,
       you must supply 'samples_file' or 'exist_file'."
@@ -634,7 +531,7 @@ phip_load_example_data <- local({
 
   yaml_cfg <- if (!is.null(config_yaml)) {
     ## validate the file extension
-    .chk_path(config_yaml, "config_yaml", c("yml", "yaml"))
+    .ph_check_path(config_yaml, "config_yaml", c("yml", "yaml"))
 
     ## read the yamlW
     rlang::check_installed("yaml")
@@ -657,14 +554,14 @@ phip_load_example_data <- local({
     val <- yaml_cfg[[key]] %||% arg # yaml first, then explicit
 
     # required argument have to be provided!
-    .chk_cond(
+    .ph_check_cond(
       is.null(val) && !optional,
       sprintf("Missing required argument '%s' in YAML or call.", key)
     )
 
-    # if the validator is .chk_path or absolute == TRUE, expand the path
+    # if the validator is .ph_check_path or absolute == TRUE, expand the path
     # to absolute
-    if ((!is.null(val) && identical(validate, .chk_path)) ||
+    if ((!is.null(val) && identical(validate, .ph_check_path)) ||
         (!is.null(val) && absolutize)) {
       if (!is_abs_path(val)) {
         val <- abs_path(basename(val), start = base_dir)
@@ -690,45 +587,39 @@ phip_load_example_data <- local({
   cfg <- list(
     exist_file = fetch(exist_file,
                        "exist_file",
-                       .chk_path,
+                       .ph_check_path,
                        optional = TRUE,
                        extension = c("csv", "parquet", "parq", "pq")
     ),
     fold_change_file = fetch(fold_change_file,
                              "fold_change_file",
-                             .chk_path,
+                             .ph_check_path,
                              optional = TRUE,
                              extension = c("csv", "parquet", "parq", "pq")
     ),
     input_file = fetch(input_file,
                        "input_file",
-                       .chk_path,
+                       .ph_check_path,
                        optional = TRUE,
                        extension = c("csv", "parquet", "parq", "pq")
     ),
     hit_file = fetch(hit_file,
                      "hit_file",
-                     .chk_path,
+                     .ph_check_path,
                      optional = TRUE,
                      extension = c("csv", "parquet", "parq", "pq")
     ),
     samples_file = fetch(samples_file,
                          "samples_file",
-                         .chk_path,
+                         .ph_check_path,
                          optional = samples_required,
                          extension = c("csv", "parquet", "parq", "pq")
     ),
     timepoints_file = fetch(timepoints_file,
                             "timepoints_file",
-                            .chk_path,
+                            .ph_check_path,
                             optional = TRUE,
                             extension = c("csv", "parquet", "parq", "pq")
-    ),
-    comparisons_file = fetch(comparisons_file,
-                             "comparisons_file",
-                             .chk_path,
-                             optional = TRUE,
-                             extension = c("csv", "parquet", "parq", "pq")
     ),
     extra_cols = fetch(extra_cols,
                        "extra_cols",
@@ -747,6 +638,7 @@ phip_load_example_data <- local({
     n_cores = n_cores,
     materialise_table = materialise_table,
     auto_expand = auto_expand,
+    sample_id_from_filenames = sample_id_from_filenames,
     base_dir = base_dir # for downstream helpers
   )
 
@@ -754,7 +646,7 @@ phip_load_example_data <- local({
   ## 4.  fast-fail rules that really must hold before heavy work              ##
   ## ------------------------------------------------------------------------ ##
   #  rule 1: input_file and hit_file must be provided together ----------
-  .chk_cond(
+  .ph_check_cond(
     xor(is.null(cfg$input_file), is.null(cfg$hit_file)),
     "Arguments 'input_file' and 'hit_file' must be provided together."
   )
@@ -767,7 +659,7 @@ phip_load_example_data <- local({
       !is.null(cfg$input_file),
       !is.null(cfg$hit_file)
     )
-    .chk_cond(
+    .ph_check_cond(
       others_supplied,
       "When 'data_long_path' is supplied, do not supply 'exist_file',
       'fold_change_file', 'input_file', or 'hit_file'."
@@ -782,7 +674,7 @@ phip_load_example_data <- local({
         is.null(input_file) &&
         is.null(hit_file)
     )
-    .chk_cond(
+    .ph_check_cond(
       all_null,
       paste0(
         "Supply at least one of:\n",
@@ -794,13 +686,74 @@ phip_load_example_data <- local({
   }
 
   #  deprecation notice -------------------------------------------------
-  .chk_cond(!is.null(cfg$output_dir),
-            error = FALSE,
-            "'output_dir' is deprecated and will be ignored."
+  .ph_check_cond(!is.null(cfg$output_dir),
+                 error = FALSE,
+                 "'output_dir' is deprecated and will be ignored."
   )
 
   # validate the tables itself --> the logic has been moved entirely to the
   # phip_data class validator
 
   cfg
+}
+
+# ==============================================================================
+# DATABASE HELPERS
+# ==============================================================================
+
+# Ensure peptide_library is queryable from the SAME connection as data_long.
+# First tries a zero-copy DuckDB ATTACH; falls back to copy_to() as a temp
+# table when the two connections are incompatible.
+#' @keywords internal
+.ph_peplib_on_main <- function(x, schema_alias = "peplib") {
+  main_con <- dbplyr::remote_con(x$data_long)
+  pep_con <- if (!is.null(x$meta$peptide_con)) {
+    x$meta$peptide_con
+  } else {
+    dbplyr::remote_con(x$peptide_library)
+  }
+
+  # -- fast path: both DuckDB -> ATTACH the peptide db file ------------------
+  if (inherits(main_con, "duckdb_connection") &&
+      inherits(pep_con, "duckdb_connection")) {
+    pep_db_path <- try(pep_con@driver@dbdir, silent = TRUE)
+    if (!inherits(pep_db_path, "try-error") &&
+        is.character(pep_db_path) && nzchar(pep_db_path)) {
+      try(
+        DBI::dbExecute(
+          main_con,
+          sprintf("ATTACH '%s' AS %s;", pep_db_path, schema_alias)
+        ),
+        silent = TRUE
+      )
+
+      base_name <- tryCatch(
+        {
+          nm <- dbplyr::remote_name(x$peptide_library)
+          if (is.null(nm) || !nzchar(nm)) "peptide_meta"
+          else sub("^.*\\.", "", nm)
+        },
+        error = function(e) "peptide_meta"
+      )
+
+      try_tbl <- function(sql_expr) {
+        tryCatch(dplyr::tbl(main_con, dbplyr::sql(sql_expr)),
+                 error = function(e) NULL)
+      }
+
+      for (q in c(
+        sprintf("SELECT * FROM %s.%s",      schema_alias, base_name),
+        sprintf("SELECT * FROM %s.main.%s", schema_alias, base_name)
+      )) {
+        out <- try_tbl(q)
+        if (!is.null(out)) return(out)
+      }
+    }
+  }
+
+  # -- fallback: collect peptide library and copy into main connection --------
+  peplib_local <- dplyr::collect(x$peptide_library)
+  tmp_name <- paste0("peptide_meta_tmp_", as.integer(Sys.time()))
+  dplyr::copy_to(main_con, peplib_local, tmp_name,
+                 temporary = TRUE, overwrite = TRUE)
 }

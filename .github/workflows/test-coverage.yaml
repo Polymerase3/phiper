@@ -34,7 +34,8 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::covr, any::xml2, any::duckdb, any::DBI
+          extra-packages: any::covr, any::xml2
+          dependencies: '"hard"'
 
       - name: Test coverage
         run: |

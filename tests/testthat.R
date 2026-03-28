@@ -8,5 +8,6 @@
 
 library(testthat)
 library(phiper)
+library(phiperio)
 
 test_check("phiper")

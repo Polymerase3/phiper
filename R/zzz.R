@@ -6,9 +6,60 @@
 #' @useDynLib phiper, .registration = TRUE
 #' @importFrom Rcpp evalCpp
 #' @importFrom RcppParallel setThreadOptions
-#' @importFrom dplyr %>%
+#' @importFrom dplyr %>% select
+#' @importFrom rlang .data
+#' @importFrom utils head
+#' @import phiperio
 ## usethis namespace: end
 NULL
+
+# Re-export phiperio functions used in phiper's examples / user-facing API,
+# so they are available after library(phiper) without a separate
+# library(phiperio) call.
+
+#' @title Load Example PhIP-Seq Dataset as <phip_data>
+#'
+#' @description Convenience helper to quickly load a shipped example dataset
+#'   (`"phip_mixture"`) into a `<phip_data>` object, suitable for downstream
+#'   analysis and visualization. This function wraps
+#'   \code{\link[phiperio]{convert_standard}}, automatically supplying the
+#'   correct parameters for the included example data.
+#'
+#' @param name Character scalar. Name of the shipped example dataset.
+#'   Currently supported: \code{"phip_mixture"}, \code{"small_mixture"}.
+#'
+#' @return A `<phip_data>` object created from the chosen example dataset.
+#'
+#' @examples
+#' # Load the example data shipped with the package:
+#' ex <- load_example_data()
+#' # ex is now a <phip_data> object ready for analysis
+#'
+#' # Specify the dataset name explicitly
+#' ex2 <- load_example_data("small_mixture")
+#'
+#' @importFrom phiperio load_example_data
+#' @export
+load_example_data <- phiperio::load_example_data
+
+#' @title Path to Example PhIP-Seq Datasets
+#'
+#' @description Return the path to an example dataset shipped with phiperio,
+#'   suitable for use with \code{\link{load_example_data}} or
+#'   \code{\link[phiperio]{convert_standard}}.
+#'
+#' @param name Character scalar. Name of the example dataset.
+#'   Currently supported: \code{"phip_mixture"}.
+#'
+#' @return A character scalar with an absolute path to the file.
+#'
+#' @examples
+#' sim_path <- get_example_path("phip_mixture")
+#' # phip_obj <- convert_standard(sim_path)
+#'
+#' @importFrom phiperio get_example_path
+#' @export
+get_example_path <- phiperio::get_example_path
 
 # There is a note for not-declared global variables in R CMD CHECK. This is a
 # little bit tricky when using dplyr to manipulate the data, as you use the
