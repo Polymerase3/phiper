@@ -130,14 +130,14 @@ plot_enrichment_counts(
 You can also compute and visualize alpha diversity for different groups
 or subgroups of interest. `phiper` is organized into analysis modules:
 for each module you typically get a computation function (for example,
-`compute_alpha_diversity()`) and one or more plotting functions (for
+`compute_alpha()`) and one or more plotting functions (for
 example, `plot_alpha_diversity()`). This pattern repeats across the
 analysis modules.
 
 For alpha diversity specifically:
 
 ``` r
-alpha <- compute_alpha_diversity(
+alpha <- compute_alpha(
   ps,
   group_cols        = c("group", "time"),
   carry_cols        = "subject_id",

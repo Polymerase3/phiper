@@ -72,6 +72,7 @@ utils::globalVariables(c(
   "%>%",
   ".",
   "..keep_cols",
+  ".abundance",
   ".env",
   ".exist",
   ".x",

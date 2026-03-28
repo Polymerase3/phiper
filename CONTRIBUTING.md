@@ -69,7 +69,7 @@ Test files mirror source files: `tests/testthat/test-<domain>_compute.R` and
 
 | Kind | Convention | Example |
 |---|---|---|
-| Exported user-facing | `snake_case` verb + noun | `compute_alpha_diversity`, `plot_enrichment_counts` |
+| Exported user-facing | `snake_case` verb + noun | `compute_alpha`, `plot_enrichment_counts` |
 | Internal helper (phiper) | `.ph_<noun>` | `.ph_peplib_on_main` |
 | Internal helper (phiperio, copied) | `.ph_<noun>` | `.ph_abort`, `.ph_with_timing` |
 | S3 method | `<generic>.<class>` | `print.phip_data` |
