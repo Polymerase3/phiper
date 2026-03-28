@@ -15,6 +15,8 @@
   instead of re-queried per rank.
 - Hardening: all-invalid ranks now aborts with an informative error instead of
   silently returning empty output; `n_samples` attribute added to the result.
+- Validation: `mode = "threshold"` now requires `threshold` to be finite and
+  `abundance_col` (when supplied) to be a character scalar.
 
 # phiper 0.3.0
 
