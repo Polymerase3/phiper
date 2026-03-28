@@ -2,6 +2,15 @@
 #' @keywords internal
 "_PACKAGE"
 
+.onLoad <- function(libname, pkgname) {
+  if (requireNamespace("sysfonts", quietly = TRUE) &&
+      requireNamespace("showtext", quietly = TRUE)) {
+    # Register the bundled font at load time; showtext rendering is opt-in
+    # (user calls phip_use_montserrat() explicitly to enable showtext_auto).
+    tryCatch(phip_use_montserrat(enable = FALSE), error = function(e) NULL)
+  }
+}
+
 ## usethis namespace: start
 #' @useDynLib phiper, .registration = TRUE
 #' @importFrom Rcpp evalCpp
@@ -184,5 +193,14 @@ utils::globalVariables(c(
   "x",
   "y",
   "T_null_mean",
-  "T_null_sd"
+  "T_null_sd",
+  "cohens_d",
+  "diagonal",
+  "fill_d",
+  "label",
+  "p_adj",
+  "p_value",
+  "sig",
+  "stars",
+  "test"
 ))
