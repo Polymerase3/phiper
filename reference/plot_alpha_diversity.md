@@ -1,7 +1,7 @@
 # Plot alpha diversity (richness/Shannon/Simpson) from precomputed results
 
 Plot alpha diversity metrics from the precomputed output of
-[`compute_alpha_diversity()`](https://polymerase3.github.io/phiper/reference/compute_alpha_diversity.md).
+[`compute_alpha()`](https://polymerase3.github.io/phiper/reference/compute_alpha.md).
 Supports filtering groups/ranks and optional faceting by rank. If the
 input contains an interaction table, you can request only that via
 `interaction_only = TRUE`.
@@ -40,7 +40,7 @@ plot_alpha_diversity(
 - x:
 
   a `"phip_alpha_diversity"` list (output of
-  [`compute_alpha_diversity()`](https://polymerase3.github.io/phiper/reference/compute_alpha_diversity.md))
+  [`compute_alpha()`](https://polymerase3.github.io/phiper/reference/compute_alpha.md))
   or a single alpha-diversity data frame.
 
 - metric:
@@ -84,7 +84,7 @@ plot_alpha_diversity(
 
   logical; if `TRUE`, plot only the interaction table (when available in
   `x`). useful when
-  [`compute_alpha_diversity()`](https://polymerase3.github.io/phiper/reference/compute_alpha_diversity.md)
+  [`compute_alpha()`](https://polymerase3.github.io/phiper/reference/compute_alpha.md)
   was run with `group_interaction = TRUE`.
 
 - interaction_sep:
@@ -141,7 +141,7 @@ a `ggplot` object.
 - `x` can be:
 
   - the named list returned by
-    [`compute_alpha_diversity()`](https://polymerase3.github.io/phiper/reference/compute_alpha_diversity.md)
+    [`compute_alpha()`](https://polymerase3.github.io/phiper/reference/compute_alpha.md)
     (class `"phip_alpha_diversity"`), or
 
   - a single data frame taken from that list.

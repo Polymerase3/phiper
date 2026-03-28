@@ -2,7 +2,7 @@
 
 ## All functions
 
-- [`compute_alpha_diversity()`](https://polymerase3.github.io/phiper/reference/compute_alpha_diversity.md)
+- [`compute_alpha()`](https://polymerase3.github.io/phiper/reference/compute_alpha.md)
   : Compute alpha diversity per sample / group across ranks
 
 - [`compute_capscale()`](https://polymerase3.github.io/phiper/reference/compute_capscale.md)

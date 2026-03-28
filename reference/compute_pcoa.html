@@ -19,7 +19,7 @@ associations."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -130,23 +130,23 @@ correction is applied via <code>vegan::wcmdscale(add = ...)</code>.</p>
 <span class="r-in"><span>  distance <span class="op">=</span> <span class="st">"jaccard"</span>,</span></span>
 <span class="r-in"><span>  n_threads <span class="op">=</span> <span class="fl">2L</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [11:24:37] INFO  building abundance matrix from `ps` using `fold_change`.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [11:24:37] INFO  building pivot spec (sample_id x peptide_id).</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [11:24:37] INFO  Collecting long table (sample_id, peptide_id, value).</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13:05:33] INFO  building abundance matrix from `ps` using `fold_change`.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13:05:33] INFO  building pivot spec (sample_id x peptide_id).</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13:05:33] INFO  Collecting long table (sample_id, peptide_id, value).</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; compute_distance</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [11:24:37] INFO  Pivoting to wide abundance matrix in R.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13:05:33] INFO  Pivoting to wide abundance matrix in R.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; compute_distance</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [11:24:37] INFO  abundance matrix has 43 samples and 5 features after</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13:05:33] INFO  abundance matrix has 43 samples and 5 features after</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                  preprocessing.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [11:24:37] INFO  auto normalization selected -&gt; using relative</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [11:24:37] INFO  computing distance: jaccard</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [11:24:37] INFO  distance matrix computation complete.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13:05:33] INFO  auto normalization selected -&gt; using relative</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13:05:33] INFO  computing distance: jaccard</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13:05:33] INFO  distance matrix computation complete.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">pcoa_res</span> <span class="op">&lt;-</span> <span class="fu">compute_pcoa</span><span class="op">(</span><span class="va">d</span>, neg_correction <span class="op">=</span> <span class="st">"none"</span>, n_axes <span class="op">=</span> <span class="fl">3L</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [11:24:37] INFO  performing principal coordinates analysis</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [11:24:37] INFO  extracting sample coordinates.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [11:24:37] INFO  summarizing eigenvalues and variance explained.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [11:24:37] INFO  pcoa analysis complete.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13:05:33] INFO  performing principal coordinates analysis</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13:05:33] INFO  extracting sample coordinates.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13:05:33] INFO  summarizing eigenvalues and variance explained.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13:05:33] INFO  pcoa analysis complete.</span>
 <span class="r-in"><span><span class="va">pcoa_res</span><span class="op">$</span><span class="va">sample_coords</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 43 × 4</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    sample_id  PCoA1   PCoA2      PCoA3</span>

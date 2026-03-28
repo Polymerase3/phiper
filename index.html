@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -152,10 +152,10 @@
 <div class="section level3">
 <h3 id="alpha-diversity">Alpha diversity<a class="anchor" aria-label="anchor" href="#alpha-diversity"></a>
 </h3>
-<p>You can also compute and visualize alpha diversity for different groups or subgroups of interest. <code>phiper</code> is organized into analysis modules: for each module you typically get a computation function (for example, <code><a href="reference/compute_alpha_diversity.html">compute_alpha_diversity()</a></code>) and one or more plotting functions (for example, <code><a href="reference/plot_alpha_diversity.html">plot_alpha_diversity()</a></code>). This pattern repeats across the analysis modules.</p>
+<p>You can also compute and visualize alpha diversity for different groups or subgroups of interest. <code>phiper</code> is organized into analysis modules: for each module you typically get a computation function (for example, <code><a href="reference/compute_alpha.html">compute_alpha()</a></code>) and one or more plotting functions (for example, <code><a href="reference/plot_alpha_diversity.html">plot_alpha_diversity()</a></code>). This pattern repeats across the analysis modules.</p>
 <p>For alpha diversity specifically:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">alpha</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/compute_alpha_diversity.html">compute_alpha_diversity</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">alpha</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/compute_alpha.html">compute_alpha</a></span><span class="op">(</span></span>
 <span>  <span class="va">ps</span>,</span>
 <span>  group_cols        <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"group"</span>, <span class="st">"time"</span><span class="op">)</span>,</span>
 <span>  carry_cols        <span class="op">=</span> <span class="st">"subject_id"</span>,</span>

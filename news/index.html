@@ -13,7 +13,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -45,6 +45,21 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.3.1" id="phiper-031">phiper 0.3.1<a class="anchor" aria-label="anchor" href="#phiper-031"></a></h2>
+<div class="section level3">
+<h3 id="changes-to-compute_alpha-0-3-1">Changes to <code>compute_alpha</code>
+<a class="anchor" aria-label="anchor" href="#changes-to-compute_alpha-0-3-1"></a></h3>
+<ul><li>Added <code>pielou_evenness</code> and <code>berger_parker_dominance</code> to the output (NA for samples with richness ≤ 1 and richness = 0 respectively).</li>
+<li>New <code>metrics</code> parameter: request any subset of the five indices; defaults to all five.</li>
+<li>New <code>mode</code> parameter (<code>"binary"</code>, <code>"threshold"</code>, <code>"abundance"</code>) replaces <code>fc_threshold</code>. <code>"abundance"</code> mode uses raw values from <code>abundance_col</code> with optional <code>abundance_agg</code> (<code>"mean"</code>, <code>"sum"</code>, <code>"max"</code>) at higher ranks.</li>
+<li>
+<code>shannon_log</code> renamed to <code>shannon_base</code>; old name still works with a deprecation warning.</li>
+<li>Performance: all-samples roster now collected once before the rank loop instead of re-queried per rank.</li>
+<li>Hardening: all-invalid ranks now aborts with an informative error instead of silently returning empty output; <code>n_samples</code> attribute added to the result.</li>
+<li>Validation: <code>mode = "threshold"</code> now requires <code>threshold</code> to be finite and <code>abundance_col</code> (when supplied) to be a character scalar.</li>
+</ul></div>
+</div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.0" id="phiper-030">phiper 0.3.0<a class="anchor" aria-label="anchor" href="#phiper-030"></a></h2>
 <div class="section level3">
 <h3 id="major-changes-0-3-0">Major changes<a class="anchor" aria-label="anchor" href="#major-changes-0-3-0"></a></h3>
@@ -54,7 +69,7 @@
 <li>
 <code>get_peptide_meta()</code> renamed to <code>get_peptide_library()</code> throughout, in line with the phiperio API.</li>
 <li>
-<code>compute_alpha_diversity</code>: restored efficient same-connection peptide library handling via <code>.ph_peplib_on_main()</code> (DuckDB ATTACH fast path with <code><a href="https://dplyr.tidyverse.org/reference/copy_to.html" class="external-link">copy_to()</a></code> fallback).</li>
+<code>compute_alpha</code>: restored efficient same-connection peptide library handling via <code>.ph_peplib_on_main()</code> (DuckDB ATTACH fast path with <code><a href="https://dplyr.tidyverse.org/reference/copy_to.html" class="external-link">copy_to()</a></code> fallback).</li>
 </ul></div>
 <div class="section level3">
 <h3 id="internal-0-3-0">Internal<a class="anchor" aria-label="anchor" href="#internal-0-3-0"></a></h3>

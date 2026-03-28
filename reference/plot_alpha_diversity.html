@@ -6,10 +6,10 @@
     }
   };
 </script><script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Plot alpha diversity (richness/Shannon/Simpson) from precomputed results — plot_alpha_diversity"><meta name="description" content="Plot alpha diversity metrics from the precomputed output of
-compute_alpha_diversity(). Supports filtering groups/ranks and optional
+compute_alpha(). Supports filtering groups/ranks and optional
 faceting by rank. If the input contains an interaction table, you can request
 only that via interaction_only = TRUE."><meta property="og:description" content="Plot alpha diversity metrics from the precomputed output of
-compute_alpha_diversity(). Supports filtering groups/ranks and optional
+compute_alpha(). Supports filtering groups/ranks and optional
 faceting by rank. If the input contains an interaction table, you can request
 only that via interaction_only = TRUE."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -19,7 +19,7 @@ only that via interaction_only = TRUE."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -53,7 +53,7 @@ only that via interaction_only = TRUE."></head><body>
 
     <div class="ref-description section level2">
     <p>Plot alpha diversity metrics from the precomputed output of
-<code><a href="compute_alpha_diversity.html">compute_alpha_diversity()</a></code>. Supports filtering groups/ranks and optional
+<code><a href="compute_alpha.html">compute_alpha()</a></code>. Supports filtering groups/ranks and optional
 faceting by rank. If the input contains an interaction table, you can request
 only that via <code>interaction_only = TRUE</code>.</p>
     </div>
@@ -92,7 +92,7 @@ only that via <code>interaction_only = TRUE</code>.</p>
 
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
 <dd><p>a <code>"phip_alpha_diversity"</code> list (output of
-<code><a href="compute_alpha_diversity.html">compute_alpha_diversity()</a></code>) or a single alpha-diversity data frame.</p></dd>
+<code><a href="compute_alpha.html">compute_alpha()</a></code>) or a single alpha-diversity data frame.</p></dd>
 
 
 <dt id="arg-metric">metric<a class="anchor" aria-label="anchor" href="#arg-metric"></a></dt>
@@ -134,7 +134,7 @@ only that via <code>interaction_only = TRUE</code>.</p>
 
 <dt id="arg-interaction-only">interaction_only<a class="anchor" aria-label="anchor" href="#arg-interaction-only"></a></dt>
 <dd><p>logical; if <code>TRUE</code>, plot only the interaction table
-(when available in <code>x</code>). useful when <code><a href="compute_alpha_diversity.html">compute_alpha_diversity()</a></code> was run
+(when available in <code>x</code>). useful when <code><a href="compute_alpha.html">compute_alpha()</a></code> was run
 with <code>group_interaction = TRUE</code>.</p></dd>
 
 
@@ -190,7 +190,7 @@ default is taken from <code>attr(x, "interaction_sep")</code> if present, otherw
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
 
-<ul><li><p><code>x</code> can be:</p><ul><li><p>the named list returned by <code><a href="compute_alpha_diversity.html">compute_alpha_diversity()</a></code> (class
+<ul><li><p><code>x</code> can be:</p><ul><li><p>the named list returned by <code><a href="compute_alpha.html">compute_alpha()</a></code> (class
 <code>"phip_alpha_diversity"</code>), or</p></li>
 <li><p>a single data frame taken from that list.</p></li>
 </ul></li>
