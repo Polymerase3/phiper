@@ -582,12 +582,12 @@ compute_alpha <- function(x,
     1 - sum(p^2)
   },
 
-  pielou_evenness = function(n, ln_base = 1, ...) {
+  pielou_evenness = function(n, ...) {
     S <- length(n)
     if (S <= 1L) return(NA_real_)
     p <- n / sum(n)
     H <- -sum(p * log(p))
-    (H / log(S)) / ln_base
+    H / log(S)   # base cancels in H / log(S); ln_base not applied
   },
 
   berger_parker = function(n, ...) {

@@ -337,6 +337,20 @@ testthat::test_that("compute_alpha returns pielou_evenness and berger_parker_dom
   testthat::expect_true(all(present$berger_parker_dominance > 0 & present$berger_parker_dominance <= 1, na.rm = TRUE))
 })
 
+testthat::test_that("pielou_evenness is invariant to shannon_base", {
+  df <- tibble::tibble(
+    sample_id  = rep("s1", 3),
+    peptide_id = c("p1", "p2", "p3"),
+    exist      = 1L
+  )
+  get_j <- function(base) {
+    compute_alpha(df, group_cols = NULL, ranks = "peptide_id",
+                  shannon_base = base, metrics = "pielou_evenness")$all_samples$pielou_evenness
+  }
+  testthat::expect_equal(get_j("ln"),    get_j("log2"),  tolerance = 1e-12)
+  testthat::expect_equal(get_j("ln"),    get_j("log10"), tolerance = 1e-12)
+})
+
 testthat::test_that("pielou_evenness is NA when richness == 1", {
   df_one <- tibble::tibble(
     sample_id  = "s1",
