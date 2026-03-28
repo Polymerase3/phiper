@@ -2,7 +2,7 @@
 
 test_that("compute_delta works for unpaired design (mock species)", {
   # example phip_data
-  ps <- phip_load_example_data()
+  ps <- load_example_data()
 
   # small unpaired subset: one species, two groups at T1
   ps_filt <- ps |>
@@ -63,7 +63,7 @@ test_that("compute_delta works for unpaired design (mock species)", {
 test_that("compute_delta handles paired design via paired_by and returns
           standardized T", {
   # build example phip_data
-  ps <- phip_load_example_data()
+  ps <- load_example_data()
 
   # subset: one mock species, group A, two timepoints
   ps_filt2 <- ps |>
@@ -182,7 +182,7 @@ test_that("compute_delta errors on duplicate positives within group", {
 test_that("compute_delta gives consistent direction for T_obs,
           T_obs_stand and Z_from_p", {
   # reuse unpaired example, smaller B for speed
-  ps <- phip_load_example_data()
+  ps <- load_example_data()
 
   ps_filt <- ps |>
     dplyr::filter(

@@ -18,7 +18,7 @@
   }
   if (!is.null(cache_env$val)) return(cache_env$val)
 
-  ps <- phip_load_example_data()
+  ps <- load_example_data()
 
   dat_cols <- dplyr::tbl_vars(ps$data_long)
   tp_col <- "timepoint"
