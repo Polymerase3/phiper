@@ -122,7 +122,7 @@ testthat::test_that("wilcoxon pairwise p-values are in [0,1]", {
 })
 
 # ---------------------------------------------------------------------------
-# 7. Pairwise (tukey) returns p_raw and p_adj in [0,1]
+# 7. Pairwise (tukey) returns p_raw and p_adj in [0,1] and p_raw == p_adj
 # ---------------------------------------------------------------------------
 testthat::test_that("tukey pairwise p-values are in [0,1]", {
   df  <- .make_alpha_df()
@@ -132,10 +132,27 @@ testthat::test_that("tukey pairwise p-values are in [0,1]", {
   pw <- sig$pairwise[!is.na(sig$pairwise$p_raw), ]
   testthat::expect_true(all(pw$p_raw >= 0 & pw$p_raw <= 1))
   testthat::expect_true(all(pw$p_adj >= 0 & pw$p_adj <= 1))
+  # TukeyHSD already adjusts: p_raw and p_adj must be identical
+  testthat::expect_equal(pw$p_raw, pw$p_adj)
+})
+
+testthat::test_that("tukey p_adj equals p_raw regardless of p_adjust_method", {
+  df <- .make_alpha_3grp()
+  sig_bh   <- compute_alpha_significance(df, group_col = "group",
+                                         pairwise_test = "tukey",
+                                         p_adjust_method = "BH",
+                                         metric = "richness")
+  sig_bonf <- compute_alpha_significance(df, group_col = "group",
+                                         pairwise_test = "tukey",
+                                         p_adjust_method = "bonferroni",
+                                         metric = "richness")
+  # p_adjust_method must have no effect on Tukey results
+  testthat::expect_equal(sig_bh$pairwise$p_adj, sig_bonf$pairwise$p_adj)
+  testthat::expect_equal(sig_bh$pairwise$p_raw, sig_bh$pairwise$p_adj)
 })
 
 # ---------------------------------------------------------------------------
-# 8. p_adjust_method: BH vs bonferroni differ with >1 pair
+# 8. p_adjust_method: BH vs bonferroni differ with >1 pair (Wilcoxon only)
 # ---------------------------------------------------------------------------
 testthat::test_that("p_adjust_method affects p_adj with multiple pairs", {
   df <- .make_alpha_3grp()

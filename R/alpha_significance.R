@@ -217,38 +217,60 @@ compute_alpha_significance <- function(
       pairs <- utils::combn(grp_levels, 2L, simplify = FALSE)
       if (!length(pairs)) next
 
+      # Tukey: run aov() + TukeyHSD() once per (rank, metric), not per pair.
+      # TukeyHSD already returns multiplicity-adjusted p-values ("p adj"), so
+      # p.adjust() must NOT be applied again.
+      tukey_mat <- NULL
+      if (pairwise_test == "tukey") {
+        tukey_mat <- tryCatch({
+          stats::TukeyHSD(stats::aov(vals ~ factor(grps)))[[1L]]
+        }, error = function(e) NULL)
+      }
+
       pw_list <- lapply(pairs, function(pr) {
         v1 <- vals[grps == pr[[1L]]]
         v2 <- vals[grps == pr[[2L]]]
 
-        p_raw_val <- tryCatch({
-          if (pairwise_test == "wilcoxon") {
-            wt <- stats::wilcox.test(v1, v2, exact = FALSE)
-            wt$p.value
-          } else {
-            at2 <- stats::aov(vals ~ factor(grps))
-            tk  <- stats::TukeyHSD(at2)[[1L]]
-            nm  <- paste(sort(c(pr[[2L]], pr[[1L]])), collapse = "-")
-            nm2 <- paste(c(pr[[2L]], pr[[1L]]), collapse = "-")
-            row <- tk[rownames(tk) == nm | rownames(tk) == nm2, , drop = FALSE]
+        if (pairwise_test == "wilcoxon") {
+          p_raw_val <- tryCatch({
+            stats::wilcox.test(v1, v2, exact = FALSE)$p.value
+          }, error = function(e) NA_real_)
+          p_adj_val <- NA_real_   # filled after p.adjust() call below
+        } else {
+          # Look up the pre-computed Tukey result.  TukeyHSD labels comparisons
+          # as "<higher-level>-<lower-level>" based on factor() level order, so
+          # try both orderings rather than relying on alphabetical sort().
+          p_raw_val <- tryCatch({
+            if (is.null(tukey_mat)) return(NA_real_)
+            nm1 <- paste(pr[[1L]], pr[[2L]], sep = "-")
+            nm2 <- paste(pr[[2L]], pr[[1L]], sep = "-")
+            row <- tukey_mat[
+              rownames(tukey_mat) == nm1 | rownames(tukey_mat) == nm2,
+              , drop = FALSE
+            ]
             if (nrow(row) > 0L) row[1L, "p adj"] else NA_real_
-          }
-        }, error = function(e) NA_real_)
+          }, error = function(e) NA_real_)
+          # Tukey p-values are already adjusted — propagate directly.
+          p_adj_val <- p_raw_val
+        }
 
         tibble::tibble(
-          rank    = rk,
-          metric  = mt,
-          group1  = pr[[1L]],
-          group2  = pr[[2L]],
-          p_raw   = p_raw_val,
+          rank     = rk,
+          metric   = mt,
+          group1   = pr[[1L]],
+          group2   = pr[[2L]],
+          p_raw    = p_raw_val,
+          p_adj    = p_adj_val,
           cohens_d = .ph_cohens_d(v1, v2),
-          test    = pairwise_test
+          test     = pairwise_test
         )
       })
       pw_df <- dplyr::bind_rows(pw_list)
 
-      # p-adjust within (rank, metric)
-      pw_df$p_adj <- stats::p.adjust(pw_df$p_raw, method = p_adjust_method)
+      # p.adjust() applies only to tests that return raw p-values (Wilcoxon).
+      if (pairwise_test == "wilcoxon") {
+        pw_df$p_adj <- stats::p.adjust(pw_df$p_raw, method = p_adjust_method)
+      }
       pw_df$stars <- .ph_sig_stars(pw_df$p_adj)
 
       pairwise_rows <- c(pairwise_rows, list(pw_df))
