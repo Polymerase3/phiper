@@ -17,7 +17,7 @@ compute_delta(
   weight_mode = c("equal", "se_invvar", "n_eff_sqrt"),
   stat_mode = c("srlr", "diff", "asin", "score", "mcnemar", "srlr_paired"),
   aggregate_stat = c("stouffer", "maxmean"),
-  strat_bins = c(0.002, 0.005, 0.01, 0.02, 0.05, 0.10, 0.20, 0.50),
+  strat_bins = c(0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5),
   winsor_z = 4,
   rank_feature_keep = NULL,
   peptide_library = NULL,
