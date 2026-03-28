@@ -305,7 +305,7 @@ compute_alpha_diversity <- function(x,
                 group_col = gc, ranks = ranks,
                 mode = mode, abundance_col = abundance_col,
                 threshold = threshold, abundance_agg = abundance_agg,
-                shannon_base = shannon_base,
+                metrics = metrics, shannon_base = shannon_base,
                 carry_cols = carry_cols, map_provider = map_provider
               )
           }
@@ -326,7 +326,7 @@ compute_alpha_diversity <- function(x,
               group_col = inter_col, ranks = ranks,
               mode = mode, abundance_col = abundance_col,
               threshold = threshold, abundance_agg = abundance_agg,
-              shannon_base = shannon_base,
+              metrics = metrics, shannon_base = shannon_base,
               carry_cols = carry_cols, map_provider = map_provider
             )
         }
