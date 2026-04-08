@@ -1611,33 +1611,23 @@ forestplot_interactive <- function(
 #' @return A `ggplot` object.
 #'
 #' @examples
-#' \donttest{
-#' library(dplyr)
-#' library(rlang)
-#' ps <- load_example_data("small_mixture")
-#'
-#' # pick the grouping column
-#' group_col <- "group"
-#'
-#' prev_res <- ph_prevalence_compare(
-#'   ps,
-#'   rank_cols  = "peptide_id",
-#'   group_cols = group_col,
-#'   collect    = TRUE
+#' set.seed(4)
+#' n <- 50
+#' prev_tbl <- data.frame(
+#'   feature = paste0("pep", seq_len(n)),
+#'   group1  = "A",
+#'   group2  = "B",
+#'   prop1   = runif(n),
+#'   prop2   = runif(n)
 #' )
-#' prev_tbl <- as.data.frame(prev_res)
-#' pair_tbl <- unique(prev_tbl[, c("group1", "group2")])
-#' group_pair <- c(pair_tbl$group1[1], pair_tbl$group2[1])
 #'
 #' p <- ecdf_plot(
 #'   prev_tbl,
-#'   group_pair_values = group_pair,
-#'   group_labels = group_pair,
-#'   show_ks_test = FALSE
+#'   group_pair_values = c("A", "B"),
+#'   group_labels      = c("Group A", "Group B"),
+#'   show_ks_test      = TRUE
 #' )
-#'
 #' print(p)
-#' }
 #' @export
 ecdf_plot <- function(
   prev_tbl,
@@ -1865,31 +1855,23 @@ ecdf_plot <- function(
 #' @return A plotly object.
 #'
 #' @examples
-#' \donttest{
-#' library(dplyr)
-#' library(rlang)
-#' ps <- load_example_data("small_mixture")
-#'
-#' # pick the grouping column
-#' group_col <- "group"
-#'
-#' prev_res <- ph_prevalence_compare(
-#'   ps,
-#'   rank_cols  = "peptide_id",
-#'   group_cols = group_col,
-#'   collect    = TRUE
+#' \dontrun{
+#' set.seed(5)
+#' n <- 50
+#' prev_tbl <- data.frame(
+#'   feature = paste0("pep", seq_len(n)),
+#'   group1  = "A",
+#'   group2  = "B",
+#'   prop1   = runif(n),
+#'   prop2   = runif(n)
 #' )
-#' prev_tbl <- as.data.frame(prev_res)
-#' pair_tbl <- unique(prev_tbl[, c("group1", "group2")])
-#' group_pair <- c(pair_tbl$group1[1], pair_tbl$group2[1])
 #'
 #' p <- ecdf_plot_interactive(
 #'   prev_tbl,
-#'   group_pair_values = group_pair,
-#'   group_labels = group_pair,
-#'   show_ks_test = FALSE
+#'   group_pair_values = c("A", "B"),
+#'   group_labels      = c("Group A", "Group B"),
+#'   show_ks_test      = TRUE
 #' )
-#'
 #' p
 #' }
 #' @export

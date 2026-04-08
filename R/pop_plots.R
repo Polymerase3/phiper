@@ -65,7 +65,7 @@
 }
 
 # ==============================================================================
-#' Static scatterplot of percent1 vs percent2 from `ph_prevalence_compare()`
+#' Static scatterplot of percent1 vs percent2 from `compute_pop()`
 #'
 #' @description
 #' A ggplot2 scatterplot comparing prevalence in **group a** vs **group b**.
@@ -275,7 +275,7 @@ scatter_static <- function(df,
 #'
 #' @description
 #' Creates an interactive scatter (plotly) comparing prevalence in **group a**
-#' vs **group b** for per-feature results produced by `ph_prevalence_compare()`.
+#' vs **group b** for per-feature results produced by `compute_pop()`.
 #' Accepts a plain data.frame with columns `percent1`, `percent2`, `feature`,
 #' `group1`, `group2`, `p_raw`, etc.
 #'

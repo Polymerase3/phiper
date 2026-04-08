@@ -2,7 +2,7 @@
 % Please edit documentation in R/pop_plots.R
 \name{scatter_static}
 \alias{scatter_static}
-\title{Static scatterplot of percent1 vs percent2 from \code{ph_prevalence_compare()}}
+\title{Static scatterplot of percent1 vs percent2 from \code{compute_pop()}}
 \usage{
 scatter_static(
   df,

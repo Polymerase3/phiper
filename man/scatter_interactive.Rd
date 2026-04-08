@@ -52,7 +52,7 @@ a \code{plotly} object.
 }
 \description{
 Creates an interactive scatter (plotly) comparing prevalence in \strong{group a}
-vs \strong{group b} for per-feature results produced by \code{ph_prevalence_compare()}.
+vs \strong{group b} for per-feature results produced by \code{compute_pop()}.
 Accepts a plain data.frame with columns \code{percent1}, \code{percent2}, \code{feature},
 \code{group1}, \code{group2}, \code{p_raw}, etc.
 
