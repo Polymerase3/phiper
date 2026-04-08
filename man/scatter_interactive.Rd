@@ -2,144 +2,81 @@
 % Please edit documentation in R/pop_plots.R
 \name{scatter_interactive}
 \alias{scatter_interactive}
-\title{Interactive prevalence scatter for \code{ph_prev_result}}
+\title{Interactive prevalence scatter for prevalence results}
 \usage{
 scatter_interactive(
   df,
   pair = NULL,
   rank = NULL,
-  universe = NULL,
-  features = NULL,
-  features_regex = FALSE,
-  universe_regex = FALSE,
   xlab = NULL,
   ylab = NULL,
   alpha = 0.05,
-  prefer_flags = TRUE,
   color_by = NULL,
   color_title = NULL,
   peplib = NULL,
-  category_colors = c(`significant (wBH, per rank)` = "#009E73", `nominal only` =
-    "#E69F00", `not significant` = "#0072B2", `other/NA` = "#999999"),
-  show_background = FALSE,
   background_df = NULL,
-  background_name = "background peptides",
-  background_color = "#808080",
-  background_size = 6,
-  background_alpha = 0.3,
-  background_max_n = 3000,
-  background_seed = 1L,
-  point_size = 7,
-  point_alpha = 0.85,
-  point_line_width = 0.7,
-  point_line_color = "rgba(0,0,0,0.6)",
-  jitter_width_pp = 0,
-  jitter_height_pp = 0,
-  font_family = NULL,
-  font_size = 12
+  ...
 )
 }
 \arguments{
-\item{df}{a \code{ph_prev_result} or a \code{data.frame} with columns:
-\code{percent1}, \code{percent2}, \code{feature}, \code{group1}, \code{group2},
-\code{p_raw}, \code{p_adj_rank}, \code{p_adj_rank_wbh}, \code{category_rank_wbh},
-optionally \code{n_peptides}, \code{rank}, \code{peptide_id}, \code{group_col}.}
+\item{df}{A \code{data.frame} with columns \code{percent1}, \code{percent2}, \code{feature},
+\code{group1}, \code{group2}, \code{p_raw}, optionally \code{n_peptides}, \code{rank}, \code{peptide_id}.}
 
-\item{pair}{optional length-2 character, e.g. \code{c("kid_serum::T2","kid_serum::T8")}.
-only used when \code{df} is a \code{ph_prev_result}; filters rows to that exact pair
-(order-agnostic).}
+\item{pair}{optional length-2 character, e.g. \code{c("kid_serum::T2","kid_serum::T8")}.}
 
-\item{rank}{optional single rank (character) to keep (only used with \code{ph_prev_result}).}
+\item{rank}{optional single rank (character) to keep.}
 
-\item{universe}{optional \code{group_col} value or regex (if \code{universe_regex = TRUE});
-only used with \code{ph_prev_result}.}
+\item{xlab, ylab}{axis labels; defaults to \code{pair[1]}/\code{pair[2]} when \code{pair} is given.}
 
-\item{features}{optional character vector or regex patterns (if \code{features_regex = TRUE});
-only used with \code{ph_prev_result}.}
+\item{alpha}{numeric in (0,1]; significance threshold; not the plotly alpha.}
 
-\item{features_regex}{logical; treat \code{features} as regex patterns (or).}
+\item{color_by}{optional named vector identifying peptide-library values to
+highlight, e.g. \code{c("is_flagellum" = TRUE)} or
+\code{c("species" = "Staphylococcus aureus")}.}
 
-\item{universe_regex}{logical; treat \code{universe} as regex pattern(s) (or).}
+\item{color_title}{optional legend title when \code{color_by} is used.}
 
-\item{xlab, ylab}{axis labels; if missing and \code{pair} is provided, they default
-to \code{pair[1]} and \code{pair[2]}.}
-
-\item{alpha}{numeric in (0,1]; used only for nominal labels; not the plotly alpha.}
-
-\item{prefer_flags}{logical; reserved for future use (kept for back-compat).}
-
-\item{color_by}{optional peptide-level meta column name to color by.}
-
-\item{color_title}{optional legend title for \code{color_by}.}
-
-\item{peplib}{Optional peptide metadata table used to color points by
-\code{color_by} when not present in \code{df}.}
-
-\item{category_colors}{Optional named vector mapping categories to colors.}
-
-\item{show_background}{Logical; plot background peptides if provided.}
+\item{peplib}{Optional peptide metadata table used to resolve \code{color_by}
+when not available via the global library.}
 
 \item{background_df}{Optional data frame of background points.}
 
-\item{background_name}{Character; legend name for background points.}
-
-\item{background_color}{Character; color for background points.}
-
-\item{background_size}{Numeric; size for background points.}
-
-\item{background_alpha}{Numeric in (0,1); opacity for background points.}
-
-\item{background_max_n}{Integer; maximum number of background points to plot.}
-
-\item{background_seed}{Integer; RNG seed for background downsampling.}
-
-\item{point_size}{Numeric; marker size for points.}
-
-\item{point_alpha}{Numeric in (0,1); marker opacity.}
-
-\item{point_line_width}{Numeric; outline width for points.}
-
-\item{point_line_color}{Character; outline color for points.}
-
-\item{jitter_width_pp}{Numeric; jitter width in percentage points.}
-
-\item{jitter_height_pp}{Numeric; jitter height in percentage points.}
-
-\item{font_family}{Character; font family for plot text.}
-
-\item{font_size}{Numeric; font size for plot text.}
+\item{...}{graphical parameters: \code{category_colors}, \code{show_background},
+\code{background_name}, \code{background_color}, \code{background_size}, \code{background_alpha},
+\code{background_max_n}, \code{background_seed}, \code{point_line_width}, \code{point_line_color},
+\code{point_size}, \code{point_alpha}, \code{jitter_width_pp}, \code{jitter_height_pp},
+\code{font_family}, \code{font_size}.}
 }
 \value{
 a \code{plotly} object.
 }
 \description{
-creates an interactive scatter (plotly) comparing prevalence in \strong{group a}
+Creates an interactive scatter (plotly) comparing prevalence in \strong{group a}
 vs \strong{group b} for per-feature results produced by \code{ph_prevalence_compare()}.
-accepts either a \code{ph_prev_result} (recommended) or a plain data.frame with the
-same columns (\code{percent1}, \code{percent2}, \code{feature}, \code{group1}, \code{group2}, etc.).
+Accepts a plain data.frame with columns \code{percent1}, \code{percent2}, \code{feature},
+\code{group1}, \code{group2}, \code{p_raw}, etc.
 
-when a \code{ph_prev_result} is passed, you may specify a concrete pair of group
-levels via \code{pair = c("A","B")}, and optionally restrict to a \code{rank}, a
-\code{universe} (\code{group_col}) and/or \code{features}. internally, subsetting uses
-\code{.ph_filter_pairs()}, preserving metadata.
+When \code{pair} is given, subsetting uses \code{.ph_filter_pairs()}.
 
-color mapping:
+Color mapping:
 \itemize{
-\item by default (when \code{color_by = NULL}), points are colored by \code{category_rank_wbh}
-with three levels: "significant (wBH, per rank)", "nominal only",
-"not significant".
-\item when \code{color_by} is a peptide-level meta column name (e.g. \code{"is_flagellum"}),
-the function tries to join peptide metadata using \code{peptide_id} (or \code{feature}
-if \code{rank == "peptide_id"}), and color by that variable.
+\item Default (\code{color_by = NULL}): BH-corrected p-values computed per-plot from
+\code{p_raw} ("significant (BH)", "nominal only", "not significant").
+\item \code{color_by} as a named vector highlights points matching the specified
+peptide-library values:
+\preformatted{
+  color_by = c("is_flagellum" = TRUE)
+  color_by = c("species" = "Staphylococcus aureus")
+  color_by = c("is_flagellum" = TRUE, "species" = "Staphylococcus aureus")
+}
 }
 }
 \examples{
 \dontrun{
-# typical usage with ph_prev_result:
 p <- scatter_interactive(scatters,
-  pair     = c("kid_serum::T2","kid_serum::T8"),
-  rank     = "peptide_id",
-  color_by = "is_flagellum",
+  pair        = c("kid_serum::T2", "kid_serum::T8"),
+  rank        = "peptide_id",
+  color_by    = c("is_flagellum" = TRUE),
   color_title = "Flagellum"
 )
 p
