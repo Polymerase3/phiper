@@ -1,6 +1,6 @@
 Package: phiper
 Title: Automated PhIP-seq Analysis and Reporting
-Version: 0.3.3
+Version: 0.3.4
 Authors@R: c(
   person(
     "Mateusz", "Kolek", 

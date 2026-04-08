@@ -16,7 +16,8 @@ compute_delta(
   B_permutations = 2000L,
   weight_mode = c("equal", "se_invvar", "n_eff_sqrt"),
   stat_mode = c("srlr", "diff", "asin", "score", "mcnemar", "srlr_paired"),
-  aggregate_stat = c("stouffer", "maxmean"),
+  perm_method = c("mid_p", "standard"),
+  aggregate_stat = c("stouffer", "maxmean", "af"),
   strat_bins = c(0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5),
   winsor_z = 4,
   rank_feature_keep = NULL,
@@ -63,9 +64,12 @@ combination (see Details).}
 \item{stat_mode}{One of \code{c("diff", "asin", "score", "srlr", "mcnemar", "srlr_paired")}, determining the peptide-level test statistic (see
 Details). The paired-only modes require paired designs.}
 
-\item{aggregate_stat}{One of \code{c("stouffer", "maxmean")}, controlling how
-peptide-level z-scores are aggregated into a single test statistic (see
-Details).}
+\item{perm_method}{One of \code{c("standard", "mid_p")}, controlling how the
+permutation p-value is computed (see Details). Default \code{"standard"}.}
+
+\item{aggregate_stat}{One of \code{c("stouffer", "maxmean", "af")},
+controlling how peptide-level z-scores are aggregated into a single test
+statistic (see Details).}
 
 \item{strat_bins}{Numeric vector of pooled prevalence cutpoints in (0, 1).
 If \code{0}, no stratification is used (single global Stouffer statistic).
@@ -204,32 +208,7 @@ a Stouffer statistic \eqn{T_b} is computed within each bin. The
 \eqn{T_{\mathrm{obs}}}. For example, if \code{strat_bins} includes \code{0.10}
 and \code{0.20}, then peptides with pooled prevalence in (0.10, 0.20] share
 a bin.
-\item If \code{aggregate_stat = "maxmean"}, the signed z-scores are split into
-positive and negative parts, averaged within each set, and the dominant
-direction is selected. If \code{strat_bins} is provided, the maxmean
-statistic is computed per bin and the \strong{mean} across bins is reported.
 }
-\item \strong{Permutation scheme and p-value.}
-A \strong{two-sided} permutation p-value for the global shift is computed:
-\itemize{
-\item \strong{Paired design}: if both groups have measurements for the same
-\code{subject_id}, each subject’s labels (\code{g1} \eqn{\leftrightarrow}
-\code{g2}) are independently
-flipped with probability 1/2 and steps (1–4) are recomputed to obtain
-\eqn{T_b}.
-\item \strong{Unpaired design}: sample labels are shuffled while preserving group
-sizes (random split into \code{n1} / \code{n2}), and steps (1–4) are recomputed
-to obtain \eqn{T_b}.
-}
-
-With \eqn{B} permutations, the p-value is
-\deqn{
-     p =
-     \frac{1 + \sum_{b=1}^{B} \mathbf{1}\{|T_b| \ge |T_{\mathrm{obs}}|\}}
-          {1 + B},
-   }
-the standard add-one estimator that remains non-zero under the global
-null.
 \item \strong{Multiplicity.}
 No multiple-testing correction is performed; \code{p_perm} is returned as
 computed.
