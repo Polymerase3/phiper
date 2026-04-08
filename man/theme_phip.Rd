@@ -9,23 +9,19 @@ theme_phip(base_size = 14, base_family = "Montserrat")
 \arguments{
 \item{base_size}{Base font size.}
 
-\item{base_family}{Base font family (default \code{"Montserrat"}). Call
-\code{\link[=phip_use_montserrat]{phip_use_montserrat()}} once per session to register and enable rendering.}
+\item{base_family}{Base font family (default \code{"Montserrat"}).}
 }
 \value{
 A ggplot2 \code{theme} object.
 }
 \description{
-A clean, publication-ready ggplot2 theme inspired by the
-provided \code{theme_Publication} snippet, tuned for \strong{facetted} plots and
-consistent use of the \strong{Montserrat} font (register it with
-\code{\link[=phip_use_montserrat]{phip_use_montserrat()}}).
+A clean, publication-ready ggplot2 theme tuned for \strong{facetted}
+plots with the \strong{Montserrat} font. The font is registered and
+\strong{showtext} rendering is enabled automatically when the package loads —
+no setup required.
 }
 \examples{
 \dontrun{
-# Register Montserrat once per session
-phip_use_montserrat()
-
 ggplot2::ggplot(iris, ggplot2::aes(Sepal.Length, Sepal.Width, colour = Species)) +
   ggplot2::geom_point() +
   scale_colour_phip() +
@@ -34,7 +30,6 @@ ggplot2::ggplot(iris, ggplot2::aes(Sepal.Length, Sepal.Width, colour = Species))
 }
 \seealso{
 Other phip-ggplot: 
-\code{\link{phip_use_montserrat}()},
 \code{\link{scale_colour_phip}()}
 }
 \concept{phip-ggplot}

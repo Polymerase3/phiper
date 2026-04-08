@@ -75,7 +75,6 @@ Thin wrappers around \verb{ggplot2::scale_*_manual()} that apply
 }
 \seealso{
 Other phip-ggplot: 
-\code{\link{phip_use_montserrat}()},
 \code{\link{theme_phip}()}
 }
 \concept{phip-ggplot}

@@ -3,12 +3,21 @@
 "_PACKAGE"
 
 .onLoad <- function(libname, pkgname) {
-  if (requireNamespace("sysfonts", quietly = TRUE) &&
-      requireNamespace("showtext", quietly = TRUE)) {
-    # Register the bundled font at load time; showtext rendering is opt-in
-    # (user calls phip_use_montserrat() explicitly to enable showtext_auto).
-    tryCatch(phip_use_montserrat(enable = FALSE), error = function(e) NULL)
+  ttf <- system.file("fonts", "Montserrat-Regular.ttf", package = pkgname)
+  if (nzchar(ttf) && file.exists(ttf)) {
+    bold   <- system.file("fonts", "Montserrat-Bold.ttf",   package = pkgname)
+    italic <- system.file("fonts", "Montserrat-Italic.ttf", package = pkgname)
+    tryCatch(
+      sysfonts::font_add(
+        family  = "Montserrat",
+        regular = ttf,
+        bold    = if (nzchar(bold)   && file.exists(bold))   bold   else NULL,
+        italic  = if (nzchar(italic) && file.exists(italic)) italic else NULL
+      ),
+      error = function(e) NULL
+    )
   }
+  tryCatch(showtext::showtext_auto(enable = TRUE), error = function(e) NULL)
 }
 
 ## usethis namespace: start
@@ -18,6 +27,8 @@
 #' @importFrom dplyr %>% select
 #' @importFrom rlang .data
 #' @importFrom utils head
+#' @importFrom showtext showtext_auto
+#' @importFrom sysfonts font_add
 #' @import phiperio
 ## usethis namespace: end
 NULL

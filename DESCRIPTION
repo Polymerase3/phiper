@@ -50,8 +50,6 @@ Suggests:
     readr,
     rmarkdown,
     rprojroot,
-    showtext,
-    sysfonts,
     testthat (>= 3.0.0),
     vdiffr,
     withr,
@@ -79,4 +77,6 @@ Imports:
     RcppParallel,
     utils,
     Rtsne,
-    plotly
+    plotly,
+    showtext,
+    sysfonts
