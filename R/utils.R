@@ -757,3 +757,126 @@
   dplyr::copy_to(main_con, peplib_local, tmp_name,
                  temporary = TRUE, overwrite = TRUE)
 }
+
+# ==============================================================================
+# Internal helper: order-agnostic pair filter for ph_prev_result / data.frame
+# ==============================================================================
+
+#' @title Internal helper: .ph_filter_pairs
+#' @description Filter prevalence result rows by group pair(s), rank, features,
+#'   universe, and optional significance thresholds. Preserves `ph_prev_result`
+#'   class and `prev_meta` attribute when the input carries them.
+#' @keywords internal
+.ph_filter_pairs <- function(
+  df,
+  gA, gB,
+  ranks = NULL,
+  features = NULL,
+  features_regex = FALSE,
+  group_universe = NULL,
+  universe_regex = FALSE,
+  col_rank = "rank",
+  col_feature = "feature",
+  col_g1 = "group1",
+  col_g2 = "group2",
+  col_groupcol = "group_col",
+  p_raw_max = NULL,
+  q_bh_max = NULL,
+  q_wbh_max = NULL,
+  passed_only = FALSE,
+  drop_na = TRUE,
+  keep_cols = NULL
+) {
+  normalize_pairs <- function(gA, gB) {
+    if (is.character(gA) && is.character(gB) && length(gA) == 1L && length(gB) == 1L) {
+      return(list(c(gA, gB)))
+    }
+    if (is.list(gA) && missing(gB)) {
+      ok <- vapply(gA, function(x) is.character(x) && length(x) == 2L, logical(1))
+      if (!all(ok)) stop(".ph_filter_pairs: all list elements must be length-2 character vectors.")
+      return(gA)
+    }
+    if (is.data.frame(gA) && missing(gB)) {
+      if (!all(c("gA", "gB") %in% names(gA))) stop(".ph_filter_pairs: data.frame must have columns 'gA' and 'gB'.")
+      return(split(as.matrix(gA[, c("gA", "gB"), drop = FALSE]), seq_len(nrow(gA))))
+    }
+    stop(".ph_filter_pairs: provide either scalars gA,gB; a list of pairs; or a data.frame with columns gA,gB.")
+  }
+  pairs_list <- normalize_pairs(gA, gB)
+
+  needed <- c(col_g1, col_g2)
+  if (!all(needed %in% names(df))) stop(".ph_filter_pairs: df is missing required columns: ", paste(setdiff(needed, names(df)), collapse = ", "))
+
+  dt <- as.data.frame(df)
+
+  if (!is.null(ranks)) {
+    if (!col_rank %in% names(dt)) stop(".ph_filter_pairs: column '", col_rank, "' not found.")
+    dt <- dt[as.character(dt[[col_rank]]) %in% as.character(ranks), , drop = FALSE]
+  }
+
+  if (!is.null(features)) {
+    if (!col_feature %in% names(dt)) stop(".ph_filter_pairs: column '", col_feature, "' not found.")
+    fvec <- as.character(dt[[col_feature]]); fvec[is.na(fvec)] <- ""
+    if (isTRUE(features_regex)) {
+      keep <- rep(FALSE, nrow(dt))
+      for (p in as.character(features)) keep <- keep | grepl(p, fvec, ignore.case = TRUE, perl = TRUE)
+      dt <- dt[keep, , drop = FALSE]
+    } else {
+      dt <- dt[tolower(fvec) %in% tolower(as.character(features)), , drop = FALSE]
+    }
+  }
+
+  if (!is.null(group_universe) && col_groupcol %in% names(dt)) {
+    gvec <- as.character(dt[[col_groupcol]]); gvec[is.na(gvec)] <- ""
+    if (isTRUE(universe_regex)) {
+      keep <- rep(FALSE, nrow(dt))
+      for (p in as.character(group_universe)) keep <- keep | grepl(p, gvec, ignore.case = TRUE, perl = TRUE)
+      dt <- dt[keep, , drop = FALSE]
+    } else {
+      dt <- dt[tolower(gvec) %in% tolower(as.character(group_universe)), , drop = FALSE]
+    }
+  }
+
+  c1 <- dt[[col_g1]]; c2 <- dt[[col_g2]]
+  ok <- if (drop_na) (!is.na(c1) & !is.na(c2)) else rep(TRUE, nrow(dt))
+  lo <- ifelse(c1 <= c2, c1, c2); hi <- ifelse(c1 <= c2, c2, c1)
+  keep_any <- rep(FALSE, nrow(dt))
+  for (pp in pairs_list) {
+    tgt <- sort(as.character(pp))
+    keep_any <- keep_any | (ok & lo == tgt[1] & hi == tgt[2])
+  }
+  dt <- dt[keep_any, , drop = FALSE]
+
+  if (!is.null(p_raw_max) && "p_raw" %in% names(dt)) {
+    dt <- dt[is.na(dt[["p_raw"]]) | dt[["p_raw"]] <= p_raw_max, , drop = FALSE]
+  }
+  if (!is.null(q_bh_max) && "p_adj_rank" %in% names(dt)) {
+    dt <- dt[is.na(dt[["p_adj_rank"]]) | dt[["p_adj_rank"]] <= q_bh_max, , drop = FALSE]
+  }
+  if (!is.null(q_wbh_max) && "p_adj_rank_wbh" %in% names(dt)) {
+    dt <- dt[is.na(dt[["p_adj_rank_wbh"]]) | dt[["p_adj_rank_wbh"]] <= q_wbh_max, , drop = FALSE]
+  }
+  if (isTRUE(passed_only)) {
+    pass_cols <- intersect(c("passed_rank_bh", "passed_rank_wbh"), names(dt))
+    if (length(pass_cols)) {
+      pass_any <- Reduce(`|`, lapply(pass_cols, function(cc) ifelse(is.na(dt[[cc]]), FALSE, dt[[cc]])))
+      dt <- dt[pass_any, , drop = FALSE]
+    }
+  }
+
+  if (!is.null(keep_cols)) {
+    dt <- dt[, intersect(keep_cols, names(dt)), drop = FALSE]
+  }
+
+  res <- as.data.frame(dt)
+
+  if (inherits(df, "ph_prev_result")) {
+    meta <- attr(df, "prev_meta") %||% list()
+    meta$subsetted <- TRUE
+    meta$subset_n <- nrow(res)
+    attr(res, "prev_meta") <- meta
+    class(res) <- class(df)
+  }
+
+  res
+}

@@ -62,7 +62,7 @@ scatter_static <- function(df,
   # same filtering behavior as before -----------------------------------------
   if (inherits(df, "ph_prev_result")) {
     if (!is.null(pair)) {
-      df <- prev_filter_pairs(
+      df <- .ph_filter_pairs(
         df,
         gA = pair[1], gB = pair[2],
         ranks = rank,
@@ -300,7 +300,7 @@ scatter_static <- function(df,
 #' when a `ph_prev_result` is passed, you may specify a concrete pair of group
 #' levels via `pair = c("A","B")`, and optionally restrict to a `rank`, a
 #' `universe` (`group_col`) and/or `features`. internally, subsetting uses
-#' `prev_filter_pairs()`, preserving metadata.
+#' `.ph_filter_pairs()`, preserving metadata.
 #'
 #' color mapping:
 #' - by default (when `color_by = NULL`), points are colored by `category_rank_wbh`
@@ -434,7 +434,7 @@ scatter_interactive <- function(df,
   # optional filtering like before --------------------------------------------
   if (inherits(df, "ph_prev_result")) {
     if (!is.null(pair)) {
-      df <- prev_filter_pairs(
+      df <- .ph_filter_pairs(
         df,
         gA = pair[1], gB = pair[2],
         ranks = rank,
@@ -802,7 +802,7 @@ scatter_interactive <- function(df,
   # --- Filtering identical to scatter_* --------------------------------------
   if (inherits(df, "ph_prev_result")) {
     if (!is.null(pair)) {
-      df <- prev_filter_pairs(
+      df <- .ph_filter_pairs(
         df,
         gA = pair[1], gB = pair[2],
         ranks = rank,
