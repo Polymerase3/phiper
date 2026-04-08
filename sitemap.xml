@@ -16,10 +16,10 @@
 <url><loc>https://polymerase3.github.io/phiper/reference/compute_pcoa.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/compute_pcoa_feature_associations.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/compute_permanova.html</loc></url>
+<url><loc>https://polymerase3.github.io/phiper/reference/compute_pop.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/compute_tsne.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/deltaplot.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/deltaplot_interactive.html</loc></url>
-<url><loc>https://polymerase3.github.io/phiper/reference/dot-as_prev_result.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/dot-ph_abort.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/dot-ph_add_quotes.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/dot-ph_base_prefix.html</loc></url>
@@ -29,6 +29,7 @@
 <url><loc>https://polymerase3.github.io/phiper/reference/dot-ph_check_path.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/dot-ph_check_pd.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/dot-ph_compose_lines.html</loc></url>
+<url><loc>https://polymerase3.github.io/phiper/reference/dot-ph_filter_pairs.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/dot-ph_log_info.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/dot-ph_log_ok.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/dot-ph_now.html</loc></url>
@@ -45,9 +46,7 @@
 <url><loc>https://polymerase3.github.io/phiper/reference/get_example_path.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/index.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/load_example_data.html</loc></url>
-<url><loc>https://polymerase3.github.io/phiper/reference/ph_prevalence_compare.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/phip_palette.html</loc></url>
-<url><loc>https://polymerase3.github.io/phiper/reference/phip_use_montserrat.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/phiper-package.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/plot_alpha.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/plot_alpha_interactive.html</loc></url>
@@ -58,15 +57,12 @@
 <url><loc>https://polymerase3.github.io/phiper/reference/plot_pcoa.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/plot_scree.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/plot_tsne.html</loc></url>
-<url><loc>https://polymerase3.github.io/phiper/reference/prev_filter_pairs.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/scale_colour_phip.html</loc></url>
+<url><loc>https://polymerase3.github.io/phiper/reference/scale_fill_phip.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/scatter_interactive.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/scatter_static.html</loc></url>
-<url><loc>https://polymerase3.github.io/phiper/reference/summary.ph_prev_result.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/theme_phip.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/volcano_interactive.html</loc></url>
 <url><loc>https://polymerase3.github.io/phiper/reference/volcano_static.html</loc></url>
-<url><loc>https://polymerase3.github.io/phiper/reference/write_result.html</loc></url>
-<url><loc>https://polymerase3.github.io/phiper/reference/write_result.ph_prev_result.html</loc></url>
 </urlset>
 

@@ -124,10 +124,8 @@ explained by each CAP axis, computed as \\100 \* \lambda_k / \sum_j
 `cap_res$eigenvalues`. Only positive parts of eigenvalues are used when
 computing percentages.
 
-The function uses
-[`theme_phip()`](https://polymerase3.github.io/phiper/reference/theme_phip.md)
-if it exists in the search path; otherwise it falls back to
-[`ggplot2::theme_minimal()`](https://ggplot2.tidyverse.org/reference/ggtheme.html).
+Styled with
+[`theme_phip()`](https://polymerase3.github.io/phiper/reference/theme_phip.md).
 
 Typically you will want to join sample-level metadata into
 `cap_res$sample_coords` before plotting, e.g.:

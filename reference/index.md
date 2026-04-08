@@ -30,6 +30,9 @@
 - [`compute_permanova()`](https://polymerase3.github.io/phiper/reference/compute_permanova.md)
   : PERMANOVA with Global and Post-hoc Tests on Beta Diversity
 
+- [`compute_pop()`](https://polymerase3.github.io/phiper/reference/compute_pop.md)
+  : Prevalence comparison by group (POP framework)
+
 - [`compute_tsne()`](https://polymerase3.github.io/phiper/reference/compute_tsne.md)
   : Compute t-SNE Embeddings for Sample Distances
 
@@ -38,11 +41,6 @@
 
 - [`deltaplot_interactive()`](https://polymerase3.github.io/phiper/reference/deltaplot_interactive.md)
   : Interactive Delta-prevalence vs Pooled Prevalence
-
-- [`.as_prev_result()`](https://polymerase3.github.io/phiper/reference/dot-as_prev_result.md)
-  :
-
-  build a `ph_prev_result` object
 
 - [`ecdf_plot()`](https://polymerase3.github.io/phiper/reference/ecdf_plot.md)
   : ECDF of Per-peptide Prevalences for Two Groups
@@ -62,15 +60,8 @@
 - [`load_example_data()`](https://polymerase3.github.io/phiper/reference/load_example_data.md)
   : Load Example PhIP-Seq Dataset as \<phip_data\>
 
-- [`ph_prevalence_compare()`](https://polymerase3.github.io/phiper/reference/ph_prevalence_compare.md)
-  : Prevalence by group with pairwise tests (POP; per-rank FDR; BH &
-  weighted BH)
-
 - [`phip_palette`](https://polymerase3.github.io/phiper/reference/phip_palette.md)
   : PHIP default colour palette
-
-- [`phip_use_montserrat()`](https://polymerase3.github.io/phiper/reference/phip_use_montserrat.md)
-  : Register and enable the Montserrat font for plotting (showtext)
 
 - [`plot_alpha()`](https://polymerase3.github.io/phiper/reference/plot_alpha.md)
   : Plot alpha diversity (richness/Shannon/Simpson) from precomputed
@@ -100,30 +91,21 @@
 - [`plot_tsne()`](https://polymerase3.github.io/phiper/reference/plot_tsne.md)
   : Plot t-SNE embeddings
 
-- [`prev_filter_pairs()`](https://polymerase3.github.io/phiper/reference/prev_filter_pairs.md)
-  : Filter pairwise results by groups/ranks/features with optional
-  q-value gates
-
 - [`scale_colour_phip()`](https://polymerase3.github.io/phiper/reference/scale_colour_phip.md)
   [`scale_color_phip()`](https://polymerase3.github.io/phiper/reference/scale_colour_phip.md)
-  [`scale_fill_phip()`](https://polymerase3.github.io/phiper/reference/scale_colour_phip.md)
-  : Discrete colour & fill scales using the PHIP palette
+  : Discrete colour scale using the PHIP palette
+
+- [`scale_fill_phip()`](https://polymerase3.github.io/phiper/reference/scale_fill_phip.md)
+  : Discrete fill scale using the PHIP palette
 
 - [`scatter_interactive()`](https://polymerase3.github.io/phiper/reference/scatter_interactive.md)
-  :
-
-  Interactive prevalence scatter for `ph_prev_result`
+  : Interactive prevalence scatter for prevalence results
 
 - [`scatter_static()`](https://polymerase3.github.io/phiper/reference/scatter_static.md)
   :
 
   Static scatterplot of percent1 vs percent2 from
-  [`ph_prevalence_compare()`](https://polymerase3.github.io/phiper/reference/ph_prevalence_compare.md)
-
-- [`summary(`*`<ph_prev_result>`*`)`](https://polymerase3.github.io/phiper/reference/summary.ph_prev_result.md)
-  :
-
-  Summarize FDR accounting and design for `ph_prev_result`
+  [`compute_pop()`](https://polymerase3.github.io/phiper/reference/compute_pop.md)
 
 - [`theme_phip()`](https://polymerase3.github.io/phiper/reference/theme_phip.md)
   :
@@ -135,9 +117,3 @@
 
 - [`volcano_static()`](https://polymerase3.github.io/phiper/reference/volcano_static.md)
   : Static volcano plot (log2 ratio vs -log10 p)
-
-- [`write_result()`](https://polymerase3.github.io/phiper/reference/write_result.md)
-  : Generic writer for phiper result objects
-
-- [`write_result(`*`<ph_prev_result>`*`)`](https://polymerase3.github.io/phiper/reference/write_result.ph_prev_result.md)
-  : Write method for ph_prev_result (ph_prevalence_compare output)

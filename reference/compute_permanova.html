@@ -19,7 +19,7 @@ permutations for repeated measures."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -191,17 +191,17 @@ timepoints.</p>
 <span class="r-in"><span>  distance <span class="op">=</span> <span class="st">"jaccard"</span>,</span></span>
 <span class="r-in"><span>  n_threads <span class="op">=</span> <span class="fl">2L</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:22] INFO  building abundance matrix from `ps` using `fold_change`.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:22] INFO  building pivot spec (sample_id x peptide_id).</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:22] INFO  Collecting long table (sample_id, peptide_id, value).</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:41] INFO  building abundance matrix from `ps` using `fold_change`.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:41] INFO  building pivot spec (sample_id x peptide_id).</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:41] INFO  Collecting long table (sample_id, peptide_id, value).</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; compute_distance</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:22] INFO  Pivoting to wide abundance matrix in R.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:41] INFO  Pivoting to wide abundance matrix in R.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; compute_distance</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:22] INFO  abundance matrix has 43 samples and 5 features after</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:41] INFO  abundance matrix has 43 samples and 5 features after</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                  preprocessing.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:22] INFO  auto normalization selected -&gt; using relative</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:22] INFO  computing distance: jaccard</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:22] INFO  distance matrix computation complete.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:41] INFO  auto normalization selected -&gt; using relative</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:41] INFO  computing distance: jaccard</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:41] INFO  distance matrix computation complete.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">permanova_res</span> <span class="op">&lt;-</span> <span class="fu">compute_permanova</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="va">dist_bc</span>,</span></span>
@@ -209,16 +209,16 @@ timepoints.</p>
 <span class="r-in"><span>  group_col <span class="op">=</span> <span class="st">"group"</span>,</span></span>
 <span class="r-in"><span>  time_col  <span class="op">=</span> <span class="st">"timepoint"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:22] INFO  preparing distance labels and metadata.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>[13:44:22] WARN  column `subject_id` found in `ps`, but `subject_col` is NULL;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:41] INFO  preparing distance labels and metadata.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>[18:59:41] WARN  column `subject_id` found in `ps`, but `subject_col` is NULL;</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span>                  repeated-measures stratification is disabled.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:22] INFO  building metadata from `ps`.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:22] INFO  filtering samples with missing grouping variables.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:22] INFO  subsetting distance matrix to complete cases.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:22] INFO  preparing global permanova model.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:22] INFO  running global permanova</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:41] INFO  building metadata from `ps`.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:41] INFO  filtering samples with missing grouping variables.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:41] INFO  subsetting distance matrix to complete cases.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:41] INFO  preparing global permanova model.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:41] INFO  running global permanova</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    - model: d_resp ~ group</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:22] INFO  running pairwise permanova contrasts.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:41] INFO  running pairwise permanova contrasts.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>number of items to replace is not a multiple of replacement length</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">permanova_res2</span> <span class="op">&lt;-</span> <span class="fu">compute_permanova</span><span class="op">(</span></span></span>
@@ -228,16 +228,16 @@ timepoints.</p>
 <span class="r-in"><span>  time_col  <span class="op">=</span> <span class="st">"timepoint"</span>,</span></span>
 <span class="r-in"><span>  p_adjust  <span class="op">=</span> <span class="st">"BH"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:22] INFO  preparing distance labels and metadata.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>[13:44:22] WARN  column `subject_id` found in `ps`, but `subject_col` is NULL;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:41] INFO  preparing distance labels and metadata.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>[18:59:41] WARN  column `subject_id` found in `ps`, but `subject_col` is NULL;</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span>                  repeated-measures stratification is disabled.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:22] INFO  building metadata from `ps`.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:22] INFO  filtering samples with missing grouping variables.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:22] INFO  subsetting distance matrix to complete cases.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:22] INFO  preparing global permanova model.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:22] INFO  running global permanova</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:41] INFO  building metadata from `ps`.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:41] INFO  filtering samples with missing grouping variables.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:41] INFO  subsetting distance matrix to complete cases.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:41] INFO  preparing global permanova model.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:41] INFO  running global permanova</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    - model: d_resp ~ group</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:22] INFO  running pairwise permanova contrasts.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:41] INFO  running pairwise permanova contrasts.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>number of items to replace is not a multiple of replacement length</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>

@@ -1,17 +1,17 @@
-# Static scatterplot of percent1 vs percent2 from `ph_prevalence_compare()`
+# Static scatterplot of percent1 vs percent2 from `compute_pop()`
 
-A ggplot2 clone of
-[`scatter_interactive()`](https://polymerase3.github.io/phiper/reference/scatter_interactive.md)
-with the same filtering behavior and default coloring rules:
+A ggplot2 scatterplot comparing prevalence in **group a** vs **group
+b**. Default coloring uses BH-corrected p-values computed per-plot from
+`p_raw`: "significant (BH)", "nominal only", "not significant". If only
+one category is present the plot falls back to p-value bins.
 
-- If `color_by = NULL`, points are colored by significance category. If
-  `category_rank_wbh` exists, it is used directly. Otherwise, categories
-  are derived with priority: p_adj_rank_wbh -\> p_adj_rank -\> p_raw
-  (threshold = `alpha`). If only one category remains, it auto-falls
-  back to p-value bins for informative coloring.
+When `color_by` is supplied as a named vector, peptide metadata is
+joined and points matching the specified values are highlighted.
+Multiple groups may be given simultaneously:
 
-- If `color_by` is provided, it joins peptide metadata (like
-  interactive).
+      color_by = c("is_flagellum" = TRUE)
+      color_by = c("species" = "Staphylococcus aureus")
+      color_by = c("is_flagellum" = TRUE, "species" = "Staphylococcus aureus")
 
 ## Usage
 
@@ -20,22 +20,12 @@ scatter_static(
   df,
   pair = NULL,
   rank = NULL,
-  universe = NULL,
-  features = NULL,
-  features_regex = FALSE,
-  universe_regex = FALSE,
   xlab = NULL,
   ylab = NULL,
   alpha = 0.05,
-  prefer_flags = TRUE,
   color_by = NULL,
   color_title = NULL,
-  point_size = 2,
-  point_alpha = 0.85,
-  jitter_width_pp = 0,
-  jitter_height_pp = 0,
-  font_family = NULL,
-  font_size = 12
+  ...
 )
 ```
 
@@ -43,7 +33,7 @@ scatter_static(
 
 - df:
 
-  A `ph_prev_result` object or a data frame with prevalence results.
+  A data frame with prevalence results.
 
 - pair:
 
@@ -53,68 +43,61 @@ scatter_static(
 
   optional single rank (character) to keep.
 
-- universe:
-
-  optional `group_col` value or regex (if `universe_regex = TRUE`).
-
-- features:
-
-  optional character vector or regex patterns (if
-  `features_regex = TRUE`).
-
-- features_regex:
-
-  logical; treat `features` as regex patterns.
-
-- universe_regex:
-
-  logical; treat `universe` as regex pattern(s).
-
 - xlab, ylab:
 
-  axis labels; if missing and `pair` is provided, they default to
-  `pair[1]` and `pair[2]`.
+  axis labels; defaults to `pair[1]`/`pair[2]` when `pair` is given.
 
 - alpha:
 
-  numeric in (0,1\]; used only for nominal labels.
-
-- prefer_flags:
-
-  logical; reserved for future use (kept for back-compat).
+  numeric in (0,1\]; significance threshold for category labels.
 
 - color_by:
 
-  optional peptide-level meta column name to color by.
+  optional named vector identifying peptide-library values to highlight,
+  e.g. `c("is_flagellum" = TRUE)` or
+  `c("species" = "Staphylococcus aureus")`.
 
 - color_title:
 
-  optional legend title for `color_by`.
+  optional legend title when `color_by` is used.
 
-- point_size:
+- ...:
 
-  Numeric; marker size for points.
-
-- point_alpha:
-
-  Numeric in (0,1); marker opacity.
-
-- jitter_width_pp:
-
-  Numeric; jitter width in percentage points.
-
-- jitter_height_pp:
-
-  Numeric; jitter height in percentage points.
-
-- font_family:
-
-  Character; font family for plot text.
-
-- font_size:
-
-  Numeric; font size for plot text.
+  graphical parameters: `point_size` (default 2), `point_alpha` (default
+  0.85), `jitter_width_pp` (default 0), `jitter_height_pp` (default 0),
+  `font_family`, `font_size` (default 12).
 
 ## Value
 
 A ggplot object.
+
+## Examples
+
+``` r
+set.seed(1)
+prev <- data.frame(
+  rank       = "peptide_id",
+  feature    = paste0("pep", 1:30),
+  group1     = "A",
+  group2     = "B",
+  prop1      = runif(30),
+  prop2      = runif(30),
+  percent1   = runif(30, 0, 100),
+  percent2   = runif(30, 0, 100),
+  ratio      = runif(30, 0.1, 10),
+  p_raw      = runif(30),
+  n_peptides = 1L
+)
+
+# basic plot
+scatter_static(prev)
+
+
+# filter to a specific pair and set axis labels
+scatter_static(prev,
+  pair  = c("A", "B"),
+  xlab  = "Group A (%)",
+  ylab  = "Group B (%)",
+  alpha = 0.05
+)
+```

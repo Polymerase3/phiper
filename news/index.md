@@ -1,5 +1,97 @@
 # Changelog
 
+## phiper 0.4.0
+
+### New functions
+
+- [`compute_pop()`](https://polymerase3.github.io/phiper/reference/compute_pop.md)
+  replaces the old `ph_prevalence_compare()`. Computes per-feature
+  prevalence comparisons (Fisher / McNemar tests) across group pairs.
+  Unused arguments were removed, internal filtering now delegates to the
+  shared
+  [`.ph_filter_pairs()`](https://polymerase3.github.io/phiper/reference/dot-ph_filter_pairs.md)
+  helper, and imports were trimmed.
+- [`scatter_static()`](https://polymerase3.github.io/phiper/reference/scatter_static.md)
+  — static ggplot2 prevalence scatter (percent1 vs percent2) with
+  BH-corrected significance colouring and optional `color_by`
+  highlighting.
+- [`volcano_static()`](https://polymerase3.github.io/phiper/reference/volcano_static.md)
+  — static ggplot2 volcano (log2 ratio vs −log10 p) with configurable
+  fold-change and p-value cutoffs and raw / BH p-value modes.
+- [`volcano_interactive()`](https://polymerase3.github.io/phiper/reference/volcano_interactive.md)
+  — plotly equivalent of
+  [`volcano_static()`](https://polymerase3.github.io/phiper/reference/volcano_static.md).
+
+### Changes to `scatter_interactive()`
+
+- Fixed a hover-text bug that caused incorrect peptide labels to appear
+  in some multi-rank datasets.
+- Updated peptide-library joining to follow the phiperio conventions
+  used elsewhere in the package.
+- Removed arguments that were no longer used after the peptide-library
+  refactor.
+
+### Plotting
+
+- All plots now use
+  [`theme_phip()`](https://polymerase3.github.io/phiper/reference/theme_phip.md)
+  as their base theme and the phiper discrete colour / fill scales,
+  ensuring a consistent visual style across the package.
+- `phip_use_montserrat()` has been removed. Font registration is handled
+  automatically in `.onLoad()`.
+
+### Examples and documentation
+
+- Added self-contained `@examples` blocks to
+  [`scatter_static()`](https://polymerase3.github.io/phiper/reference/scatter_static.md),
+  [`volcano_static()`](https://polymerase3.github.io/phiper/reference/volcano_static.md),
+  and
+  [`volcano_interactive()`](https://polymerase3.github.io/phiper/reference/volcano_interactive.md).
+- Fixed examples for
+  [`deltaplot()`](https://polymerase3.github.io/phiper/reference/deltaplot.md),
+  [`deltaplot_interactive()`](https://polymerase3.github.io/phiper/reference/deltaplot_interactive.md),
+  [`ecdf_plot()`](https://polymerase3.github.io/phiper/reference/ecdf_plot.md),
+  and
+  [`ecdf_plot_interactive()`](https://polymerase3.github.io/phiper/reference/ecdf_plot_interactive.md):
+  the old examples called `ph_prevalence_compare()` which no longer
+  exists; they now use a minimal inline `data.frame` and require no
+  external data.
+- Updated prose descriptions in
+  [`scatter_static()`](https://polymerase3.github.io/phiper/reference/scatter_static.md)
+  and
+  [`scatter_interactive()`](https://polymerase3.github.io/phiper/reference/scatter_interactive.md)
+  that still referenced `ph_prevalence_compare()`.
+
+### Tests
+
+- New `test-pop_plots.R` covering
+  [`scatter_static()`](https://polymerase3.github.io/phiper/reference/scatter_static.md),
+  [`scatter_interactive()`](https://polymerase3.github.io/phiper/reference/scatter_interactive.md),
+  [`volcano_static()`](https://polymerase3.github.io/phiper/reference/volcano_static.md),
+  and
+  [`volcano_interactive()`](https://polymerase3.github.io/phiper/reference/volcano_interactive.md)
+  (return types, pair / rank filtering, BH colouring, `color_by`
+  interface, background overlay, and the internal `.build_color_group()`
+  helper).
+- Removed the two `phip_use_montserrat()` tests from `test-plot_utils.R`
+  for the function that was deleted.
+- Updated vdiffr reference snapshots for `deltaplot`, `forestplot`, and
+  `ecdf_plot` to reflect the new
+  [`theme_phip()`](https://polymerase3.github.io/phiper/reference/theme_phip.md)
+  styling.
+
+### R CMD CHECK
+
+- Added `delta_ratio`, `n01`, and `n10` to
+  [`utils::globalVariables()`](https://rdrr.io/r/utils/globalVariables.html)
+  in `zzz.R` to silence the “no visible binding” notes from
+  [`compute_pop()`](https://polymerase3.github.io/phiper/reference/compute_pop.md).
+
+### Vignettes
+
+- Removed the pre-built `.html` vignette that was accidentally committed
+  to the repository.
+
 ## phiper 0.3.4
 
 ### Changes to `compute_delta()`
@@ -32,13 +124,13 @@
   labels, and input-validation errors.
 - New `test-plot_utils.R`: tests for colour helpers (`phip_palette`,
   [`scale_colour_phip()`](https://polymerase3.github.io/phiper/reference/scale_colour_phip.md),
-  [`scale_fill_phip()`](https://polymerase3.github.io/phiper/reference/scale_colour_phip.md),
+  [`scale_fill_phip()`](https://polymerase3.github.io/phiper/reference/scale_fill_phip.md),
   [`theme_phip()`](https://polymerase3.github.io/phiper/reference/theme_phip.md),
-  [`phip_use_montserrat()`](https://polymerase3.github.io/phiper/reference/phip_use_montserrat.md)),
-  internal colour utilities (`.hex2rgb()`, `.rgb2hex()`, `.mix_cols()`,
-  `.tint()`, `.blend_hex()`, `.make_shades()`, `.build_shaded_map()`),
-  and ordination helpers (`.pick_axes()`, `.axis_labels_with_pct()`,
-  `.shaded_colors()`, `.make_point_fills()`, `.first_subview_name()`).
+  `phip_use_montserrat()`), internal colour utilities (`.hex2rgb()`,
+  `.rgb2hex()`, `.mix_cols()`, `.tint()`, `.blend_hex()`,
+  `.make_shades()`, `.build_shaded_map()`), and ordination helpers
+  (`.pick_axes()`, `.axis_labels_with_pct()`, `.shaded_colors()`,
+  `.make_point_fills()`, `.first_subview_name()`).
 - New `test-shift_computing.R`: tests for
   [`compute_delta()`](https://polymerase3.github.io/phiper/reference/compute_delta.md)
   covering all `stat_mode` options (`diff`, `score`, `srlr`, `mcnemar`,
@@ -105,17 +197,14 @@
 ### Font bundling
 
 - Montserrat Regular, Bold, and Italic TTF files are now shipped in
-  `inst/fonts/`, so
-  [`phip_use_montserrat()`](https://polymerase3.github.io/phiper/reference/phip_use_montserrat.md)
-  works offline without a Google Fonts connection.
-- [`phip_use_montserrat()`](https://polymerase3.github.io/phiper/reference/phip_use_montserrat.md)
-  tries the local bundle first; falls back to
+  `inst/fonts/`, so `phip_use_montserrat()` works offline without a
+  Google Fonts connection.
+- `phip_use_montserrat()` tries the local bundle first; falls back to
   [`sysfonts::font_add_google()`](https://rdrr.io/pkg/sysfonts/man/font_add_google.html)
   only when the local files are absent.
 - Package registers the font at load time via `.onLoad()` (showtext
-  rendering remains opt-in; call
-  [`phip_use_montserrat()`](https://polymerase3.github.io/phiper/reference/phip_use_montserrat.md)
-  explicitly to enable it).
+  rendering remains opt-in; call `phip_use_montserrat()` explicitly to
+  enable it).
 
 ### Tests
 

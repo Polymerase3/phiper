@@ -1,7 +1,9 @@
-# Discrete colour & fill scales using the PHIP palette
+# Discrete colour scale using the PHIP palette
 
-Thin wrappers around `ggplot2::scale_*_manual()` that apply
-`phip_palette`.
+A thin wrapper around
+[`ggplot2::scale_colour_manual()`](https://ggplot2.tidyverse.org/reference/scale_manual.html)
+that applies `phip_palette`. Set as the session default on
+[`library(phiper)`](https://github.com/Polymerase3/phiper).
 
 ## Usage
 
@@ -9,8 +11,6 @@ Thin wrappers around `ggplot2::scale_*_manual()` that apply
 scale_colour_phip(...)
 
 scale_color_phip(...)
-
-scale_fill_phip(...)
 ```
 
 ## Arguments
@@ -112,10 +112,19 @@ scale_fill_phip(...)
 
 ## Value
 
-A ggplot2 scale
+A ggplot2 scale.
 
 ## See also
 
 Other phip-ggplot:
-[`phip_use_montserrat()`](https://polymerase3.github.io/phiper/reference/phip_use_montserrat.md),
+[`scale_fill_phip()`](https://polymerase3.github.io/phiper/reference/scale_fill_phip.md),
 [`theme_phip()`](https://polymerase3.github.io/phiper/reference/theme_phip.md)
+
+## Examples
+
+``` r
+ggplot2::ggplot(iris,
+  ggplot2::aes(Sepal.Length, Sepal.Width, colour = Species)) +
+  ggplot2::geom_point() +
+  scale_colour_phip()
+```

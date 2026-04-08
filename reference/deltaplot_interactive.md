@@ -112,62 +112,23 @@ If `add_smooth = TRUE`, a GAM smooth is overlaid to summarize the trend.
 ## Examples
 
 ``` r
-# \donttest{
-library(dplyr)
-library(rlang)
-ps <- load_example_data("small_mixture")
-
-# pick the grouping column
-group_col <- "group"
-
-prev_res <- ph_prevalence_compare(
-  ps,
-  rank_cols  = "peptide_id",
-  group_cols = group_col,
-  collect    = TRUE
+if (FALSE) { # \dontrun{
+set.seed(2)
+n <- 40
+prev_tbl <- data.frame(
+  feature = paste0("pep", seq_len(n)),
+  group1  = "A",
+  group2  = "B",
+  prop1   = runif(n),
+  prop2   = runif(n)
 )
-#> [13:44:26] INFO  prevalence_compare (per-rank fdr)
-#> Warning: Unknown or uninitialised column: `peptide_library`.
-#> Warning: Unknown or uninitialised column: `meta`.
-#> [13:44:26] INFO  preparing input data
-#>                    - ranks: peptide_id
-#>                    - group_cols: group
-#>                    - exist_col: exist
-#>                    - weight_mode: peptide_count
-#>                    - collect: TRUE
-#>                    - pop_k_min: 1
-#>                    - paired: FALSE
-#> [13:44:26] INFO  ranks resolved
-#>                    - - available: peptide_id
-#> [13:44:26] INFO  grouping universes
-#>                    - - per-column only: group
-#> [13:44:26] INFO  computing cohort sizes (n) per universe
-#> [13:44:26] INFO  computing presence per sample via k-of-n rule
-#> [13:44:26] INFO  counting present samples per feature (pop, non-paired)
-#> [13:44:27] INFO  fdr accounting
-#>                    - pool per rank: peptide_id=5
-#>                    - universes: group (k=2, pairs=1)
-#>                    - pairs across universes (sum): 1
-#>                    - total tests m per rank = pool * pairs: peptide_id=5
-#> [13:44:27] INFO  building pairwise comparisons
-#> [13:44:29] OK    materialized duckdb table
-#>                    - name: ph_prev_20260408_134427
-#>                    - computing p-values (fisher-only); then fdr per rank (bh /
-#>                      wbh)
-#> [13:44:29] OK    prevalence_compare (per-rank fdr) - done
-#>                  -> elapsed: 2.47s
-prev_tbl <- as.data.frame(prev_res)
-pair_tbl <- unique(prev_tbl[, c("group1", "group2")])
-group_pair <- c(pair_tbl$group1[1], pair_tbl$group2[1])
 
 p <- deltaplot_interactive(
   prev_tbl,
-  group_pair_values = group_pair,
-  group_labels = group_pair,
-  add_smooth = FALSE
+  group_pair_values = c("A", "B"),
+  group_labels      = c("Group A", "Group B"),
+  add_smooth        = FALSE
 )
-
 p
-
-{"x":{"visdat":{"1d983dc146ef":["function () ","plotlyVisDat"]},"cur_data":"1d983dc146ef","attrs":{"1d983dc146ef":{"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"scatter","mode":"markers","x":[0.3482480394048616,0.019080884796769722,0.026993756864685567,0.04554525229148567,0.022722471556828723],"y":[-0.70258118032012129,0.041528367957039534,-0.05496617958182469,-0.10044818393187598,0.041064454361735642],"text":["<b>16196<\/b><br>A: 14/20 (70.0%)<br>B: 0/23 (0.0%)<br>p (Fisher, wBH): 2.47e-06<br>pooled: 35.0%<br>Δ: -70.0%","<b>16627<\/b><br>A: 0/20 (0.0%)<br>B: 1/23 (4.3%)<br>p (Fisher, wBH): 1.00e+00<br>pooled: 2.2%<br>Δ: 4.3%","<b>18003<\/b><br>A: 1/20 (5.0%)<br>B: 0/23 (0.0%)<br>p (Fisher, wBH): 7.75e-01<br>pooled: 2.5%<br>Δ: -5.0%","<b>24799<\/b><br>A: 2/20 (10.0%)<br>B: 0/23 (0.0%)<br>p (Fisher, wBH): 5.26e-01<br>pooled: 5.0%<br>Δ: -10.0%","<b>5243<\/b><br>A: 0/20 (0.0%)<br>B: 1/23 (4.3%)<br>p (Fisher, wBH): 1.00e+00<br>pooled: 2.2%<br>Δ: 4.3%"],"hoverinfo":"text","marker":{"size":6,"opacity":0.59999999999999998},"inherit":true},"1d983dc146ef.1":{"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"scatter","mode":"lines","x":[0,1],"y":[0,0],"hoverinfo":"skip","line":{"dash":"dash"},"showlegend":false,"inherit":true}},"layout":{"margin":{"b":60,"l":60,"t":60,"r":80},"title":{"text":"Per-peptide shift vs pooled prevalence<br />                                ( B − A )"},"xaxis":{"domain":[0,1],"automargin":true,"title":"Pooled prevalence (A & B)","tickformat":".0%%","range":[0,1]},"yaxis":{"domain":[0,1],"automargin":true,"title":"Δ prevalence (B − A)","tickformat":".1%"},"annotations":[{"x":0.96999999999999997,"y":0.22304347826086954,"xref":"x","yref":"y","ax":0.96999999999999997,"ay":0,"axref":"x","ayref":"y","text":"","showarrow":true,"arrowhead":2,"arrowsize":0.59999999999999998,"arrowwidth":2,"arrowcolor":"red"},{"x":0.96999999999999997,"y":-0.22304347826086954,"xref":"x","yref":"y","ax":0.96999999999999997,"ay":0,"axref":"x","ayref":"y","text":"","showarrow":true,"arrowhead":2,"arrowsize":0.59999999999999998,"arrowwidth":2,"arrowcolor":"red"},{"x":0.93999999999999995,"y":0.028608695652173916,"xref":"x","yref":"y","text":"More in B","showarrow":false,"xanchor":"right","font":{"color":"red","size":12},"bgcolor":"rgba(255,255,255,0.65)","bordercolor":"red","borderwidth":1},{"x":0.93999999999999995,"y":-0.13382608695652171,"xref":"x","yref":"y","text":"More in A","showarrow":false,"xanchor":"right","font":{"color":"red","size":12},"bgcolor":"rgba(255,255,255,0.65)","bordercolor":"red","borderwidth":1}],"hovermode":"closest","showlegend":false},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"data":[{"type":"scatter","mode":"markers","x":[0.3482480394048616,0.019080884796769722,0.026993756864685567,0.04554525229148567,0.022722471556828723],"y":[-0.70258118032012129,0.041528367957039534,-0.05496617958182469,-0.10044818393187598,0.041064454361735642],"text":["<b>16196<\/b><br>A: 14/20 (70.0%)<br>B: 0/23 (0.0%)<br>p (Fisher, wBH): 2.47e-06<br>pooled: 35.0%<br>Δ: -70.0%","<b>16627<\/b><br>A: 0/20 (0.0%)<br>B: 1/23 (4.3%)<br>p (Fisher, wBH): 1.00e+00<br>pooled: 2.2%<br>Δ: 4.3%","<b>18003<\/b><br>A: 1/20 (5.0%)<br>B: 0/23 (0.0%)<br>p (Fisher, wBH): 7.75e-01<br>pooled: 2.5%<br>Δ: -5.0%","<b>24799<\/b><br>A: 2/20 (10.0%)<br>B: 0/23 (0.0%)<br>p (Fisher, wBH): 5.26e-01<br>pooled: 5.0%<br>Δ: -10.0%","<b>5243<\/b><br>A: 0/20 (0.0%)<br>B: 1/23 (4.3%)<br>p (Fisher, wBH): 1.00e+00<br>pooled: 2.2%<br>Δ: 4.3%"],"hoverinfo":["text","text","text","text","text"],"marker":{"color":"rgba(31,119,180,1)","size":6,"opacity":0.59999999999999998,"line":{"color":"rgba(31,119,180,1)"}},"error_y":{"color":"rgba(31,119,180,1)"},"error_x":{"color":"rgba(31,119,180,1)"},"line":{"color":"rgba(31,119,180,1)"},"xaxis":"x","yaxis":"y","frame":null},{"type":"scatter","mode":"lines","x":[0,1],"y":[0,0],"hoverinfo":["skip","skip"],"line":{"color":"rgba(255,127,14,1)","dash":"dash"},"showlegend":false,"marker":{"color":"rgba(255,127,14,1)","line":{"color":"rgba(255,127,14,1)"}},"error_y":{"color":"rgba(255,127,14,1)"},"error_x":{"color":"rgba(255,127,14,1)"},"xaxis":"x","yaxis":"y","frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}# }
+} # }
 ```

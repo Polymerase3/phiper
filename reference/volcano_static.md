@@ -9,15 +9,11 @@ volcano_static(
   df,
   pair = NULL,
   rank = NULL,
-  universe = NULL,
-  features = NULL,
-  features_regex = FALSE,
-  universe_regex = FALSE,
   color_by = NULL,
   color_title = NULL,
   fc_cut = 1,
   p_cut = 0.05,
-  p_mode = c("raw", "bh", "wbh"),
+  p_mode = c("raw", "bh"),
   significant_colors = c(`not significant` = "#386cb0", `significant prior correction` =
     "#1b9e77", `significant post fdr correction` = "#e31a1c")
 )
@@ -27,7 +23,7 @@ volcano_static(
 
 - df:
 
-  A `ph_prev_result` object or a data frame with prevalence results.
+  A data frame with prevalence results.
 
 - pair:
 
@@ -37,30 +33,14 @@ volcano_static(
 
   optional single rank (character) to keep.
 
-- universe:
-
-  optional `group_col` value or regex (if `universe_regex = TRUE`).
-
-- features:
-
-  optional character vector or regex patterns (if
-  `features_regex = TRUE`).
-
-- features_regex:
-
-  logical; treat `features` as regex patterns.
-
-- universe_regex:
-
-  logical; treat `universe` as regex pattern(s).
-
 - color_by:
 
-  optional peptide-level meta column name to color by.
+  optional named vector identifying peptide-library values to highlight,
+  e.g. `c("is_flagellum" = TRUE)`.
 
 - color_title:
 
-  optional legend title for `color_by`.
+  optional legend title when `color_by` is used.
 
 - fc_cut:
 
@@ -72,7 +52,8 @@ volcano_static(
 
 - p_mode:
 
-  One of `c("raw","bh","wbh")` controlling which p-values to use.
+  One of `c("raw","bh")`; `"bh"` applies BH correction per-plot from
+  `p_raw`.
 
 - significant_colors:
 
@@ -81,3 +62,33 @@ volcano_static(
 ## Value
 
 A `ggplot` object.
+
+## Examples
+
+``` r
+set.seed(2)
+prev <- data.frame(
+  rank       = "peptide_id",
+  feature    = paste0("pep", 1:40),
+  group1     = "A",
+  group2     = "B",
+  prop1      = runif(40),
+  prop2      = runif(40),
+  percent1   = runif(40, 0, 100),
+  percent2   = runif(40, 0, 100),
+  ratio      = runif(40, 0.1, 10),
+  p_raw      = c(runif(10, 0, 0.01), runif(30, 0.1, 1)),
+  n_peptides = 1L
+)
+
+# basic volcano
+volcano_static(prev)
+
+
+# BH correction, custom cutoffs
+volcano_static(prev, fc_cut = 1.5, p_cut = 0.01, p_mode = "bh")
+
+
+# filter to one pair
+volcano_static(prev, pair = c("A", "B"), rank = "peptide_id")
+```

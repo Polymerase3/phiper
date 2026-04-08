@@ -19,7 +19,7 @@ centroids can be overlaid for group/time/group*time summaries.'></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -178,8 +178,7 @@ explained by each CAP axis, computed as
 \(100 * \lambda_k / \sum_j \lambda_j\), where \(\lambda_k\) are the
 constrained eigenvalues from <code>cap_res$eigenvalues</code>. Only positive parts
 of eigenvalues are used when computing percentages.</p>
-<p>The function uses <code><a href="theme_phip.html">theme_phip()</a></code> if it exists in the search path;
-otherwise it falls back to <code><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">ggplot2::theme_minimal()</a></code>.</p>
+<p>Styled with <code><a href="theme_phip.html">theme_phip()</a></code>.</p>
 <p>Typically you will want to join sample-level metadata into
 <code>cap_res$sample_coords</code> before plotting, e.g.:</p>
 <p></p><div class="sourceCode r"><pre><code><span><span class="va">cap_res</span><span class="op">$</span><span class="va">sample_coords</span> <span class="op">&lt;-</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span></span>

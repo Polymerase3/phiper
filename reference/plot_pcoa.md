@@ -140,10 +140,8 @@ Axis labels are automatically annotated with the percentage of variance
 explained, using the `var_explained` component of `pcoa_res` if
 available.
 
-The function uses
-[`theme_phip()`](https://polymerase3.github.io/phiper/reference/theme_phip.md)
-if it exists in the search path; otherwise it falls back to
-[`ggplot2::theme_minimal()`](https://ggplot2.tidyverse.org/reference/ggtheme.html).
+Styled with
+[`theme_phip()`](https://polymerase3.github.io/phiper/reference/theme_phip.md).
 
 ## Examples
 

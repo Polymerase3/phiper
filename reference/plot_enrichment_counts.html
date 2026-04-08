@@ -19,7 +19,7 @@ an internal helper .plot_enrichment_counts_one()."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -154,45 +154,45 @@ requires <code>group_interaction = TRUE</code> and at least two <code>group_cols
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># per-group plots</span></span></span>
 <span class="r-in"><span><span class="va">pd</span> <span class="op">&lt;-</span> <span class="fu"><a href="load_example_data.html">load_example_data</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fu">plot_enrichment_counts</span><span class="op">(</span><span class="va">pd</span>, group_cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"group"</span>,<span class="st">"timepoint"</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:40] INFO  Plotting enrichment counts (&lt;phip_data&gt;)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:49] INFO  Plotting enrichment counts (&lt;phip_data&gt;)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; group_cols: 'group', 'timepoint'</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:40] INFO  building enrichment count plot</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:49] INFO  building enrichment count plot</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; grouping variable: 'group'</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:40] OK    plot built</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:40] OK    building enrichment count plot - done</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; elapsed: 0.231s</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:40] INFO  building enrichment count plot</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:49] OK    plot built</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:49] OK    building enrichment count plot - done</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; elapsed: 0.243s</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:49] INFO  building enrichment count plot</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; grouping variable: 'timepoint'</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:40] OK    plot built</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:40] OK    building enrichment count plot - done</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; elapsed: 0.209s</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:40] OK    Plotting enrichment counts (&lt;phip_data&gt;) - done</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; elapsed: 0.441s</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:49] OK    plot built</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:49] OK    building enrichment count plot - done</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; elapsed: 0.239s</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:49] OK    Plotting enrichment counts (&lt;phip_data&gt;) - done</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; elapsed: 0.484s</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># add interaction plot</span></span></span>
 <span class="r-in"><span><span class="va">p2</span> <span class="op">&lt;-</span> <span class="fu">plot_enrichment_counts</span><span class="op">(</span><span class="va">pd</span>,</span></span>
 <span class="r-in"><span>  group_cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"group"</span>,<span class="st">"timepoint"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  group_interaction <span class="op">=</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:40] INFO  Plotting enrichment counts (&lt;phip_data&gt;)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:49] INFO  Plotting enrichment counts (&lt;phip_data&gt;)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; group_cols: 'group', 'timepoint'</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:40] INFO  building enrichment count plot</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:49] INFO  building enrichment count plot</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; grouping variable: 'group'</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:40] OK    plot built</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:40] OK    building enrichment count plot - done</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; elapsed: 0.223s</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:40] INFO  building enrichment count plot</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:50] OK    plot built</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:50] OK    building enrichment count plot - done</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; elapsed: 0.238s</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:50] INFO  building enrichment count plot</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; grouping variable: 'timepoint'</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:41] OK    plot built</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:41] OK    building enrichment count plot - done</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; elapsed: 0.223s</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:41] INFO  building enrichment count plot</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:50] OK    plot built</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:50] OK    building enrichment count plot - done</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; elapsed: 0.249s</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:50] INFO  building enrichment count plot</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; grouping variable: '..phip_interaction..'</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:41] OK    plot built</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:41] OK    building enrichment count plot - done</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; elapsed: 0.225s</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:41] OK    Plotting enrichment counts (&lt;phip_data&gt;) - done</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; elapsed: 0.68s</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:50] OK    plot built</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:50] OK    building enrichment count plot - done</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; elapsed: 0.483s</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:50] OK    Plotting enrichment counts (&lt;phip_data&gt;) - done</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; elapsed: 0.978s</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># interaction only</span></span></span>
 <span class="r-in"><span><span class="va">p3</span> <span class="op">&lt;-</span> <span class="fu">plot_enrichment_counts</span><span class="op">(</span><span class="va">pd</span>,</span></span>
@@ -200,15 +200,15 @@ requires <code>group_interaction = TRUE</code> and at least two <code>group_cols
 <span class="r-in"><span>  group_interaction <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
 <span class="r-in"><span>  interaction_only <span class="op">=</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:41] INFO  Plotting enrichment counts (&lt;phip_data&gt;)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:50] INFO  Plotting enrichment counts (&lt;phip_data&gt;)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; group_cols: 'group', 'timepoint'</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:41] INFO  building enrichment count plot</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:50] INFO  building enrichment count plot</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; grouping variable: '..phip_interaction..'</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:41] OK    plot built</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:41] OK    building enrichment count plot - done</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; elapsed: 0.237s</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:41] OK    Plotting enrichment counts (&lt;phip_data&gt;) - done</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; elapsed: 0.245s</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:51] OK    plot built</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:51] OK    building enrichment count plot - done</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; elapsed: 0.239s</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18:59:51] OK    Plotting enrichment counts (&lt;phip_data&gt;) - done</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; elapsed: 0.247s</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -13,7 +13,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -49,6 +49,53 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.4.0" id="phiper-040">phiper 0.4.0<a class="anchor" aria-label="anchor" href="#phiper-040"></a></h2>
+<div class="section level3">
+<h3 id="new-functions-0-4-0">New functions<a class="anchor" aria-label="anchor" href="#new-functions-0-4-0"></a></h3>
+<ul><li>
+<code><a href="../reference/compute_pop.html">compute_pop()</a></code> replaces the old <code>ph_prevalence_compare()</code>. Computes per-feature prevalence comparisons (Fisher / McNemar tests) across group pairs. Unused arguments were removed, internal filtering now delegates to the shared <code><a href="../reference/dot-ph_filter_pairs.html">.ph_filter_pairs()</a></code> helper, and imports were trimmed.</li>
+<li>
+<code><a href="../reference/scatter_static.html">scatter_static()</a></code> — static ggplot2 prevalence scatter (percent1 vs percent2) with BH-corrected significance colouring and optional <code>color_by</code> highlighting.</li>
+<li>
+<code><a href="../reference/volcano_static.html">volcano_static()</a></code> — static ggplot2 volcano (log2 ratio vs −log10 p) with configurable fold-change and p-value cutoffs and raw / BH p-value modes.</li>
+<li>
+<code><a href="../reference/volcano_interactive.html">volcano_interactive()</a></code> — plotly equivalent of <code><a href="../reference/volcano_static.html">volcano_static()</a></code>.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="changes-to-scatter_interactive-0-4-0">Changes to <code>scatter_interactive()</code>
+<a class="anchor" aria-label="anchor" href="#changes-to-scatter_interactive-0-4-0"></a></h3>
+<ul><li>Fixed a hover-text bug that caused incorrect peptide labels to appear in some multi-rank datasets.</li>
+<li>Updated peptide-library joining to follow the phiperio conventions used elsewhere in the package.</li>
+<li>Removed arguments that were no longer used after the peptide-library refactor.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="plotting-0-4-0">Plotting<a class="anchor" aria-label="anchor" href="#plotting-0-4-0"></a></h3>
+<ul><li>All plots now use <code><a href="../reference/theme_phip.html">theme_phip()</a></code> as their base theme and the phiper discrete colour / fill scales, ensuring a consistent visual style across the package.</li>
+<li>
+<code>phip_use_montserrat()</code> has been removed. Font registration is handled automatically in <code>.onLoad()</code>.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="examples-and-documentation-0-4-0">Examples and documentation<a class="anchor" aria-label="anchor" href="#examples-and-documentation-0-4-0"></a></h3>
+<ul><li>Added self-contained <code>@examples</code> blocks to <code><a href="../reference/scatter_static.html">scatter_static()</a></code>, <code><a href="../reference/volcano_static.html">volcano_static()</a></code>, and <code><a href="../reference/volcano_interactive.html">volcano_interactive()</a></code>.</li>
+<li>Fixed examples for <code><a href="../reference/deltaplot.html">deltaplot()</a></code>, <code><a href="../reference/deltaplot_interactive.html">deltaplot_interactive()</a></code>, <code><a href="../reference/ecdf_plot.html">ecdf_plot()</a></code>, and <code><a href="../reference/ecdf_plot_interactive.html">ecdf_plot_interactive()</a></code>: the old examples called <code>ph_prevalence_compare()</code> which no longer exists; they now use a minimal inline <code>data.frame</code> and require no external data.</li>
+<li>Updated prose descriptions in <code><a href="../reference/scatter_static.html">scatter_static()</a></code> and <code><a href="../reference/scatter_interactive.html">scatter_interactive()</a></code> that still referenced <code>ph_prevalence_compare()</code>.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="tests-0-4-0">Tests<a class="anchor" aria-label="anchor" href="#tests-0-4-0"></a></h3>
+<ul><li>New <code>test-pop_plots.R</code> covering <code><a href="../reference/scatter_static.html">scatter_static()</a></code>, <code><a href="../reference/scatter_interactive.html">scatter_interactive()</a></code>, <code><a href="../reference/volcano_static.html">volcano_static()</a></code>, and <code><a href="../reference/volcano_interactive.html">volcano_interactive()</a></code> (return types, pair / rank filtering, BH colouring, <code>color_by</code> interface, background overlay, and the internal <code>.build_color_group()</code> helper).</li>
+<li>Removed the two <code>phip_use_montserrat()</code> tests from <code>test-plot_utils.R</code> for the function that was deleted.</li>
+<li>Updated vdiffr reference snapshots for <code>deltaplot</code>, <code>forestplot</code>, and <code>ecdf_plot</code> to reflect the new <code><a href="../reference/theme_phip.html">theme_phip()</a></code> styling.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="r-cmd-check-0-4-0">R CMD CHECK<a class="anchor" aria-label="anchor" href="#r-cmd-check-0-4-0"></a></h3>
+<ul><li>Added <code>delta_ratio</code>, <code>n01</code>, and <code>n10</code> to <code><a href="https://rdrr.io/r/utils/globalVariables.html" class="external-link">utils::globalVariables()</a></code> in <code>zzz.R</code> to silence the “no visible binding” notes from <code><a href="../reference/compute_pop.html">compute_pop()</a></code>.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="vignettes-0-4-0">Vignettes<a class="anchor" aria-label="anchor" href="#vignettes-0-4-0"></a></h3>
+<ul><li>Removed the pre-built <code>.html</code> vignette that was accidentally committed to the repository.</li>
+</ul></div>
+</div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.4" id="phiper-034">phiper 0.3.4<a class="anchor" aria-label="anchor" href="#phiper-034"></a></h2>
 <div class="section level3">
 <h3 id="changes-to-compute_delta-0-3-4">Changes to <code>compute_delta()</code>
@@ -62,7 +109,7 @@
 <div class="section level3">
 <h3 id="tests-0-3-3">Tests<a class="anchor" aria-label="anchor" href="#tests-0-3-3"></a></h3>
 <ul><li>New <code>test-beta_plots.R</code>: tests for <code><a href="../reference/plot_pcoa.html">plot_pcoa()</a></code>, <code><a href="../reference/plot_cap.html">plot_cap()</a></code>, <code><a href="../reference/plot_scree.html">plot_scree()</a></code>, <code><a href="../reference/plot_dispersion.html">plot_dispersion()</a></code>, and <code><a href="../reference/plot_tsne.html">plot_tsne()</a></code> (2-D and 3-D), covering basic output type, grouping/time aesthetics, centroid and ellipse options, axis selection, variance-explained labels, and input-validation errors.</li>
-<li>New <code>test-plot_utils.R</code>: tests for colour helpers (<code>phip_palette</code>, <code><a href="../reference/scale_colour_phip.html">scale_colour_phip()</a></code>, <code><a href="../reference/scale_colour_phip.html">scale_fill_phip()</a></code>, <code><a href="../reference/theme_phip.html">theme_phip()</a></code>, <code><a href="../reference/phip_use_montserrat.html">phip_use_montserrat()</a></code>), internal colour utilities (<code>.hex2rgb()</code>, <code>.rgb2hex()</code>, <code>.mix_cols()</code>, <code>.tint()</code>, <code>.blend_hex()</code>, <code>.make_shades()</code>, <code>.build_shaded_map()</code>), and ordination helpers (<code>.pick_axes()</code>, <code>.axis_labels_with_pct()</code>, <code>.shaded_colors()</code>, <code>.make_point_fills()</code>, <code>.first_subview_name()</code>).</li>
+<li>New <code>test-plot_utils.R</code>: tests for colour helpers (<code>phip_palette</code>, <code><a href="../reference/scale_colour_phip.html">scale_colour_phip()</a></code>, <code><a href="../reference/scale_fill_phip.html">scale_fill_phip()</a></code>, <code><a href="../reference/theme_phip.html">theme_phip()</a></code>, <code>phip_use_montserrat()</code>), internal colour utilities (<code>.hex2rgb()</code>, <code>.rgb2hex()</code>, <code>.mix_cols()</code>, <code>.tint()</code>, <code>.blend_hex()</code>, <code>.make_shades()</code>, <code>.build_shaded_map()</code>), and ordination helpers (<code>.pick_axes()</code>, <code>.axis_labels_with_pct()</code>, <code>.shaded_colors()</code>, <code>.make_point_fills()</code>, <code>.first_subview_name()</code>).</li>
 <li>New <code>test-shift_computing.R</code>: tests for <code><a href="../reference/compute_delta.html">compute_delta()</a></code> covering all <code>stat_mode</code> options (<code>diff</code>, <code>score</code>, <code>srlr</code>, <code>mcnemar</code>, <code>srlr_paired</code>), all <code>weight_mode</code> options, stratified bins (<code>strat_bins</code>), winsorisation, and paired designs.</li>
 <li>New <code>test-zzz.R</code>: tests for <code>.onLoad()</code> idempotency, <code><a href="../reference/load_example_data.html">load_example_data()</a></code>, and <code><a href="../reference/get_example_path.html">get_example_path()</a></code>.</li>
 <li>New <code>test-utils.R</code>: tests for internal utilities including <code><a href="../reference/dot-ph_check_cond.html">.ph_check_cond()</a></code>, <code><a href="../reference/dot-ph_check_extension.html">.ph_check_extension()</a></code>, <code><a href="../reference/dot-ph_check_null_default.html">.ph_check_null_default()</a></code>, <code><a href="../reference/dot-ph_check_path.html">.ph_check_path()</a></code>, <code>%nin%</code>, <code>%||%</code>, <code><a href="../reference/dot-ph_opt.html">.ph_opt()</a></code>, <code><a href="../reference/dot-ph_now.html">.ph_now()</a></code>, <code><a href="../reference/dot-ph_base_prefix.html">.ph_base_prefix()</a></code>, <code><a href="../reference/dot-ph_wrap.html">.ph_wrap()</a></code>, <code><a href="../reference/dot-ph_compose_lines.html">.ph_compose_lines()</a></code>, <code><a href="../reference/dot-ph_log_info.html">.ph_log_info()</a></code>, <code><a href="../reference/dot-ph_log_ok.html">.ph_log_ok()</a></code>, <code><a href="../reference/dot-ph_warn.html">.ph_warn()</a></code>, <code><a href="../reference/dot-ph_abort.html">.ph_abort()</a></code>, <code><a href="../reference/dot-ph_with_timing.html">.ph_with_timing()</a></code>, <code><a href="../reference/dot-ph_check_pd.html">.ph_check_pd()</a></code>, and <code><a href="../reference/dot-ph_resolve_paths.html">.ph_resolve_paths()</a></code>.</li>
@@ -87,10 +134,10 @@
 </ul></div>
 <div class="section level3">
 <h3 id="font-bundling-0-3-2">Font bundling<a class="anchor" aria-label="anchor" href="#font-bundling-0-3-2"></a></h3>
-<ul><li>Montserrat Regular, Bold, and Italic TTF files are now shipped in <code>inst/fonts/</code>, so <code><a href="../reference/phip_use_montserrat.html">phip_use_montserrat()</a></code> works offline without a Google Fonts connection.</li>
+<ul><li>Montserrat Regular, Bold, and Italic TTF files are now shipped in <code>inst/fonts/</code>, so <code>phip_use_montserrat()</code> works offline without a Google Fonts connection.</li>
 <li>
-<code><a href="../reference/phip_use_montserrat.html">phip_use_montserrat()</a></code> tries the local bundle first; falls back to <code><a href="https://rdrr.io/pkg/sysfonts/man/font_add_google.html" class="external-link">sysfonts::font_add_google()</a></code> only when the local files are absent.</li>
-<li>Package registers the font at load time via <code>.onLoad()</code> (showtext rendering remains opt-in; call <code><a href="../reference/phip_use_montserrat.html">phip_use_montserrat()</a></code> explicitly to enable it).</li>
+<code>phip_use_montserrat()</code> tries the local bundle first; falls back to <code><a href="https://rdrr.io/pkg/sysfonts/man/font_add_google.html" class="external-link">sysfonts::font_add_google()</a></code> only when the local files are absent.</li>
+<li>Package registers the font at load time via <code>.onLoad()</code> (showtext rendering remains opt-in; call <code>phip_use_montserrat()</code> explicitly to enable it).</li>
 </ul></div>
 <div class="section level3">
 <h3 id="tests-0-3-2">Tests<a class="anchor" aria-label="anchor" href="#tests-0-3-2"></a></h3>

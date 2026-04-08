@@ -13,7 +13,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -122,6 +122,13 @@
 
         <dt>
 
+          <code><a href="compute_pop.html">compute_pop()</a></code>
+
+        </dt>
+        <dd>Prevalence comparison by group (POP framework)</dd>
+
+        <dt>
+
           <code><a href="compute_tsne.html">compute_tsne()</a></code>
 
         </dt>
@@ -140,13 +147,6 @@
 
         </dt>
         <dd>Interactive Delta-prevalence vs Pooled Prevalence</dd>
-
-        <dt>
-
-          <code><a href="dot-as_prev_result.html">.as_prev_result()</a></code>
-
-        </dt>
-        <dd>build a <code>ph_prev_result</code> object</dd>
 
         <dt>
 
@@ -192,24 +192,10 @@
 
         <dt>
 
-          <code><a href="ph_prevalence_compare.html">ph_prevalence_compare()</a></code>
-
-        </dt>
-        <dd>Prevalence by group with pairwise tests (POP; per-rank FDR; BH &amp; weighted BH)</dd>
-
-        <dt>
-
           <code><a href="phip_palette.html">phip_palette</a></code>
 
         </dt>
         <dd>PHIP default colour palette</dd>
-
-        <dt>
-
-          <code><a href="phip_use_montserrat.html">phip_use_montserrat()</a></code>
-
-        </dt>
-        <dd>Register and enable the Montserrat font for plotting (showtext)</dd>
 
         <dt>
 
@@ -276,38 +262,31 @@
 
         <dt>
 
-          <code><a href="prev_filter_pairs.html">prev_filter_pairs()</a></code>
+          <code><a href="scale_colour_phip.html">scale_colour_phip()</a></code> <code><a href="scale_colour_phip.html">scale_color_phip()</a></code>
 
         </dt>
-        <dd>Filter pairwise results by groups/ranks/features with optional q-value gates</dd>
+        <dd>Discrete colour scale using the PHIP palette</dd>
 
         <dt>
 
-          <code><a href="scale_colour_phip.html">scale_colour_phip()</a></code> <code><a href="scale_colour_phip.html">scale_color_phip()</a></code> <code><a href="scale_colour_phip.html">scale_fill_phip()</a></code>
+          <code><a href="scale_fill_phip.html">scale_fill_phip()</a></code>
 
         </dt>
-        <dd>Discrete colour &amp; fill scales using the PHIP palette</dd>
+        <dd>Discrete fill scale using the PHIP palette</dd>
 
         <dt>
 
           <code><a href="scatter_interactive.html">scatter_interactive()</a></code>
 
         </dt>
-        <dd>Interactive prevalence scatter for <code>ph_prev_result</code></dd>
+        <dd>Interactive prevalence scatter for prevalence results</dd>
 
         <dt>
 
           <code><a href="scatter_static.html">scatter_static()</a></code>
 
         </dt>
-        <dd>Static scatterplot of percent1 vs percent2 from <code><a href="../reference/ph_prevalence_compare.html">ph_prevalence_compare()</a></code></dd>
-
-        <dt>
-
-          <code><a href="summary.ph_prev_result.html">summary(<i>&lt;ph_prev_result&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Summarize FDR accounting and design for <code>ph_prev_result</code></dd>
+        <dd>Static scatterplot of percent1 vs percent2 from <code><a href="../reference/compute_pop.html">compute_pop()</a></code></dd>
 
         <dt>
 
@@ -329,20 +308,6 @@
 
         </dt>
         <dd>Static volcano plot (log2 ratio vs -log10 p)</dd>
-
-        <dt>
-
-          <code><a href="write_result.html">write_result()</a></code>
-
-        </dt>
-        <dd>Generic writer for phiper result objects</dd>
-
-        <dt>
-
-          <code><a href="write_result.ph_prev_result.html">write_result(<i>&lt;ph_prev_result&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Write method for ph_prev_result (ph_prevalence_compare output)</dd>
       </dl></div>
   </main></div>
 

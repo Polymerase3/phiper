@@ -41,10 +41,8 @@ Percentages are computed from the positive part of the eigenvalues, i.e.
 `pmax(eigenvalues, 0)`, to handle possible small negative eigenvalues
 from non-perfectly Euclidean distance matrices.
 
-The function uses
-[`theme_phip()`](https://polymerase3.github.io/phiper/reference/theme_phip.md)
-if it exists in the search path; otherwise it falls back to
-[`ggplot2::theme_minimal()`](https://ggplot2.tidyverse.org/reference/ggtheme.html).
+Styled with
+[`theme_phip()`](https://polymerase3.github.io/phiper/reference/theme_phip.md).
 
 ## Examples
 
