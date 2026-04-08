@@ -96,6 +96,33 @@
 #'   (default 0), `font_family`, `font_size` (default 12).
 #'
 #' @return A ggplot object.
+#'
+#' @examples
+#' set.seed(1)
+#' prev <- data.frame(
+#'   rank       = "peptide_id",
+#'   feature    = paste0("pep", 1:30),
+#'   group1     = "A",
+#'   group2     = "B",
+#'   prop1      = runif(30),
+#'   prop2      = runif(30),
+#'   percent1   = runif(30, 0, 100),
+#'   percent2   = runif(30, 0, 100),
+#'   ratio      = runif(30, 0.1, 10),
+#'   p_raw      = runif(30),
+#'   n_peptides = 1L
+#' )
+#'
+#' # basic plot
+#' scatter_static(prev)
+#'
+#' # filter to a specific pair and set axis labels
+#' scatter_static(prev,
+#'   pair  = c("A", "B"),
+#'   xlab  = "Group A (%)",
+#'   ylab  = "Group B (%)",
+#'   alpha = 0.05
+#' )
 #' @export
 scatter_static <- function(df,
                            pair        = NULL,
@@ -756,6 +783,31 @@ scatter_interactive <- function(df,
 #' @param significant_colors Named vector of colors for significance categories.
 #'
 #' @return A `ggplot` object.
+#'
+#' @examples
+#' set.seed(2)
+#' prev <- data.frame(
+#'   rank       = "peptide_id",
+#'   feature    = paste0("pep", 1:40),
+#'   group1     = "A",
+#'   group2     = "B",
+#'   prop1      = runif(40),
+#'   prop2      = runif(40),
+#'   percent1   = runif(40, 0, 100),
+#'   percent2   = runif(40, 0, 100),
+#'   ratio      = runif(40, 0.1, 10),
+#'   p_raw      = c(runif(10, 0, 0.01), runif(30, 0.1, 1)),
+#'   n_peptides = 1L
+#' )
+#'
+#' # basic volcano
+#' volcano_static(prev)
+#'
+#' # BH correction, custom cutoffs
+#' volcano_static(prev, fc_cut = 1.5, p_cut = 0.01, p_mode = "bh")
+#'
+#' # filter to one pair
+#' volcano_static(prev, pair = c("A", "B"), rank = "peptide_id")
 #' @export
 volcano_static <- function(df,
                            pair               = NULL,
@@ -817,6 +869,30 @@ volcano_static <- function(df,
 #'
 #' @inheritParams volcano_static
 #' @return A `plotly` htmlwidget.
+#'
+#' @examples
+#' \dontrun{
+#' set.seed(3)
+#' prev <- data.frame(
+#'   rank       = "peptide_id",
+#'   feature    = paste0("pep", 1:40),
+#'   group1     = "A",
+#'   group2     = "B",
+#'   prop1      = runif(40),
+#'   prop2      = runif(40),
+#'   percent1   = runif(40, 0, 100),
+#'   percent2   = runif(40, 0, 100),
+#'   ratio      = runif(40, 0.1, 10),
+#'   p_raw      = c(runif(10, 0, 0.01), runif(30, 0.1, 1)),
+#'   n_peptides = 1L
+#' )
+#'
+#' # interactive volcano — hover to inspect each peptide
+#' volcano_interactive(prev)
+#'
+#' # BH correction
+#' volcano_interactive(prev, p_mode = "bh", fc_cut = 1.5, p_cut = 0.01)
+#' }
 #' @export
 volcano_interactive <- function(df,
                                 pair               = NULL,

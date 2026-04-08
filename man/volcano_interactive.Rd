@@ -44,3 +44,27 @@ A \code{plotly} htmlwidget.
 \description{
 Interactive volcano plot (log2 ratio vs -log10 p)
 }
+\examples{
+\dontrun{
+set.seed(3)
+prev <- data.frame(
+  rank       = "peptide_id",
+  feature    = paste0("pep", 1:40),
+  group1     = "A",
+  group2     = "B",
+  prop1      = runif(40),
+  prop2      = runif(40),
+  percent1   = runif(40, 0, 100),
+  percent2   = runif(40, 0, 100),
+  ratio      = runif(40, 0.1, 10),
+  p_raw      = c(runif(10, 0, 0.01), runif(30, 0.1, 1)),
+  n_peptides = 1L
+)
+
+# interactive volcano — hover to inspect each peptide
+volcano_interactive(prev)
+
+# BH correction
+volcano_interactive(prev, p_mode = "bh", fc_cut = 1.5, p_cut = 0.01)
+}
+}

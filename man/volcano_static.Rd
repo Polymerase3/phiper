@@ -44,3 +44,28 @@ A \code{ggplot} object.
 \description{
 Static volcano plot (log2 ratio vs -log10 p)
 }
+\examples{
+set.seed(2)
+prev <- data.frame(
+  rank       = "peptide_id",
+  feature    = paste0("pep", 1:40),
+  group1     = "A",
+  group2     = "B",
+  prop1      = runif(40),
+  prop2      = runif(40),
+  percent1   = runif(40, 0, 100),
+  percent2   = runif(40, 0, 100),
+  ratio      = runif(40, 0.1, 10),
+  p_raw      = c(runif(10, 0, 0.01), runif(30, 0.1, 1)),
+  n_peptides = 1L
+)
+
+# basic volcano
+volcano_static(prev)
+
+# BH correction, custom cutoffs
+volcano_static(prev, fc_cut = 1.5, p_cut = 0.01, p_mode = "bh")
+
+# filter to one pair
+volcano_static(prev, pair = c("A", "B"), rank = "peptide_id")
+}

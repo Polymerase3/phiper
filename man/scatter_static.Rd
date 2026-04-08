@@ -55,3 +55,30 @@ given simultaneously:
   color_by = c("is_flagellum" = TRUE, "species" = "Staphylococcus aureus")
 }
 }
+\examples{
+set.seed(1)
+prev <- data.frame(
+  rank       = "peptide_id",
+  feature    = paste0("pep", 1:30),
+  group1     = "A",
+  group2     = "B",
+  prop1      = runif(30),
+  prop2      = runif(30),
+  percent1   = runif(30, 0, 100),
+  percent2   = runif(30, 0, 100),
+  ratio      = runif(30, 0.1, 10),
+  p_raw      = runif(30),
+  n_peptides = 1L
+)
+
+# basic plot
+scatter_static(prev)
+
+# filter to a specific pair and set axis labels
+scatter_static(prev,
+  pair  = c("A", "B"),
+  xlab  = "Group A (\%)",
+  ylab  = "Group B (\%)",
+  alpha = 0.05
+)
+}
