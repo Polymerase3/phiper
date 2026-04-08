@@ -1,3 +1,18 @@
+# phiper 0.3.4
+
+## Changes to `compute_delta()`
+
+- New `perm_method = "mid_p"` option: computes the mid-p corrected permutation
+  p-value, which halves the contribution of ties
+  (\eqn{p_{\mathrm{mid}} = (\#\{|T_b| > |T_{\mathrm{obs}}|\} + 0.5 \cdot \#\{|T_b| = |T_{\mathrm{obs}}|\}) / B}),
+  reducing the conservative bias of the standard test for discrete statistics.
+  `perm_method` now defaults to `"mid_p"` (previously `"standard"`).
+- New `aggregate_stat = "af"` option: implements an adaptive Fisher aggregation
+  statistic. Per-peptide z-scores are converted to one-sided p-values, sorted,
+  and the optimal truncation point is selected by maximising a
+  harmonic-mean-weighted cumulative \eqn{-\log p} sum. Positive and negative
+  tails are aggregated separately and the dominant direction is returned.
+
 # phiper 0.3.3
 
 ## Tests

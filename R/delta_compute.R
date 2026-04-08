@@ -101,32 +101,43 @@
 #'      and `0.20`, then peptides with pooled prevalence in (0.10, 0.20] share
 #'      a bin.
 #'
-#'    - If `aggregate_stat = "maxmean"`, the signed z-scores are split into
-#'      positive and negative parts, averaged within each set, and the dominant
-#'      direction is selected. If `strat_bins` is provided, the maxmean
-#'      statistic is computed per bin and the **mean** across bins is reported.
-#'
-#' 5. **Permutation scheme and p-value.**
-#'    A **two-sided** permutation p-value for the global shift is computed:
-#'
-#'    - **Paired design**: if both groups have measurements for the same
-#'      `subject_id`, each subject’s labels (\code{g1} \eqn{\leftrightarrow}
-#'      \code{g2}) are independently
-#'      flipped with probability 1/2 and steps (1–4) are recomputed to obtain
-#'      \eqn{T_b}.
-#'
-#'    - **Unpaired design**: sample labels are shuffled while preserving group
-#'      sizes (random split into `n1` / `n2`), and steps (1–4) are recomputed
-#'      to obtain \eqn{T_b}.
-#'
-#'    With \eqn{B} permutations, the p-value is
-#'    \deqn{
-#'      p =
-#'      \frac{1 + \sum_{b=1}^{B} \mathbf{1}\{|T_b| \ge |T_{\mathrm{obs}}|\}}
-#'           {1 + B},
-#'    }
-#'    the standard add-one estimator that remains non-zero under the global
-#'    null.
+#’    - If `aggregate_stat = "maxmean"`, the signed z-scores are split into
+#’      positive and negative parts, averaged within each set, and the dominant
+#’      direction is selected. If `strat_bins` is provided, the maxmean
+#’      statistic is computed per bin and the **mean** across bins is reported.
+#’
+#’ 5. **Permutation scheme and p-value.**
+#’    A **two-sided** permutation p-value for the global shift is computed:
+#’
+#’    - **Paired design**: if both groups have measurements for the same
+#’      `subject_id`, each subject’s labels (\code{g1} \eqn{\leftrightarrow}
+#’      \code{g2}) are independently
+#’      flipped with probability 1/2 and steps (1–4) are recomputed to obtain
+#’      \eqn{T_b}.
+#’
+#’    - **Unpaired design**: sample labels are shuffled while preserving group
+#’      sizes (random split into `n1` / `n2`), and steps (1–4) are recomputed
+#’      to obtain \eqn{T_b}.
+#’
+#’    The p-value is computed according to `perm_method`:
+#’
+#’    - `"standard"` (default): the standard add-one estimator,
+#’      \deqn{
+#’        p =
+#’        \frac{1 + \sum_{b=1}^{B} \mathbf{1}\{|T_b| \ge |T_{\mathrm{obs}}|\}}
+#’             {1 + B},
+#’      }
+#’      which remains non-zero under the global null.
+#’
+#’    - `"mid_p"`: the mid-p correction for discreteness,
+#’      \deqn{
+#’        p_{\mathrm{mid}} =
+#’        \frac{\sum_{b=1}^{B} \mathbf{1}\{|T_b| > |T_{\mathrm{obs}}|\}
+#’              + 0.5 \sum_{b=1}^{B} \mathbf{1}\{|T_b| = |T_{\mathrm{obs}}|\}}
+#’             {B},
+#’      }
+#’      which reduces the conservative bias of the standard test for discrete
+#’      statistics.
 #'
 #' 6. **Multiplicity.**
 #'    No multiple-testing correction is performed; `p_perm` is returned as
@@ -196,9 +207,11 @@
 #' @param stat_mode One of `c("diff", "asin", "score", "srlr", "mcnemar",
 #'   "srlr_paired")`, determining the peptide-level test statistic (see
 #'   Details). The paired-only modes require paired designs.
-#' @param aggregate_stat One of `c("stouffer", "maxmean")`, controlling how
-#'   peptide-level z-scores are aggregated into a single test statistic (see
-#'   Details).
+#' @param perm_method One of `c("standard", "mid_p")`, controlling how the
+#'   permutation p-value is computed (see Details). Default `"standard"`.
+#' @param aggregate_stat One of `c("stouffer", "maxmean", "af")`,
+#'   controlling how peptide-level z-scores are aggregated into a single test
+#'   statistic (see Details).
 #' @param strat_bins Numeric vector of pooled prevalence cutpoints in (0, 1).
 #'   If `0`, no stratification is used (single global Stouffer statistic).
 #'   Otherwise, peptides are binned by pooled prevalence and the mean of
@@ -284,7 +297,8 @@ compute_delta <- function(
   B_permutations = 2000L,
   weight_mode = c("equal", "se_invvar", "n_eff_sqrt"),
   stat_mode = c("srlr", "diff", "asin", "score", "mcnemar", "srlr_paired"),
-  aggregate_stat = c("stouffer", "maxmean"),
+  perm_method = c("mid_p", "standard"),
+  aggregate_stat = c("stouffer", "maxmean", "af"),
   strat_bins = c(0.002, 0.005, 0.01, 0.02, 0.05, 0.10, 0.20, 0.50),
   winsor_z = 4.0,
   rank_feature_keep = NULL,
@@ -303,6 +317,7 @@ compute_delta <- function(
   chk::chk_true(B_permutations >= 100)
   weight_mode <- match.arg(weight_mode)
   stat_mode <- match.arg(stat_mode)
+  perm_method <- match.arg(perm_method)
   aggregate_stat <- match.arg(aggregate_stat)
   if (stat_mode %in% c("mcnemar", "srlr_paired") && is.null(paired_by)) {
     .ph_abort("stat_mode requires paired_by for paired designs.")
@@ -809,6 +824,7 @@ compute_delta <- function(
       weight_mode      = weight_mode,
       stat_mode        = stat_mode,
       aggregate_stat   = aggregate_stat,
+      perm_method      = perm_method,
       strat_bins       = strat_bins,
       winsor_z         = winsor_z,
       design           = st$design

@@ -23,8 +23,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // cpp_shift_contrast
-Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw, const int n_words, const Rcpp::IntegerVector& pep_cols, const Rcpp::IntegerVector& g1_rows, const Rcpp::IntegerVector& g2_rows, const Rcpp::List& hits_g1_paired, const Rcpp::List& hits_g2_paired, const int P, const int B, const int seed, const std::string& weight_mode, const std::string& stat_mode, const std::string& aggregate_stat, const Rcpp::NumericVector& strat_bins, const double winsor_z, const std::string& design);
-RcppExport SEXP _phiper_cpp_shift_contrast(SEXP bitset_rawSEXP, SEXP n_wordsSEXP, SEXP pep_colsSEXP, SEXP g1_rowsSEXP, SEXP g2_rowsSEXP, SEXP hits_g1_pairedSEXP, SEXP hits_g2_pairedSEXP, SEXP PSEXP, SEXP BSEXP, SEXP seedSEXP, SEXP weight_modeSEXP, SEXP stat_modeSEXP, SEXP aggregate_statSEXP, SEXP strat_binsSEXP, SEXP winsor_zSEXP, SEXP designSEXP) {
+Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw, const int n_words, const Rcpp::IntegerVector& pep_cols, const Rcpp::IntegerVector& g1_rows, const Rcpp::IntegerVector& g2_rows, const Rcpp::List& hits_g1_paired, const Rcpp::List& hits_g2_paired, const int P, const int B, const int seed, const std::string& weight_mode, const std::string& stat_mode, const std::string& aggregate_stat, const std::string& perm_method, const Rcpp::NumericVector& strat_bins, const double winsor_z, const std::string& design);
+RcppExport SEXP _phiper_cpp_shift_contrast(SEXP bitset_rawSEXP, SEXP n_wordsSEXP, SEXP pep_colsSEXP, SEXP g1_rowsSEXP, SEXP g2_rowsSEXP, SEXP hits_g1_pairedSEXP, SEXP hits_g2_pairedSEXP, SEXP PSEXP, SEXP BSEXP, SEXP seedSEXP, SEXP weight_modeSEXP, SEXP stat_modeSEXP, SEXP aggregate_statSEXP, SEXP perm_methodSEXP, SEXP strat_binsSEXP, SEXP winsor_zSEXP, SEXP designSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -41,17 +41,18 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const std::string& >::type weight_mode(weight_modeSEXP);
     Rcpp::traits::input_parameter< const std::string& >::type stat_mode(stat_modeSEXP);
     Rcpp::traits::input_parameter< const std::string& >::type aggregate_stat(aggregate_statSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type perm_method(perm_methodSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type strat_bins(strat_binsSEXP);
     Rcpp::traits::input_parameter< const double >::type winsor_z(winsor_zSEXP);
     Rcpp::traits::input_parameter< const std::string& >::type design(designSEXP);
-    rcpp_result_gen = Rcpp::wrap(cpp_shift_contrast(bitset_raw, n_words, pep_cols, g1_rows, g2_rows, hits_g1_paired, hits_g2_paired, P, B, seed, weight_mode, stat_mode, aggregate_stat, strat_bins, winsor_z, design));
+    rcpp_result_gen = Rcpp::wrap(cpp_shift_contrast(bitset_raw, n_words, pep_cols, g1_rows, g2_rows, hits_g1_paired, hits_g2_paired, P, B, seed, weight_mode, stat_mode, aggregate_stat, perm_method, strat_bins, winsor_z, design));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
     {"_phiper_build_bitset_unpaired", (DL_FUNC) &_phiper_build_bitset_unpaired, 2},
-    {"_phiper_cpp_shift_contrast", (DL_FUNC) &_phiper_cpp_shift_contrast, 16},
+    {"_phiper_cpp_shift_contrast", (DL_FUNC) &_phiper_cpp_shift_contrast, 17},
     {NULL, NULL, 0}
 };
 
