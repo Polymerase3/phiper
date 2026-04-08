@@ -87,10 +87,19 @@ struct CombineOut {
 
 static inline Rcpp::List make_perm_result(
     int mu, double m_eff, double T_obs,
-    const WelfordAccum& acc, int b_hits, int B,
-    double max_delta, double frac_pos, double frac_pos_w)
+    const WelfordAccum& acc, int b_hits, int b_equal, int B,
+    double max_delta, double frac_pos, double frac_pos_w,
+    const std::string& perm_method)
 {
-  const double p_perm = (1.0 + (double)b_hits) / (1.0 + (double)B);
+  double p_perm;
+  if (perm_method == "mid_p") {
+    // b_hits counts |Tb| > |T_obs| (strict), b_equal counts |Tb| == |T_obs|
+    p_perm = ((double)b_hits + 0.5 * (double)b_equal) / (double)B;
+    if (p_perm <= 0.0) p_perm = 0.5 / (double)B; // floor at half the resolution
+  } else {
+    // standard add-one estimator: count |Tb| >= |T_obs|
+    p_perm = (1.0 + (double)(b_hits + b_equal)) / (1.0 + (double)B);
+  }
   double T_null_mean = NA_REAL;
   double T_null_sd   = NA_REAL;
   if (acc.n > 0) {
@@ -257,6 +266,45 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
     return (Splus >= Sminus) ? Splus : -Sminus;
   };
 
+  // Adaptive Fisher (AF): run one-sided Fisher on positive and negative
+  // directions separately, return the signed dominant direction.
+  //
+  // For each direction, one-sided p_i are sorted ascending, then partial sums
+  // S_k = -Σ_{i=1}^k log(p_(i)) are normalized by the k-th harmonic number
+  // H_k = Σ_{j=1}^k 1/j (the expected value of S_k under the null for sorted
+  // uniforms), giving T_k = S_k / H_k.  T_AF = max_k T_k.
+  //
+  // Positive direction: p_i = Phi(-z_i)  (small when z_i >> 0)
+  // Negative direction: p_i = Phi( z_i)  (small when z_i << 0)
+  auto af_stat = [&](const std::vector<int>& idx) -> double {
+    if (idx.empty()) return 0.0;
+    constexpr double P_MIN = 1e-300;
+    const int k = (int)idx.size();
+
+    std::vector<double> ppos(k), pneg(k);
+    for (int j = 0; j < k; ++j) {
+      const double zi = z[idx[j]];
+      ppos[j] = std::max(0.5 * std::erfc( zi * M_SQRT1_2), P_MIN);
+      pneg[j] = std::max(0.5 * std::erfc(-zi * M_SQRT1_2), P_MIN);
+    }
+
+    auto af_one = [](std::vector<double>& pv) -> double {
+      std::sort(pv.begin(), pv.end());
+      double s = 0.0, hk = 0.0, best = 0.0;
+      for (int j = 0; j < (int)pv.size(); ++j) {
+        s  += -std::log(pv[j]);
+        hk += 1.0 / (j + 1);
+        const double tk = s / hk;
+        if (tk > best) best = tk;
+      }
+      return best;
+    };
+
+    const double Tpos = af_one(ppos);
+    const double Tneg = af_one(pneg);
+    return (Tpos >= Tneg) ? Tpos : -Tneg;
+  };
+
   // Aggregate combine
   double T_obs = 0.0;
   bool use_strat = true;
@@ -299,7 +347,7 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
           const double v = pp[i];
           const bool in = ((b == 0 ? (v >= L) : (v > L)) && (v <= R));
           if (in) {
-            if (aggregate_stat == "maxmean") {
+            if (aggregate_stat == "maxmean" || aggregate_stat == "af") {
               idx.push_back(i);
             } else {
               num += w[i]*z[i];
@@ -310,6 +358,8 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
         }
         if (aggregate_stat == "maxmean") {
           if (!idx.empty()) { s += maxmean_stat(idx); ++n_nonempty; }
+        } else if (aggregate_stat == "af") {
+          if (!idx.empty()) { s += af_stat(idx); ++n_nonempty; }
         } else {
           if (any) { s += num / std::sqrt(std::max(den2, 1e-300)); ++n_nonempty; }
         }
@@ -319,10 +369,12 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
     }
   }
   if (!use_strat) {
+    std::vector<int> all_idx(m);
+    for (int i = 0; i < m; ++i) all_idx[i] = i;
     if (aggregate_stat == "maxmean") {
-      std::vector<int> idx(m);
-      for (int i = 0; i < m; ++i) idx[i] = i;
-      T_obs = maxmean_stat(idx);
+      T_obs = maxmean_stat(all_idx);
+    } else if (aggregate_stat == "af") {
+      T_obs = af_stat(all_idx);
     } else {
       double num = 0.0, den2 = 0.0;
       for (int i = 0; i < m; ++i) { num += w[i]*z[i]; den2 += w[i]*w[i]; }
@@ -373,6 +425,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
                               const std::string& weight_mode,
                               const std::string& stat_mode,
                               const std::string& aggregate_stat,
+                              const std::string& perm_method,
                               const Rcpp::NumericVector& strat_bins,
                               const double winsor_z,
                               const std::string& design) {
@@ -477,7 +530,8 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     std::mt19937_64 rng((uint64_t)seed);
     std::bernoulli_distribution coin(0.5);
 
-    int b_hits = 0;
+    int b_hits = 0;    // |Tb| > |T_obs| (strict, used for mid-p numerator)
+    int b_equal = 0;   // |Tb| == |T_obs| (used for mid-p 0.5 weight)
     std::vector<uint64_t> Fmask(n_words_p, 0ULL); // flip mask
     WelfordAccum acc;
 
@@ -538,11 +592,14 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
 
       acc.digest(Tb);
 
-      if (std::fabs(Tb) >= std::fabs(obs.T_obs)) ++b_hits;
+      const double abs_Tb  = std::fabs(Tb);
+      const double abs_obs = std::fabs(obs.T_obs);
+      if (abs_Tb > abs_obs) ++b_hits;
+      else if (abs_Tb == abs_obs) ++b_equal;
     }
 
-    return make_perm_result(mu, m_eff, obs.T_obs, acc, b_hits, B,
-                            max_delta, frac_pos, frac_pos_w);
+    return make_perm_result(mu, m_eff, obs.T_obs, acc, b_hits, b_equal, B,
+                            max_delta, frac_pos, frac_pos_w, perm_method);
   }
 
   // --------------------------- UNPAIRED PATH ----------------------------------
@@ -637,7 +694,8 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     const int nB = (int)g2_rows.size();
     const int N  = nA + nB;
 
-    int b_hits = 0;
+    int b_hits = 0;    // |Tb| > |T_obs| (strict)
+    int b_equal = 0;   // |Tb| == |T_obs|
     std::vector<int> choose_idx(nA);
     std::vector<uint64_t> mask_A(n_words), mask_B(n_words);
     WelfordAccum acc;
@@ -696,10 +754,13 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
 
       acc.digest(Tb);
 
-      if (std::fabs(Tb) >= std::fabs(obs.T_obs)) ++b_hits;
+      const double abs_Tb  = std::fabs(Tb);
+      const double abs_obs = std::fabs(obs.T_obs);
+      if (abs_Tb > abs_obs) ++b_hits;
+      else if (abs_Tb == abs_obs) ++b_equal;
     }
 
-    return make_perm_result(mu, m_eff, obs.T_obs, acc, b_hits, B,
-                            max_delta, frac_pos, frac_pos_w);
+    return make_perm_result(mu, m_eff, obs.T_obs, acc, b_hits, b_equal, B,
+                            max_delta, frac_pos, frac_pos_w, perm_method);
   }
 }
