@@ -1,5 +1,57 @@
 # Changelog
 
+## phiper 0.3.3
+
+### Tests
+
+- New `test-beta_plots.R`: tests for
+  [`plot_pcoa()`](https://polymerase3.github.io/phiper/reference/plot_pcoa.md),
+  [`plot_cap()`](https://polymerase3.github.io/phiper/reference/plot_cap.md),
+  [`plot_scree()`](https://polymerase3.github.io/phiper/reference/plot_scree.md),
+  [`plot_dispersion()`](https://polymerase3.github.io/phiper/reference/plot_dispersion.md),
+  and
+  [`plot_tsne()`](https://polymerase3.github.io/phiper/reference/plot_tsne.md)
+  (2-D and 3-D), covering basic output type, grouping/time aesthetics,
+  centroid and ellipse options, axis selection, variance-explained
+  labels, and input-validation errors.
+- New `test-plot_utils.R`: tests for colour helpers (`phip_palette`,
+  [`scale_colour_phip()`](https://polymerase3.github.io/phiper/reference/scale_colour_phip.md),
+  [`scale_fill_phip()`](https://polymerase3.github.io/phiper/reference/scale_colour_phip.md),
+  [`theme_phip()`](https://polymerase3.github.io/phiper/reference/theme_phip.md),
+  [`phip_use_montserrat()`](https://polymerase3.github.io/phiper/reference/phip_use_montserrat.md)),
+  internal colour utilities (`.hex2rgb()`, `.rgb2hex()`, `.mix_cols()`,
+  `.tint()`, `.blend_hex()`, `.make_shades()`, `.build_shaded_map()`),
+  and ordination helpers (`.pick_axes()`, `.axis_labels_with_pct()`,
+  `.shaded_colors()`, `.make_point_fills()`, `.first_subview_name()`).
+- New `test-shift_computing.R`: tests for
+  [`compute_delta()`](https://polymerase3.github.io/phiper/reference/compute_delta.md)
+  covering all `stat_mode` options (`diff`, `score`, `srlr`, `mcnemar`,
+  `srlr_paired`), all `weight_mode` options, stratified bins
+  (`strat_bins`), winsorisation, and paired designs.
+- New `test-zzz.R`: tests for `.onLoad()` idempotency,
+  [`load_example_data()`](https://polymerase3.github.io/phiper/reference/load_example_data.md),
+  and
+  [`get_example_path()`](https://polymerase3.github.io/phiper/reference/get_example_path.md).
+- New `test-utils.R`: tests for internal utilities including
+  [`.ph_check_cond()`](https://polymerase3.github.io/phiper/reference/dot-ph_check_cond.md),
+  [`.ph_check_extension()`](https://polymerase3.github.io/phiper/reference/dot-ph_check_extension.md),
+  [`.ph_check_null_default()`](https://polymerase3.github.io/phiper/reference/dot-ph_check_null_default.md),
+  [`.ph_check_path()`](https://polymerase3.github.io/phiper/reference/dot-ph_check_path.md),
+  `%nin%`, `%||%`,
+  [`.ph_opt()`](https://polymerase3.github.io/phiper/reference/dot-ph_opt.md),
+  [`.ph_now()`](https://polymerase3.github.io/phiper/reference/dot-ph_now.md),
+  [`.ph_base_prefix()`](https://polymerase3.github.io/phiper/reference/dot-ph_base_prefix.md),
+  [`.ph_wrap()`](https://polymerase3.github.io/phiper/reference/dot-ph_wrap.md),
+  [`.ph_compose_lines()`](https://polymerase3.github.io/phiper/reference/dot-ph_compose_lines.md),
+  [`.ph_log_info()`](https://polymerase3.github.io/phiper/reference/dot-ph_log_info.md),
+  [`.ph_log_ok()`](https://polymerase3.github.io/phiper/reference/dot-ph_log_ok.md),
+  [`.ph_warn()`](https://polymerase3.github.io/phiper/reference/dot-ph_warn.md),
+  [`.ph_abort()`](https://polymerase3.github.io/phiper/reference/dot-ph_abort.md),
+  [`.ph_with_timing()`](https://polymerase3.github.io/phiper/reference/dot-ph_with_timing.md),
+  [`.ph_check_pd()`](https://polymerase3.github.io/phiper/reference/dot-ph_check_pd.md),
+  and
+  [`.ph_resolve_paths()`](https://polymerase3.github.io/phiper/reference/dot-ph_resolve_paths.md).
+
 ## phiper 0.3.2
 
 ### New functions

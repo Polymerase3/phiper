@@ -13,7 +13,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -48,6 +48,17 @@
       <small>Source: <a href="https://github.com/Polymerase3/phiper/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.3.3" id="phiper-033">phiper 0.3.3<a class="anchor" aria-label="anchor" href="#phiper-033"></a></h2>
+<div class="section level3">
+<h3 id="tests-0-3-3">Tests<a class="anchor" aria-label="anchor" href="#tests-0-3-3"></a></h3>
+<ul><li>New <code>test-beta_plots.R</code>: tests for <code><a href="../reference/plot_pcoa.html">plot_pcoa()</a></code>, <code><a href="../reference/plot_cap.html">plot_cap()</a></code>, <code><a href="../reference/plot_scree.html">plot_scree()</a></code>, <code><a href="../reference/plot_dispersion.html">plot_dispersion()</a></code>, and <code><a href="../reference/plot_tsne.html">plot_tsne()</a></code> (2-D and 3-D), covering basic output type, grouping/time aesthetics, centroid and ellipse options, axis selection, variance-explained labels, and input-validation errors.</li>
+<li>New <code>test-plot_utils.R</code>: tests for colour helpers (<code>phip_palette</code>, <code><a href="../reference/scale_colour_phip.html">scale_colour_phip()</a></code>, <code><a href="../reference/scale_colour_phip.html">scale_fill_phip()</a></code>, <code><a href="../reference/theme_phip.html">theme_phip()</a></code>, <code><a href="../reference/phip_use_montserrat.html">phip_use_montserrat()</a></code>), internal colour utilities (<code>.hex2rgb()</code>, <code>.rgb2hex()</code>, <code>.mix_cols()</code>, <code>.tint()</code>, <code>.blend_hex()</code>, <code>.make_shades()</code>, <code>.build_shaded_map()</code>), and ordination helpers (<code>.pick_axes()</code>, <code>.axis_labels_with_pct()</code>, <code>.shaded_colors()</code>, <code>.make_point_fills()</code>, <code>.first_subview_name()</code>).</li>
+<li>New <code>test-shift_computing.R</code>: tests for <code><a href="../reference/compute_delta.html">compute_delta()</a></code> covering all <code>stat_mode</code> options (<code>diff</code>, <code>score</code>, <code>srlr</code>, <code>mcnemar</code>, <code>srlr_paired</code>), all <code>weight_mode</code> options, stratified bins (<code>strat_bins</code>), winsorisation, and paired designs.</li>
+<li>New <code>test-zzz.R</code>: tests for <code>.onLoad()</code> idempotency, <code><a href="../reference/load_example_data.html">load_example_data()</a></code>, and <code><a href="../reference/get_example_path.html">get_example_path()</a></code>.</li>
+<li>New <code>test-utils.R</code>: tests for internal utilities including <code><a href="../reference/dot-ph_check_cond.html">.ph_check_cond()</a></code>, <code><a href="../reference/dot-ph_check_extension.html">.ph_check_extension()</a></code>, <code><a href="../reference/dot-ph_check_null_default.html">.ph_check_null_default()</a></code>, <code><a href="../reference/dot-ph_check_path.html">.ph_check_path()</a></code>, <code>%nin%</code>, <code>%||%</code>, <code><a href="../reference/dot-ph_opt.html">.ph_opt()</a></code>, <code><a href="../reference/dot-ph_now.html">.ph_now()</a></code>, <code><a href="../reference/dot-ph_base_prefix.html">.ph_base_prefix()</a></code>, <code><a href="../reference/dot-ph_wrap.html">.ph_wrap()</a></code>, <code><a href="../reference/dot-ph_compose_lines.html">.ph_compose_lines()</a></code>, <code><a href="../reference/dot-ph_log_info.html">.ph_log_info()</a></code>, <code><a href="../reference/dot-ph_log_ok.html">.ph_log_ok()</a></code>, <code><a href="../reference/dot-ph_warn.html">.ph_warn()</a></code>, <code><a href="../reference/dot-ph_abort.html">.ph_abort()</a></code>, <code><a href="../reference/dot-ph_with_timing.html">.ph_with_timing()</a></code>, <code><a href="../reference/dot-ph_check_pd.html">.ph_check_pd()</a></code>, and <code><a href="../reference/dot-ph_resolve_paths.html">.ph_resolve_paths()</a></code>.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.2" id="phiper-032">phiper 0.3.2<a class="anchor" aria-label="anchor" href="#phiper-032"></a></h2>
 <div class="section level3">
