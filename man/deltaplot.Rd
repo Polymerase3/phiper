@@ -83,31 +83,20 @@ increased prevalence for \code{group1} vs \code{group2}. If
 across pooled prevalence.
 }
 \examples{
-\donttest{
-library(dplyr)
-library(rlang)
-ps <- load_example_data("small_mixture")
-
-# pick the grouping column
-group_col <- "group"
-
-prev_res <- ph_prevalence_compare(
-  ps,
-  rank_cols  = "peptide_id",
-  group_cols = group_col,
-  collect    = TRUE
+set.seed(1)
+n <- 40
+prev_tbl <- data.frame(
+  feature = paste0("pep", seq_len(n)),
+  group1  = "A",
+  group2  = "B",
+  prop1   = runif(n),
+  prop2   = runif(n)
 )
-prev_tbl <- as.data.frame(prev_res)
-pair_tbl <- unique(prev_tbl[, c("group1", "group2")])
-group_pair <- c(pair_tbl$group1[1], pair_tbl$group2[1])
 
 p <- deltaplot(
   prev_tbl,
-  group_pair_values = group_pair,
-  group_labels = group_pair,
-  y_label = "Delta prevalence (group2 - group1)"
+  group_pair_values = c("A", "B"),
+  group_labels      = c("Group A", "Group B")
 )
-
 print(p)
-}
 }

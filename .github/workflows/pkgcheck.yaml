@@ -7,17 +7,8 @@ concurrency:
 
 on:
   push:
-    paths:
-      - "R/**"              # any R source file
-      - "tests/**"          # testthat files
-      - "DESCRIPTION"       # bumping version, deps, etc.
-      - "NAMESPACE"         # roxygenise output
   pull_request:
-    paths:
-      - "R/**"
-      - "tests/**"
-      - "DESCRIPTION"
-      - "NAMESPACE"
+  workflow_dispatch:
 
 jobs:
   pkgcheck:

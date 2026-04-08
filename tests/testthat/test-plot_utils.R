@@ -58,22 +58,6 @@ testthat::test_that("theme_phip() applies to a ggplot without error", {
   testthat::expect_s3_class(p, "ggplot")
 })
 
-# ---------------------------------------------------------------------------
-# phip_use_montserrat()
-# ---------------------------------------------------------------------------
-testthat::test_that("phip_use_montserrat() returns the family name invisibly", {
-  testthat::skip_if_not_installed("sysfonts")
-  testthat::skip_if_not_installed("showtext")
-  fam <- phip_use_montserrat(enable = FALSE)
-  testthat::expect_identical(fam, "Montserrat")
-})
-
-testthat::test_that("phip_use_montserrat() accepts a custom family name", {
-  testthat::skip_if_not_installed("sysfonts")
-  testthat::skip_if_not_installed("showtext")
-  fam <- phip_use_montserrat(family = "MyFont", enable = FALSE)
-  testthat::expect_identical(fam, "MyFont")
-})
 
 # ---------------------------------------------------------------------------
 # .phip_palette_map()

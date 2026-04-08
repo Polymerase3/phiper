@@ -8,43 +8,33 @@ volcano_interactive(
   df,
   pair = NULL,
   rank = NULL,
-  universe = NULL,
-  features = NULL,
-  features_regex = FALSE,
-  universe_regex = FALSE,
   color_by = NULL,
   color_title = NULL,
   fc_cut = 1,
   p_cut = 0.05,
-  p_mode = c("raw", "bh", "wbh"),
+  p_mode = c("raw", "bh"),
   significant_colors = c(`not significant` = "#386cb0", `significant prior correction` =
     "#1b9e77", `significant post fdr correction` = "#e31a1c")
 )
 }
 \arguments{
-\item{df}{A \code{ph_prev_result} object or a data frame with prevalence results.}
+\item{df}{A data frame with prevalence results.}
 
 \item{pair}{optional group pair (character length-2).}
 
 \item{rank}{optional single rank (character) to keep.}
 
-\item{universe}{optional \code{group_col} value or regex (if \code{universe_regex = TRUE}).}
+\item{color_by}{optional named vector identifying peptide-library values to
+highlight, e.g. \code{c("is_flagellum" = TRUE)}.}
 
-\item{features}{optional character vector or regex patterns (if \code{features_regex = TRUE}).}
-
-\item{features_regex}{logical; treat \code{features} as regex patterns.}
-
-\item{universe_regex}{logical; treat \code{universe} as regex pattern(s).}
-
-\item{color_by}{optional peptide-level meta column name to color by.}
-
-\item{color_title}{optional legend title for \code{color_by}.}
+\item{color_title}{optional legend title when \code{color_by} is used.}
 
 \item{fc_cut}{Numeric; absolute log2 fold-change cutoff.}
 
 \item{p_cut}{Numeric; p-value cutoff.}
 
-\item{p_mode}{One of \code{c("raw","bh","wbh")} controlling which p-values to use.}
+\item{p_mode}{One of \code{c("raw","bh")}; \code{"bh"} applies BH correction per-plot
+from \code{p_raw}.}
 
 \item{significant_colors}{Named vector of colors for significance categories.}
 }
@@ -53,4 +43,28 @@ A \code{plotly} htmlwidget.
 }
 \description{
 Interactive volcano plot (log2 ratio vs -log10 p)
+}
+\examples{
+\dontrun{
+set.seed(3)
+prev <- data.frame(
+  rank       = "peptide_id",
+  feature    = paste0("pep", 1:40),
+  group1     = "A",
+  group2     = "B",
+  prop1      = runif(40),
+  prop2      = runif(40),
+  percent1   = runif(40, 0, 100),
+  percent2   = runif(40, 0, 100),
+  ratio      = runif(40, 0.1, 10),
+  p_raw      = c(runif(10, 0, 0.01), runif(30, 0.1, 1)),
+  n_peptides = 1L
+)
+
+# interactive volcano — hover to inspect each peptide
+volcano_interactive(prev)
+
+# BH correction
+volcano_interactive(prev, p_mode = "bh", fc_cut = 1.5, p_cut = 0.01)
+}
 }

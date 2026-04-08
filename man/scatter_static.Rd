@@ -2,81 +2,83 @@
 % Please edit documentation in R/pop_plots.R
 \name{scatter_static}
 \alias{scatter_static}
-\title{Static scatterplot of percent1 vs percent2 from \code{ph_prevalence_compare()}}
+\title{Static scatterplot of percent1 vs percent2 from \code{compute_pop()}}
 \usage{
 scatter_static(
   df,
   pair = NULL,
   rank = NULL,
-  universe = NULL,
-  features = NULL,
-  features_regex = FALSE,
-  universe_regex = FALSE,
   xlab = NULL,
   ylab = NULL,
   alpha = 0.05,
-  prefer_flags = TRUE,
   color_by = NULL,
   color_title = NULL,
-  point_size = 2,
-  point_alpha = 0.85,
-  jitter_width_pp = 0,
-  jitter_height_pp = 0,
-  font_family = NULL,
-  font_size = 12
+  ...
 )
 }
 \arguments{
-\item{df}{A \code{ph_prev_result} object or a data frame with prevalence results.}
+\item{df}{A data frame with prevalence results.}
 
 \item{pair}{optional group pair (character length-2).}
 
 \item{rank}{optional single rank (character) to keep.}
 
-\item{universe}{optional \code{group_col} value or regex (if \code{universe_regex = TRUE}).}
+\item{xlab, ylab}{axis labels; defaults to \code{pair[1]}/\code{pair[2]} when \code{pair} is given.}
 
-\item{features}{optional character vector or regex patterns (if \code{features_regex = TRUE}).}
+\item{alpha}{numeric in (0,1]; significance threshold for category labels.}
 
-\item{features_regex}{logical; treat \code{features} as regex patterns.}
+\item{color_by}{optional named vector identifying peptide-library values to
+highlight, e.g. \code{c("is_flagellum" = TRUE)} or
+\code{c("species" = "Staphylococcus aureus")}.}
 
-\item{universe_regex}{logical; treat \code{universe} as regex pattern(s).}
+\item{color_title}{optional legend title when \code{color_by} is used.}
 
-\item{xlab, ylab}{axis labels; if missing and \code{pair} is provided, they default
-to \code{pair[1]} and \code{pair[2]}.}
-
-\item{alpha}{numeric in (0,1]; used only for nominal labels.}
-
-\item{prefer_flags}{logical; reserved for future use (kept for back-compat).}
-
-\item{color_by}{optional peptide-level meta column name to color by.}
-
-\item{color_title}{optional legend title for \code{color_by}.}
-
-\item{point_size}{Numeric; marker size for points.}
-
-\item{point_alpha}{Numeric in (0,1); marker opacity.}
-
-\item{jitter_width_pp}{Numeric; jitter width in percentage points.}
-
-\item{jitter_height_pp}{Numeric; jitter height in percentage points.}
-
-\item{font_family}{Character; font family for plot text.}
-
-\item{font_size}{Numeric; font size for plot text.}
+\item{...}{graphical parameters: \code{point_size} (default 2), \code{point_alpha}
+(default 0.85), \code{jitter_width_pp} (default 0), \code{jitter_height_pp}
+(default 0), \code{font_family}, \code{font_size} (default 12).}
 }
 \value{
 A ggplot object.
 }
 \description{
-A ggplot2 clone of \code{scatter_interactive()} with the same filtering behavior
-and default coloring rules:
-\itemize{
-\item If \code{color_by = NULL}, points are colored by significance category.
-If \code{category_rank_wbh} exists, it is used directly.
-Otherwise, categories are derived with priority:
-p_adj_rank_wbh -> p_adj_rank -> p_raw (threshold = \code{alpha}).
-If only one category remains, it auto-falls back to p-value bins for
-informative coloring.
-\item If \code{color_by} is provided, it joins peptide metadata (like interactive).
+A ggplot2 scatterplot comparing prevalence in \strong{group a} vs \strong{group b}.
+Default coloring uses BH-corrected p-values computed per-plot from \code{p_raw}:
+"significant (BH)", "nominal only", "not significant".
+If only one category is present the plot falls back to p-value bins.
+
+When \code{color_by} is supplied as a named vector, peptide metadata is joined and
+points matching the specified values are highlighted.  Multiple groups may be
+given simultaneously:
+\preformatted{
+  color_by = c("is_flagellum" = TRUE)
+  color_by = c("species" = "Staphylococcus aureus")
+  color_by = c("is_flagellum" = TRUE, "species" = "Staphylococcus aureus")
 }
+}
+\examples{
+set.seed(1)
+prev <- data.frame(
+  rank       = "peptide_id",
+  feature    = paste0("pep", 1:30),
+  group1     = "A",
+  group2     = "B",
+  prop1      = runif(30),
+  prop2      = runif(30),
+  percent1   = runif(30, 0, 100),
+  percent2   = runif(30, 0, 100),
+  ratio      = runif(30, 0.1, 10),
+  p_raw      = runif(30),
+  n_peptides = 1L
+)
+
+# basic plot
+scatter_static(prev)
+
+# filter to a specific pair and set axis labels
+scatter_static(prev,
+  pair  = c("A", "B"),
+  xlab  = "Group A (\%)",
+  ylab  = "Group B (\%)",
+  alpha = 0.05
+)
 }

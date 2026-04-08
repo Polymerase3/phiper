@@ -29,8 +29,7 @@ Percentages are computed from the positive part of the eigenvalues,
 i.e. \code{pmax(eigenvalues, 0)}, to handle possible small negative
 eigenvalues from non-perfectly Euclidean distance matrices.
 
-The function uses \code{\link[=theme_phip]{theme_phip()}} if it exists in the search path;
-otherwise it falls back to \code{\link[ggplot2:ggtheme]{ggplot2::theme_minimal()}}.
+Styled with \code{\link[=theme_phip]{theme_phip()}}.
 }
 \examples{
 \dontrun{

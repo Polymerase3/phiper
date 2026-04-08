@@ -26,3 +26,5 @@ src/*.a
 src/*.dSYM
 src/*.gcda
 src/*.gcno
+
+.swp

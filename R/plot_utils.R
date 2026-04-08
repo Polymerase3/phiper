@@ -47,14 +47,19 @@ phip_palette <- c(
   "#386cb0" # strong blue
 )
 
-#' @title Discrete colour & fill scales using the PHIP palette
+#' @title Discrete colour scale using the PHIP palette
 #'
-#' @description Thin wrappers around `ggplot2::scale_*_manual()` that apply
-#'   `phip_palette`.
+#' @description A thin wrapper around `ggplot2::scale_colour_manual()` that
+#'   applies `phip_palette`. Set as the session default on `library(phiper)`.
 #'
 #' @inheritParams ggplot2::scale_colour_manual
-#' @return A ggplot2 scale
+#' @return A ggplot2 scale.
 #' @family phip-ggplot
+#' @examples
+#' ggplot2::ggplot(iris,
+#'   ggplot2::aes(Sepal.Length, Sepal.Width, colour = Species)) +
+#'   ggplot2::geom_point() +
+#'   scale_colour_phip()
 #' @export
 scale_colour_phip <- function(...) {
   ggplot2::scale_colour_manual(values = phip_palette, ...)
@@ -64,73 +69,22 @@ scale_colour_phip <- function(...) {
 #' @export
 scale_color_phip <- scale_colour_phip
 
-#' @rdname scale_colour_phip
+#' @title Discrete fill scale using the PHIP palette
+#'
+#' @description A thin wrapper around `ggplot2::scale_fill_manual()` that
+#'   applies `phip_palette`. Set as the session default on `library(phiper)`.
+#'
+#' @inheritParams ggplot2::scale_fill_manual
+#' @return A ggplot2 scale.
+#' @family phip-ggplot
+#' @examples
+#' ggplot2::ggplot(iris,
+#'   ggplot2::aes(Species, Sepal.Length, fill = Species)) +
+#'   ggplot2::geom_boxplot() +
+#'   scale_fill_phip()
 #' @export
 scale_fill_phip <- function(...) {
   ggplot2::scale_fill_manual(values = phip_palette, ...)
-}
-
-# ------------------------------------------------------------------------------
-# Fonts via showtext/sysfonts
-# ------------------------------------------------------------------------------
-#' @title Register and enable the Montserrat font for plotting (showtext)
-#'
-#' @description Registers the Google font **Montserrat** (via **sysfonts**) and
-#'   enables **showtext** so the font renders consistently in all devices (PNG,
-#'   PDF, etc.). Safe to call multiple times; silently no-ops if already active.
-#'
-#' @param family Internal family alias to register. Default `"Montserrat"`.
-#' @param enable If `TRUE`, turns on `showtext::showtext_auto(TRUE)`.
-#'
-#' @details Requires packages **showtext** and **sysfonts**. If the Google
-#'   download fails (e.g., offline), the theme will still try to use a locally
-#'   installed Montserrat by name; otherwise it falls back to the default device
-#'   font.
-#'
-#' @return (Invisibly) the family name to use in themes.
-#' @family phip-ggplot
-#' @export
-phip_use_montserrat <- function(family = "Montserrat",
-                                enable = TRUE) {
-  if (!requireNamespace("sysfonts", quietly = TRUE) ||
-    !requireNamespace("showtext", quietly = TRUE)) {
-    .ph_warn(
-      headline = "Missing dependencies for Montserrat registration.",
-      step = "phip_use_montserrat()",
-      bullets = c(
-        "Packages 'sysfonts' and 'showtext' are required.",
-        "Install with: install.packages(c('sysfonts','showtext'))"
-      )
-    )
-
-    return(invisible(family))
-  }
-
-  # Try bundled local fonts first; fall back to Google Fonts if not found.
-  local_regular <- system.file("fonts", "Montserrat-Regular.ttf", package = "phiper")
-  if (nzchar(local_regular) && file.exists(local_regular)) {
-    local_bold   <- system.file("fonts", "Montserrat-Bold.ttf",   package = "phiper")
-    local_italic <- system.file("fonts", "Montserrat-Italic.ttf", package = "phiper")
-    try(
-      sysfonts::font_add(
-        family  = family,
-        regular = local_regular,
-        bold    = if (nzchar(local_bold)   && file.exists(local_bold))   local_bold   else NULL,
-        italic  = if (nzchar(local_italic) && file.exists(local_italic)) local_italic else NULL
-      ),
-      silent = TRUE
-    )
-  } else {
-    try(
-      sysfonts::font_add_google(name = "Montserrat", family = family),
-      silent = TRUE
-    )
-  }
-
-  if (isTRUE(enable)) {
-    showtext::showtext_auto(enable = TRUE)
-  }
-  invisible(family)
 }
 
 # ------------------------------------------------------------------------------
@@ -138,22 +92,18 @@ phip_use_montserrat <- function(family = "Montserrat",
 # ------------------------------------------------------------------------------
 #' @title Theme `theme_phip`
 #'
-#' @description A clean, publication-ready ggplot2 theme inspired by the
-#'   provided `theme_Publication` snippet, tuned for **facetted** plots and
-#'   consistent use of the **Montserrat** font (register it with
-#'   [phip_use_montserrat()]).
+#' @description A clean, publication-ready ggplot2 theme tuned for **facetted**
+#'   plots with the **Montserrat** font. The font is registered and
+#'   **showtext** rendering is enabled automatically when the package loads —
+#'   no setup required.
 #'
 #' @param base_size   Base font size.
-#' @param base_family Base font family (default `"Montserrat"`). Call
-#'   [phip_use_montserrat()] once per session to register and enable rendering.
+#' @param base_family Base font family (default `"Montserrat"`).
 #'
 #' @return A ggplot2 `theme` object.
 #' @family phip-ggplot
 #' @examples
 #' \dontrun{
-#' # Register Montserrat once per session
-#' phip_use_montserrat()
-#'
 #' ggplot2::ggplot(iris, ggplot2::aes(Sepal.Length, Sepal.Width, colour = Species)) +
 #'   ggplot2::geom_point() +
 #'   scale_colour_phip() +

@@ -1,3 +1,64 @@
+# phiper 0.4.0
+
+## New functions
+
+- `compute_pop()` replaces the old `ph_prevalence_compare()`. Computes
+  per-feature prevalence comparisons (Fisher / McNemar tests) across group
+  pairs. Unused arguments were removed, internal filtering now delegates to the
+  shared `.ph_filter_pairs()` helper, and imports were trimmed.
+- `scatter_static()` — static ggplot2 prevalence scatter (percent1 vs percent2)
+  with BH-corrected significance colouring and optional `color_by` highlighting.
+- `volcano_static()` — static ggplot2 volcano (log2 ratio vs −log10 p) with
+  configurable fold-change and p-value cutoffs and raw / BH p-value modes.
+- `volcano_interactive()` — plotly equivalent of `volcano_static()`.
+
+## Changes to `scatter_interactive()`
+
+- Fixed a hover-text bug that caused incorrect peptide labels to appear in
+  some multi-rank datasets.
+- Updated peptide-library joining to follow the phiperio conventions used
+  elsewhere in the package.
+- Removed arguments that were no longer used after the peptide-library refactor.
+
+## Plotting
+
+- All plots now use `theme_phip()` as their base theme and the phiper discrete
+  colour / fill scales, ensuring a consistent visual style across the package.
+- `phip_use_montserrat()` has been removed. Font registration is handled
+  automatically in `.onLoad()`.
+
+## Examples and documentation
+
+- Added self-contained `@examples` blocks to `scatter_static()`,
+  `volcano_static()`, and `volcano_interactive()`.
+- Fixed examples for `deltaplot()`, `deltaplot_interactive()`, `ecdf_plot()`,
+  and `ecdf_plot_interactive()`: the old examples called `ph_prevalence_compare()`
+  which no longer exists; they now use a minimal inline `data.frame` and require
+  no external data.
+- Updated prose descriptions in `scatter_static()` and `scatter_interactive()`
+  that still referenced `ph_prevalence_compare()`.
+
+## Tests
+
+- New `test-pop_plots.R` covering `scatter_static()`, `scatter_interactive()`,
+  `volcano_static()`, and `volcano_interactive()` (return types, pair / rank
+  filtering, BH colouring, `color_by` interface, background overlay, and the
+  internal `.build_color_group()` helper).
+- Removed the two `phip_use_montserrat()` tests from `test-plot_utils.R` for
+  the function that was deleted.
+- Updated vdiffr reference snapshots for `deltaplot`, `forestplot`, and
+  `ecdf_plot` to reflect the new `theme_phip()` styling.
+
+## R CMD CHECK
+
+- Added `delta_ratio`, `n01`, and `n10` to `utils::globalVariables()` in
+  `zzz.R` to silence the "no visible binding" notes from `compute_pop()`.
+
+## Vignettes
+
+- Removed the pre-built `.html` vignette that was accidentally committed to
+  the repository.
+
 # phiper 0.3.4
 
 ## Changes to `compute_delta()`

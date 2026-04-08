@@ -1,6 +1,6 @@
 Package: phiper
 Title: Automated PhIP-seq Analysis and Reporting
-Version: 0.3.4
+Version: 0.4.0
 Authors@R: c(
   person(
     "Mateusz", "Kolek", 
@@ -50,8 +50,6 @@ Suggests:
     readr,
     rmarkdown,
     rprojroot,
-    showtext,
-    sysfonts,
     testthat (>= 3.0.0),
     vdiffr,
     withr,
@@ -79,4 +77,6 @@ Imports:
     RcppParallel,
     utils,
     Rtsne,
-    plotly
+    plotly,
+    showtext,
+    sysfonts
