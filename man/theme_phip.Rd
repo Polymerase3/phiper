@@ -30,6 +30,7 @@ ggplot2::ggplot(iris, ggplot2::aes(Sepal.Length, Sepal.Width, colour = Species))
 }
 \seealso{
 Other phip-ggplot: 
-\code{\link{scale_colour_phip}()}
+\code{\link{scale_colour_phip}()},
+\code{\link{scale_fill_phip}()}
 }
 \concept{phip-ggplot}

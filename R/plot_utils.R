@@ -47,14 +47,19 @@ phip_palette <- c(
   "#386cb0" # strong blue
 )
 
-#' @title Discrete colour & fill scales using the PHIP palette
+#' @title Discrete colour scale using the PHIP palette
 #'
-#' @description Thin wrappers around `ggplot2::scale_*_manual()` that apply
-#'   `phip_palette`.
+#' @description A thin wrapper around `ggplot2::scale_colour_manual()` that
+#'   applies `phip_palette`. Set as the session default on `library(phiper)`.
 #'
 #' @inheritParams ggplot2::scale_colour_manual
-#' @return A ggplot2 scale
+#' @return A ggplot2 scale.
 #' @family phip-ggplot
+#' @examples
+#' ggplot2::ggplot(iris,
+#'   ggplot2::aes(Sepal.Length, Sepal.Width, colour = Species)) +
+#'   ggplot2::geom_point() +
+#'   scale_colour_phip()
 #' @export
 scale_colour_phip <- function(...) {
   ggplot2::scale_colour_manual(values = phip_palette, ...)
@@ -64,7 +69,19 @@ scale_colour_phip <- function(...) {
 #' @export
 scale_color_phip <- scale_colour_phip
 
-#' @rdname scale_colour_phip
+#' @title Discrete fill scale using the PHIP palette
+#'
+#' @description A thin wrapper around `ggplot2::scale_fill_manual()` that
+#'   applies `phip_palette`. Set as the session default on `library(phiper)`.
+#'
+#' @inheritParams ggplot2::scale_fill_manual
+#' @return A ggplot2 scale.
+#' @family phip-ggplot
+#' @examples
+#' ggplot2::ggplot(iris,
+#'   ggplot2::aes(Species, Sepal.Length, fill = Species)) +
+#'   ggplot2::geom_boxplot() +
+#'   scale_fill_phip()
 #' @export
 scale_fill_phip <- function(...) {
   ggplot2::scale_fill_manual(values = phip_palette, ...)

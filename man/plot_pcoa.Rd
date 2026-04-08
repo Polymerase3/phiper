@@ -105,8 +105,7 @@ table via \code{sample_id}).
 Axis labels are automatically annotated with the percentage of variance
 explained, using the \code{var_explained} component of \code{pcoa_res} if available.
 
-The function uses \code{\link[=theme_phip]{theme_phip()}} if it exists in the search path; otherwise
-it falls back to \code{\link[ggplot2:ggtheme]{ggplot2::theme_minimal()}}.
+Styled with \code{\link[=theme_phip]{theme_phip()}}.
 }
 \examples{
 \dontrun{

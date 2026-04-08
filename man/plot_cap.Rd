@@ -93,8 +93,7 @@ explained by each CAP axis, computed as
 constrained eigenvalues from \code{cap_res$eigenvalues}. Only positive parts
 of eigenvalues are used when computing percentages.
 
-The function uses \code{\link[=theme_phip]{theme_phip()}} if it exists in the search path;
-otherwise it falls back to \code{\link[ggplot2:ggtheme]{ggplot2::theme_minimal()}}.
+Styled with \code{\link[=theme_phip]{theme_phip()}}.
 
 Typically you will want to join sample-level metadata into
 \code{cap_res$sample_coords} before plotting, e.g.:

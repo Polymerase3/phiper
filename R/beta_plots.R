@@ -66,8 +66,8 @@
 #' Axis labels are automatically annotated with the percentage of variance
 #' explained, using the `var_explained` component of `pcoa_res` if available.
 #'
-#' The function uses [theme_phip()] if it exists in the search path; otherwise
-#' it falls back to [ggplot2::theme_minimal()].
+#' Styled with [theme_phip()].
+
 #'
 #' @return A [ggplot2::ggplot] object representing the PCoA scatter plot.
 #'
@@ -445,11 +445,7 @@ plot_pcoa <- function(pcoa_res,
   }
 
   # --- theme + labels --------------------------------------------------------
-  base_theme <- if (exists("theme_phip", mode = "function")) {
-    theme_phip()
-  } else {
-    ggplot2::theme_minimal()
-  }
+  base_theme <- theme_phip()
 
   p <- p +
     ggplot2::labs(x = xlab, y = ylab) +
@@ -513,8 +509,8 @@ plot_pcoa <- function(pcoa_res,
 #' constrained eigenvalues from `cap_res$eigenvalues`. Only positive parts
 #' of eigenvalues are used when computing percentages.
 #'
-#' The function uses [theme_phip()] if it exists in the search path;
-#' otherwise it falls back to [ggplot2::theme_minimal()].
+#' Styled with [theme_phip()].
+
 #'
 #' Typically you will want to join sample-level metadata into
 #' `cap_res$sample_coords` before plotting, e.g.:
@@ -911,11 +907,7 @@ plot_cap <- function(cap_res,
   }
 
   # --- finish ----------------------------------------------------------------
-  base_theme <- if (exists("theme_phip", mode = "function")) {
-    theme_phip()
-  } else {
-    ggplot2::theme_minimal()
-  }
+  base_theme <- theme_phip()
 
   p <- p +
     ggplot2::labs(x = xlab, y = ylab) +
@@ -942,8 +934,8 @@ plot_cap <- function(cap_res,
 #' i.e. `pmax(eigenvalues, 0)`, to handle possible small negative
 #' eigenvalues from non-perfectly Euclidean distance matrices.
 #'
-#' The function uses [theme_phip()] if it exists in the search path;
-#' otherwise it falls back to [ggplot2::theme_minimal()].
+#' Styled with [theme_phip()].
+
 #'
 #' @return A [ggplot2::ggplot] object representing the scree plot.
 #'
@@ -1000,11 +992,7 @@ plot_scree <- function(pcoa_res,
     pct      = pct
   )
 
-  base_theme <- if (exists("theme_phip", mode = "function")) {
-    theme_phip()
-  } else {
-    ggplot2::theme_minimal()
-  }
+  base_theme <- theme_phip()
 
   # --- ggplot ----------------------------------------------------------------
   if (type == "bar") {
@@ -1187,9 +1175,7 @@ plot_dispersion <- function(x,
       axis.text.x      = ggplot2::element_text(angle = 45, hjust = 1)
     )
 
-  if (exists("theme_phip", mode = "function")) {
-    p <- p + theme_phip()
-  }
+  p <- p + theme_phip()
 
   p
 }
@@ -1290,12 +1276,7 @@ plot_tsne <- function(tsne_res,
         colour = if (!is.null(colour)) colour else NULL
       )
 
-    # Use theme_phip() if available, otherwise minimal
-    if (exists("theme_phip", mode = "function")) {
-      p <- p + theme_phip()
-    } else {
-      p <- p + ggplot2::theme_minimal()
-    }
+    p <- p + theme_phip()
 
     return(p)
   }

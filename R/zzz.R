@@ -3,6 +3,7 @@
 "_PACKAGE"
 
 .onLoad <- function(libname, pkgname) {
+  # Register bundled Montserrat and activate showtext rendering
   ttf <- system.file("fonts", "Montserrat-Regular.ttf", package = pkgname)
   if (nzchar(ttf) && file.exists(ttf)) {
     bold   <- system.file("fonts", "Montserrat-Bold.ttf",   package = pkgname)
@@ -18,6 +19,13 @@
     )
   }
   tryCatch(showtext::showtext_auto(enable = TRUE), error = function(e) NULL)
+
+  # Set package-wide ggplot2 defaults
+  ggplot2::theme_set(theme_phip())
+  options(
+    ggplot2.discrete.colour = phip_palette,
+    ggplot2.discrete.fill   = phip_palette
+  )
 }
 
 ## usethis namespace: start
