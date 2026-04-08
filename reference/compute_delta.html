@@ -19,7 +19,7 @@ statistic and assessing significance via label permutation."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -76,7 +76,8 @@ statistic and assessing significance via <strong>label permutation</strong>.</p>
 <span>  B_permutations <span class="op">=</span> <span class="fl">2000L</span>,</span>
 <span>  weight_mode <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"equal"</span>, <span class="st">"se_invvar"</span>, <span class="st">"n_eff_sqrt"</span><span class="op">)</span>,</span>
 <span>  stat_mode <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"srlr"</span>, <span class="st">"diff"</span>, <span class="st">"asin"</span>, <span class="st">"score"</span>, <span class="st">"mcnemar"</span>, <span class="st">"srlr_paired"</span><span class="op">)</span>,</span>
-<span>  aggregate_stat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"stouffer"</span>, <span class="st">"maxmean"</span><span class="op">)</span>,</span>
+<span>  perm_method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mid_p"</span>, <span class="st">"standard"</span><span class="op">)</span>,</span>
+<span>  aggregate_stat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"stouffer"</span>, <span class="st">"maxmean"</span>, <span class="st">"af"</span><span class="op">)</span>,</span>
 <span>  strat_bins <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.002</span>, <span class="fl">0.005</span>, <span class="fl">0.01</span>, <span class="fl">0.02</span>, <span class="fl">0.05</span>, <span class="fl">0.1</span>, <span class="fl">0.2</span>, <span class="fl">0.5</span><span class="op">)</span>,</span>
 <span>  winsor_z <span class="op">=</span> <span class="fl">4</span>,</span>
 <span>  rank_feature_keep <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -149,10 +150,15 @@ combination (see Details).</p></dd>
 Details). The paired-only modes require paired designs.</p></dd>
 
 
+<dt id="arg-perm-method">perm_method<a class="anchor" aria-label="anchor" href="#arg-perm-method"></a></dt>
+<dd><p>One of <code>c("standard", "mid_p")</code>, controlling how the
+permutation p-value is computed (see Details). Default <code>"standard"</code>.</p></dd>
+
+
 <dt id="arg-aggregate-stat">aggregate_stat<a class="anchor" aria-label="anchor" href="#arg-aggregate-stat"></a></dt>
-<dd><p>One of <code>c("stouffer", "maxmean")</code>, controlling how
-peptide-level z-scores are aggregated into a single test statistic (see
-Details).</p></dd>
+<dd><p>One of <code>c("stouffer", "maxmean", "af")</code>,
+controlling how peptide-level z-scores are aggregated into a single test
+statistic (see Details).</p></dd>
 
 
 <dt id="arg-strat-bins">strat_bins<a class="anchor" aria-label="anchor" href="#arg-strat-bins"></a></dt>
@@ -287,28 +293,7 @@ a Stouffer statistic \(T_b\) is computed within each bin. The
 \(T_{\mathrm{obs}}\). For example, if <code>strat_bins</code> includes <code>0.10</code>
 and <code>0.20</code>, then peptides with pooled prevalence in (0.10, 0.20] share
 a bin.</p></li>
-<li><p>If <code>aggregate_stat = "maxmean"</code>, the signed z-scores are split into
-positive and negative parts, averaged within each set, and the dominant
-direction is selected. If <code>strat_bins</code> is provided, the maxmean
-statistic is computed per bin and the <strong>mean</strong> across bins is reported.</p></li>
 </ul></li>
-<li><p><strong>Permutation scheme and p-value.</strong>
-A <strong>two-sided</strong> permutation p-value for the global shift is computed:</p><ul><li><p><strong>Paired design</strong>: if both groups have measurements for the same
-<code>subject_id</code>, each subject’s labels (<code>g1</code> \(\leftrightarrow\)
-<code>g2</code>) are independently
-flipped with probability 1/2 and steps (1–4) are recomputed to obtain
-\(T_b\).</p></li>
-<li><p><strong>Unpaired design</strong>: sample labels are shuffled while preserving group
-sizes (random split into <code>n1</code> / <code>n2</code>), and steps (1–4) are recomputed
-to obtain \(T_b\).</p></li>
-</ul><p>With \(B\) permutations, the p-value is
-$$
-     p =
-     \frac{1 + \sum_{b=1}^{B} \mathbf{1}\{|T_b| \ge |T_{\mathrm{obs}}|\}}
-          {1 + B},
-   $$
-the standard add-one estimator that remains non-zero under the global
-null.</p></li>
 <li><p><strong>Multiplicity.</strong>
 No multiple-testing correction is performed; <code>p_perm</code> is returned as
 computed.</p></li>

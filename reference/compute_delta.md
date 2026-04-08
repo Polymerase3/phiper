@@ -20,7 +20,8 @@ compute_delta(
   B_permutations = 2000L,
   weight_mode = c("equal", "se_invvar", "n_eff_sqrt"),
   stat_mode = c("srlr", "diff", "asin", "score", "mcnemar", "srlr_paired"),
-  aggregate_stat = c("stouffer", "maxmean"),
+  perm_method = c("mid_p", "standard"),
+  aggregate_stat = c("stouffer", "maxmean", "af"),
   strat_bins = c(0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5),
   winsor_z = 4,
   rank_feature_keep = NULL,
@@ -93,9 +94,14 @@ compute_delta(
   determining the peptide-level test statistic (see Details). The
   paired-only modes require paired designs.
 
+- perm_method:
+
+  One of `c("standard", "mid_p")`, controlling how the permutation
+  p-value is computed (see Details). Default `"standard"`.
+
 - aggregate_stat:
 
-  One of `c("stouffer", "maxmean")`, controlling how peptide-level
+  One of `c("stouffer", "maxmean", "af")`, controlling how peptide-level
   z-scores are aggregated into a single test statistic (see Details).
 
 - strat_bins:
@@ -238,30 +244,7 @@ pair of groups `(g1, g2)`, the procedure is:
       `strat_bins` includes `0.10` and `0.20`, then peptides with pooled
       prevalence in (0.10, 0.20\] share a bin.
 
-    - If `aggregate_stat = "maxmean"`, the signed z-scores are split
-      into positive and negative parts, averaged within each set, and
-      the dominant direction is selected. If `strat_bins` is provided,
-      the maxmean statistic is computed per bin and the **mean** across
-      bins is reported.
-
-5.  **Permutation scheme and p-value.** A **two-sided** permutation
-    p-value for the global shift is computed:
-
-    - **Paired design**: if both groups have measurements for the same
-      `subject_id`, each subject’s labels (`g1` \\\leftrightarrow\\
-      `g2`) are independently flipped with probability 1/2 and steps
-      (1–4) are recomputed to obtain \\T_b\\.
-
-    - **Unpaired design**: sample labels are shuffled while preserving
-      group sizes (random split into `n1` / `n2`), and steps (1–4) are
-      recomputed to obtain \\T_b\\.
-
-    With \\B\\ permutations, the p-value is \$\$ p = \frac{1 +
-    \sum\_{b=1}^{B} \mathbf{1}\\\|T_b\| \ge \|T\_{\mathrm{obs}}\|\\}
-    {1 + B}, \$\$ the standard add-one estimator that remains non-zero
-    under the global null.
-
-6.  **Multiplicity.** No multiple-testing correction is performed;
+5.  **Multiplicity.** No multiple-testing correction is performed;
     `p_perm` is returned as computed.
 
 **Input requirements.**

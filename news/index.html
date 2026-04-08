@@ -13,7 +13,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -48,6 +48,15 @@
       <small>Source: <a href="https://github.com/Polymerase3/phiper/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.3.4" id="phiper-034">phiper 0.3.4<a class="anchor" aria-label="anchor" href="#phiper-034"></a></h2>
+<div class="section level3">
+<h3 id="changes-to-compute_delta-0-3-4">Changes to <code>compute_delta()</code>
+<a class="anchor" aria-label="anchor" href="#changes-to-compute_delta-0-3-4"></a></h3>
+<ul><li>New <code>perm_method = "mid_p"</code> option: computes the mid-p corrected permutation p-value, which halves the contribution of ties (), reducing the conservative bias of the standard test for discrete statistics. <code>perm_method</code> now defaults to <code>"mid_p"</code> (previously <code>"standard"</code>).</li>
+<li>New <code>aggregate_stat = "af"</code> option: implements an adaptive Fisher aggregation statistic. Per-peptide z-scores are converted to one-sided p-values, sorted, and the optimal truncation point is selected by maximising a harmonic-mean-weighted cumulative  sum. Positive and negative tails are aggregated separately and the dominant direction is returned.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.3" id="phiper-033">phiper 0.3.3<a class="anchor" aria-label="anchor" href="#phiper-033"></a></h2>
 <div class="section level3">

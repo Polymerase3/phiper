@@ -21,7 +21,7 @@ group1, group2, prop1, and prop2."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -192,10 +192,10 @@ across pooled prevalence.</p>
 <span class="r-in"><span>  group_cols <span class="op">=</span> <span class="va">group_col</span>,</span></span>
 <span class="r-in"><span>  collect    <span class="op">=</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [10:26:58] INFO  prevalence_compare (per-rank fdr)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:23] INFO  prevalence_compare (per-rank fdr)</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Unknown or uninitialised column: `peptide_library`.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Unknown or uninitialised column: `meta`.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [10:26:58] INFO  preparing input data</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:23] INFO  preparing input data</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    - ranks: peptide_id</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    - group_cols: group</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    - exist_col: exist</span>
@@ -203,25 +203,25 @@ across pooled prevalence.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    - collect: TRUE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    - pop_k_min: 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    - paired: FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [10:26:59] INFO  ranks resolved</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:23] INFO  ranks resolved</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    - - available: peptide_id</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [10:26:59] INFO  grouping universes</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:23] INFO  grouping universes</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    - - per-column only: group</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [10:26:59] INFO  computing cohort sizes (n) per universe</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [10:26:59] INFO  computing presence per sample via k-of-n rule</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [10:26:59] INFO  counting present samples per feature (pop, non-paired)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [10:26:59] INFO  fdr accounting</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:23] INFO  computing cohort sizes (n) per universe</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:23] INFO  computing presence per sample via k-of-n rule</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:23] INFO  counting present samples per feature (pop, non-paired)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:24] INFO  fdr accounting</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    - pool per rank: peptide_id=5</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    - universes: group (k=2, pairs=1)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    - pairs across universes (sum): 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    - total tests m per rank = pool * pairs: peptide_id=5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [10:26:59] INFO  building pairwise comparisons</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [10:27:00] OK    materialized duckdb table</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                    - name: ph_prev_20260408_102659</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:24] INFO  building pairwise comparisons</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:25] OK    materialized duckdb table</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                    - name: ph_prev_20260408_134424</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    - computing p-values (fisher-only); then fdr per rank (bh /</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                      wbh)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [10:27:01] OK    prevalence_compare (per-rank fdr) - done</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; elapsed: 2.142s</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:25] OK    prevalence_compare (per-rank fdr) - done</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; elapsed: 2.509s</span>
 <span class="r-in"><span><span class="va">prev_tbl</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">prev_res</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">pair_tbl</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">prev_tbl</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"group1"</span>, <span class="st">"group2"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">group_pair</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">pair_tbl</span><span class="op">$</span><span class="va">group1</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, <span class="va">pair_tbl</span><span class="op">$</span><span class="va">group2</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span><span class="op">)</span></span></span>
@@ -232,7 +232,7 @@ across pooled prevalence.</p>
 <span class="r-in"><span>  group_labels <span class="op">=</span> <span class="va">group_pair</span>,</span></span>
 <span class="r-in"><span>  y_label <span class="op">=</span> <span class="st">"Delta prevalence (group2 - group1)"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [10:27:01] INFO  Preparing delta prevalence plot.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13:44:25] INFO  Preparing delta prevalence plot.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">p</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="deltaplot-1.png" alt="" width="700" height="433"></span>
