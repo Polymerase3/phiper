@@ -121,7 +121,7 @@ same columns (\code{percent1}, \code{percent2}, \code{feature}, \code{group1}, \
 when a \code{ph_prev_result} is passed, you may specify a concrete pair of group
 levels via \code{pair = c("A","B")}, and optionally restrict to a \code{rank}, a
 \code{universe} (\code{group_col}) and/or \code{features}. internally, subsetting uses
-\code{prev_filter_pairs()}, preserving metadata.
+\code{.ph_filter_pairs()}, preserving metadata.
 
 color mapping:
 \itemize{
