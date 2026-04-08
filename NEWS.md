@@ -1,3 +1,31 @@
+# phiper 0.3.3
+
+## Tests
+
+- New `test-beta_plots.R`: tests for `plot_pcoa()`, `plot_cap()`, `plot_scree()`,
+  `plot_dispersion()`, and `plot_tsne()` (2-D and 3-D), covering basic output
+  type, grouping/time aesthetics, centroid and ellipse options, axis selection,
+  variance-explained labels, and input-validation errors.
+- New `test-plot_utils.R`: tests for colour helpers (`phip_palette`,
+  `scale_colour_phip()`, `scale_fill_phip()`, `theme_phip()`,
+  `phip_use_montserrat()`), internal colour utilities (`.hex2rgb()`,
+  `.rgb2hex()`, `.mix_cols()`, `.tint()`, `.blend_hex()`, `.make_shades()`,
+  `.build_shaded_map()`), and ordination helpers (`.pick_axes()`,
+  `.axis_labels_with_pct()`, `.shaded_colors()`, `.make_point_fills()`,
+  `.first_subview_name()`).
+- New `test-shift_computing.R`: tests for `compute_delta()` covering all
+  `stat_mode` options (`diff`, `score`, `srlr`, `mcnemar`, `srlr_paired`), all
+  `weight_mode` options, stratified bins (`strat_bins`), winsorisation, and
+  paired designs.
+- New `test-zzz.R`: tests for `.onLoad()` idempotency, `load_example_data()`,
+  and `get_example_path()`.
+- New `test-utils.R`: tests for internal utilities including `.ph_check_cond()`,
+  `.ph_check_extension()`, `.ph_check_null_default()`, `.ph_check_path()`,
+  `%nin%`, `%||%`, `.ph_opt()`, `.ph_now()`, `.ph_base_prefix()`,
+  `.ph_wrap()`, `.ph_compose_lines()`, `.ph_log_info()`, `.ph_log_ok()`,
+  `.ph_warn()`, `.ph_abort()`, `.ph_with_timing()`, `.ph_check_pd()`, and
+  `.ph_resolve_paths()`.
+
 # phiper 0.3.2
 
 ## New functions
