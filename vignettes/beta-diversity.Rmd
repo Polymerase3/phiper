@@ -1,0 +1,540 @@
+---
+title: "Beta Diversity Analysis in PhIP-seq"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+    number_sections: false
+vignette: >
+  %\VignetteIndexEntry{Beta Diversity Analysis in PhIP-seq}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse   = TRUE,
+  comment    = "#>",
+  fig.width  = 7,
+  fig.height = 4.5,
+  warning    = FALSE,
+  message    = FALSE
+)
+```
+
+## Overview
+
+Beta diversity quantifies **between-sample** dissimilarity of antibody
+reactivity profiles. In PhIP-seq, each sample is represented by a vector of
+peptide presence/absence calls or continuous enrichment scores. Comparing these
+vectors reveals how similar or different individual immune repertoires are — and
+whether those differences are explained by group membership, disease status, or
+timepoint.
+
+This vignette walks through the complete beta diversity workflow in **phiper**:
+
+1. Computing pairwise distances with `compute_distance()`
+2. Unconstrained ordination (PCoA) with `compute_pcoa()`, `plot_pcoa()`, and
+   `plot_scree()`
+3. Feature–axis associations with `compute_pcoa_feature_associations()`
+4. Constrained ordination (CAP / db-RDA) with `compute_capscale()` and
+   `plot_cap()`
+5. Permutation-based testing (PERMANOVA) with `compute_permanova()`
+6. Homogeneity of dispersion with `compute_dispersion()` and `plot_dispersion()`
+7. Non-linear embedding (t-SNE) with `compute_tsne()` and `plot_tsne()`
+
+---
+
+## Setup
+
+```{r load}
+library(phiper)
+library(dplyr)
+```
+
+Load the bundled example dataset. It contains two patient groups (`A`, `B`)
+measured at two timepoints (`T1`, `T2`) across 1 000 simulated peptides.
+
+```{r data}
+pd <- load_example_data()
+pd
+```
+
+> **Note.** The example data are entirely simulated and have no biological
+> meaning. They exist solely to demonstrate the API.
+
+Extract a one-row-per-sample metadata table — you will need it to annotate
+ordination plots later:
+
+```{r meta}
+meta <- pd$data_long |>
+  select(sample_id, subject_id, group, timepoint) |>
+  distinct() |>
+  collect()
+
+glimpse(meta)
+```
+
+---
+
+## Step 1 — Distance matrix
+
+`compute_distance()` builds a sample × feature abundance matrix from a
+`phip_data` object and computes pairwise distances between samples. The
+normalised abundance matrix is attached to the returned `dist` object as the
+`"abundances"` attribute — this is reused downstream by
+`compute_pcoa_feature_associations()` and `compute_capscale()`.
+
+### Choosing a distance and normalisation
+
+The right combination depends on the type of data you want to compare:
+
+| Scenario | `value_col` | `method_normalization` | `distance` |
+|---|---|---|---|
+| Binary presence/absence | `"exist"` | `"auto"` (→ `"none"`) | `"jaccard"` |
+| Continuous enrichment | `"fold_change"` | `"hellinger"` | `"bray"` |
+| Raw counts | `"counts_hits"` | `"relative"` | `"bray"` |
+
+We use fold-change data with Hellinger normalisation and Bray-Curtis
+dissimilarity throughout this vignette.
+
+```{r compute-distance}
+d <- compute_distance(
+  pd,
+  value_col            = "fold_change",
+  method_normalization = "hellinger",
+  distance             = "bray"
+)
+
+class(d)                       # a standard dist object
+attr(d, "Size")                # number of samples
+dim(attr(d, "abundances"))     # rows = samples, cols = features
+```
+
+Parallelised computation via the optional `parallelDist` package is requested
+with `n_threads`:
+
+```{r n-threads, eval=FALSE}
+d <- compute_distance(
+  pd,
+  value_col            = "fold_change",
+  method_normalization = "hellinger",
+  distance             = "bray",
+  n_threads            = 4L
+)
+```
+
+---
+
+## Step 2 — Unconstrained ordination (PCoA)
+
+### Computing PCoA
+
+`compute_pcoa()` wraps `stats::cmdscale()` and returns an S3 object of class
+`"beta_pcoa"` containing sample coordinates, eigenvalues, variance explained,
+and eigenvalue diagnostics.
+
+```{r compute-pcoa}
+pcoa_res <- compute_pcoa(d, neg_correction = "none", n_axes = 5L)
+
+names(pcoa_res)           # components of the result
+pcoa_res$var_explained    # % variance per axis
+pcoa_res$eigen_diagnostics
+```
+
+The `eigen_diagnostics` tibble reports how many eigenvalues are negative and
+how large they are relative to the positive ones. Non-Euclidean distances
+(such as Bray-Curtis) routinely produce a small fraction of negative
+eigenvalues; a ratio below ~0.1 is generally acceptable. When negative
+eigenvalues are substantial, apply a Lingoes or Cailliez correction:
+
+```{r neg-correction, eval=FALSE}
+pcoa_corr <- compute_pcoa(d, neg_correction = "lingoes", n_axes = 5L)
+pcoa_corr$correction_infos
+```
+
+### Scree plot
+
+`plot_scree()` visualises how variance is distributed across axes. It helps
+decide how many axes are worth inspecting.
+
+```{r scree-bar}
+plot_scree(pcoa_res, n_axes = 5L, type = "bar")
+```
+
+```{r scree-line}
+plot_scree(pcoa_res, n_axes = 5L, type = "line")
+```
+
+### Feature associations
+
+`compute_pcoa_feature_associations()` computes associations between individual
+features (peptides) and PCoA axes. It needs both the `dist` object (to access
+the `"abundances"` attribute) and the `pcoa_res` object. Call it **before**
+joining any metadata into `pcoa_res$sample_coords`, as the function expects only
+numeric coordinate columns.
+
+```{r feature-assoc}
+feat_assoc <- compute_pcoa_feature_associations(
+  dist_obj           = d,
+  pcoa_result        = pcoa_res,
+  top_features       = 20L,
+  association_method = "correlation"
+)
+
+feat_assoc
+```
+
+Three association methods are available:
+
+| Method | Description |
+|---|---|
+| `"weighted_average"` | Abundance-weighted centroid of sample scores |
+| `"correlation"` | Pearson correlation between feature abundance and axis score |
+| `"regression"` | Regression slope of axis scores on feature abundance |
+
+### Plotting PCoA
+
+`plot_pcoa()` requires group and/or time columns to already be present in
+`pcoa_res$sample_coords`. Join the metadata table before plotting:
+
+```{r join-meta-pcoa}
+pcoa_res$sample_coords <- left_join(
+  pcoa_res$sample_coords,
+  meta,
+  by = "sample_id"
+)
+```
+
+#### Basic plot — colour by group
+
+```{r plot-pcoa-group}
+plot_pcoa(
+  pcoa_res,
+  group_col = "group"
+)
+```
+
+#### Adding a time factor
+
+When `time_col` is supplied, points are **shaped** by time in addition to being
+coloured by group.
+
+```{r plot-pcoa-group-time}
+plot_pcoa(
+  pcoa_res,
+  group_col = "group",
+  time_col  = "timepoint"
+)
+```
+
+#### Centroids and centroid trajectories
+
+`show_centroids = TRUE` (the default) overlays centroid points for each
+group × time combination. Set `connect_centroids = "group"` to draw paths that
+connect centroids along time within each group — useful for tracking
+longitudinal change.
+
+```{r plot-pcoa-centroids}
+plot_pcoa(
+  pcoa_res,
+  group_col         = "group",
+  time_col          = "timepoint",
+  centroid_by       = "group_time",
+  connect_centroids = "group"
+)
+```
+
+#### Confidence ellipses
+
+`ellipse_by` accepts a character vector, so multiple ellipse types can be
+overlaid simultaneously. Possible values are `"group"`, `"time"`, and
+`"group_time"`.
+
+```{r plot-pcoa-ellipses}
+plot_pcoa(
+  pcoa_res,
+  group_col      = "group",
+  time_col       = "timepoint",
+  show_centroids = FALSE,
+  ellipse_by     = c("group", "group_time")
+)
+```
+
+#### Plotting alternative axes
+
+```{r plot-pcoa-axes23}
+plot_pcoa(
+  pcoa_res,
+  axes      = c(2, 3),
+  group_col = "group"
+)
+```
+
+---
+
+## Step 3 — Constrained ordination (CAP / db-RDA)
+
+Constrained ordination asks: **how much of the distance structure is explained
+by known metadata variables?** `compute_capscale()` wraps
+`vegan::capscale()` (distance-based RDA) and runs per-term permutation tests
+via `vegan::anova.cca()`.
+
+```{r compute-cap}
+cap_res <- compute_capscale(
+  dist_obj     = d,
+  ps           = pd,
+  formula      = ~ group + timepoint,
+  permutations = 99L
+)
+
+cap_res$variance_partition
+
+cat(
+  "R\u00b2 =", round(cap_res$r2, 3),
+  "| adj. R\u00b2 =", round(cap_res$r2_adj, 3), "\n"
+)
+
+cap_res$perm_terms
+```
+
+The `variance_partition` tibble shows how much of the total inertia is
+constrained by the formula terms vs. left unconstrained. `perm_terms` gives the
+per-variable permutation test results.
+
+### Plotting CAP
+
+As with PCoA, join metadata into `cap_res$sample_coords` before plotting:
+
+```{r join-meta-cap}
+cap_res$sample_coords <- left_join(
+  cap_res$sample_coords,
+  meta,
+  by = "sample_id"
+)
+```
+
+```{r plot-cap}
+plot_cap(
+  cap_res,
+  group_col         = "group",
+  time_col          = "time",
+  centroid_by       = "group_time",
+  connect_centroids = "group",
+  ellipse_by        = "group"
+)
+```
+
+`plot_cap()` accepts the same `axes`, `centroid_by`, `connect_centroids`, and
+`ellipse_by` arguments as `plot_pcoa()`.
+
+---
+
+## Step 4 — PERMANOVA
+
+PERMANOVA (permutational ANOVA) tests whether group centroids differ
+significantly in multivariate distance space. `compute_permanova()` runs a
+global model and all pairwise post-hoc contrasts, with optional BH adjustment
+within each contrast scope.
+
+```{r compute-permanova}
+perm_res <- compute_permanova(
+  dist_obj     = d,
+  ps           = pd,
+  group_col    = "group",
+  time_col     = "timepoint",
+  subject_col  = "subject_id",
+  permutations = 99L,
+  p_adjust     = "BH"
+)
+
+perm_res
+```
+
+The `scope` column distinguishes three levels of inference:
+
+| `scope` | Meaning |
+|---|---|
+| `"global"` | Full model (group, time, interaction) |
+| `"group_pairwise"` | All pairwise comparisons between group levels |
+| `"time_pairwise"` | All pairwise comparisons between time levels |
+
+`p_adjust` is applied **within** each scope separately, so global and pairwise
+p-values are adjusted independently.
+
+> **Repeated measures.** When `subject_col` is provided and subjects appear at
+> multiple timepoints, permutations for time contrasts are stratified by subject.
+> This is a simplified approximation; complex longitudinal designs may require
+> custom permutation schemes via `permute::how()`.
+
+---
+
+## Step 5 — Beta dispersion
+
+PERMANOVA assumes homogeneous within-group dispersion (equal spread around
+centroids). If groups differ in dispersion rather than in location, a
+significant PERMANOVA result can be misleading. `compute_dispersion()` tests
+this assumption using `vegan::betadisper()` and `vegan::permutest()`.
+
+```{r compute-dispersion}
+disp_res <- compute_dispersion(
+  dist_obj     = d,
+  ps           = pd,
+  group_col    = "group",
+  time_col     = "timepoint",
+  permutations = 99L,
+  p_adjust     = "BH"
+)
+
+disp_res$tests        # permutation test results per scope
+head(disp_res$distances)  # per-sample distances to centroid
+```
+
+The returned object is of class `"beta_dispersion"` and contains two tibbles:
+
+| Component | Content |
+|---|---|
+| `$tests` | Permutation test p-values per scope and contrast |
+| `$distances` | Per-sample distance-to-centroid, scope, and contrast |
+
+### Plotting dispersion
+
+`plot_dispersion()` overlays violins, boxplots, and jittered points. Select a
+`scope` and `contrast` that appear in `disp_res$distances`.
+
+#### Group dispersion
+
+```{r plot-dispersion-group}
+plot_dispersion(
+  disp_res,
+  scope    = "group",
+  contrast = "<global>"
+)
+```
+
+#### Time dispersion
+
+```{r plot-dispersion-time}
+plot_dispersion(
+  disp_res,
+  scope    = "time",
+  contrast = "<global>"
+)
+```
+
+Layer visibility is controlled individually:
+
+```{r plot-dispersion-style}
+plot_dispersion(
+  disp_res,
+  scope       = "group",
+  contrast    = "<global>",
+  show_violin = FALSE,
+  show_box    = TRUE,
+  show_points = TRUE
+)
+```
+
+---
+
+## Step 6 — t-SNE
+
+t-SNE is a non-linear embedding method that preserves local neighbourhood
+structure. It is useful for spotting clusters that linear methods miss.
+**Axes are not interpretable** and embeddings vary with the random seed and
+the `perplexity` parameter — always set a `seed`.
+
+```{r compute-tsne}
+tsne_res <- compute_tsne(
+  ps         = pd,
+  dist_obj   = d,
+  dims       = 3L,         # compute 3 dimensions for both 2D and 3D views
+  perplexity = 15,
+  meta_cols  = c("group", "timepoint"),
+  seed       = 42L
+)
+
+head(tsne_res)
+attr(tsne_res, "tsne_params")
+```
+
+### 2D plot
+
+```{r plot-tsne-2d-group}
+plot_tsne(tsne_res, view = "2d", colour = "group")
+```
+
+```{r plot-tsne-2d-time}
+plot_tsne(tsne_res, view = "2d", colour = "timepoint")
+```
+
+Axis labels (`t-SNE 1`, `t-SNE 2`) carry no quantitative meaning — do not
+read them the way you would PCoA axes.
+
+### 3D interactive plot
+
+`view = "3d"` returns a `plotly` widget. It is best explored interactively in
+an HTML report or the RStudio viewer.
+
+```{r plot-tsne-3d, eval=FALSE}
+plot_tsne(tsne_res, view = "3d", colour = "group")
+```
+
+---
+
+## Putting it all together
+
+A complete beta diversity analysis from data object to inference:
+
+```{r full-pipeline, eval=FALSE}
+library(phiper)
+library(dplyr)
+
+pd   <- load_example_data()
+meta <- pd$data_long |> select(sample_id, subject_id, group, timepoint) |> distinct() |> collect()
+
+# 1. Distances
+d <- compute_distance(pd, value_col = "fold_change",
+                      method_normalization = "hellinger", distance = "bray")
+
+# 2. PCoA
+pcoa_res <- compute_pcoa(d, n_axes = 5L)
+plot_scree(pcoa_res)
+pcoa_res$sample_coords <- left_join(pcoa_res$sample_coords, meta, by = "sample_id")
+plot_pcoa(pcoa_res, group_col = "group", time_col = "time",
+          centroid_by = "group_time", connect_centroids = "group")
+
+# 3. Feature associations
+compute_pcoa_feature_associations(d, pcoa_res, top_features = 30L)
+
+# 4. CAP
+cap_res <- compute_capscale(d, ps = pd, formula = ~ group + timepoint,
+                             permutations = 999L)
+cap_res$perm_terms
+cap_res$sample_coords <- left_join(cap_res$sample_coords, meta, by = "sample_id")
+plot_cap(cap_res, group_col = "group", time_col = "time")
+
+# 5. PERMANOVA
+compute_permanova(d, ps = pd, group_col = "group", time_col = "time",
+                  subject_col = "subject_id", permutations = 999L, p_adjust = "BH")
+
+# 6. Dispersion
+disp_res <- compute_dispersion(d, ps = pd, group_col = "group", time_col = "time",
+                                permutations = 999L, p_adjust = "BH")
+disp_res$tests
+plot_dispersion(disp_res, scope = "group", contrast = "<global>")
+
+# 7. t-SNE
+tsne_res <- compute_tsne(pd, d, dims = 3L, perplexity = 15, seed = 42L,
+                          meta_cols = c("group", "timepoint"))
+plot_tsne(tsne_res, view = "2d", colour = "group")
+plot_tsne(tsne_res, view = "3d", colour = "group")
+```
+
+---
+
+## Session info
+
+```{r session-info}
+sessionInfo()
+```
