@@ -4,15 +4,6 @@ output: github_document
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-```{r, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  fig.path = "man/figures/README-",
-  out.width = "100%"
-)
-```
-
 <!-- badges: start -->
 
 [![Codecov test coverage](https://codecov.io/gh/Polymerase3/phiper/graph/badge.svg)](https://app.codecov.io/gh/Polymerase3/phiper)
@@ -26,13 +17,16 @@ knitr::opts_chunk$set(
 
 # phiper
 
-The `phiper` package provides a scalable, reproducible toolkit for validating and analyzing PhIP-Seq data in cross-sectional and longitudinal studies.
+`phiper` is an end-to-end R toolkit for Phage ImmunoPrecipitation sequencing
+(PhIP-seq) data analysis. It covers everything from quality control and
+enrichment statistics to diversity metrics and publication-ready figures —
+supporting both cross-sectional and longitudinal study designs.
 
 ## Installation
 
 You can install the development version of `phiper` from GitHub with either `pak` or `devtools`:
 
-```{r, eval = FALSE}
+``` r
 # install.packages("pak")
 pak::pak("Polymerase3/phiper")
 
@@ -41,92 +35,58 @@ pak::pak("Polymerase3/phiper")
 devtools::install_github("Polymerase3/phiper")
 ```
 
-## Usage
+> **Note:** `phiper` depends on
+> [`phiperio`](https://github.com/Polymerase3/phiperio) for data import and
+> class construction. It is installed automatically by the commands above.
 
-For testing, exploration, and minimal examples we provide the `phip_mixture` dataset. It is a simulated PhIP-Seq–like antibody repertoire for two groups (A, B) and two time points (T1, T2), with per-subject, per-peptide presence/absence (`exist`) plus corresponding read counts and fold changes. The dataset is generated from a simple mixture of rare and common peptide prevalences with Poisson-distributed counts and is intended solely for testing and illustrative examples, without any biological interpretation.
+## What can phiper do?
 
-### Importing the data
+`phiper` is organised into four analysis domains, each with dedicated
+computation and visualisation functions:
 
-A ready-to-use example dataset is bundled with `phiperio`. Load it directly with:
+- **Enrichment counts** — `plot_enrichment_counts()` gives a quick overview of
+  per-group peptide hit counts.
+- **Alpha diversity** — richness, Shannon, Simpson, Pielou evenness, and
+  Berger-Parker dominance, with optional significance testing and bracket
+  annotations (`compute_alpha()`, `compute_alpha_significance()`).
+- **Beta diversity** — pairwise distances, PCoA, CAP (constrained ordination),
+  PERMANOVA, dispersion tests, and t-SNE (`compute_distance()`,
+  `compute_pcoa()`, `compute_capscale()`, `compute_permanova()`,
+  `compute_dispersion()`, `compute_tsne()`).
+- **Global prevalence shift (delta)** — subject-level permutation tests for
+  antigen-wide prevalence shifts between groups, with forest plots and ECDF
+  visualisations (`compute_delta()`, `forestplot()`, `ecdf_plot()`).
+- **Per-feature prevalence comparison (POP)** — Fisher's exact and McNemar
+  tests for every peptide or taxonomic rank, visualised as scatter plots and
+  volcano plots (`compute_pop()`, `scatter_static()`, `volcano_static()`).
 
-```{r, results = "hide", message = FALSE, warning = FALSE}
-library(phiper)
-library(dplyr)
-library(ggplot2)
+### The `compute_` / `plot_` pattern
 
-ps <- load_example_data()
-```
+Every domain follows the same two-step workflow: a `compute_*()` function
+returns a tidy data structure, which is then passed to one or more `plot_*()`
+functions. This keeps computation and visualisation cleanly separated and makes
+it easy to inspect, filter, or export results before plotting.
 
-You can inspect the data:
+### Static and interactive outputs
 
-```{r}
-ps$data_long %>%
-  head(5) %>%
-  collect()
-```
+All visualisation functions come in two flavours: a static version built on
+**ggplot2** (composable with the full tidyverse graphics ecosystem) and an
+interactive version built on **plotly** (useful for exploratory data analysis
+and HTML reports). Both use the built-in `theme_phip()` and phiper colour
+scales for a consistent visual style.
 
-You can also inspect the current version of the peptide library maintained by the Vogl lab:
+## Documentation, examples, and vignettes
 
-```{r}
-get_peptide_library(ps) %>%
-  head(5) %>%
-  collect()
-```
+Full documentation, worked examples, and vignettes are available on the
+package website:
 
-### Plotting peptide counts
-
-You can easily plot peptide counts using the `plot_enrichment_counts()` function:
-
-```{r, message = FALSE, warning = FALSE}
-plot_enrichment_counts(
-  ps,
-  group_cols        = c("group", "time"),
-  group_interaction = TRUE,
-  interaction_only  = TRUE,
-  annotation_size   = 3
-)
-```
-
-### Alpha diversity
-
-You can also compute and visualize alpha diversity for different groups or subgroups of interest. `phiper` is organized into analysis modules: for each module you typically get a computation function (for example, `compute_alpha()`) and one or more plotting functions (for example, `plot_alpha()`). This pattern repeats across the analysis modules.
-
-For alpha diversity specifically:
-
-```{r, message = FALSE, warning = FALSE}
-alpha <- compute_alpha(
-  ps,
-  group_cols        = c("group", "time"),
-  carry_cols        = "subject_id",
-  group_interaction = TRUE,
-  interaction_only  = TRUE
-)
-
-head(alpha)
-```
-
-You can then plot the results:
-
-```{r, message = FALSE, warning = FALSE}
-plot_alpha(
-  alpha,
-  metric    = "richness",
-  group_col = "phip_interaction"
-) +
-  ylim(100, 400) +
-  theme(
-    axis.text.x = element_text(
-      angle = 45,
-      vjust = 1,
-      hjust = 1
-    )
-  )
-```
+**<https://polymerase3.github.io/phiper/>**
 
 ## Contributing
 
-Bug reports, feature requests, and questions are welcome. Please open an issue on the GitHub tracker:
+Bug reports, feature requests, and questions are welcome. Please open an issue
+on the GitHub tracker:
 
 - <https://github.com/Polymerase3/phiper/issues>
 
-If you’d like to contribute, please read [CONTRIBUTING.md](CONTRIBUTING.md).
+If you'd like to contribute, please read [CONTRIBUTING.md](CONTRIBUTING.md).
