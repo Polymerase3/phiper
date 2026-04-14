@@ -7,7 +7,17 @@ concurrency:
 
 on:
   push:
+    paths:
+      - "R/**"
+      - "tests/**"
+      - "DESCRIPTION"
+      - "NAMESPACE"
   pull_request:
+    paths:
+      - "R/**"
+      - "tests/**"
+      - "DESCRIPTION"
+      - "NAMESPACE"
   workflow_dispatch:
 
 jobs:
