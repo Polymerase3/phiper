@@ -169,6 +169,12 @@ testthat::test_that("scatter_interactive: rank filtering works", {
   testthat::expect_s3_class(p, "plotly")
 })
 
+testthat::test_that("scatter_interactive: throws error when n_peptides column is absent", {
+  df <- .make_prev_df()
+  df$n_peptides <- NULL
+  testthat::expect_error(scatter_interactive(df))
+})
+
 testthat::test_that("scatter_interactive: graphical ... args accepted without error", {
   df <- .make_prev_df()
   testthat::expect_no_error(

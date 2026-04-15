@@ -41,7 +41,7 @@ A data.frame with one row per (rank, feature, group_col) comparison:
 \code{rank}, \code{feature}, \code{group_col}, \code{group1}, \code{group2},
 \code{n1}, \code{N1}, \code{prop1}, \code{percent1},
 \code{n2}, \code{N2}, \code{prop2}, \code{percent2},
-\code{ratio}, \code{delta_ratio} (unpaired only), \code{p_raw}.
+\code{ratio}, \code{delta_ratio} (unpaired only), \code{p_raw}, \code{n_peptides}.
 A \code{view} column is prepended when the input carries a view attribute.
 }
 \description{

@@ -1,0 +1,446 @@
+---
+title: "Delta Analysis in PhIP-seq"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+    number_sections: false
+vignette: >
+  %\VignetteIndexEntry{Delta Analysis in PhIP-seq}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse   = TRUE,
+  comment    = "#>",
+  fig.width  = 7,
+  fig.height = 5,
+  warning    = FALSE,
+  message    = FALSE
+)
+```
+
+## Overview
+
+The Delta framework answers two related but distinct questions about
+peptide-level prevalence:
+
+1. **Where do peptides shift?** — `deltaplot()` and `deltaplot_interactive()`
+   place each peptide at its pooled prevalence (x) and prevalence shift Δ (y),
+   providing a global view of which features move between groups.
+2. **Is there a statistically significant global shift?** —
+   `compute_delta()` aggregates per-peptide z-scores into a single
+   Stouffer-type statistic and assesses significance via subject-label
+   permutation. `forestplot()` and `forestplot_interactive()` then display
+   the top and bottom features ranked by that statistic.
+
+This vignette walks through the complete Delta workflow in **phiper**:
+
+1. Visualising raw prevalence shift with `deltaplot()` and
+   `deltaplot_interactive()`
+2. Running the permutation test with `compute_delta()`
+3. Displaying results with `forestplot()` and `forestplot_interactive()`
+
+---
+
+## Setup
+
+```{r load}
+library(phiper)
+```
+
+Load the bundled example dataset. It contains two patient groups (`A`, `B`)
+measured at two timepoints (`T1`, `T2`) across 1 000 simulated peptides.
+
+```{r data}
+pd <- load_example_data()
+pd
+```
+
+> **Note.** The example data are entirely simulated and have no biological
+> meaning. They exist solely to demonstrate the API.
+
+The Delta plots consume prevalence tables produced by `compute_pop()` (see
+the POP vignette for details). Compute a group-level prevalence table first:
+
+```{r pop}
+pop_group <- compute_pop(
+  pd,
+  rank_cols  = "peptide_id",
+  group_cols = "group"
+)
+head(pop_group)
+```
+
+For the unpaired group comparison with `compute_delta()`, each subject must
+appear at most once per group. Because `pd` contains two timepoints per
+subject, restrict to a single timepoint first:
+
+```{r filter-t1}
+pd_t1 <- pd |> dplyr::filter(timepoint == "T1") |> dplyr::collect()
+```
+
+---
+
+## Visualising prevalence shift
+
+### `deltaplot()` — static ggplot2
+
+`deltaplot()` plots each peptide at:
+
+- **x-axis** — pooled prevalence `(prop1 + prop2) / 2`
+- **y-axis** — prevalence shift `prop2 − prop1`
+
+A dashed horizontal line marks Δ = 0. Arrows and labels indicate the direction
+of enrichment. A GAM smooth (controlled by `add_smooth`) summarises the trend
+across pooled prevalence.
+
+The only required input is a data frame containing `group1`, `group2`, `prop1`,
+and `prop2` — which is exactly what `compute_pop()` returns.
+
+```{r deltaplot-basic}
+deltaplot(
+  pop_group,
+  group_pair_values = c("A", "B"),
+  group_labels      = c("Group A", "Group B")
+)
+```
+
+Use `group_pair_values` to select a specific contrast when the table contains
+more than one pair. `group_labels` provides display names for the axis
+annotations.
+
+#### Adjusting the smooth
+
+The smooth uses a GAM with basis dimension `smooth_k`. Lower values produce
+smoother curves; set `add_smooth = FALSE` to suppress it.
+
+```{r deltaplot-smooth}
+deltaplot(
+  pop_group,
+  group_pair_values  = c("A", "B"),
+  group_labels       = c("Group A", "Group B"),
+  smooth_k           = 3,
+  point_alpha        = 0.15,
+  point_size         = 0.4
+)
+```
+
+#### Jitter and appearance
+
+```{r deltaplot-custom}
+deltaplot(
+  pop_group,
+  group_pair_values   = c("A", "B"),
+  group_labels        = c("Group A", "Group B"),
+  point_jitter_width  = 0.01,
+  point_jitter_height = 0.01,
+  point_alpha         = 0.20,
+  arrow_color         = "steelblue"
+)
+```
+
+### `deltaplot_interactive()` — plotly
+
+The interactive version mirrors the static API. Hovering over a point shows
+the feature identifier, group-level counts and percentages, and p-value.
+
+```{r deltaplot-interactive, eval=FALSE}
+deltaplot_interactive(
+  pop_group,
+  group_pair_values = c("A", "B"),
+  group_labels      = c("Group A", "Group B")
+)
+```
+
+Disable the smooth if you have few peptides or want a cleaner display:
+
+```{r deltaplot-interactive-nosmooth, eval=FALSE}
+deltaplot_interactive(
+  pop_group,
+  group_pair_values = c("A", "B"),
+  group_labels      = c("Group A", "Group B"),
+  add_smooth        = FALSE,
+  point_size        = 5,
+  point_alpha       = 0.5
+)
+```
+
+---
+
+## Testing global shift: `compute_delta()`
+
+`compute_delta()` performs a permutation test for a global (antigen-wide)
+shift in prevalence between two groups. For each `(rank, feature)` stratum
+it computes a per-peptide z-score, aggregates them via a Stouffer statistic,
+and assesses significance by permuting subject labels.
+
+### Unpaired design — group comparison
+
+```{r compute-delta}
+set.seed(42)
+delta_group <- compute_delta(
+  pd_t1,
+  rank_cols      = "peptide_id",
+  group_cols     = "group",
+  B_permutations = 2000L
+)
+```
+
+```{r delta-result}
+delta_group
+```
+
+### What's in the output?
+
+| Column | Description |
+|---|---|
+| `rank` | Rank at which the feature is defined |
+| `feature` | Feature identifier |
+| `group_col` | Name of the grouping column |
+| `group1`, `group2` | The two groups compared |
+| `design` | `"paired"` or `"unpaired"` |
+| `n_subjects_paired` | Paired subjects used (or `NA` for unpaired) |
+| `n_peptides_used` | Peptides contributing to the test |
+| `m_eff` | Effective number of peptides after weighting |
+| `T_obs` | Observed Stouffer-type test statistic |
+| `p_perm` | Two-sided permutation p-value |
+| `b` | Number of permutations actually used |
+| `max_delta` | Maximum absolute peptide-level prevalence difference |
+| `frac_delta_pos` | Unweighted fraction of positive peptide-level deltas |
+| `frac_delta_pos_w` | Weighted fraction of positive peptide-level deltas |
+
+### Choosing the per-peptide statistic
+
+`stat_mode` controls how each peptide's z-score is computed:
+
+| `stat_mode` | Description |
+|---|---|
+| `"srlr"` (default) | Signed root likelihood ratio |
+| `"diff"` | Wald-type z: Δ / SE |
+| `"asin"` | Arcsine-transformed z (variance-stabilised) |
+| `"score"` | Pooled score z (2×2 score test) |
+| `"mcnemar"` | Signed McNemar z — paired designs only |
+| `"srlr_paired"` | Signed root deviance — paired designs only |
+
+```{r delta-stat-mode, eval=FALSE}
+# Arcsine-transformed statistic
+delta_asin <- compute_delta(
+  pd,
+  rank_cols      = "peptide_id",
+  group_cols     = "group",
+  stat_mode      = "asin",
+  B_permutations = 2000L
+)
+```
+
+### Aggregation and stratification
+
+`aggregate_stat` controls how peptide-level z-scores are combined:
+
+- `"stouffer"` (default) — weighted Stouffer combination
+- `"maxmean"` — mean of the dominant direction
+- `"af"` — absolute fraction
+
+`strat_bins` bins peptides by pooled prevalence before aggregation. The
+default bins `c(0.002, 0.005, ..., 0.50)` stratify across the prevalence
+range so that low- and high-prevalence peptides are treated separately.
+Set `strat_bins = 0` for a single global statistic without stratification.
+
+```{r delta-strat, eval=FALSE}
+# No stratification
+delta_nostrat <- compute_delta(
+  pd,
+  rank_cols      = "peptide_id",
+  group_cols     = "group",
+  strat_bins     = 0,
+  B_permutations = 2000L
+)
+
+# Custom bins
+delta_custom <- compute_delta(
+  pd,
+  rank_cols      = "peptide_id",
+  group_cols     = "group",
+  strat_bins     = c(0.05, 0.25, 0.50),
+  B_permutations = 2000L
+)
+```
+
+### Weighting
+
+`weight_mode` controls peptide weights in the Stouffer statistic:
+
+- `"equal"` (default) — all peptides weight 1
+- `"se_invvar"` — inverse-SE weights (downweights noisy peptides)
+- `"n_eff_sqrt"` — square root of expected positives (emphasises common
+  peptides)
+
+```{r delta-weight, eval=FALSE}
+delta_invvar <- compute_delta(
+  pd,
+  rank_cols      = "peptide_id",
+  group_cols     = "group",
+  weight_mode    = "se_invvar",
+  B_permutations = 2000L
+)
+```
+
+### Paired design — timepoint comparison
+
+When the same subjects are measured at two timepoints, set `paired_by` to
+the subject-linking column and `stat_mode` to a paired statistic. The
+function then performs sign-flipping permutations instead of label shuffling.
+
+```{r compute-delta-paired}
+set.seed(42)
+delta_paired <- compute_delta(
+  pd,
+  rank_cols      = "peptide_id",
+  group_cols     = "timepoint",
+  paired_by      = "subject_id",
+  stat_mode      = "srlr_paired",
+  B_permutations = 2000L
+)
+delta_paired
+```
+
+---
+
+## Forest plots
+
+Forest plots display the most extreme positive and negative features for a
+chosen rank, sorted by the selected test statistic.
+
+### `forestplot()` — static ggplot2
+
+```{r forestplot-basic}
+forestplot(
+  delta_group,
+  rank_of_interest  = "peptide_id",
+  statistic_to_plot = "T",
+  n_neg_each        = 10,
+  n_pos_each        = 10,
+  left_label        = "More in A",
+  right_label       = "More in B"
+)$plot
+```
+
+`statistic_to_plot` selects what is plotted on the x-axis:
+
+| Value | Description |
+|---|---|
+| `"T"` | Raw `T_obs` from `compute_delta()` |
+| `"T_stand"` | Permutation-standardised T (requires `T_obs_stand` column) |
+| `"Z_from_p"` | Signed Z derived from permutation p-values (requires `Z_from_p`) |
+
+#### Diverging colours
+
+Set `use_diverging_colors = TRUE` to shade bars from blue (negative) to red
+(positive):
+
+```{r forestplot-colors}
+forestplot(
+  delta_group,
+  rank_of_interest     = "peptide_id",
+  statistic_to_plot    = "T",
+  n_neg_each           = 10,
+  n_pos_each           = 10,
+  left_label           = "More in A",
+  right_label          = "More in B",
+  use_diverging_colors = TRUE
+)$plot
+```
+
+#### Filtering to significant features
+
+Pass a column name to `filter_significant` to restrict the plot to features
+below a given significance threshold. With `p_perm` this retains only
+permutation-significant features.
+
+```{r forestplot-filter, eval=FALSE}
+forestplot(
+  delta_group,
+  rank_of_interest   = "peptide_id",
+  statistic_to_plot  = "T",
+  filter_significant = "p_perm",
+  sig_level          = 0.05,
+  left_label         = "More in A",
+  right_label        = "More in B"
+)$plot
+```
+
+### `forestplot_interactive()` — plotly
+
+The interactive version mirrors the static API and returns a plotly widget.
+Hovering over a bar shows the feature identifier and statistic value.
+
+```{r forestplot-interactive, eval=FALSE}
+forestplot_interactive(
+  delta_group,
+  rank_of_interest     = "peptide_id",
+  statistic_to_plot    = "T",
+  n_neg_each           = 10,
+  n_pos_each           = 10,
+  left_label           = "More in A",
+  right_label          = "More in B",
+  use_diverging_colors = TRUE
+)$plot
+```
+
+---
+
+## Putting it all together
+
+A typical Delta analysis runs in four steps:
+
+```{r full-pipeline, eval=FALSE}
+# 1. Compute prevalence (needed for deltaplot)
+pop <- compute_pop(
+  pd,
+  rank_cols  = "peptide_id",
+  group_cols = "group"
+)
+
+# 2. Visualise raw shift
+deltaplot(pop, group_pair_values = c("A", "B"),
+          group_labels = c("Group A", "Group B"))
+deltaplot_interactive(pop, group_pair_values = c("A", "B"),
+                      group_labels = c("Group A", "Group B"))
+
+# 3. Permutation test (unpaired)
+set.seed(42)
+delta <- compute_delta(
+  pd,
+  rank_cols      = "peptide_id",
+  group_cols     = "group",
+  B_permutations = 2000L
+)
+
+# Optional: paired test across timepoints
+delta_paired <- compute_delta(
+  pd,
+  rank_cols      = "peptide_id",
+  group_cols     = "timepoint",
+  paired_by      = "subject_id",
+  stat_mode      = "srlr_paired",
+  B_permutations = 2000L
+)
+
+# 4. Forest plots
+forestplot(delta, rank_of_interest = "peptide_id",
+           left_label = "More in A", right_label = "More in B")$plot
+forestplot_interactive(delta, rank_of_interest = "peptide_id",
+                       left_label = "More in A",
+                       right_label = "More in B")$plot
+```
+
+---
+
+## Session info
+
+```{r session-info}
+sessionInfo()
+```

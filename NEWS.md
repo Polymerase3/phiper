@@ -1,3 +1,26 @@
+# phiper 0.4.1 (2026-04-15)
+
+## Bug fixes
+
+- Fixed `n_peptides` bug in `compute_pop()`.
+
+## Vignettes
+
+- New vignettes: beta diversity, delta plots, and POP plots.
+- Added calibration vignette to `.Rbuildignore`.
+
+## Plotting
+
+- Exported beta diversity plot functions.
+
+## Documentation
+
+- Updated README.
+
+## CI
+
+- Updated pkgcheck workflow to mirror phiperio behaviour.
+
 # phiper 0.4.0
 
 ## New functions

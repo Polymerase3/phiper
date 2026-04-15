@@ -726,6 +726,8 @@ compute_delta <- function(
         .data[[gc]] == g1,
         .data[[paired_by]] %in% pair_ids
       ) |>
+      dplyr::select(peptide_id, !!paired_by) |>
+      dplyr::collect() |>
       dplyr::transmute(
         peptide_id,
         idx = id_map[.data[[paired_by]]]
@@ -741,6 +743,8 @@ compute_delta <- function(
         .data[[gc]] == g2,
         .data[[paired_by]] %in% pair_ids
       ) |>
+      dplyr::select(peptide_id, !!paired_by) |>
+      dplyr::collect() |>
       dplyr::transmute(
         peptide_id,
         idx = id_map[.data[[paired_by]]]

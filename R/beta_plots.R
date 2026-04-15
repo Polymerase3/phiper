@@ -94,6 +94,7 @@
 #'     connect_centroids = "group"
 #'   )
 #' }
+#' @export
 plot_pcoa <- function(pcoa_res,
                       axes = c(1, 2),
                       group_col = NULL,
@@ -546,6 +547,7 @@ plot_pcoa <- function(pcoa_res,
 #'     ellipse_by      = c("group", "group_time")
 #'   )
 #' }
+#' @export
 plot_cap <- function(cap_res,
                      axes = c(1, 2),
                      group_col = NULL,
@@ -947,6 +949,7 @@ plot_cap <- function(cap_res,
 #'   # More axes as line plot:
 #'   plot_scree(pcoa_res, n_axes = 15, type = "line")
 #' }
+#' @export
 plot_scree <- function(pcoa_res,
                        n_axes = NULL,
                        type = c("bar", "line")) {
@@ -1059,6 +1062,7 @@ plot_scree <- function(pcoa_res,
 #'     show_points  = TRUE
 #'   )
 #' }
+#' @export
 plot_dispersion <- function(x,
                             scope          = "group",
                             contrast       = "<global>",

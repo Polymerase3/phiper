@@ -28,3 +28,6 @@ src/*.gcda
 src/*.gcno
 
 .swp
+CLAUDE.md
+
+vignettes/delta-calibration-data/

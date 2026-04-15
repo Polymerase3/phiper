@@ -1,0 +1,392 @@
+---
+title: "Prevalence of Presence (POP) Analysis in PhIP-seq"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+    number_sections: false
+vignette: >
+  %\VignetteIndexEntry{Prevalence of Presence (POP) Analysis in PhIP-seq}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse  = TRUE,
+  comment   = "#>",
+  fig.width = 7,
+  fig.height = 5,
+  warning   = FALSE,
+  message   = FALSE
+)
+```
+
+## Overview
+
+POP (Prevalence Of Presence) measures how often each feature is detected
+across the samples in a group. For each `(rank, feature, group pair)` the
+analysis asks: does the fraction of samples carrying this feature differ
+between the two groups?
+
+This vignette walks through the complete POP workflow in **phiper**:
+
+1. Computing prevalence and p-values with `compute_pop()`
+2. Visualising results as scatter plots with `scatter_static()` and
+   `scatter_interactive()`
+3. Volcano plots with `volcano_static()` and `volcano_interactive()`
+
+---
+
+## Setup
+
+```{r load}
+library(phiper)
+```
+
+Load the bundled example dataset. It contains two patient groups (`A`, `B`)
+measured at two timepoints (`T1`, `T2`) across 1 000 simulated peptides.
+
+```{r data}
+pd <- load_example_data()
+pd
+```
+
+> **Note.** The example data are entirely simulated and have no biological
+> meaning. They exist solely to demonstrate the API.
+
+---
+
+## Computing prevalence: `compute_pop()`
+
+### Unpaired design — group comparison
+
+The workhorse function is `compute_pop()`. Supply a `phip_data` object, the
+rank(s) at which prevalence should be aggregated, and the binary grouping
+column(s).
+
+```{r compute-basic}
+pop_group <- compute_pop(
+  pd,
+  rank_cols  = "peptide_id",
+  group_cols = "group"
+)
+```
+
+The result is a plain `data.frame` with one row per
+`(rank, feature, group pair)`:
+
+```{r result-head}
+head(pop_group)
+```
+
+### What's in the output?
+
+| Column | Description |
+|---|---|
+| `rank` | Rank at which the feature is defined (e.g. `"peptide_id"`) |
+| `feature` | Feature identifier |
+| `group_col` | Name of the grouping column |
+| `group1`, `group2` | The two group labels being compared |
+| `n1`, `N1` | Positives and total samples in group 1 |
+| `prop1`, `percent1` | Prevalence in group 1 (proportion and percentage) |
+| `n2`, `N2` | Positives and total samples in group 2 |
+| `prop2`, `percent2` | Prevalence in group 2 |
+| `ratio` | `prop1 / prop2` (with small-sample epsilon correction) |
+| `delta_ratio` | Signed fold-change: `prop1/prop2 − 1` (or its negative) |
+| `p_raw` | Fisher's exact test p-value (unpaired) |
+| `n_peptides` | Number of peptides contributing to this feature |
+
+```{r result-cols}
+names(pop_group)
+nrow(pop_group)
+```
+
+### Multiple group columns
+
+Pass a character vector to `group_cols` to test several grouping variables in
+one call.
+
+```{r compute-multi-group}
+pop_multi <- compute_pop(
+  pd,
+  rank_cols  = "peptide_id",
+  group_cols = c("group", "timepoint")
+)
+
+# One block of rows per group column
+table(pop_multi$group_col)
+```
+
+### Multiple ranks
+
+`rank_cols` accepts any column present in the peptide library. Pass
+`"peptide_id"` for peptide-level results, or taxonomic rank columns
+(e.g. `"family"`, `"genus"`) for higher-level aggregation.
+
+> **Note on this toy example.** The synthetic peptides do not map to real
+> library annotations, so all higher-rank columns are empty. In a real
+> PhIP-seq experiment, `family`- and `genus`-level rows reflect the
+> taxonomic breadth of each patient's reactivity.
+
+```{r compute-multi-rank, eval=FALSE}
+pop_tax <- compute_pop(
+  pd,
+  rank_cols  = c("peptide_id", "family", "genus"),
+  group_cols = "group"
+)
+table(pop_tax$rank)
+```
+
+### k-of-n presence threshold
+
+By default a sample is called positive for a feature if at least one of its
+contributing peptides is present (`pop_k_min = 1`). Raise this threshold to
+require, say, at least two peptides before calling a sample positive — useful
+for filtering out singleton hits.
+
+```{r compute-kmin}
+pop_k2 <- compute_pop(
+  pd,
+  rank_cols  = "peptide_id",
+  group_cols = "group",
+  pop_k_min  = 2L
+)
+
+# Higher k_min → fewer positives
+mean(pop_k2$n1) < mean(pop_group$n1)
+```
+
+---
+
+## Paired design — timepoint comparison
+
+When the same subjects are measured at two timepoints, the paired design
+uses **McNemar's exact binomial test** instead of Fisher's exact test, which
+is more powerful because it accounts for within-subject correlation.
+
+Set `paired` to the name of the column that links samples from the same
+subject across timepoints.
+
+```{r compute-paired}
+pop_paired <- compute_pop(
+  pd,
+  rank_cols  = "peptide_id",
+  group_cols = "timepoint",
+  paired     = "subject_id"
+)
+
+head(pop_paired)
+```
+
+The paired output does not include `ratio` or `delta_ratio` — the test
+statistic is the McNemar discordant-pair ratio, which is reflected in
+`p_raw`.
+
+```{r paired-cols}
+names(pop_paired)
+```
+
+---
+
+## Scatter plots
+
+Scatter plots compare the prevalence of every feature in group 1 (x-axis)
+against group 2 (y-axis). Points on the diagonal represent features with
+equal prevalence across groups; deviations indicate differential carriage.
+
+### `scatter_static()` — ggplot2
+
+The simplest call takes the `compute_pop()` result directly. Coloring is
+determined automatically from BH-corrected p-values:
+`"significant (BH)"`, `"nominal only"`, `"not significant"`.
+
+```{r scatter-basic}
+scatter_static(pop_group)
+```
+
+Use `pair` to restrict the plot to a specific group contrast and `xlab`/`ylab`
+to label the axes.
+
+```{r scatter-pair}
+scatter_static(
+  pop_group,
+  pair  = c("A", "B"),
+  xlab  = "Group A (%)",
+  ylab  = "Group B (%)",
+  alpha = 0.05
+)
+```
+
+Pass `rank` to display a single rank when the result contains multiple ranks.
+
+```{r scatter-rank, eval=FALSE}
+scatter_static(pop_tax, rank = "family", pair = c("A", "B"))
+```
+
+Graphical parameters are passed via `...`:
+
+| Parameter | Default | Effect |
+|---|---|---|
+| `point_size` | 2 | Point diameter |
+| `point_alpha` | 0.85 | Point opacity |
+| `jitter_width_pp` | 0 | Horizontal jitter (percentage points) |
+| `jitter_height_pp` | 0 | Vertical jitter (percentage points) |
+| `font_size` | 12 | Base font size |
+
+```{r scatter-custom}
+scatter_static(
+  pop_group,
+  pair             = c("A", "B"),
+  xlab             = "Group A (%)",
+  ylab             = "Group B (%)",
+  point_size       = 1.5,
+  point_alpha      = 0.6,
+  jitter_width_pp  = 0.5,
+  jitter_height_pp = 0.5
+)
+```
+
+> **`color_by`** — `scatter_static()` also accepts a `color_by` named vector
+> (e.g. `c("species" = "Staphylococcus aureus")`) to highlight points by
+> peptide-library metadata. This requires a real peptide library with matching
+> annotations and is not demonstrated here.
+
+### `scatter_interactive()` — plotly
+
+The interactive version mirrors the static API and returns a plotly widget
+suitable for HTML reports and Shiny dashboards. Hovering over a point shows
+its feature identifier, raw counts, prevalence percentages, and p-values.
+
+```{r scatter-interactive, eval=FALSE}
+scatter_interactive(
+  pop_group,
+  pair  = c("A", "B"),
+  xlab  = "Group A (%)",
+  ylab  = "Group B (%)",
+  alpha = 0.05
+)
+```
+
+An optional `background_df` argument lets you overlay a second set of points
+(e.g. all peptides from a different comparison) as a grey reference layer:
+
+```{r scatter-interactive-bg, eval=FALSE}
+scatter_interactive(
+  pop_group,
+  pair            = c("A", "B"),
+  background_df   = pop_multi[pop_multi$group_col == "timepoint", ],
+  show_background = TRUE,
+  background_name = "timepoint background"
+)
+```
+
+---
+
+## Volcano plots
+
+Volcano plots display **log₂ ratio** (x-axis) against **−log₁₀(p)** (y-axis),
+making it easy to spot features with both large effect sizes and small
+p-values.
+
+### `volcano_static()` — ggplot2
+
+```{r volcano-basic}
+volcano_static(pop_group)
+```
+
+Filter to a specific contrast and rank with `pair` and `rank`:
+
+```{r volcano-pair}
+volcano_static(
+  pop_group,
+  pair = c("A", "B"),
+  rank = "peptide_id"
+)
+```
+
+#### Cutoffs
+
+`fc_cut` (absolute log₂ fold-change) and `p_cut` (p-value) control where the
+dashed reference lines are drawn and how significance categories are assigned.
+
+```{r volcano-cutoffs}
+volcano_static(
+  pop_group,
+  pair   = c("A", "B"),
+  fc_cut = 1.5,
+  p_cut  = 0.01
+)
+```
+
+#### BH correction
+
+Set `p_mode = "bh"` to apply Benjamini–Hochberg correction per-plot. The
+y-axis then displays −log₁₀(p_BH).
+
+```{r volcano-bh}
+volcano_static(
+  pop_group,
+  pair   = c("A", "B"),
+  p_mode = "bh",
+  p_cut  = 0.05
+)
+```
+
+> **`color_by`** — like the scatter plots, `volcano_static()` accepts a
+> `color_by` argument to highlight features by peptide-library metadata.
+> This requires real library annotations and is not demonstrated here.
+
+### `volcano_interactive()` — plotly
+
+```{r volcano-interactive, eval=FALSE}
+volcano_interactive(
+  pop_group,
+  pair   = c("A", "B"),
+  p_mode = "bh",
+  p_cut  = 0.05,
+  fc_cut = 1
+)
+```
+
+Hovering over a point shows the feature identifier, rank, group labels,
+log₂ ratio, and −log₁₀(p).
+
+---
+
+## Putting it all together
+
+A typical POP analysis runs in three steps:
+
+```{r full-pipeline, eval=FALSE}
+# 1. Compute prevalence
+pop <- compute_pop(
+  pd,
+  rank_cols  = c("peptide_id", "family"),
+  group_cols = "group"
+)
+
+# Optional paired comparison across timepoints
+pop_paired <- compute_pop(
+  pd,
+  rank_cols  = "peptide_id",
+  group_cols = "timepoint",
+  paired     = "subject_id"
+)
+
+# 2. Scatter: prevalence in group A vs group B
+scatter_static(pop, pair = c("A", "B"), xlab = "Group A (%)", ylab = "Group B (%)")
+scatter_interactive(pop, pair = c("A", "B"), xlab = "Group A (%)", ylab = "Group B (%)")
+
+# 3. Volcano: effect size and significance
+volcano_static(pop,       pair = c("A", "B"), p_mode = "bh")
+volcano_interactive(pop,  pair = c("A", "B"), p_mode = "bh")
+```
+
+---
+
+## Session info
+
+```{r session-info}
+sessionInfo()
+```

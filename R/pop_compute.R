@@ -29,7 +29,7 @@
 #'   `rank`, `feature`, `group_col`, `group1`, `group2`,
 #'   `n1`, `N1`, `prop1`, `percent1`,
 #'   `n2`, `N2`, `prop2`, `percent2`,
-#'   `ratio`, `delta_ratio` (unpaired only), `p_raw`.
+#'   `ratio`, `delta_ratio` (unpaired only), `p_raw`, `n_peptides`.
 #'   A `view` column is prepended when the input carries a view attribute.
 #'
 #' @examples
@@ -206,6 +206,28 @@ compute_pop <- function(x,
           values_to = "feature"
         ) |>
         dplyr::mutate(feature = as.character(feature))
+
+      # --- count peptides per (rank, feature) --------------------------------
+      # Must be computed from df_ranked (before pivot_longer consumes rank cols)
+      n_pep_tbl <- dplyr::bind_rows(lapply(available_ranks, function(r) {
+        if (r == "peptide_id") {
+          df_ranked |>
+            dplyr::distinct(feature = !!.sym("peptide_id")) |>
+            dplyr::mutate(rank = r, n_peptides = 1L) |>
+            dplyr::select(rank, feature, n_peptides) |>
+            dplyr::collect() |>
+            dplyr::mutate(feature = as.character(feature))
+        } else {
+          df_ranked |>
+            dplyr::filter(!is.na(!!.sym(r))) |>
+            dplyr::distinct(peptide_id, feature = !!.sym(r)) |>
+            dplyr::count(feature, name = "n_peptides") |>
+            dplyr::mutate(rank = r) |>
+            dplyr::select(rank, feature, n_peptides) |>
+            dplyr::collect() |>
+            dplyr::mutate(feature = as.character(feature))
+        }
+      }))
 
       # --- grouping universes (per-column only) -----------------------------
       gs_view <- df_ranked_long |>
@@ -408,7 +430,8 @@ compute_pop <- function(x,
             ratio, delta_ratio, p_raw
           ) |>
           dplyr::collect() |>
-          as.data.frame()
+          as.data.frame() |>
+          dplyr::left_join(n_pep_tbl, by = c("rank", "feature"))
 
         .ph_log_ok("done (compute_pop, unpaired)",
           bullets = c(
@@ -543,7 +566,8 @@ compute_pop <- function(x,
           group2, n2, N2, prop2, percent2,
           p_raw
         ) |>
-        as.data.frame()
+        as.data.frame() |>
+        dplyr::left_join(n_pep_tbl, by = c("rank", "feature"))
 
       .ph_log_ok("done (compute_pop, paired)",
         bullets = c(
