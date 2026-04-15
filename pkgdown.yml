@@ -3,7 +3,10 @@ pkgdown: 2.2.0
 pkgdown_sha: ~
 articles:
   alpha-diversity: alpha-diversity.html
-last_built: 2026-04-08T18:59Z
+  beta-diversity: beta-diversity.html
+  delta-analysis: delta-analysis.html
+  pop-analysis: pop-analysis.html
+last_built: 2026-04-15T18:40Z
 urls:
   reference: https://polymerase3.github.io/phiper/reference
   article: https://polymerase3.github.io/phiper/articles

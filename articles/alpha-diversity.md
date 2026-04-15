@@ -38,41 +38,41 @@ Load the bundled example dataset. It contains two patient groups (`A`,
 
 ``` r
 pd <- load_example_data()
-#> [18:59:58] INFO  Constructing <phip_data> object
+#> [18:40:53] INFO  Constructing <phip_data> object
 #>                  -> create_data()
-#> [18:59:58] INFO  Fetching peptide metadata library via get_peptide_library()
-#> [18:59:58] INFO  Retrieving peptide metadata into DuckDB cache
+#> [18:40:53] INFO  Fetching peptide metadata library via get_peptide_library()
+#> [18:40:53] INFO  Retrieving peptide metadata into DuckDB cache
 #>                  -> get_peptide_library(force_refresh = FALSE)
-#> [18:59:58] INFO  Opened DuckDB connection
+#> [18:40:53] INFO  Opened DuckDB connection
 #>                    - cache dir:
 #>                      /home/runner/.cache/R/phiperio/peptide_meta/phip_cache.duckdb
 #>                    - table: peptide_meta
-#> [18:59:58] OK    Using cached download (SHA-256 match)
-#> [19:00:00] OK    Download complete and loaded into R
-#> [19:00:05] INFO  Importing sanitized metadata into DuckDB cache...
-#> [19:00:07] OK    peptide_meta table created in DuckDB cache
-#> [19:00:07] OK    Retrieving peptide metadata into DuckDB cache - done
-#>                  -> elapsed: 9.438s
-#> [19:00:07] OK    Peptide metadata acquired
-#> [19:00:07] INFO  Validating <phip_data>
+#> [18:40:53] OK    Using cached download (SHA-256 match)
+#> [18:40:56] OK    Download complete and loaded into R
+#> [18:41:01] INFO  Importing sanitized metadata into DuckDB cache...
+#> [18:41:02] OK    peptide_meta table created in DuckDB cache
+#> [18:41:02] OK    Retrieving peptide metadata into DuckDB cache - done
+#>                  -> elapsed: 9.55s
+#> [18:41:02] OK    Peptide metadata acquired
+#> [18:41:02] INFO  Validating <phip_data>
 #>                  -> validate_phip_data()
-#> [19:00:07] INFO  Checking structural requirements (shape & mandatory columns)
-#> [19:00:07] INFO  Checking outcome family availability (exist / fold_change /
+#> [18:41:02] INFO  Checking structural requirements (shape & mandatory columns)
+#> [18:41:03] INFO  Checking outcome family availability (exist / fold_change /
 #>                  raw_counts)
-#> [19:00:07] INFO  Checking collisions with reserved names
+#> [18:41:03] INFO  Checking collisions with reserved names
 #>                    - subject_id, sample_id, timepoint, peptide_id, exist,
 #>                      fold_change, counts_input, counts_hit
-#> [19:00:07] INFO  Ensuring all columns are atomic (no list-cols)
-#> [19:00:07] INFO  Checking key uniqueness
-#> [19:00:07] INFO  Validating value ranges & types for outcomes
-#> [19:00:07] INFO  Assessing sparsity (NA/zero prevalence vs threshold)
+#> [18:41:03] INFO  Ensuring all columns are atomic (no list-cols)
+#> [18:41:03] INFO  Checking key uniqueness
+#> [18:41:03] INFO  Validating value ranges & types for outcomes
+#> [18:41:03] INFO  Assessing sparsity (NA/zero prevalence vs threshold)
 #>                    - warn threshold: 50%
-#> [19:00:07] INFO  Checking peptide_id coverage against peptide_library
-#> [19:00:08] INFO  Checking full grid completeness (peptide * sample)
-#> [19:00:08] OK    Validating <phip_data> - done
-#>                  -> elapsed: 0.624s
-#> [19:00:08] OK    Constructing <phip_data> object - done
-#>                  -> elapsed: 10.068s
+#> [18:41:03] INFO  Checking peptide_id coverage against peptide_library
+#> [18:41:03] INFO  Checking full grid completeness (peptide * sample)
+#> [18:41:03] OK    Validating <phip_data> - done
+#>                  -> elapsed: 0.654s
+#> [18:41:03] OK    Constructing <phip_data> object - done
+#>                  -> elapsed: 10.209s
 pd
 #> ── <phip_data> ───────────────────────────────────────────────────────────────── 
 #> 
@@ -132,10 +132,10 @@ alpha_group <- compute_alpha(
   group_cols = "group",
   ranks      = "peptide_id"
 )
-#> [19:00:08] INFO  Computing alpha diversity (<phip_data>)
+#> [18:41:03] INFO  Computing alpha diversity (<phip_data>)
 #>                  -> group_cols: 'group'; ranks: 'peptide_id'
-#> [19:00:08] OK    Computing alpha diversity (<phip_data>) - done
-#>                  -> elapsed: 0.252s
+#> [18:41:04] OK    Computing alpha diversity (<phip_data>) - done
+#>                  -> elapsed: 0.259s
 ```
 
 The result is a **named list** with S3 class `"phip_alpha_diversity"`.
@@ -191,10 +191,10 @@ alpha_both <- compute_alpha(
   group_cols = c("group", "timepoint"),
   ranks      = "peptide_id"
 )
-#> [19:00:08] INFO  Computing alpha diversity (<phip_data>)
+#> [18:41:04] INFO  Computing alpha diversity (<phip_data>)
 #>                  -> group_cols: 'group', 'timepoint'; ranks: 'peptide_id'
-#> [19:00:09] OK    Computing alpha diversity (<phip_data>) - done
-#>                  -> elapsed: 0.447s
+#> [18:41:04] OK    Computing alpha diversity (<phip_data>) - done
+#>                  -> elapsed: 0.455s
 names(alpha_both)
 #> [1] "group"     "timepoint"
 ```
@@ -211,10 +211,10 @@ alpha_tax <- compute_alpha(
   group_cols = "group",
   ranks      = c("peptide_id", "family", "genus")
 )
-#> [19:00:09] INFO  Computing alpha diversity (<phip_data>)
+#> [18:41:04] INFO  Computing alpha diversity (<phip_data>)
 #>                  -> group_cols: 'group'; ranks: 'peptide_id', 'family', 'genus'
-#> [19:00:09] OK    Computing alpha diversity (<phip_data>) - done
-#>                  -> elapsed: 0.565s
+#> [18:41:05] OK    Computing alpha diversity (<phip_data>) - done
+#>                  -> elapsed: 0.58s
 # Each element now has rows for all three ranks
 dplyr::count(alpha_tax$group, rank)
 #> # A tibble: 3 × 2
@@ -238,10 +238,10 @@ alpha_inter <- compute_alpha(
   ranks             = "peptide_id",
   group_interaction = TRUE
 )
-#> [19:00:10] INFO  Computing alpha diversity (<phip_data>)
+#> [18:41:05] INFO  Computing alpha diversity (<phip_data>)
 #>                  -> group_cols: 'group', 'timepoint'; ranks: 'peptide_id'
-#> [19:00:10] OK    Computing alpha diversity (<phip_data>) - done
-#>                  -> elapsed: 0.685s
+#> [18:41:06] OK    Computing alpha diversity (<phip_data>) - done
+#>                  -> elapsed: 0.689s
 names(alpha_inter)
 #> [1] "group"             "timepoint"         "group * timepoint"
 
@@ -253,10 +253,10 @@ alpha_inter_only <- compute_alpha(
   group_interaction = TRUE,
   interaction_only  = TRUE
 )
-#> [19:00:10] INFO  Computing alpha diversity (<phip_data>)
+#> [18:41:06] INFO  Computing alpha diversity (<phip_data>)
 #>                  -> group_cols: 'group', 'timepoint'; ranks: 'peptide_id'
-#> [19:00:11] OK    Computing alpha diversity (<phip_data>) - done
-#>                  -> elapsed: 0.252s
+#> [18:41:06] OK    Computing alpha diversity (<phip_data>) - done
+#>                  -> elapsed: 0.257s
 names(alpha_inter_only)
 #> [1] "group * timepoint"
 ```
@@ -273,10 +273,10 @@ alpha_light <- compute_alpha(
   ranks      = "peptide_id",
   metrics    = c("richness", "shannon")
 )
-#> [19:00:11] INFO  Computing alpha diversity (<phip_data>)
+#> [18:41:06] INFO  Computing alpha diversity (<phip_data>)
 #>                  -> group_cols: 'group'; ranks: 'peptide_id'
-#> [19:00:11] OK    Computing alpha diversity (<phip_data>) - done
-#>                  -> elapsed: 0.264s
+#> [18:41:06] OK    Computing alpha diversity (<phip_data>) - done
+#>                  -> elapsed: 0.282s
 names(alpha_light$group)
 #> [1] "rank"              "sample_id"         "group"            
 #> [4] "richness"          "shannon_diversity"
@@ -291,16 +291,16 @@ with other tools.
 ``` r
 alpha_ln   <- compute_alpha(pd, group_cols = "group", ranks = "peptide_id",
                              metrics = "shannon", shannon_base = "ln")
-#> [19:00:11] INFO  Computing alpha diversity (<phip_data>)
+#> [18:41:07] INFO  Computing alpha diversity (<phip_data>)
 #>                  -> group_cols: 'group'; ranks: 'peptide_id'
-#> [19:00:11] OK    Computing alpha diversity (<phip_data>) - done
-#>                  -> elapsed: 0.232s
+#> [18:41:07] OK    Computing alpha diversity (<phip_data>) - done
+#>                  -> elapsed: 0.241s
 alpha_log2 <- compute_alpha(pd, group_cols = "group", ranks = "peptide_id",
                              metrics = "shannon", shannon_base = "log2")
-#> [19:00:11] INFO  Computing alpha diversity (<phip_data>)
+#> [18:41:07] INFO  Computing alpha diversity (<phip_data>)
 #>                  -> group_cols: 'group'; ranks: 'peptide_id'
-#> [19:00:11] OK    Computing alpha diversity (<phip_data>) - done
-#>                  -> elapsed: 0.229s
+#> [18:41:07] OK    Computing alpha diversity (<phip_data>) - done
+#>                  -> elapsed: 0.23s
 
 # log2 values are ln values divided by ln(2)
 head(alpha_ln$group$shannon_diversity / log(2) - alpha_log2$group$shannon_diversity, 3)
@@ -330,10 +330,10 @@ alpha_bin <- compute_alpha(
   mode       = "binary",
   metrics    = "richness"
 )
-#> [19:00:12] INFO  Computing alpha diversity (<phip_data>)
+#> [18:41:07] INFO  Computing alpha diversity (<phip_data>)
 #>                  -> group_cols: 'group'; ranks: 'peptide_id'
-#> [19:00:12] OK    Computing alpha diversity (<phip_data>) - done
-#>                  -> elapsed: 0.23s
+#> [18:41:07] OK    Computing alpha diversity (<phip_data>) - done
+#>                  -> elapsed: 0.197s
 summary(alpha_bin$group$richness)
 #>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
 #>   141.0   173.2   201.0   233.8   304.2   339.0
@@ -356,10 +356,10 @@ alpha_thr10 <- compute_alpha(
   threshold  = 10,
   metrics    = "richness"
 )
-#> [19:00:12] INFO  Computing alpha diversity (<phip_data>)
+#> [18:41:08] INFO  Computing alpha diversity (<phip_data>)
 #>                  -> group_cols: 'group'; ranks: 'peptide_id'
-#> [19:00:12] OK    Computing alpha diversity (<phip_data>) - done
-#>                  -> elapsed: 0.213s
+#> [18:41:08] OK    Computing alpha diversity (<phip_data>) - done
+#>                  -> elapsed: 0.251s
 
 # Strict threshold: fold_change > 100
 alpha_thr100 <- compute_alpha(
@@ -370,10 +370,10 @@ alpha_thr100 <- compute_alpha(
   threshold  = 100,
   metrics    = "richness"
 )
-#> [19:00:12] INFO  Computing alpha diversity (<phip_data>)
+#> [18:41:08] INFO  Computing alpha diversity (<phip_data>)
 #>                  -> group_cols: 'group'; ranks: 'peptide_id'
-#> [19:00:12] OK    Computing alpha diversity (<phip_data>) - done
-#>                  -> elapsed: 0.24s
+#> [18:41:08] OK    Computing alpha diversity (<phip_data>) - done
+#>                  -> elapsed: 0.242s
 
 # Richness drops as the threshold increases
 data.frame(
@@ -428,10 +428,10 @@ alpha_abund <- compute_alpha(
   abundance_col = "fold_change",
   metrics       = c("richness", "shannon", "simpson")
 )
-#> [19:00:13] INFO  Computing alpha diversity (data.frame)
+#> [18:41:08] INFO  Computing alpha diversity (data.frame)
 #>                  -> group_cols: 'group'; ranks: 'peptide_id'
-#> [19:00:15] OK    Computing alpha diversity (data.frame) - done
-#>                  -> elapsed: 1.939s
+#> [18:41:10] OK    Computing alpha diversity (data.frame) - done
+#>                  -> elapsed: 1.971s
 head(alpha_abund$group[, c("sample_id", "group", "richness",
                             "shannon_diversity", "simpson_diversity")])
 #> # A tibble: 6 × 5
@@ -512,10 +512,10 @@ plot_alpha(
   metric    = "richness",
   group_col = "group"
 )
-#> [19:00:15] INFO  plotting alpha diversity (precomputed)
+#> [18:41:10] INFO  plotting alpha diversity (precomputed)
 #>                  -> metric: richness
-#> [19:00:15] OK    plotting alpha diversity (precomputed) - done
-#>                  -> elapsed: 0.087s
+#> [18:41:11] OK    plotting alpha diversity (precomputed) - done
+#>                  -> elapsed: 0.09s
 ```
 
 ![](alpha-diversity_files/figure-html/plot-basic-1.png)
@@ -527,39 +527,39 @@ for (m in c("richness", "shannon_diversity", "simpson_diversity",
             "pielou_evenness", "berger_parker_dominance")) {
   print(plot_alpha(alpha_group, metric = m, group_col = "group"))
 }
-#> [19:00:15] INFO  plotting alpha diversity (precomputed)
+#> [18:41:11] INFO  plotting alpha diversity (precomputed)
 #>                  -> metric: richness
-#> [19:00:15] OK    plotting alpha diversity (precomputed) - done
+#> [18:41:11] OK    plotting alpha diversity (precomputed) - done
 #>                  -> elapsed: 0.06s
 ```
 
 ![](alpha-diversity_files/figure-html/plot-all-metrics-1.png)
 
-    #> [19:00:16] INFO  plotting alpha diversity (precomputed)
+    #> [18:41:11] INFO  plotting alpha diversity (precomputed)
     #>                  -> metric: shannon_diversity
-    #> [19:00:16] OK    plotting alpha diversity (precomputed) - done
-    #>                  -> elapsed: 0.096s
+    #> [18:41:11] OK    plotting alpha diversity (precomputed) - done
+    #>                  -> elapsed: 0.062s
 
 ![](alpha-diversity_files/figure-html/plot-all-metrics-2.png)
 
-    #> [19:00:16] INFO  plotting alpha diversity (precomputed)
+    #> [18:41:12] INFO  plotting alpha diversity (precomputed)
     #>                  -> metric: simpson_diversity
-    #> [19:00:16] OK    plotting alpha diversity (precomputed) - done
-    #>                  -> elapsed: 0.094s
+    #> [18:41:12] OK    plotting alpha diversity (precomputed) - done
+    #>                  -> elapsed: 0.097s
 
 ![](alpha-diversity_files/figure-html/plot-all-metrics-3.png)
 
-    #> [19:00:16] INFO  plotting alpha diversity (precomputed)
+    #> [18:41:12] INFO  plotting alpha diversity (precomputed)
     #>                  -> metric: pielou_evenness
-    #> [19:00:16] OK    plotting alpha diversity (precomputed) - done
-    #>                  -> elapsed: 0.06s
+    #> [18:41:12] OK    plotting alpha diversity (precomputed) - done
+    #>                  -> elapsed: 0.061s
 
 ![](alpha-diversity_files/figure-html/plot-all-metrics-4.png)
 
-    #> [19:00:17] INFO  plotting alpha diversity (precomputed)
+    #> [18:41:12] INFO  plotting alpha diversity (precomputed)
     #>                  -> metric: berger_parker_dominance
-    #> [19:00:17] OK    plotting alpha diversity (precomputed) - done
-    #>                  -> elapsed: 0.094s
+    #> [18:41:12] OK    plotting alpha diversity (precomputed) - done
+    #>                  -> elapsed: 0.062s
 
 ![](alpha-diversity_files/figure-html/plot-all-metrics-5.png)
 
@@ -585,10 +585,10 @@ plot_alpha(
   facet_by_rank = TRUE,
   ncol          = 3
 )
-#> [19:00:17] INFO  plotting alpha diversity (precomputed)
+#> [18:41:13] INFO  plotting alpha diversity (precomputed)
 #>                  -> metric: richness
-#> [19:00:17] OK    plotting alpha diversity (precomputed) - done
-#>                  -> elapsed: 0.099s
+#> [18:41:13] OK    plotting alpha diversity (precomputed) - done
+#>                  -> elapsed: 0.104s
 ```
 
 ![](alpha-diversity_files/figure-html/plot-facets-1.png)
@@ -603,10 +603,10 @@ plot_alpha(
   filter_ranks  = "peptide_id",
   facet_by_rank = FALSE
 )
-#> [19:00:18] INFO  plotting alpha diversity (precomputed)
+#> [18:41:14] INFO  plotting alpha diversity (precomputed)
 #>                  -> metric: richness
-#> [19:00:18] OK    plotting alpha diversity (precomputed) - done
-#>                  -> elapsed: 0.061s
+#> [18:41:14] OK    plotting alpha diversity (precomputed) - done
+#>                  -> elapsed: 0.062s
 ```
 
 ![](alpha-diversity_files/figure-html/plot-filter-rank-1.png)
@@ -625,10 +625,10 @@ plot_alpha(
   x_order       = c("T1", "T2"),
   x_labels      = c(T1 = "Baseline", T2 = "Follow-up")
 )
-#> [19:00:18] INFO  plotting alpha diversity (precomputed)
+#> [18:41:14] INFO  plotting alpha diversity (precomputed)
 #>                  -> metric: shannon_diversity
-#> [19:00:18] OK    plotting alpha diversity (precomputed) - done
-#>                  -> elapsed: 0.061s
+#> [18:41:14] OK    plotting alpha diversity (precomputed) - done
+#>                  -> elapsed: 0.064s
 ```
 
 ![](alpha-diversity_files/figure-html/plot-filter-order-1.png)
@@ -652,10 +652,10 @@ plot_alpha(
   point_size    = 2.5,
   point_alpha   = 0.6
 )
-#> [19:00:19] INFO  plotting alpha diversity (precomputed)
+#> [18:41:15] INFO  plotting alpha diversity (precomputed)
 #>                  -> metric: simpson_diversity
-#> [19:00:19] OK    plotting alpha diversity (precomputed) - done
-#>                  -> elapsed: 0.064s
+#> [18:41:15] OK    plotting alpha diversity (precomputed) - done
+#>                  -> elapsed: 0.116s
 ```
 
 ![](alpha-diversity_files/figure-html/plot-custom-1.png)
@@ -672,12 +672,12 @@ plot_alpha(
   group_col        = "phip_interaction",
   interaction_only = TRUE
 )
-#> [19:00:19] INFO  plotting alpha diversity (precomputed)
+#> [18:41:15] INFO  plotting alpha diversity (precomputed)
 #>                  -> metric: richness
-#> [19:00:19] INFO  selected interaction table
+#> [18:41:15] INFO  selected interaction table
 #>                    - group * timepoint
-#> [19:00:19] OK    plotting alpha diversity (precomputed) - done
-#>                  -> elapsed: 0.098s
+#> [18:41:15] OK    plotting alpha diversity (precomputed) - done
+#>                  -> elapsed: 0.099s
 ```
 
 ![](alpha-diversity_files/figure-html/plot-interaction-1.png)
@@ -954,10 +954,10 @@ plot_alpha(
   show_significance = TRUE,
   sig_p_threshold   = 0.05
 )
-#> [19:00:21] INFO  plotting alpha diversity (precomputed)
+#> [18:41:17] INFO  plotting alpha diversity (precomputed)
 #>                  -> metric: richness
-#> [19:00:21] OK    plotting alpha diversity (precomputed) - done
-#>                  -> elapsed: 0.108s
+#> [18:41:17] OK    plotting alpha diversity (precomputed) - done
+#>                  -> elapsed: 0.113s
 ```
 
 ![](alpha-diversity_files/figure-html/brackets-1.png)
@@ -975,10 +975,10 @@ plot_alpha(
   sig_step_increase = 0.08,
   sig_tip_length    = 0.005
 )
-#> [19:00:22] INFO  plotting alpha diversity (precomputed)
+#> [18:41:18] INFO  plotting alpha diversity (precomputed)
 #>                  -> metric: shannon_diversity
-#> [19:00:22] OK    plotting alpha diversity (precomputed) - done
-#>                  -> elapsed: 0.107s
+#> [18:41:18] OK    plotting alpha diversity (precomputed) - done
+#>                  -> elapsed: 0.108s
 ```
 
 ![](alpha-diversity_files/figure-html/brackets-tuned-1.png)
@@ -1041,7 +1041,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] phiper_0.4.0
+#> [1] phiper_0.4.1
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] tidyr_1.3.2           utf8_1.2.6            sass_0.4.10          
@@ -1049,13 +1049,13 @@ sessionInfo()
 #>  [7] evaluate_1.0.5        grid_4.5.3            RColorBrewer_1.1-3   
 #> [10] sysfonts_0.8.9        showtextdb_3.0        blob_1.3.0           
 #> [13] fastmap_1.2.0         jsonlite_2.0.0        DBI_1.3.0            
-#> [16] purrr_1.2.1           scales_1.4.0          textshaping_1.0.5    
-#> [19] jquerylib_0.1.4       duckdb_1.5.1          cli_3.6.5            
+#> [16] purrr_1.2.2           scales_1.4.0          textshaping_1.0.5    
+#> [19] jquerylib_0.1.4       duckdb_1.5.2          cli_3.6.6            
 #> [22] rlang_1.2.0           chk_0.10.0            dbplyr_2.5.2         
 #> [25] phiperio_0.5.0        withr_3.0.2           cachem_1.1.0         
 #> [28] yaml_2.3.12           otel_0.2.0            tools_4.5.3          
 #> [31] ggsignif_0.6.4        dplyr_1.2.1           ggplot2_4.0.2        
-#> [34] showtext_0.9-8        vctrs_0.7.2           R6_2.6.1             
+#> [34] showtext_0.9-8        vctrs_0.7.3           R6_2.6.1             
 #> [37] lifecycle_1.0.5       fs_2.0.1              htmlwidgets_1.6.4    
 #> [40] ragg_1.5.2            pkgconfig_2.0.3       desc_1.4.3           
 #> [43] pkgdown_2.2.0         RcppParallel_5.1.11-2 pillar_1.11.1        

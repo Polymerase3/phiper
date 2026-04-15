@@ -48,9 +48,8 @@ plot_tsne(
 
 - palette:
 
-  Optional vector of colour values passed to
-  [`scale_color_manual()`](https://ggplot2.tidyverse.org/reference/scale_manual.html)
-  (2D) or `colors` (3D plotly).
+  Optional vector of colour values passed to `scale_color_manual()` (2D)
+  or `colors` (3D plotly).
 
 - ...:
 

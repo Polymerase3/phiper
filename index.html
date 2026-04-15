@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,9 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="articles/alpha-diversity.html">Alpha Diversity Analysis in PhIP-seq</a></li>
+    <li><a class="dropdown-item" href="articles/beta-diversity.html">Beta Diversity Analysis in PhIP-seq</a></li>
+    <li><a class="dropdown-item" href="articles/delta-analysis.html">Delta Analysis in PhIP-seq</a></li>
+    <li><a class="dropdown-item" href="articles/pop-analysis.html">Prevalence of Presence (POP) Analysis in PhIP-seq</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
@@ -71,7 +74,7 @@
 <div class="section level1">
 <div class="page-header"><h1 id="phiper">phiper<a class="anchor" aria-label="anchor" href="#phiper"></a>
 </h1></div>
-<p>The <code>phiper</code> package provides a scalable, reproducible toolkit for validating and analyzing PhIP-Seq data in cross-sectional and longitudinal studies.</p>
+<p><code>phiper</code> is an end-to-end R toolkit for Phage ImmunoPrecipitation sequencing (PhIP-seq) data analysis. It covers everything from quality control and enrichment statistics to diversity metrics and publication-ready figures — supporting both cross-sectional and longitudinal study designs.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -83,137 +86,42 @@
 <span><span class="co"># or, using devtools:</span></span>
 <span><span class="co"># install.packages("devtools")</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"Polymerase3/phiper"</span><span class="op">)</span></span></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> <code>phiper</code> depends on <a href="https://github.com/Polymerase3/phiperio" class="external-link"><code>phiperio</code></a> for data import and class construction. It is installed automatically by the commands above.</p>
+</blockquote>
 </div>
 <div class="section level2">
-<h2 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a>
+<h2 id="what-can-phiper-do">What can phiper do?<a class="anchor" aria-label="anchor" href="#what-can-phiper-do"></a>
 </h2>
-<p>For testing, exploration, and minimal examples we provide the <code>phip_mixture</code> dataset. It is a simulated PhIP-Seq–like antibody repertoire for two groups (A, B) and two time points (T1, T2), with per-subject, per-peptide presence/absence (<code>exist</code>) plus corresponding read counts and fold changes. The dataset is generated from a simple mixture of rare and common peptide prevalences with Poisson-distributed counts and is intended solely for testing and illustrative examples, without any biological interpretation.</p>
+<p><code>phiper</code> is organised into four analysis domains, each with dedicated computation and visualisation functions:</p>
+<ul>
+<li>
+<strong>Enrichment counts</strong> — <code><a href="reference/plot_enrichment_counts.html">plot_enrichment_counts()</a></code> gives a quick overview of per-group peptide hit counts.</li>
+<li>
+<strong>Alpha diversity</strong> — richness, Shannon, Simpson, Pielou evenness, and Berger-Parker dominance, with optional significance testing and bracket annotations (<code><a href="reference/compute_alpha.html">compute_alpha()</a></code>, <code><a href="reference/compute_alpha_significance.html">compute_alpha_significance()</a></code>).</li>
+<li>
+<strong>Beta diversity</strong> — pairwise distances, PCoA, CAP (constrained ordination), PERMANOVA, dispersion tests, and t-SNE (<code><a href="reference/compute_distance.html">compute_distance()</a></code>, <code><a href="reference/compute_pcoa.html">compute_pcoa()</a></code>, <code><a href="reference/compute_capscale.html">compute_capscale()</a></code>, <code><a href="reference/compute_permanova.html">compute_permanova()</a></code>, <code><a href="reference/compute_dispersion.html">compute_dispersion()</a></code>, <code><a href="reference/compute_tsne.html">compute_tsne()</a></code>).</li>
+<li>
+<strong>Global prevalence shift (delta)</strong> — subject-level permutation tests for antigen-wide prevalence shifts between groups, with forest plots and ECDF visualisations (<code><a href="reference/compute_delta.html">compute_delta()</a></code>, <code><a href="reference/forestplot.html">forestplot()</a></code>, <code><a href="reference/ecdf_plot.html">ecdf_plot()</a></code>).</li>
+<li>
+<strong>Per-feature prevalence comparison (POP)</strong> — Fisher’s exact and McNemar tests for every peptide or taxonomic rank, visualised as scatter plots and volcano plots (<code><a href="reference/compute_pop.html">compute_pop()</a></code>, <code><a href="reference/scatter_static.html">scatter_static()</a></code>, <code><a href="reference/volcano_static.html">volcano_static()</a></code>).</li>
+</ul>
 <div class="section level3">
-<h3 id="importing-the-data">Importing the data<a class="anchor" aria-label="anchor" href="#importing-the-data"></a>
+<h3 id="the-compute_--plot_-pattern">The <code>compute_</code> / <code>plot_</code> pattern<a class="anchor" aria-label="anchor" href="#the-compute_--plot_-pattern"></a>
 </h3>
-<p>A ready-to-use example dataset is bundled with <code>phiperio</code>. Load it directly with:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/Polymerase3/phiper" class="external-link">phiper</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">ps</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/load_example_data.html">load_example_data</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>You can inspect the data:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">ps</span><span class="op">$</span><span class="va">data_long</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; # A tibble: 5 × 9</span></span>
-<span><span class="co">#&gt;   sample_id subject_id group time  peptide_id exist counts_control counts_hits</span></span>
-<span><span class="co">#&gt;   &lt;chr&gt;     &lt;chr&gt;      &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;      &lt;int&gt;          &lt;int&gt;       &lt;int&gt;</span></span>
-<span><span class="co">#&gt; 1 A_T1_1    1          A     T1    10003          1              5        1031</span></span>
-<span><span class="co">#&gt; 2 A_T1_1    1          A     T1    10017          1             37         494</span></span>
-<span><span class="co">#&gt; 3 A_T1_1    1          A     T1    10023          1             11        3015</span></span>
-<span><span class="co">#&gt; 4 A_T1_1    1          A     T1    10062          1              0        3499</span></span>
-<span><span class="co">#&gt; 5 B_T1_1    1          B     T1    10087          1              1        1245</span></span>
-<span><span class="co">#&gt; # ℹ 1 more variable: fold_change &lt;dbl&gt;</span></span></code></pre></div>
-<p>You can also inspect the current version of the peptide library maintained by the Vogl lab:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">get_peptide_library</span><span class="op">(</span><span class="va">ps</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; # A tibble: 5 × 30</span></span>
-<span><span class="co">#&gt;   peptide_id aa_seq    pos len_seq Fullname Description is_IEDB_or_cntrl is_auto</span></span>
-<span><span class="co">#&gt;   &lt;chr&gt;      &lt;chr&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;chr&gt;    &lt;chr&gt;       &lt;lgl&gt;            &lt;lgl&gt;  </span></span>
-<span><span class="co">#&gt; 1 agilent_1  AAAAAA…  2728    2997 Chromod… Chromodoma… TRUE             TRUE   </span></span>
-<span><span class="co">#&gt; 2 agilent_2  AAAAYA…    88     445 integra… Uncharacte… TRUE             FALSE  </span></span>
-<span><span class="co">#&gt; 3 agilent_3  AAADRS…   264     548 hypothe… Possible c… TRUE             FALSE  </span></span>
-<span><span class="co">#&gt; 4 agilent_4  AAAIAW…  1276    3432 envelop… Genome pol… TRUE             FALSE  </span></span>
-<span><span class="co">#&gt; 5 agilent_5  AAALRK…  1188    1935 Myosin-… Myosin-7    TRUE             FALSE  </span></span>
-<span><span class="co">#&gt; # ℹ 22 more variables: is_infect &lt;lgl&gt;, is_EBV &lt;lgl&gt;, is_toxin &lt;lgl&gt;,</span></span>
-<span><span class="co">#&gt; #   is_PNP &lt;lgl&gt;, is_EM &lt;lgl&gt;, is_MPA &lt;lgl&gt;, is_patho &lt;lgl&gt;, is_probio &lt;lgl&gt;,</span></span>
-<span><span class="co">#&gt; #   is_IgA &lt;lgl&gt;, is_flagellum &lt;lgl&gt;, signalp6_slow &lt;lgl&gt;,</span></span>
-<span><span class="co">#&gt; #   is_topgraph_new &lt;lgl&gt;, is_allergens &lt;lgl&gt;, domain &lt;chr&gt;, kingdom &lt;chr&gt;,</span></span>
-<span><span class="co">#&gt; #   phylum &lt;chr&gt;, class &lt;chr&gt;, order &lt;chr&gt;, family &lt;chr&gt;, genus &lt;chr&gt;,</span></span>
-<span><span class="co">#&gt; #   species &lt;chr&gt;, common &lt;chr&gt;</span></span></code></pre></div>
+<p>Every domain follows the same two-step workflow: a <code>compute_*()</code> function returns a tidy data structure, which is then passed to one or more <code>plot_*()</code> functions. This keeps computation and visualisation cleanly separated and makes it easy to inspect, filter, or export results before plotting.</p>
 </div>
 <div class="section level3">
-<h3 id="plotting-peptide-counts">Plotting peptide counts<a class="anchor" aria-label="anchor" href="#plotting-peptide-counts"></a>
+<h3 id="static-and-interactive-outputs">Static and interactive outputs<a class="anchor" aria-label="anchor" href="#static-and-interactive-outputs"></a>
 </h3>
-<p>You can easily plot peptide counts using the <code><a href="reference/plot_enrichment_counts.html">plot_enrichment_counts()</a></code> function:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/plot_enrichment_counts.html">plot_enrichment_counts</a></span><span class="op">(</span></span>
-<span>  <span class="va">ps</span>,</span>
-<span>  group_cols        <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"group"</span>, <span class="st">"time"</span><span class="op">)</span>,</span>
-<span>  group_interaction <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  interaction_only  <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  annotation_size   <span class="op">=</span> <span class="fl">3</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:47:57] INFO  Plotting enrichment counts (&lt;phip_data&gt;)</span></span>
-<span><span class="co">#&gt;                  -&gt; group_cols: 'group', 'time'</span></span>
-<span><span class="co">#&gt; [15:47:57] INFO  building enrichment count plot</span></span>
-<span><span class="co">#&gt;                  -&gt; grouping variable: '..phip_interaction..'</span></span>
-<span><span class="co">#&gt; [15:47:57] OK    plot built</span></span>
-<span><span class="co">#&gt; [15:47:57] OK    building enrichment count plot - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.151s</span></span>
-<span><span class="co">#&gt; [15:47:57] OK    Plotting enrichment counts (&lt;phip_data&gt;) - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.155s</span></span></code></pre></div>
-<p><img src="reference/figures/README-unnamed-chunk-7-1.png" width="100%"></p>
+<p>All visualisation functions come in two flavours: a static version built on <strong>ggplot2</strong> (composable with the full tidyverse graphics ecosystem) and an interactive version built on <strong>plotly</strong> (useful for exploratory data analysis and HTML reports). Both use the built-in <code><a href="reference/theme_phip.html">theme_phip()</a></code> and phiper colour scales for a consistent visual style.</p>
 </div>
-<div class="section level3">
-<h3 id="alpha-diversity">Alpha diversity<a class="anchor" aria-label="anchor" href="#alpha-diversity"></a>
-</h3>
-<p>You can also compute and visualize alpha diversity for different groups or subgroups of interest. <code>phiper</code> is organized into analysis modules: for each module you typically get a computation function (for example, <code><a href="reference/compute_alpha.html">compute_alpha()</a></code>) and one or more plotting functions (for example, <code><a href="reference/plot_alpha.html">plot_alpha()</a></code>). This pattern repeats across the analysis modules.</p>
-<p>For alpha diversity specifically:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">alpha</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/compute_alpha.html">compute_alpha</a></span><span class="op">(</span></span>
-<span>  <span class="va">ps</span>,</span>
-<span>  group_cols        <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"group"</span>, <span class="st">"time"</span><span class="op">)</span>,</span>
-<span>  carry_cols        <span class="op">=</span> <span class="st">"subject_id"</span>,</span>
-<span>  group_interaction <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  interaction_only  <span class="op">=</span> <span class="cn">TRUE</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:47:58] INFO  Peptide library attached on main connection</span></span>
-<span><span class="co">#&gt;                    - available columns: peptide_id, aa_seq, pos, len_seq,</span></span>
-<span><span class="co">#&gt;                      Fullname, Description, is_IEDB_or_cntrl, is_auto …(+22)</span></span>
-<span><span class="co">#&gt; [15:47:58] INFO  Computing alpha diversity (&lt;phip_data&gt;)</span></span>
-<span><span class="co">#&gt;                  -&gt; group_cols: 'group', 'time'; ranks: 'peptide_id'</span></span>
-<span><span class="co">#&gt; [15:47:58] OK    Computing alpha diversity (&lt;phip_data&gt;) - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.116s</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">alpha</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $`group * time`</span></span>
-<span><span class="co">#&gt; # A tibble: 80 × 7</span></span>
-<span><span class="co">#&gt;    rank       sample_id phip_interaction subject_id richness simpson_diversity</span></span>
-<span><span class="co">#&gt;    &lt;chr&gt;      &lt;chr&gt;     &lt;chr&gt;            &lt;chr&gt;         &lt;int&gt;             &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt;  1 peptide_id B_T1_13   B * T1           13              141             0.993</span></span>
-<span><span class="co">#&gt;  2 peptide_id A_T2_13   A * T2           13              333             0.997</span></span>
-<span><span class="co">#&gt;  3 peptide_id B_T2_13   B * T2           13              282             0.996</span></span>
-<span><span class="co">#&gt;  4 peptide_id B_T2_22   B * T2           22              317             0.997</span></span>
-<span><span class="co">#&gt;  5 peptide_id B_T2_23   B * T2           23              303             0.997</span></span>
-<span><span class="co">#&gt;  6 peptide_id B_T1_3    B * T1           3               174             0.994</span></span>
-<span><span class="co">#&gt;  7 peptide_id B_T2_5    B * T2           5               283             0.996</span></span>
-<span><span class="co">#&gt;  8 peptide_id A_T1_6    A * T1           6               187             0.995</span></span>
-<span><span class="co">#&gt;  9 peptide_id B_T1_7    B * T1           7               169             0.994</span></span>
-<span><span class="co">#&gt; 10 peptide_id A_T2_8    A * T2           8               310             0.997</span></span>
-<span><span class="co">#&gt; # ℹ 70 more rows</span></span>
-<span><span class="co">#&gt; # ℹ 1 more variable: shannon_diversity &lt;dbl&gt;</span></span></code></pre></div>
-<p>You can then plot the results:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/plot_alpha.html">plot_alpha</a></span><span class="op">(</span></span>
-<span>  <span class="va">alpha</span>,</span>
-<span>  metric    <span class="op">=</span> <span class="st">"richness"</span>,</span>
-<span>  group_col <span class="op">=</span> <span class="st">"phip_interaction"</span></span>
-<span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/lims.html" class="external-link">ylim</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fl">400</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span></span>
-<span>    axis.text.x <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span></span>
-<span>      angle <span class="op">=</span> <span class="fl">45</span>,</span>
-<span>      vjust <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>      hjust <span class="op">=</span> <span class="fl">1</span></span>
-<span>    <span class="op">)</span></span>
-<span>  <span class="op">)</span></span>
-<span><span class="co">#&gt; [15:47:58] INFO  plotting alpha diversity (precomputed)</span></span>
-<span><span class="co">#&gt;                  -&gt; metric: richness</span></span>
-<span><span class="co">#&gt; [15:47:58] OK    plotting alpha diversity (precomputed) - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.073s</span></span></code></pre></div>
-<p><img src="reference/figures/README-unnamed-chunk-9-1.png" width="100%"></p>
 </div>
+<div class="section level2">
+<h2 id="documentation-examples-and-vignettes">Documentation, examples, and vignettes<a class="anchor" aria-label="anchor" href="#documentation-examples-and-vignettes"></a>
+</h2>
+<p>Full documentation, worked examples, and vignettes are available on the package website:</p>
+<p><strong><a href="https://polymerase3.github.io/phiper/" class="uri">https://polymerase3.github.io/phiper/</a></strong></p>
 </div>
 <div class="section level2">
 <h2 id="contributing">Contributing<a class="anchor" aria-label="anchor" href="#contributing"></a>

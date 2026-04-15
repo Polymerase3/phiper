@@ -70,8 +70,8 @@ compute_pop(
 A data.frame with one row per (rank, feature, group_col) comparison:
 `rank`, `feature`, `group_col`, `group1`, `group2`, `n1`, `N1`, `prop1`,
 `percent1`, `n2`, `N2`, `prop2`, `percent2`, `ratio`, `delta_ratio`
-(unpaired only), `p_raw`. A `view` column is prepended when the input
-carries a view attribute.
+(unpaired only), `p_raw`, `n_peptides`. A `view` column is prepended
+when the input carries a view attribute.
 
 ## Examples
 

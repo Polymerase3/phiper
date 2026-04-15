@@ -15,7 +15,7 @@ applies phip_palette. Set as the session default on library(phiper)."></head><bo
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -27,6 +27,9 @@ applies phip_palette. Set as the session default on library(phiper)."></head><bo
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/alpha-diversity.html">Alpha Diversity Analysis in PhIP-seq</a></li>
+    <li><a class="dropdown-item" href="../articles/beta-diversity.html">Beta Diversity Analysis in PhIP-seq</a></li>
+    <li><a class="dropdown-item" href="../articles/delta-analysis.html">Delta Analysis in PhIP-seq</a></li>
+    <li><a class="dropdown-item" href="../articles/pop-analysis.html">Prevalence of Presence (POP) Analysis in PhIP-seq</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -88,13 +91,13 @@ from a discrete scale, specify <code>na.translate = FALSE</code>.</p></dd>
 
     <dt><code>name</code></dt>
 <dd><p>The name of the scale. Used as the axis or legend title. If
-<code><a href="https://ggplot2.tidyverse.org/reference/waiver.html" class="external-link">waiver()</a></code>, the default, the name of the scale is taken from the first
+<code>waiver()</code>, the default, the name of the scale is taken from the first
 mapping used for that aesthetic. If <code>NULL</code>, the legend title will be
 omitted.</p></dd>
 
     <dt><code>minor_breaks</code></dt>
 <dd><p>One of:</p><ul><li><p><code>NULL</code> for no minor breaks</p></li>
-<li><p><code><a href="https://ggplot2.tidyverse.org/reference/waiver.html" class="external-link">waiver()</a></code> for the default breaks (none for discrete, one minor break
+<li><p><code>waiver()</code> for the default breaks (none for discrete, one minor break
 between each major break for continuous)</p></li>
 <li><p>A numeric vector of positions</p></li>
 <li><p>A function that given the limits returns a vector of minor breaks. Also
@@ -107,7 +110,7 @@ break positions.</p></li>
 <dd><p>One of the options below. Please note that when <code>labels</code> is a
 vector, it is highly recommended to also set the <code>breaks</code> argument as a
 vector to protect against unintended mismatches.</p><ul><li><p><code>NULL</code> for no labels</p></li>
-<li><p><code><a href="https://ggplot2.tidyverse.org/reference/waiver.html" class="external-link">waiver()</a></code> for the default labels computed by the
+<li><p><code>waiver()</code> for the default labels computed by the
 transformation object</p></li>
 <li><p>A character vector giving labels (must be same length as <code>breaks</code>)</p></li>
 <li><p>An expression vector (must be the same length as breaks). See ?plotmath for details.</p></li>

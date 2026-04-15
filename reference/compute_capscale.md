@@ -121,48 +121,48 @@ A list of class `"beta_capscale"` with elements:
 ``` r
 # \donttest{
 ps <- load_example_data("small_mixture")
-#> [18:59:38] INFO  Constructing <phip_data> object
+#> [18:40:33] INFO  Constructing <phip_data> object
 #>                  -> create_data()
-#> [18:59:38] INFO  Fetching peptide metadata library via get_peptide_library()
-#> [18:59:38] INFO  Retrieving peptide metadata into DuckDB cache
+#> [18:40:33] INFO  Fetching peptide metadata library via get_peptide_library()
+#> [18:40:33] INFO  Retrieving peptide metadata into DuckDB cache
 #>                  -> get_peptide_library(force_refresh = FALSE)
-#> [18:59:38] INFO  Opened DuckDB connection
+#> [18:40:33] INFO  Opened DuckDB connection
 #>                    - cache dir:
 #>                      /home/runner/.cache/R/phiperio/peptide_meta/phip_cache.duckdb
 #>                    - table: peptide_meta
-#> [18:59:38] OK    Using cached peptide_meta (fast path)
-#> [18:59:38] OK    Retrieving peptide metadata into DuckDB cache - done
+#> [18:40:33] OK    Using cached peptide_meta (fast path)
+#> [18:40:33] OK    Retrieving peptide metadata into DuckDB cache - done
 #>                  -> elapsed: 0.039s
-#> [18:59:38] OK    Peptide metadata acquired
-#> [18:59:38] INFO  Validating <phip_data>
+#> [18:40:33] OK    Peptide metadata acquired
+#> [18:40:33] INFO  Validating <phip_data>
 #>                  -> validate_phip_data()
-#> [18:59:38] INFO  Checking structural requirements (shape & mandatory columns)
-#> [18:59:38] INFO  Checking outcome family availability (exist / fold_change /
+#> [18:40:33] INFO  Checking structural requirements (shape & mandatory columns)
+#> [18:40:33] INFO  Checking outcome family availability (exist / fold_change /
 #>                  raw_counts)
-#> [18:59:38] INFO  Checking collisions with reserved names
+#> [18:40:33] INFO  Checking collisions with reserved names
 #>                    - subject_id, sample_id, timepoint, peptide_id, exist,
 #>                      fold_change, counts_input, counts_hit
-#> [18:59:38] INFO  Ensuring all columns are atomic (no list-cols)
-#> [18:59:38] INFO  Checking key uniqueness
-#> [18:59:38] INFO  Validating value ranges & types for outcomes
-#> [18:59:38] INFO  Assessing sparsity (NA/zero prevalence vs threshold)
+#> [18:40:33] INFO  Ensuring all columns are atomic (no list-cols)
+#> [18:40:33] INFO  Checking key uniqueness
+#> [18:40:33] INFO  Validating value ranges & types for outcomes
+#> [18:40:33] INFO  Assessing sparsity (NA/zero prevalence vs threshold)
 #>                    - warn threshold: 50%
-#> [18:59:38] INFO  Checking peptide_id coverage against peptide_library
-#> Warning: [18:59:38] WARN  peptide_id not found in peptide_library (e.g. 10003)
+#> [18:40:33] INFO  Checking peptide_id coverage against peptide_library
+#> Warning: [18:40:33] WARN  peptide_id not found in peptide_library (e.g. 10003)
 #>                  -> peptide library coverage.
-#> [18:59:38] INFO  Checking full grid completeness (peptide * sample)
-#> Warning: [18:59:38] WARN  Counts table is not a full peptide * sample grid.
+#> [18:40:33] INFO  Checking full grid completeness (peptide * sample)
+#> Warning: [18:40:33] WARN  Counts table is not a full peptide * sample grid.
 #>                  -> grid completeness
 #>                    - observed rows: 78200
 #>                    - expected rows: 156000.
-#> Warning: [18:59:38] WARN  Grid remains incomplete (auto_expand = FALSE).
+#> Warning: [18:40:33] WARN  Grid remains incomplete (auto_expand = FALSE).
 #>                  -> grid completeness
 #>                    - observed rows: 78200
 #>                    - expected rows: 156000.
-#> [18:59:38] OK    Validating <phip_data> - done
-#>                  -> elapsed: 0.561s
-#> [18:59:38] OK    Constructing <phip_data> object - done
-#>                  -> elapsed: 0.602s
+#> [18:40:33] OK    Validating <phip_data> - done
+#>                  -> elapsed: 0.534s
+#> [18:40:33] OK    Constructing <phip_data> object - done
+#>                  -> elapsed: 0.574s
 
 # compute distance matrix
 val_col <- "fold_change"
@@ -174,16 +174,16 @@ dist_bc <- compute_distance(
   distance = "bray",
   n_threads = 2L
 )
-#> [18:59:38] INFO  building abundance matrix from `ps` using `fold_change`.
-#> [18:59:38] INFO  building pivot spec (sample_id x peptide_id).
-#> [18:59:38] INFO  Collecting long table (sample_id, peptide_id, value).
+#> [18:40:33] INFO  building abundance matrix from `ps` using `fold_change`.
+#> [18:40:33] INFO  building pivot spec (sample_id x peptide_id).
+#> [18:40:33] INFO  Collecting long table (sample_id, peptide_id, value).
 #>                  -> compute_distance
-#> [18:59:38] INFO  Pivoting to wide abundance matrix in R.
+#> [18:40:33] INFO  Pivoting to wide abundance matrix in R.
 #>                  -> compute_distance
-#> [18:59:38] INFO  abundance matrix has 43 samples and 5 features after
+#> [18:40:33] INFO  abundance matrix has 43 samples and 5 features after
 #>                  preprocessing.
-#> [18:59:38] INFO  computing distance: bray
-#> [18:59:38] INFO  distance matrix computation complete.
+#> [18:40:33] INFO  computing distance: bray
+#> [18:40:33] INFO  distance matrix computation complete.
 
 # pick a simple constraint that exists in the example data (fallback order)
 dat <- ps
@@ -197,13 +197,13 @@ cap_res <- compute_capscale(
   neg_correction = "none",
   top_features = 30L
 )
-#> [18:59:38] INFO  building metadata from `ps$data_long`.
-#> [18:59:38] INFO  fitting constrained ordination (cap/db-rda)
+#> [18:40:33] INFO  building metadata from `ps$data_long`.
+#> [18:40:33] INFO  fitting constrained ordination (cap/db-rda)
 #>                    - formula: ~group
-#> [18:59:39] INFO  extracting constrained sample scores.
-#> [18:59:39] INFO  computing variance partitioning and permutation tests.
-#> [18:59:39] INFO  computing feature associations: weighted_average.
-#> [18:59:39] INFO  cap analysis complete.
+#> [18:40:34] INFO  extracting constrained sample scores.
+#> [18:40:34] INFO  computing variance partitioning and permutation tests.
+#> [18:40:34] INFO  computing feature associations: weighted_average.
+#> [18:40:34] INFO  cap analysis complete.
 
 cap_res$variance_partition
 #> # A tibble: 3 × 3

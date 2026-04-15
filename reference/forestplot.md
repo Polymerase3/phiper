@@ -100,8 +100,7 @@ forestplot(
 
 - label_vjust:
 
-  Vertical justification for arrow labels (passed to
-  [`annotate()`](https://ggplot2.tidyverse.org/reference/annotate.html)).
+  Vertical justification for arrow labels (passed to `annotate()`).
 
 - arrow_color:
 
