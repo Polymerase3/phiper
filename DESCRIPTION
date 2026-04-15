@@ -43,6 +43,7 @@ Suggests:
     ggsignif,
     ggpubr,
     knitr,
+    kableExtra,
     mgcv,
     mockery,
     openxlsx,
