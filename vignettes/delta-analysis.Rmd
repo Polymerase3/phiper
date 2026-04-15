@@ -74,6 +74,14 @@ pop_group <- compute_pop(
 head(pop_group)
 ```
 
+For the unpaired group comparison with `compute_delta()`, each subject must
+appear at most once per group. Because `pd` contains two timepoints per
+subject, restrict to a single timepoint first:
+
+```{r filter-t1}
+pd_t1 <- pd |> dplyr::filter(timepoint == "T1") |> dplyr::collect()
+```
+
 ---
 
 ## Visualising prevalence shift
@@ -174,7 +182,7 @@ and assesses significance by permuting subject labels.
 ```{r compute-delta}
 set.seed(42)
 delta_group <- compute_delta(
-  pd,
+  pd_t1,
   rank_cols      = "peptide_id",
   group_cols     = "group",
   B_permutations = 2000L
