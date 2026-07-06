@@ -31,3 +31,6 @@ src/*.gcno
 CLAUDE.md
 
 vignettes/delta-calibration-data/
+
+library-metadata/combined_libraries_11.10.25.rds
+library-metadata/combined_library_15.01.26.rds
