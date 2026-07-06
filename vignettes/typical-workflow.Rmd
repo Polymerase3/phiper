@@ -1,0 +1,303 @@
+---
+title: "Tutorial: Typical phiper workflow"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+vignette: >
+  %\VignetteIndexEntry{Tutorial: Typical phiper workflow}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment  = "#>",
+  fig.width = 7,
+  fig.height = 4.5,
+  warning  = FALSE,
+  message  = FALSE
+)
+```
+
+## General idea
+
+This tutorial is supposed to provide an exemplary workflow for a cross-sectional analysis of unpaired PhIP-Seq data using the `phiper` package. It's supposed to serve as a railing along `phiper`'s individual modules to help you get started. It's not meant as a comprehensive collection of all features.
+
+For instructions to install `phiper`, please consult the [documentation](https://polymerase3.github.io/phiper/index.html).
+
+`phiper`'s modules are explained in detail on their own documentation pages, linked here where appropriate. All of `phiper`'s functions also come with their own help page, so please call `?function_name` for focused usage instructions.
+
+We provide a dummy dataset for you to play with and we use it here to showcase `phiper`'s analysis and plotting functions.
+
+## Load packages
+
+You will want to start by loading the necessary packages. `phiperio` handles input/output of phiper-related data, while `phiper` contains functions for analysis and plotting. We also use `dplyr` and `ggplot2` here for quality of life.
+
+```{r load_packages}
+library(phiperio)
+library(phiper)
+library(dplyr)
+library(ggplot2)
+```
+
+## Load data
+
+Next, you will need to load your data. There are different ways to do this. For details, please consult `phiperio`'s [Github repository](https://github.com/Polymerase3/phiperio). For this tutorial we assume that you have received a set of `.csv` files (one for each sample), containing a list of enriched peptides.
+
+Note that peptides which didn't show enrichment within a sample will not be listed in that sample's `.csv` file.
+
+Please save the entire set of `.csv` files that you want to load into one folder. Then `phiperio`'s `convert_standard()` can batch-import them into a `phip-data` object. `convert_standard()` can also be used to load a `.parquet` file.
+
+For this tutorial, we have prepared a dummy dataset bundled with the package. Load it like so:
+
+```{r load_enrichment_data}
+vig_dir <- system.file("extdata/typical-workflow", package = "phiper")
+
+pd <- convert_standard(
+  data_long_path = file.path(vig_dir, "enrichment_files"),
+  peptide_id = "ID",                   # column in the .csv files for peptide IDs
+  sample_id_from_filenames = TRUE,     # use file names as sample IDs
+  auto_expand = TRUE                   # expand to include all library peptides
+)
+```
+
+Since we are dealing with extremely large tables, `phip_data` objects rely on DuckDB, so the data is not stored in memory but on disk instead. Calls and manipulations of this object will be translated into database queries. This can be a bit awkward at times, but you can basically do the same types of operations as on regular R objects (e.g., `filter()`, `select()`, `%>%`, etc.). This is how calling this object looks like:
+
+```{r pd_call, echo=TRUE}
+pd
+```
+
+You can extract a regular tibble from a `phip_data` object using `collect()`, but larger datasets will have to be filtered down first, as they won't fit into memory.
+
+`phip_data` objects also come with annotation information of all peptides in the library. `get_peptide_library()` will return a `phip_data` object with these annotations. You may want to turn that into a tibble for convenient exploration:
+
+```{r load_annotations}
+peplib <- get_peptide_library() %>%
+  collect()
+```
+
+Let's now load in the metadata for our samples and include them into our `pd` object. The metadata for our dummy dataset are entirely fictional. This metadata table contains a column called `treatment` assigning the samples into either `treat_A` or `treat_B`. We will be using this column for comparisons throughout this tutorial. Across different functions, comparisons are realized by specifying the column name in the `group_cols` argument (i.e., `group_cols = "treatment"`).
+
+```{r load_and_append_metadata}
+metadata <- read.delim(file.path(vig_dir, "metadata.txt")) %>%
+  tibble()
+
+pd_with_metadata <- left_join(pd, metadata, by = "sample_id", copy = TRUE) # copy = TRUE is necessary because of DuckDB
+```
+
+`pd_with_metadata` will be the main input for most of `phiper`'s functions in this tutorial.
+
+## Alpha diversity
+
+Please refer to the vignette [Alpha Diversity Analysis in PhIP-seq](https://polymerase3.github.io/phiper/articles/alpha-diversity.html) for detailed information.
+
+As a first overview, let's plot the distribution of enriched peptide counts across our samples.
+
+```{r enriched_peptides}
+p_enrichment_counts <- plot_enrichment_counts(
+  pd_with_metadata,
+  group_cols = "treatment" # makes a separate panel for each group in this metadata column
+)
+```
+
+```{r plot_enriched_counts, echo=TRUE}
+p_enrichment_counts
+```
+
+Now let's calculate peptide alpha diversities in each sample. We can also compute global (Kruskal-Wallis) and pair-wise (Wilcoxon) comparisons and display all of this in a boxplot.
+
+```{r calculate_alpha}
+alpha_div <- compute_alpha(
+  pd_with_metadata,
+  group_cols = "treatment"
+)
+
+alpha_sig <- compute_alpha_significance(alpha_div)
+
+p_alpha_richness <- plot_alpha(
+  alpha_div,
+  metric = "richness",
+  group_col = "treatment",
+  significance = alpha_sig,
+  show_significance = TRUE # needs the package ggsignif
+)
+```
+
+```{r display_alpha, echo=TRUE}
+p_alpha_richness
+```
+
+## Beta diversity
+
+Please refer to the vignette [Beta Diversity Analysis in PhIP-seq](https://polymerase3.github.io/phiper/articles/beta-diversity.html) for detailed information.
+
+Next, let's calculate between-sample (beta) diversities; Jaccard dissimilarities in this case. Based on these dissimilarities, we can easily calculate a PCoA and a PERMANOVA.
+
+```{r calculate_beta}
+beta_dist <- compute_distance(
+  pd_with_metadata,
+  distance = "Jaccard"
+)
+
+pcoa <- compute_pcoa(beta_dist)
+
+# add the treatment column to the coordinate dataframe in order to plot centroids later
+pcoa$sample_coords <- pcoa$sample_coords %>%
+  left_join(
+    pd_with_metadata$data_long %>% select(sample_id, treatment) %>% distinct(),
+    by = "sample_id",
+    copy = TRUE
+  )
+
+permanova <- compute_permanova(
+  beta_dist,
+  ps = pd_with_metadata,
+  group_col = "treatment",
+  subject_col = "subject_id"
+)
+
+permanova_string <- paste0(
+  "PERMANOVA (", permanova$n_perm, " permutations):",
+  "\nF = ", round(permanova$F_stat, digits = 2),
+  "; R2 = ", round(permanova$R2, digits = 2),
+  "; P = ", permanova$p_value
+)
+
+p_pcoa <- plot_pcoa(
+  pcoa,
+  axes = c(1, 2),
+  group_col = "treatment",
+  ellipse_by = "group",
+  show_centroids = TRUE,
+  point_size = 4
+) +
+  labs(subtitle = permanova_string)
+```
+
+```{r display_beta, echo=TRUE}
+p_pcoa
+```
+
+## POP
+
+Please refer to the vignette [Prevalence of Presence (POP) Analysis in PhIP-seq](https://polymerase3.github.io/phiper/articles/pop-analysis.html) for detailed information.
+
+Comparing prevalences of peptides between two different groups is a classic way of looking at PhIP-seq data. It's good for exploration but please refer to the [DELTA section](#delta) for a proper analysis of shifts in prevalence using `phiper`'s DELTA module.
+
+You can run POP in different (taxonomic) ranks (see peptide annotation in the `peplib` variable). For any other ranks than `peptide_id`, results will be aggregated by that rank. As an example we here run POP on `peptide_id` and `species`.
+
+```{r calculate_pop}
+pop <- compute_pop(
+  x = pd_with_metadata,
+  rank_cols = c("peptide_id", "species"),
+  group_cols = "treatment"
+) %>% tibble()
+```
+
+Since we have POP data for two different ranks, we can make two separate plots.
+
+```{r plot_pop_static}
+p_pop_static <- list()
+for (rank_name in c("peptide_id", "species")) {
+
+  p_pop_static[[rank_name]] <- scatter_static(
+    df = pop,
+    rank = rank_name,
+    xlab = paste("Prevalence in", unique(pop$group1), "%"),
+    ylab = paste("Prevalence in", unique(pop$group2), "%")
+  ) +
+    labs(title = rank_name)
+
+}
+```
+
+You can also create interactive plots with plotly that you can later save as HTML files.
+
+```{r plot_pop_inter}
+p_pop_interactive <- list()
+for (rank_name in c("peptide_id", "species")) {
+
+  p_inter_temp <- scatter_interactive(
+    df = pop,
+    rank = rank_name,
+    xlab = paste("Prevalence in", unique(pop$group1), "(%)"),
+    ylab = paste("Prevalence in", unique(pop$group2), "(%)"),
+    peplib = peplib
+  )
+
+  p_pop_interactive[[rank_name]] <- plotly::layout(
+    p_inter_temp,
+    autosize = TRUE,
+    margin   = list(l = 70, r = 30, t = 50, b = 50),
+    xaxis    = list(range = c(-2, 102), automargin = TRUE),
+    yaxis    = list(range = c(-2, 102), automargin = TRUE),
+    title = rank_name
+  )
+
+}
+```
+
+Let's display one of the plots as an example:
+
+```{r display_pop, echo=TRUE}
+p_pop_interactive$species
+```
+
+## DELTA {#delta}
+
+Please refer to the vignette [Delta Analysis in PhIP-seq](https://polymerase3.github.io/phiper/articles/delta-analysis.html) for detailed information.
+
+The DELTA module can be computationally quite expensive, so if you have a large dataset you may want to use the `future` package for multithreading and run it on a high-performance computer. `future` doesn't work in interactive R Studio sessions, though, so we will run it on one core here.
+
+```{r calculate_delta}
+delta <- compute_delta(
+  x = pd_with_metadata,
+  rank_cols = c("peptide_id", "species"),
+  group_cols = "treatment",
+  B_permutations = 100
+) %>%
+  filter(m_eff > 5) # highly recommended: results based on fewer than 5 peptides can be unreliable
+```
+
+The most common way to visualize these results is by a forest plot to display the features whose prevalence shifted the most.
+
+```{r plot_delta}
+p_delta_static <- list()
+p_delta_interactive <- list()
+for (rank_name in c("peptide_id", "species")) {
+
+  p_delta_static[[rank_name]] <- forestplot(
+    results_tbl = delta,
+    rank_of_interest = rank_name,
+    use_diverging_colors = TRUE,
+    filter_significant = "p_perm",
+    left_label = paste0("More in ", unique(delta$group1)),
+    right_label = paste0("More in ", unique(delta$group2))
+  )
+
+  p_delta_interactive[[rank_name]] <- forestplot_interactive(
+    results_tbl = delta,
+    rank_of_interest = rank_name,
+    use_diverging_colors = TRUE,
+    filter_significant = "p_perm",
+    left_label = paste0("More in ", unique(delta$group1)),
+    right_label = paste0("More in ", unique(delta$group2))
+  )
+
+}
+```
+
+Let's again look at one of these plots as an example:
+
+```{r display_delta, echo=TRUE}
+p_delta_interactive$species$plot
+```
+
+## Save output
+
+We assume you already know how to save tables and ggplot objects to disk. The interactive plots can for example be saved to HTML with `htmlwidgets::saveWidget()`.
+
+`phip_data` objects can be stored as `.parquet` files using `phiperio`'s `export_parquet()`.

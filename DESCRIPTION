@@ -1,6 +1,6 @@
 Package: phiper
 Title: Automated PhIP-seq Analysis and Reporting
-Version: 0.4.1
+Version: 0.4.2
 Authors@R: c(
   person(
     "Mateusz", "Kolek", 
@@ -12,6 +12,11 @@ Authors@R: c(
     "Alon", "Alexander",
     email = "a.alexander@umcg.nl",
     role = c("ctb", "cph")
+  ),
+  person(
+    "Nikolas", "Basler",
+    email = "nikolas.basler@meduniwien.ac.at",
+    role = c("ctb")
   ),
   person(
     "Thomas", "Vogl",

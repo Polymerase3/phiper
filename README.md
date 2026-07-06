@@ -88,6 +88,11 @@ package website:
 
 **<https://polymerase3.github.io/phiper/>**
 
+A hands-on [**Typical workflow
+tutorial**](https://polymerase3.github.io/phiper/articles/typical-workflow.html)
+walks through a full cross-sectional analysis — loading data, alpha/beta
+diversity, POP, and DELTA — using a bundled dummy dataset.
+
 ## Contributing
 
 Bug reports, feature requests, and questions are welcome. Please open an

@@ -12,3 +12,16 @@ template:
     border-radius: 0.5rem
     btn-border-radius: 0.25rem
     danger: "#A6081A"
+
+articles:
+  - title: "Get started"
+    navbar: "Get started"
+    contents:
+      - typical-workflow
+  - title: "Module vignettes"
+    navbar: "Module vignettes"
+    contents:
+      - alpha-diversity
+      - beta-diversity
+      - pop-analysis
+      - delta-analysis
