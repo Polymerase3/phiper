@@ -51,7 +51,7 @@ All visualisation functions come in two flavours: a static version built on **gg
 
 Full documentation, worked examples, and vignettes are available on the package website:
 
-[**https://polymerase3.github.io/phiper/**](https://polymerase3.github.io/phiper/){.uri}
+**<https://polymerase3.github.io/phiper/>**
 
 A hands-on [**Typical workflow tutorial**](https://polymerase3.github.io/phiper/articles/typical-workflow.html) walks through a full cross-sectional analysis — loading data, alpha/beta diversity, POP, and DELTA — using a bundled dummy dataset.
 
