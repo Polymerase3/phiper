@@ -1,3 +1,23 @@
+# phiper 0.4.2 (2026-07-06)
+
+## New vignette
+
+- Added "Tutorial: Typical phiper workflow" vignette by Nikolas Basler, covering a full cross-sectional analysis (alpha/beta diversity, POP, DELTA) with a bundled dummy dataset (`inst/extdata/typical-workflow/`).
+
+## Data
+
+- Bundled tutorial dummy dataset (40 enrichment CSVs + metadata) under `inst/extdata/typical-workflow/`.
+- Updated peptide library to `combined_library_06.07.26.rds` with `protein_id` merged in from `peptide_to_protein_map.csv`.
+
+## Contributors
+
+- Added Nikolas Basler as contributor.
+
+## Documentation
+
+- pkgdown articles section now groups vignettes into "Get started" (tutorial) and "Module vignettes".
+- README links directly to the tutorial vignette.
+
 # phiper 0.4.1 (2026-04-15)
 
 ## Bug fixes
