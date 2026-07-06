@@ -34,12 +34,13 @@ We provide a dummy dataset for you to play with and we use it here to showcase `
 
 ## Load packages
 
-You will want to start by loading the necessary packages. `phiperio` handles input/output of phiper-related data, while `phiper` contains functions for analysis and plotting. We also use `tidyverse` here for quality of life.
+You will want to start by loading the necessary packages. `phiperio` handles input/output of phiper-related data, while `phiper` contains functions for analysis and plotting. We also use `dplyr` and `ggplot2` here for quality of life.
 
 ```{r load_packages}
 library(phiperio)
 library(phiper)
-library(tidyverse)
+library(dplyr)
+library(ggplot2)
 ```
 
 ## Load data

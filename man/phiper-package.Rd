@@ -23,6 +23,7 @@ Useful links:
 Other contributors:
 \itemize{
   \item Alon Alexander \email{a.alexander@umcg.nl} [contributor, copyright holder]
+  \item Nikolas Basler \email{nikolas.basler@meduniwien.ac.at} [contributor]
   \item Thomas Vogl \email{thomas.vogl@meduniwien.ac.at} (\href{https://orcid.org/0000-0002-3892-1740}{ORCID}) [copyright holder, funder]
 }
 
