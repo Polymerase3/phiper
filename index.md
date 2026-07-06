@@ -12,6 +12,7 @@ You can install the development version of `phiper` from GitHub with
 either `pak` or `devtools`:
 
 ``` r
+
 # install.packages("pak")
 pak::pak("Polymerase3/phiper")
 
@@ -82,6 +83,11 @@ Full documentation, worked examples, and vignettes are available on the
 package website:
 
 **<https://polymerase3.github.io/phiper/>**
+
+A hands-on [**Typical workflow
+tutorial**](https://polymerase3.github.io/phiper/articles/typical-workflow.html)
+walks through a full cross-sectional analysis — loading data, alpha/beta
+diversity, POP, and DELTA — using a bundled dummy dataset.
 
 ## Contributing
 

@@ -17,6 +17,7 @@ Color mapping:
 - `color_by` as a named vector highlights points matching the specified
   peptide-library values:
 
+
         color_by = c("is_flagellum" = TRUE)
         color_by = c("species" = "Staphylococcus aureus")
         color_by = c("is_flagellum" = TRUE, "species" = "Staphylococcus aureus")

@@ -13,8 +13,8 @@
     }
   };
 </script><script src="lightswitch.js"></script><script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="phiper - Automated PhIP-seq Analysis and Reporting">
 <meta name="description" content="Provides an end-to-end toolkit for Phage ImmunoPrecipitation- sequencing (PhIP-seq) data. Functions import raw peptide-sample count matrices, apply quality control filters, normalise library sizes, compute enrichment statistics and diversity metrics, and identify differentially enriched peptides or motifs. Results can be explored through tidy data frames, visualised with publication-ready ggplot2 graphics, or rendered into fully fledged HTML reports via R Markdown.">
@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -41,10 +41,15 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="articles/alpha-diversity.html">Alpha Diversity Analysis in PhIP-seq</a></li>
+<li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Get started</h6></li>
+    <li><a class="dropdown-item" href="articles/typical-workflow.html">Tutorial: Typical phiper workflow</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Module vignettes</h6></li>
+    <li><a class="dropdown-item" href="articles/alpha-diversity.html">Alpha Diversity Analysis in PhIP-seq</a></li>
     <li><a class="dropdown-item" href="articles/beta-diversity.html">Beta Diversity Analysis in PhIP-seq</a></li>
-    <li><a class="dropdown-item" href="articles/delta-analysis.html">Delta Analysis in PhIP-seq</a></li>
     <li><a class="dropdown-item" href="articles/pop-analysis.html">Prevalence of Presence (POP) Analysis in PhIP-seq</a></li>
+    <li><a class="dropdown-item" href="articles/delta-analysis.html">Delta Analysis in PhIP-seq</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
@@ -122,6 +127,7 @@
 </h2>
 <p>Full documentation, worked examples, and vignettes are available on the package website:</p>
 <p><strong><a href="https://polymerase3.github.io/phiper/" class="uri">https://polymerase3.github.io/phiper/</a></strong></p>
+<p>A hands-on <a href="https://polymerase3.github.io/phiper/articles/typical-workflow.html"><strong>Typical workflow tutorial</strong></a> walks through a full cross-sectional analysis — loading data, alpha/beta diversity, POP, and DELTA — using a bundled dummy dataset.</p>
 </div>
 <div class="section level2">
 <h2 id="contributing">Contributing<a class="anchor" aria-label="anchor" href="#contributing"></a>

@@ -39,6 +39,7 @@ This vignette walks through the complete Delta workflow in **phiper**:
 ## Setup
 
 ``` r
+
 library(phiper)
 ```
 
@@ -47,42 +48,43 @@ Load the bundled example dataset. It contains two patient groups (`A`,
 peptides.
 
 ``` r
+
 pd <- load_example_data()
-#> [18:41:45] INFO  Constructing <phip_data> object
+#> [19:44:23] INFO  Constructing <phip_data> object
 #>                  -> create_data()
-#> [18:41:45] INFO  Fetching peptide metadata library via get_peptide_library()
-#> [18:41:45] INFO  Retrieving peptide metadata into DuckDB cache
+#> [19:44:23] INFO  Fetching peptide metadata library via get_peptide_library()
+#> [19:44:23] INFO  Retrieving peptide metadata into DuckDB cache
 #>                  -> get_peptide_library(force_refresh = FALSE)
-#> [18:41:45] INFO  Opened DuckDB connection
+#> [19:44:23] INFO  Opened DuckDB connection
 #>                    - cache dir:
 #>                      /home/runner/.cache/R/phiperio/peptide_meta/phip_cache.duckdb
 #>                    - table: peptide_meta
-#> [18:41:45] OK    Using cached download (SHA-256 match)
-#> [18:41:48] OK    Download complete and loaded into R
-#> [18:41:53] INFO  Importing sanitized metadata into DuckDB cache...
-#> [18:41:54] OK    peptide_meta table created in DuckDB cache
-#> [18:41:54] OK    Retrieving peptide metadata into DuckDB cache - done
-#>                  -> elapsed: 9.463s
-#> [18:41:54] OK    Peptide metadata acquired
-#> [18:41:54] INFO  Validating <phip_data>
+#> [19:44:23] OK    Using cached download (SHA-256 match)
+#> [19:44:26] OK    Download complete and loaded into R
+#> [19:44:31] INFO  Importing sanitized metadata into DuckDB cache...
+#> [19:44:32] OK    peptide_meta table created in DuckDB cache
+#> [19:44:32] OK    Retrieving peptide metadata into DuckDB cache - done
+#>                  -> elapsed: 9.305s
+#> [19:44:32] OK    Peptide metadata acquired
+#> [19:44:32] INFO  Validating <phip_data>
 #>                  -> validate_phip_data()
-#> [18:41:54] INFO  Checking structural requirements (shape & mandatory columns)
-#> [18:41:54] INFO  Checking outcome family availability (exist / fold_change /
+#> [19:44:32] INFO  Checking structural requirements (shape & mandatory columns)
+#> [19:44:32] INFO  Checking outcome family availability (exist / fold_change /
 #>                  raw_counts)
-#> [18:41:54] INFO  Checking collisions with reserved names
+#> [19:44:32] INFO  Checking collisions with reserved names
 #>                    - subject_id, sample_id, timepoint, peptide_id, exist,
 #>                      fold_change, counts_input, counts_hit
-#> [18:41:54] INFO  Ensuring all columns are atomic (no list-cols)
-#> [18:41:54] INFO  Checking key uniqueness
-#> [18:41:55] INFO  Validating value ranges & types for outcomes
-#> [18:41:55] INFO  Assessing sparsity (NA/zero prevalence vs threshold)
+#> [19:44:32] INFO  Ensuring all columns are atomic (no list-cols)
+#> [19:44:32] INFO  Checking key uniqueness
+#> [19:44:32] INFO  Validating value ranges & types for outcomes
+#> [19:44:32] INFO  Assessing sparsity (NA/zero prevalence vs threshold)
 #>                    - warn threshold: 50%
-#> [18:41:55] INFO  Checking peptide_id coverage against peptide_library
-#> [18:41:55] INFO  Checking full grid completeness (peptide * sample)
-#> [18:41:55] OK    Validating <phip_data> - done
-#>                  -> elapsed: 0.646s
-#> [18:41:55] OK    Constructing <phip_data> object - done
-#>                  -> elapsed: 10.114s
+#> [19:44:32] INFO  Checking peptide_id coverage against peptide_library
+#> [19:44:33] INFO  Checking full grid completeness (peptide * sample)
+#> [19:44:33] OK    Validating <phip_data> - done
+#>                  -> elapsed: 0.479s
+#> [19:44:33] OK    Constructing <phip_data> object - done
+#>                  -> elapsed: 9.787s
 pd
 #> ── <phip_data> ───────────────────────────────────────────────────────────────── 
 #> 
@@ -134,32 +136,33 @@ The Delta plots consume prevalence tables produced by
 table first:
 
 ``` r
+
 pop_group <- compute_pop(
   pd,
   rank_cols  = "peptide_id",
   group_cols = "group"
 )
-#> [18:41:55] INFO  compute_pop
-#> [18:41:55] INFO  compute_pop
+#> [19:44:33] INFO  compute_pop
+#> [19:44:33] INFO  compute_pop
 #>                    - ranks : peptide_id
 #>                    - group_cols: group
 #>                    - exist_col : exist
 #>                    - pop_k_min : 1
 #>                    - paired : FALSE
-#> [18:41:55] INFO  ranks resolved
+#> [19:44:33] INFO  ranks resolved
 #>                    - available: peptide_id
-#> [18:41:55] INFO  computing cohort sizes and validating binary group_cols
-#> [18:41:56] INFO  computing presence per sample via k-of-n rule
-#> [18:41:56] INFO  counting present samples per feature (pop, unpaired)
-#> [18:41:56] INFO  building pairwise comparisons
-#> [18:41:58] OK    materialized; computing Fisher p-values
-#>                    - table: ph_pop_20260415_184156
-#> [18:41:59] OK    done (compute_pop, unpaired)
+#> [19:44:33] INFO  computing cohort sizes and validating binary group_cols
+#> [19:44:33] INFO  computing presence per sample via k-of-n rule
+#> [19:44:33] INFO  counting present samples per feature (pop, unpaired)
+#> [19:44:33] INFO  building pairwise comparisons
+#> [19:44:35] OK    materialized; computing Fisher p-values
+#>                    - table: ph_pop_20260706_194433
+#> [19:44:36] OK    done (compute_pop, unpaired)
 #>                    - rows : 1950
 #>                    - ranks : peptide_id
 #>                    - k_min : 1
-#> [18:41:59] OK    compute_pop - done
-#>                  -> elapsed: 3.405s
+#> [19:44:36] OK    compute_pop - done
+#>                  -> elapsed: 2.791s
 head(pop_group)
 #>         rank feature group_col group1 n1 N1     prop1 percent1 group2 n2 N2
 #> 1 peptide_id   10003     group      A 31 38 0.8157895 81.57895      B  0 42
@@ -183,6 +186,7 @@ each subject must appear at most once per group. Because `pd` contains
 two timepoints per subject, restrict to a single timepoint first:
 
 ``` r
+
 pd_t1 <- pd |> dplyr::filter(timepoint == "T1") |> dplyr::collect()
 ```
 
@@ -208,12 +212,13 @@ The only required input is a data frame containing `group1`, `group2`,
 returns.
 
 ``` r
+
 deltaplot(
   pop_group,
   group_pair_values = c("A", "B"),
   group_labels      = c("Group A", "Group B")
 )
-#> [18:41:59] INFO  Preparing delta prevalence plot.
+#> [19:44:36] INFO  Preparing delta prevalence plot.
 ```
 
 ![](delta-analysis_files/figure-html/deltaplot-basic-1.png)
@@ -228,6 +233,7 @@ The smooth uses a GAM with basis dimension `smooth_k`. Lower values
 produce smoother curves; set `add_smooth = FALSE` to suppress it.
 
 ``` r
+
 deltaplot(
   pop_group,
   group_pair_values  = c("A", "B"),
@@ -236,7 +242,7 @@ deltaplot(
   point_alpha        = 0.15,
   point_size         = 0.4
 )
-#> [18:42:00] INFO  Preparing delta prevalence plot.
+#> [19:44:37] INFO  Preparing delta prevalence plot.
 ```
 
 ![](delta-analysis_files/figure-html/deltaplot-smooth-1.png)
@@ -244,6 +250,7 @@ deltaplot(
 #### Jitter and appearance
 
 ``` r
+
 deltaplot(
   pop_group,
   group_pair_values   = c("A", "B"),
@@ -253,7 +260,7 @@ deltaplot(
   point_alpha         = 0.20,
   arrow_color         = "steelblue"
 )
-#> [18:42:01] INFO  Preparing delta prevalence plot.
+#> [19:44:38] INFO  Preparing delta prevalence plot.
 ```
 
 ![](delta-analysis_files/figure-html/deltaplot-custom-1.png)
@@ -265,6 +272,7 @@ shows the feature identifier, group-level counts and percentages, and
 p-value.
 
 ``` r
+
 deltaplot_interactive(
   pop_group,
   group_pair_values = c("A", "B"),
@@ -275,6 +283,7 @@ deltaplot_interactive(
 Disable the smooth if you have few peptides or want a cleaner display:
 
 ``` r
+
 deltaplot_interactive(
   pop_group,
   group_pair_values = c("A", "B"),
@@ -298,6 +307,7 @@ statistic, and assesses significance by permuting subject labels.
 ### Unpaired design — group comparison
 
 ``` r
+
 set.seed(42)
 delta_group <- compute_delta(
   pd_t1,
@@ -308,6 +318,7 @@ delta_group <- compute_delta(
 ```
 
 ``` r
+
 delta_group
 #> # A tibble: 1,950 × 19
 #>    rank       feature group_col group1 group2 design   n_subjects_paired
@@ -362,6 +373,7 @@ delta_group
 | `"srlr_paired"`    | Signed root deviance — paired designs only  |
 
 ``` r
+
 # Arcsine-transformed statistic
 delta_asin <- compute_delta(
   pd,
@@ -387,6 +399,7 @@ Set `strat_bins = 0` for a single global statistic without
 stratification.
 
 ``` r
+
 # No stratification
 delta_nostrat <- compute_delta(
   pd,
@@ -416,6 +429,7 @@ delta_custom <- compute_delta(
   peptides)
 
 ``` r
+
 delta_invvar <- compute_delta(
   pd,
   rank_cols      = "peptide_id",
@@ -433,6 +447,7 @@ function then performs sign-flipping permutations instead of label
 shuffling.
 
 ``` r
+
 set.seed(42)
 delta_paired <- compute_delta(
   pd,
@@ -473,6 +488,7 @@ a chosen rank, sorted by the selected test statistic.
 ### `forestplot()` — static ggplot2
 
 ``` r
+
 forestplot(
   delta_group,
   rank_of_interest  = "peptide_id",
@@ -488,11 +504,11 @@ forestplot(
 
 `statistic_to_plot` selects what is plotted on the x-axis:
 
-| Value        | Description                                                                                           |
-|--------------|-------------------------------------------------------------------------------------------------------|
-| `"T"`        | Raw `T_obs` from [`compute_delta()`](https://polymerase3.github.io/phiper/reference/compute_delta.md) |
-| `"T_stand"`  | Permutation-standardised T (requires `T_obs_stand` column)                                            |
-| `"Z_from_p"` | Signed Z derived from permutation p-values (requires `Z_from_p`)                                      |
+| Value | Description |
+|----|----|
+| `"T"` | Raw `T_obs` from [`compute_delta()`](https://polymerase3.github.io/phiper/reference/compute_delta.md) |
+| `"T_stand"` | Permutation-standardised T (requires `T_obs_stand` column) |
+| `"Z_from_p"` | Signed Z derived from permutation p-values (requires `Z_from_p`) |
 
 #### Diverging colours
 
@@ -500,6 +516,7 @@ Set `use_diverging_colors = TRUE` to shade bars from blue (negative) to
 red (positive):
 
 ``` r
+
 forestplot(
   delta_group,
   rank_of_interest     = "peptide_id",
@@ -521,6 +538,7 @@ features below a given significance threshold. With `p_perm` this
 retains only permutation-significant features.
 
 ``` r
+
 forestplot(
   delta_group,
   rank_of_interest   = "peptide_id",
@@ -539,6 +557,7 @@ widget. Hovering over a bar shows the feature identifier and statistic
 value.
 
 ``` r
+
 forestplot_interactive(
   delta_group,
   rank_of_interest     = "peptide_id",
@@ -558,6 +577,7 @@ forestplot_interactive(
 A typical Delta analysis runs in four steps:
 
 ``` r
+
 # 1. Compute prevalence (needed for deltaplot)
 pop <- compute_pop(
   pd,
@@ -603,8 +623,9 @@ forestplot_interactive(delta, rank_of_interest = "peptide_id",
 ## Session info
 
 ``` r
+
 sessionInfo()
-#> R version 4.5.3 (2026-03-11)
+#> R version 4.6.1 (2026-06-24)
 #> Platform: x86_64-pc-linux-gnu
 #> Running under: Ubuntu 24.04.4 LTS
 #> 
@@ -625,31 +646,31 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] phiper_0.4.1
+#> [1] phiper_0.4.2
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] future_1.70.0         tidyr_1.3.2           utf8_1.2.6           
 #>  [4] sass_0.4.10           generics_0.1.4        lattice_0.22-9       
-#>  [7] listenv_0.10.1        digest_0.6.39         magrittr_2.0.5       
-#> [10] evaluate_1.0.5        grid_4.5.3            RColorBrewer_1.1-3   
+#>  [7] listenv_1.0.0         digest_0.6.39         magrittr_2.0.5       
+#> [10] evaluate_1.0.5        grid_4.6.1            RColorBrewer_1.1-3   
 #> [13] sysfonts_0.8.9        showtextdb_3.0        blob_1.3.0           
-#> [16] fastmap_1.2.0         Matrix_1.7-4          jsonlite_2.0.0       
+#> [16] fastmap_1.2.0         Matrix_1.7-5          jsonlite_2.0.0       
 #> [19] DBI_1.3.0             mgcv_1.9-4            purrr_1.2.2          
 #> [22] scales_1.4.0          codetools_0.2-20      textshaping_1.0.5    
-#> [25] jquerylib_0.1.4       duckdb_1.5.2          cli_3.6.6            
-#> [28] rlang_1.2.0           chk_0.10.0            dbplyr_2.5.2         
-#> [31] phiperio_0.5.0        future.apply_1.20.2   parallelly_1.46.1    
-#> [34] splines_4.5.3         withr_3.0.2           cachem_1.1.0         
-#> [37] yaml_2.3.12           otel_0.2.0            parallel_4.5.3       
-#> [40] tools_4.5.3           dplyr_1.2.1           ggplot2_4.0.2        
+#> [25] jquerylib_0.1.4       duckdb_1.5.4.2        cli_3.6.6            
+#> [28] rlang_1.3.0           chk_0.10.0            dbplyr_2.6.0         
+#> [31] phiperio_0.5.0        future.apply_1.20.2   parallelly_1.48.0    
+#> [34] splines_4.6.1         withr_3.0.3           cachem_1.1.0         
+#> [37] yaml_2.3.12           otel_0.2.0            parallel_4.6.1       
+#> [40] tools_4.6.1           dplyr_1.2.1           ggplot2_4.0.3        
 #> [43] showtext_0.9-8        globals_0.19.1        vctrs_0.7.3          
-#> [46] R6_2.6.1              lifecycle_1.0.5       fs_2.0.1             
+#> [46] R6_2.6.1              lifecycle_1.0.5       fs_2.1.0             
 #> [49] htmlwidgets_1.6.4     ragg_1.5.2            pkgconfig_2.0.3      
 #> [52] desc_1.4.3            pkgdown_2.2.0         RcppParallel_5.1.11-2
-#> [55] pillar_1.11.1         bslib_0.10.0          gtable_0.3.6         
-#> [58] glue_1.8.0            Rcpp_1.1.1            systemfonts_1.3.2    
-#> [61] xfun_0.57             tibble_3.3.1          tidyselect_1.2.1     
-#> [64] knitr_1.51            farver_2.1.2          nlme_3.1-168         
+#> [55] pillar_1.11.1         bslib_0.11.0          gtable_0.3.6         
+#> [58] glue_1.8.1            Rcpp_1.1.2            systemfonts_1.3.2    
+#> [61] xfun_0.59             tibble_3.3.1          tidyselect_1.2.1     
+#> [64] knitr_1.51            farver_2.1.2          nlme_3.1-169         
 #> [67] htmltools_0.5.9       labeling_0.4.3        rmarkdown_2.31       
-#> [70] compiler_4.5.3        S7_0.2.1
+#> [70] compiler_4.6.1        S7_0.2.2
 ```

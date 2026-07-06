@@ -12,6 +12,7 @@ You can install the development version of `phiper` from GitHub with
 either `pak` or `devtools`:
 
 ``` r
+
 # install.packages("pak")
 pak::pak("Polymerase3/phiper")
 
@@ -82,6 +83,11 @@ Full documentation, worked examples, and vignettes are available on the
 package website:
 
 **<https://polymerase3.github.io/phiper/>**
+
+A hands-on [**Typical workflow
+tutorial**](https://polymerase3.github.io/phiper/articles/typical-workflow.html)
+walks through a full cross-sectional analysis — loading data, alpha/beta
+diversity, POP, and DELTA — using a bundled dummy dataset.
 
 ## Contributing
 
@@ -215,13 +221,18 @@ If you’d like to contribute, please read
 
 # Articles
 
-### All vignettes
+### Get started
+
+- [Tutorial: Typical phiper
+  workflow](https://polymerase3.github.io/phiper/articles/typical-workflow.md):
+
+### Module vignettes
 
 - [Alpha Diversity Analysis in
   PhIP-seq](https://polymerase3.github.io/phiper/articles/alpha-diversity.md):
 - [Beta Diversity Analysis in
   PhIP-seq](https://polymerase3.github.io/phiper/articles/beta-diversity.md):
-- [Delta Analysis in
-  PhIP-seq](https://polymerase3.github.io/phiper/articles/delta-analysis.md):
 - [Prevalence of Presence (POP) Analysis in
   PhIP-seq](https://polymerase3.github.io/phiper/articles/pop-analysis.md):
+- [Delta Analysis in
+  PhIP-seq](https://polymerase3.github.io/phiper/articles/delta-analysis.md):

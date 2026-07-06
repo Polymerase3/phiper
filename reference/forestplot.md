@@ -172,6 +172,7 @@ results or T_stand.
 ## Examples
 
 ``` r
+
 # in this example we mock the output of compute_delta with a simple
 # data.frame - it works the same
 set.seed(1)

@@ -9,6 +9,7 @@ When `color_by` is supplied as a named vector, peptide metadata is
 joined and points matching the specified values are highlighted.
 Multiple groups may be given simultaneously:
 
+
       color_by = c("is_flagellum" = TRUE)
       color_by = c("species" = "Staphylococcus aureus")
       color_by = c("is_flagellum" = TRUE, "species" = "Staphylococcus aureus")

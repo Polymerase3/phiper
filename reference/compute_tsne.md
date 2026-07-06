@@ -131,16 +131,16 @@ d <- compute_distance(
   distance = "bray",
   n_threads = 2L
 )
-#> [18:40:37] INFO  building abundance matrix from `ps` using `fold_change`.
-#> [18:40:37] INFO  building pivot spec (sample_id x peptide_id).
-#> [18:40:37] INFO  Collecting long table (sample_id, peptide_id, value).
+#> [19:43:19] INFO  building abundance matrix from `ps` using `fold_change`.
+#> [19:43:19] INFO  building pivot spec (sample_id x peptide_id).
+#> [19:43:19] INFO  Collecting long table (sample_id, peptide_id, value).
 #>                  -> compute_distance
-#> [18:40:37] INFO  Pivoting to wide abundance matrix in R.
+#> [19:43:19] INFO  Pivoting to wide abundance matrix in R.
 #>                  -> compute_distance
-#> [18:40:37] INFO  abundance matrix has 43 samples and 5 features after
+#> [19:43:19] INFO  abundance matrix has 43 samples and 5 features after
 #>                  preprocessing.
-#> [18:40:37] INFO  computing distance: bray
-#> [18:40:37] INFO  distance matrix computation complete.
+#> [19:43:19] INFO  computing distance: bray
+#> [19:43:19] INFO  distance matrix computation complete.
 
 # Compute t-SNE embeddings
 tsne_res <- compute_tsne(
@@ -151,12 +151,12 @@ tsne_res <- compute_tsne(
   meta_cols = c("subject_id", "timepoint"),
   seed = 42
 )
-#> Warning: [18:40:37] WARN  Perplexity (15) is high for n = 43; reducing to 14.
-#> [18:40:37] INFO  Running t-SNE with dims = 3, perplexity = 14 on 43 samples
+#> Warning: [19:43:19] WARN  Perplexity (15) is high for n = 43; reducing to 14.
+#> [19:43:19] INFO  Running t-SNE with dims = 3, perplexity = 14 on 43 samples
 #>                  (distance input).
-#> [18:40:37] INFO  Attaching metadata columns to t-SNE result: subject_id,
+#> [19:43:19] INFO  Attaching metadata columns to t-SNE result: subject_id,
 #>                  timepoint
-#> [18:40:37] INFO  t-SNE embedding computation finished.
+#> [19:43:20] INFO  t-SNE embedding computation finished.
 
 # View results
 head(tsne_res)

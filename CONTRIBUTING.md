@@ -92,12 +92,12 @@ and `test-<domain>_plots.R`.
 
 #### Function names
 
-| Kind                               | Convention               | Example                                   |
-|------------------------------------|--------------------------|-------------------------------------------|
-| Exported user-facing               | `snake_case` verb + noun | `compute_alpha`, `plot_enrichment_counts` |
-| Internal helper (phiper)           | `.ph_<noun>`             | `.ph_peplib_on_main`                      |
-| Internal helper (phiperio, copied) | `.ph_<noun>`             | `.ph_abort`, `.ph_with_timing`            |
-| S3 method                          | `<generic>.<class>`      | `print.phip_data`                         |
+| Kind | Convention | Example |
+|----|----|----|
+| Exported user-facing | `snake_case` verb + noun | `compute_alpha`, `plot_enrichment_counts` |
+| Internal helper (phiper) | `.ph_<noun>` | `.ph_peplib_on_main` |
+| Internal helper (phiperio, copied) | `.ph_<noun>` | `.ph_abort`, `.ph_with_timing` |
+| S3 method | `<generic>.<class>` | `print.phip_data` |
 
 Key rules: - All internal helpers must start with `.ph_` — this makes
 them easy to grep and clearly distinguishes them from exported

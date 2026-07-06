@@ -27,6 +27,8 @@ Other contributors:
 
 - Alon Alexander <a.alexander@umcg.nl> \[contributor, copyright holder\]
 
+- Nikolas Basler <nikolas.basler@meduniwien.ac.at> \[contributor\]
+
 - Thomas Vogl <thomas.vogl@meduniwien.ac.at>
   ([ORCID](https://orcid.org/0000-0002-3892-1740)) \[copyright holder,
   funder\]
