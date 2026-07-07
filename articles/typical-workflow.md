@@ -65,77 +65,77 @@ pd <- convert_standard(
   sample_id_from_filenames = TRUE,     # use file names as sample IDs
   auto_expand = TRUE                   # expand to include all library peptides
 )
-#> [19:51:22] INFO  Constructing <phip_data> object
+#> [15:36:43] INFO  Constructing <phip_data> object
 #>                  -> create_data()
-#> [19:51:22] INFO  Fetching peptide metadata library via get_peptide_library()
-#> [19:51:22] INFO  Retrieving peptide metadata into DuckDB cache
+#> [15:36:43] INFO  Fetching peptide metadata library via get_peptide_library()
+#> [15:36:43] INFO  Retrieving peptide metadata into DuckDB cache
 #>                  -> get_peptide_library(force_refresh = FALSE)
-#> [19:51:22] INFO  Opened DuckDB connection
+#> [15:36:43] INFO  Opened DuckDB connection
 #>                    - cache dir:
 #>                      /home/runner/.cache/R/phiperio/peptide_meta/phip_cache.duckdb
 #>                    - table: peptide_meta
-#> [19:51:22] OK    Using cached download (SHA-256 match)
-#> [19:51:25] OK    Download complete and loaded into R
-#> [19:51:30] INFO  Importing sanitized metadata into DuckDB cache...
-#> [19:51:32] OK    peptide_meta table created in DuckDB cache
-#> [19:51:32] OK    Retrieving peptide metadata into DuckDB cache - done
-#>                  -> elapsed: 9.359s
-#> [19:51:32] OK    Peptide metadata acquired
-#> [19:51:32] INFO  Validating <phip_data>
+#> [15:36:43] OK    Using cached download (SHA-256 match)
+#> [15:36:46] OK    Download complete and loaded into R
+#> [15:36:51] INFO  Importing sanitized metadata into DuckDB cache...
+#> [15:36:53] OK    peptide_meta table created in DuckDB cache
+#> [15:36:53] OK    Retrieving peptide metadata into DuckDB cache - done
+#>                  -> elapsed: 9.55s
+#> [15:36:53] OK    Peptide metadata acquired
+#> [15:36:53] INFO  Validating <phip_data>
 #>                  -> validate_phip_data()
-#> [19:51:32] INFO  Checking structural requirements (shape & mandatory columns)
-#> [19:51:32] INFO  Checking outcome family availability (exist / fold_change /
+#> [15:36:53] INFO  Checking structural requirements (shape & mandatory columns)
+#> [15:36:53] INFO  Checking outcome family availability (exist / fold_change /
 #>                  raw_counts)
-#> [19:51:32] INFO  Checking collisions with reserved names
+#> [15:36:53] INFO  Checking collisions with reserved names
 #>                    - subject_id, sample_id, timepoint, peptide_id, exist,
 #>                      fold_change, counts_input, counts_hit
-#> [19:51:32] INFO  Ensuring all columns are atomic (no list-cols)
-#> [19:51:32] INFO  Checking key uniqueness
-#> [19:51:32] INFO  Validating value ranges & types for outcomes
-#> [19:51:32] INFO  Assessing sparsity (NA/zero prevalence vs threshold)
+#> [15:36:53] INFO  Ensuring all columns are atomic (no list-cols)
+#> [15:36:53] INFO  Checking key uniqueness
+#> [15:36:53] INFO  Validating value ranges & types for outcomes
+#> [15:36:53] INFO  Assessing sparsity (NA/zero prevalence vs threshold)
 #>                    - warn threshold: 50%
-#> [19:51:32] INFO  Checking peptide_id coverage against peptide_library
-#> [19:51:32] INFO  Checking full grid completeness (peptide * sample)
-#> [19:51:32] INFO  Auto-expanding to full grid via expand_data()
+#> [15:36:53] INFO  Checking peptide_id coverage against peptide_library
+#> [15:36:53] INFO  Checking full grid completeness (peptide * sample)
+#> [15:36:53] INFO  Auto-expanding to full grid via expand_data()
 #>                    - add_exist = TRUE
 #>                    - exist_col = "exist"
-#> [19:51:32] INFO  Expanding <phip_data> to full grid
+#> [15:36:53] INFO  Expanding <phip_data> to full grid
 #>                  -> updating x$data_long
-#> [19:51:32] INFO  Expanding to full key * id grid
+#> [15:36:53] INFO  Expanding to full key * id grid
 #>                  -> keys: 'sample_id'; id: 'peptide_id'
-#> [19:51:32] INFO  Type probe on lazy table
+#> [15:36:53] INFO  Type probe on lazy table
 #>                  -> collect(head 0)
-#> [19:51:32] INFO  Building Cartesian product of keys and ids
-#> [19:51:32] INFO  Detecting per-key constant (recyclable) columns
+#> [15:36:53] INFO  Building Cartesian product of keys and ids
+#> [15:36:53] INFO  Detecting per-key constant (recyclable) columns
 #>                    - candidates: fold_change, neglogp, padj, input, count
-#> [19:51:32] OK    Column split decided
+#> [15:36:53] OK    Column split decided
 #>                    - recyclable: <none>
 #>                    - non-recyclable: fold_change, neglogp, padj, input, count
-#> [19:51:32] INFO  Preparing fill defaults for introduced rows
+#> [15:36:53] INFO  Preparing fill defaults for introduced rows
 #>                    - numeric/integer: fold_change, neglogp, padj, input, count
 #>                    - logical: <none>
-#> [19:51:32] INFO  Applying user-provided fill overrides
+#> [15:36:53] INFO  Applying user-provided fill overrides
 #>                    - overrides: exist, fold_change, input_count, hit_count,
 #>                      counts_input, counts_hit
-#> [19:51:32] INFO  Adding existence flag column
+#> [15:36:53] INFO  Adding existence flag column
 #>                    - column: "exist"
-#> [19:51:32] OK    Expanding to full key * id grid - done
-#>                  -> elapsed: 0.156s
-#> [19:51:33] INFO  Registering expanded table back to DB
+#> [15:36:53] OK    Expanding to full key * id grid - done
+#>                  -> elapsed: 0.16s
+#> [15:36:54] INFO  Registering expanded table back to DB
 #>                    - name: 'data_long'
 #>                    - materialise_table: TRUE
-#> [19:51:33] INFO  Registering lazy table
+#> [15:36:54] INFO  Registering lazy table
 #>                  -> name: 'data_long'; as TABLE
-#> [19:51:33] INFO  Materialising via dplyr::compute()
-#> [19:51:33] OK    Registering lazy table - done
-#>                  -> elapsed: 0.251s
-#> [19:51:33] OK    Expanding <phip_data> to full grid - done
-#>                  -> elapsed: 1.225s
-#> [19:51:33] OK    Auto-expansion complete; grid is now full
-#> [19:51:33] OK    Validating <phip_data> - done
-#>                  -> elapsed: 1.604s
-#> [19:51:33] OK    Constructing <phip_data> object - done
-#>                  -> elapsed: 10.966s
+#> [15:36:54] INFO  Materialising via dplyr::compute()
+#> [15:36:54] OK    Registering lazy table - done
+#>                  -> elapsed: 0.252s
+#> [15:36:54] OK    Expanding <phip_data> to full grid - done
+#>                  -> elapsed: 1.245s
+#> [15:36:54] OK    Auto-expansion complete; grid is now full
+#> [15:36:54] OK    Validating <phip_data> - done
+#>                  -> elapsed: 1.62s
+#> [15:36:54] OK    Constructing <phip_data> object - done
+#>                  -> elapsed: 11.176s
 ```
 
 Since we are dealing with extremely large tables, `phip_data` objects
@@ -156,11 +156,11 @@ pd
 #> # A tibble: 5 × 8
 #>   sample_id peptide_id     fold_change neglogp  padj input count exist
 #>   <chr>     <chr>                <dbl>   <dbl> <dbl> <dbl> <dbl> <int>
-#> 1 B_20      agilent_196462     13449.     8.20 0.002   0.1    18     1
-#> 2 B_20      agilent_165933        97.7    7.02 0.029  13      17     1
-#> 3 B_20      twist_83556           61.7    7.35 0.013  23      19     1
-#> 4 B_20      twist_75961         1644.     9.71 0       1      22     1
-#> 5 B_20      twist_54336           88.7    7.66 0.007  16      19     1
+#> 1 B_16      agilent_80746        156.     7.63 0.007   9      17     1
+#> 2 B_16      agilent_24238      13189.     7.87 0.004   0.1    16     1
+#> 3 B_16      agilent_220289     11540.     7.02 0.028   0.1    14     1
+#> 4 B_10      twist_55690           14.8    7.92 0.004 271      50     1
+#> 5 B_10      agilent_172180     16002.     6.82 0.044   0.1    20     1
 #> 
 #> table size: 89,000 rows x 8 columns
 #> 
@@ -206,18 +206,18 @@ turn that into a tibble for convenient exploration:
 
 peplib <- get_peptide_library() %>%
   collect()
-#> [19:51:33] INFO  Retrieving peptide metadata into DuckDB cache
+#> [15:36:54] INFO  Retrieving peptide metadata into DuckDB cache
 #>                  -> get_peptide_library(force_refresh = FALSE)
-#> [19:51:34] INFO  Opened DuckDB connection
+#> [15:36:55] INFO  Opened DuckDB connection
 #>                    - cache dir:
 #>                      /home/runner/.cache/R/phiperio/peptide_meta/phip_cache.duckdb
 #>                    - table: peptide_meta
-#> [19:51:34] OK    Using cached download (SHA-256 match)
-#> [19:51:35] OK    Download complete and loaded into R
-#> [19:51:40] INFO  Importing sanitized metadata into DuckDB cache...
-#> [19:51:42] OK    peptide_meta table created in DuckDB cache
-#> [19:51:42] OK    Retrieving peptide metadata into DuckDB cache - done
-#>                  -> elapsed: 8.249s
+#> [15:36:55] OK    Using cached download (SHA-256 match)
+#> [15:36:57] OK    Download complete and loaded into R
+#> [15:37:01] INFO  Importing sanitized metadata into DuckDB cache...
+#> [15:37:03] OK    peptide_meta table created in DuckDB cache
+#> [15:37:03] OK    Retrieving peptide metadata into DuckDB cache - done
+#>                  -> elapsed: 8.435s
 ```
 
 Let’s now load in the metadata for our samples and include them into our
@@ -254,18 +254,18 @@ p_enrichment_counts <- plot_enrichment_counts(
   pd_with_metadata,
   group_cols = "treatment" # makes a separate panel for each group in this metadata column
 )
-#> [19:51:43] INFO  Plotting enrichment counts (<phip_data>)
+#> [15:37:04] INFO  Plotting enrichment counts (<phip_data>)
 #>                  -> group_cols: 'treatment'
-#> [19:51:43] INFO  Full-cross detected; pruning non-existing rows before plotting
+#> [15:37:04] INFO  Full-cross detected; pruning non-existing rows before plotting
 #>                    - rule: keep exist == 1
 #>                    - estimated reduction: ~4.3x
-#> [19:51:43] INFO  building enrichment count plot
+#> [15:37:04] INFO  building enrichment count plot
 #>                  -> grouping variable: 'treatment'
-#> [19:51:43] OK    plot built
-#> [19:51:43] OK    building enrichment count plot - done
-#>                  -> elapsed: 0.305s
-#> [19:51:43] OK    Plotting enrichment counts (<phip_data>) - done
-#>                  -> elapsed: 0.31s
+#> [15:37:04] OK    plot built
+#> [15:37:04] OK    building enrichment count plot - done
+#>                  -> elapsed: 0.323s
+#> [15:37:04] OK    Plotting enrichment counts (<phip_data>) - done
+#>                  -> elapsed: 0.327s
 ```
 
 ``` r
@@ -285,14 +285,14 @@ alpha_div <- compute_alpha(
   pd_with_metadata,
   group_cols = "treatment"
 )
-#> [19:51:44] INFO  Full-cross detected; pruning non-existing rows before alpha
+#> [15:37:05] INFO  Full-cross detected; pruning non-existing rows before alpha
 #>                  calc
 #>                    - rule: keep exist == 1
 #>                    - estimated reduction: ~4.3x
-#> [19:51:44] INFO  Computing alpha diversity (<phip_data>)
+#> [15:37:05] INFO  Computing alpha diversity (<phip_data>)
 #>                  -> group_cols: 'treatment'; ranks: 'peptide_id'
-#> [19:51:44] OK    Computing alpha diversity (<phip_data>) - done
-#>                  -> elapsed: 0.248s
+#> [15:37:05] OK    Computing alpha diversity (<phip_data>) - done
+#>                  -> elapsed: 0.257s
 
 alpha_sig <- compute_alpha_significance(alpha_div)
 
@@ -303,10 +303,10 @@ p_alpha_richness <- plot_alpha(
   significance = alpha_sig,
   show_significance = TRUE # needs the package ggsignif
 )
-#> [19:51:44] INFO  plotting alpha diversity (precomputed)
+#> [15:37:05] INFO  plotting alpha diversity (precomputed)
 #>                  -> metric: richness
-#> [19:51:44] OK    plotting alpha diversity (precomputed) - done
-#>                  -> elapsed: 0.118s
+#> [15:37:05] OK    plotting alpha diversity (precomputed) - done
+#>                  -> elapsed: 0.123s
 ```
 
 ``` r
@@ -332,24 +332,24 @@ beta_dist <- compute_distance(
   pd_with_metadata,
   distance = "Jaccard"
 )
-#> [19:51:44] INFO  auto-detected `value_col = "exist"` from `ps`.
-#> [19:51:44] INFO  building abundance matrix from `ps` using `exist`.
-#> [19:51:44] INFO  building pivot spec (sample_id x peptide_id).
-#> [19:51:45] INFO  Collecting long table (sample_id, peptide_id, value).
+#> [15:37:06] INFO  auto-detected `value_col = "exist"` from `ps`.
+#> [15:37:06] INFO  building abundance matrix from `ps` using `exist`.
+#> [15:37:06] INFO  building pivot spec (sample_id x peptide_id).
+#> [15:37:06] INFO  Collecting long table (sample_id, peptide_id, value).
 #>                  -> compute_distance
-#> [19:51:45] INFO  Pivoting to wide abundance matrix in R.
+#> [15:37:06] INFO  Pivoting to wide abundance matrix in R.
 #>                  -> compute_distance
-#> [19:51:45] INFO  abundance matrix has 40 samples and 2225 features after
+#> [15:37:06] INFO  abundance matrix has 40 samples and 2225 features after
 #>                  preprocessing.
-#> [19:51:45] INFO  auto normalization selected -> using none
-#> [19:51:45] INFO  computing distance: jaccard
-#> [19:51:46] INFO  distance matrix computation complete.
+#> [15:37:06] INFO  auto normalization selected -> using none
+#> [15:37:06] INFO  computing distance: jaccard
+#> [15:37:07] INFO  distance matrix computation complete.
 
 pcoa <- compute_pcoa(beta_dist)
-#> [19:51:46] INFO  performing principal coordinates analysis
-#> [19:51:46] INFO  extracting sample coordinates.
-#> [19:51:46] INFO  summarizing eigenvalues and variance explained.
-#> [19:51:46] INFO  pcoa analysis complete.
+#> [15:37:07] INFO  performing principal coordinates analysis
+#> [15:37:07] INFO  extracting sample coordinates.
+#> [15:37:07] INFO  summarizing eigenvalues and variance explained.
+#> [15:37:07] INFO  pcoa analysis complete.
 
 # add the treatment column to the coordinate dataframe in order to plot centroids later
 pcoa$sample_coords <- pcoa$sample_coords %>%
@@ -365,14 +365,14 @@ permanova <- compute_permanova(
   group_col = "treatment",
   subject_col = "subject_id"
 )
-#> [19:51:46] INFO  preparing distance labels and metadata.
-#> [19:51:46] INFO  building metadata from `ps`.
-#> [19:51:46] INFO  filtering samples with missing grouping variables.
-#> [19:51:46] INFO  subsetting distance matrix to complete cases.
-#> [19:51:46] INFO  preparing global permanova model.
-#> [19:51:46] INFO  running global permanova
+#> [15:37:07] INFO  preparing distance labels and metadata.
+#> [15:37:07] INFO  building metadata from `ps`.
+#> [15:37:07] INFO  filtering samples with missing grouping variables.
+#> [15:37:07] INFO  subsetting distance matrix to complete cases.
+#> [15:37:07] INFO  preparing global permanova model.
+#> [15:37:07] INFO  running global permanova
 #>                    - model: d_resp ~ treatment
-#> [19:51:46] INFO  running pairwise permanova contrasts.
+#> [15:37:07] INFO  running pairwise permanova contrasts.
 
 permanova_string <- paste0(
   "PERMANOVA (", permanova$n_perm, " permutations):",
@@ -390,7 +390,7 @@ p_pcoa <- plot_pcoa(
   point_size = 4
 ) +
   labs(subtitle = permanova_string)
-#> [19:51:46] INFO  Plotting PCoA: n=40 | group_col=treatment | time_col=<none> |
+#> [15:37:07] INFO  Plotting PCoA: n=40 | group_col=treatment | time_col=<none> |
 #>                  centroid_by=group
 #>                  -> plot_pcoa
 ```
@@ -425,27 +425,27 @@ pop <- compute_pop(
   rank_cols = c("peptide_id", "species"),
   group_cols = "treatment"
 ) %>% tibble()
-#> [19:51:46] INFO  compute_pop
-#> [19:51:46] INFO  compute_pop
+#> [15:37:08] INFO  compute_pop
+#> [15:37:08] INFO  compute_pop
 #>                    - ranks : peptide_id, species
 #>                    - group_cols: treatment
 #>                    - exist_col : exist
 #>                    - pop_k_min : 1
 #>                    - paired : FALSE
-#> [19:51:47] INFO  ranks resolved
+#> [15:37:08] INFO  ranks resolved
 #>                    - available: peptide_id, species
-#> [19:51:47] INFO  computing cohort sizes and validating binary group_cols
-#> [19:51:48] INFO  computing presence per sample via k-of-n rule
-#> [19:51:48] INFO  counting present samples per feature (pop, unpaired)
-#> [19:51:48] INFO  building pairwise comparisons
-#> [19:51:50] OK    materialized; computing Fisher p-values
-#>                    - table: ph_pop_20260706_195148
-#> [19:51:51] OK    done (compute_pop, unpaired)
+#> [15:37:09] INFO  computing cohort sizes and validating binary group_cols
+#> [15:37:09] INFO  computing presence per sample via k-of-n rule
+#> [15:37:09] INFO  counting present samples per feature (pop, unpaired)
+#> [15:37:09] INFO  building pairwise comparisons
+#> [15:37:12] OK    materialized; computing Fisher p-values
+#>                    - table: ph_pop_20260707_153709
+#> [15:37:13] OK    done (compute_pop, unpaired)
 #>                    - rows : 2605
 #>                    - ranks : peptide_id, species
 #>                    - k_min : 1
-#> [19:51:51] OK    compute_pop - done
-#>                  -> elapsed: 4.659s
+#> [15:37:13] OK    compute_pop - done
+#>                  -> elapsed: 4.85s
 ```
 
 Since we have POP data for two different ranks, we can make two separate

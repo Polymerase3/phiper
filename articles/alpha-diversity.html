@@ -125,41 +125,41 @@ hypothesis testing.</p>
 (<code>T1</code>, <code>T2</code>).</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pd</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/load_example_data.html">load_example_data</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [19:43:35] INFO  Constructing &lt;phip_data&gt; object</span></span>
+<span><span class="co">#&gt; [15:28:47] INFO  Constructing &lt;phip_data&gt; object</span></span>
 <span><span class="co">#&gt;                  -&gt; create_data()</span></span>
-<span><span class="co">#&gt; [19:43:35] INFO  Fetching peptide metadata library via get_peptide_library()</span></span>
-<span><span class="co">#&gt; [19:43:35] INFO  Retrieving peptide metadata into DuckDB cache</span></span>
+<span><span class="co">#&gt; [15:28:47] INFO  Fetching peptide metadata library via get_peptide_library()</span></span>
+<span><span class="co">#&gt; [15:28:47] INFO  Retrieving peptide metadata into DuckDB cache</span></span>
 <span><span class="co">#&gt;                  -&gt; get_peptide_library(force_refresh = FALSE)</span></span>
-<span><span class="co">#&gt; [19:43:35] INFO  Opened DuckDB connection</span></span>
+<span><span class="co">#&gt; [15:28:47] INFO  Opened DuckDB connection</span></span>
 <span><span class="co">#&gt;                    - cache dir:</span></span>
 <span><span class="co">#&gt;                      /home/runner/.cache/R/phiperio/peptide_meta/phip_cache.duckdb</span></span>
 <span><span class="co">#&gt;                    - table: peptide_meta</span></span>
-<span><span class="co">#&gt; [19:43:35] OK    Using cached download (SHA-256 match)</span></span>
-<span><span class="co">#&gt; [19:43:37] OK    Download complete and loaded into R</span></span>
-<span><span class="co">#&gt; [19:43:42] INFO  Importing sanitized metadata into DuckDB cache...</span></span>
-<span><span class="co">#&gt; [19:43:44] OK    peptide_meta table created in DuckDB cache</span></span>
-<span><span class="co">#&gt; [19:43:44] OK    Retrieving peptide metadata into DuckDB cache - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 9.268s</span></span>
-<span><span class="co">#&gt; [19:43:44] OK    Peptide metadata acquired</span></span>
-<span><span class="co">#&gt; [19:43:44] INFO  Validating &lt;phip_data&gt;</span></span>
+<span><span class="co">#&gt; [15:28:47] OK    Using cached download (SHA-256 match)</span></span>
+<span><span class="co">#&gt; [15:28:50] OK    Download complete and loaded into R</span></span>
+<span><span class="co">#&gt; [15:28:55] INFO  Importing sanitized metadata into DuckDB cache...</span></span>
+<span><span class="co">#&gt; [15:28:57] OK    peptide_meta table created in DuckDB cache</span></span>
+<span><span class="co">#&gt; [15:28:57] OK    Retrieving peptide metadata into DuckDB cache - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 9.745s</span></span>
+<span><span class="co">#&gt; [15:28:57] OK    Peptide metadata acquired</span></span>
+<span><span class="co">#&gt; [15:28:57] INFO  Validating &lt;phip_data&gt;</span></span>
 <span><span class="co">#&gt;                  -&gt; validate_phip_data()</span></span>
-<span><span class="co">#&gt; [19:43:44] INFO  Checking structural requirements (shape &amp; mandatory columns)</span></span>
-<span><span class="co">#&gt; [19:43:44] INFO  Checking outcome family availability (exist / fold_change /</span></span>
+<span><span class="co">#&gt; [15:28:57] INFO  Checking structural requirements (shape &amp; mandatory columns)</span></span>
+<span><span class="co">#&gt; [15:28:57] INFO  Checking outcome family availability (exist / fold_change /</span></span>
 <span><span class="co">#&gt;                  raw_counts)</span></span>
-<span><span class="co">#&gt; [19:43:44] INFO  Checking collisions with reserved names</span></span>
+<span><span class="co">#&gt; [15:28:57] INFO  Checking collisions with reserved names</span></span>
 <span><span class="co">#&gt;                    - subject_id, sample_id, timepoint, peptide_id, exist,</span></span>
 <span><span class="co">#&gt;                      fold_change, counts_input, counts_hit</span></span>
-<span><span class="co">#&gt; [19:43:44] INFO  Ensuring all columns are atomic (no list-cols)</span></span>
-<span><span class="co">#&gt; [19:43:44] INFO  Checking key uniqueness</span></span>
-<span><span class="co">#&gt; [19:43:44] INFO  Validating value ranges &amp; types for outcomes</span></span>
-<span><span class="co">#&gt; [19:43:44] INFO  Assessing sparsity (NA/zero prevalence vs threshold)</span></span>
+<span><span class="co">#&gt; [15:28:57] INFO  Ensuring all columns are atomic (no list-cols)</span></span>
+<span><span class="co">#&gt; [15:28:57] INFO  Checking key uniqueness</span></span>
+<span><span class="co">#&gt; [15:28:57] INFO  Validating value ranges &amp; types for outcomes</span></span>
+<span><span class="co">#&gt; [15:28:57] INFO  Assessing sparsity (NA/zero prevalence vs threshold)</span></span>
 <span><span class="co">#&gt;                    - warn threshold: 50%</span></span>
-<span><span class="co">#&gt; [19:43:44] INFO  Checking peptide_id coverage against peptide_library</span></span>
-<span><span class="co">#&gt; [19:43:44] INFO  Checking full grid completeness (peptide * sample)</span></span>
-<span><span class="co">#&gt; [19:43:44] OK    Validating &lt;phip_data&gt; - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.477s</span></span>
-<span><span class="co">#&gt; [19:43:44] OK    Constructing &lt;phip_data&gt; object - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 9.748s</span></span>
+<span><span class="co">#&gt; [15:28:57] INFO  Checking peptide_id coverage against peptide_library</span></span>
+<span><span class="co">#&gt; [15:28:57] INFO  Checking full grid completeness (peptide * sample)</span></span>
+<span><span class="co">#&gt; [15:28:57] OK    Validating &lt;phip_data&gt; - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.483s</span></span>
+<span><span class="co">#&gt; [15:28:57] OK    Constructing &lt;phip_data&gt; object - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 10.233s</span></span>
 <span><span class="va">pd</span></span>
 <span><span class="co">#&gt; ── &lt;phip_data&gt; ───────────────────────────────────────────────────────────────── </span></span>
 <span><span class="co">#&gt; </span></span>
@@ -217,10 +217,10 @@ column(s), and the rank(s) at which diversity should be computed.</p>
 <span>  group_cols <span class="op">=</span> <span class="st">"group"</span>,</span>
 <span>  ranks      <span class="op">=</span> <span class="st">"peptide_id"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [19:43:45] INFO  Computing alpha diversity (&lt;phip_data&gt;)</span></span>
+<span><span class="co">#&gt; [15:28:57] INFO  Computing alpha diversity (&lt;phip_data&gt;)</span></span>
 <span><span class="co">#&gt;                  -&gt; group_cols: 'group'; ranks: 'peptide_id'</span></span>
-<span><span class="co">#&gt; [19:43:45] OK    Computing alpha diversity (&lt;phip_data&gt;) - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.219s</span></span></code></pre></div>
+<span><span class="co">#&gt; [15:28:58] OK    Computing alpha diversity (&lt;phip_data&gt;) - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.225s</span></span></code></pre></div>
 <p>The result is a <strong>named list</strong> with S3 class
 <code>"phip_alpha_diversity"</code>. Each element is one data frame —
 one per <code>group_col</code> plus, optionally, an interaction
@@ -306,10 +306,10 @@ per group variable.</p>
 <span>  group_cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"group"</span>, <span class="st">"timepoint"</span><span class="op">)</span>,</span>
 <span>  ranks      <span class="op">=</span> <span class="st">"peptide_id"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [19:43:45] INFO  Computing alpha diversity (&lt;phip_data&gt;)</span></span>
+<span><span class="co">#&gt; [15:28:58] INFO  Computing alpha diversity (&lt;phip_data&gt;)</span></span>
 <span><span class="co">#&gt;                  -&gt; group_cols: 'group', 'timepoint'; ranks: 'peptide_id'</span></span>
-<span><span class="co">#&gt; [19:43:45] OK    Computing alpha diversity (&lt;phip_data&gt;) - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.377s</span></span>
+<span><span class="co">#&gt; [15:28:58] OK    Computing alpha diversity (&lt;phip_data&gt;) - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.386s</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">alpha_both</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "group"     "timepoint"</span></span></code></pre></div>
 </div>
@@ -326,10 +326,10 @@ diversity.</p>
 <span>  group_cols <span class="op">=</span> <span class="st">"group"</span>,</span>
 <span>  ranks      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"peptide_id"</span>, <span class="st">"family"</span>, <span class="st">"genus"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [19:43:45] INFO  Computing alpha diversity (&lt;phip_data&gt;)</span></span>
+<span><span class="co">#&gt; [15:28:58] INFO  Computing alpha diversity (&lt;phip_data&gt;)</span></span>
 <span><span class="co">#&gt;                  -&gt; group_cols: 'group'; ranks: 'peptide_id', 'family', 'genus'</span></span>
-<span><span class="co">#&gt; [19:43:46] OK    Computing alpha diversity (&lt;phip_data&gt;) - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.438s</span></span>
+<span><span class="co">#&gt; [15:28:59] OK    Computing alpha diversity (&lt;phip_data&gt;) - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.446s</span></span>
 <span><span class="co"># Each element now has rows for all three ranks</span></span>
 <span><span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">alpha_tax</span><span class="op">$</span><span class="va">group</span>, <span class="va">rank</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 2</span></span></span>
@@ -353,10 +353,10 @@ return only the interaction.</p>
 <span>  ranks             <span class="op">=</span> <span class="st">"peptide_id"</span>,</span>
 <span>  group_interaction <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [19:43:46] INFO  Computing alpha diversity (&lt;phip_data&gt;)</span></span>
+<span><span class="co">#&gt; [15:28:59] INFO  Computing alpha diversity (&lt;phip_data&gt;)</span></span>
 <span><span class="co">#&gt;                  -&gt; group_cols: 'group', 'timepoint'; ranks: 'peptide_id'</span></span>
-<span><span class="co">#&gt; [19:43:47] OK    Computing alpha diversity (&lt;phip_data&gt;) - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.53s</span></span>
+<span><span class="co">#&gt; [15:28:59] OK    Computing alpha diversity (&lt;phip_data&gt;) - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.558s</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">alpha_inter</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "group"             "timepoint"         "group * timepoint"</span></span>
 <span></span>
@@ -368,10 +368,10 @@ return only the interaction.</p>
 <span>  group_interaction <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  interaction_only  <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [19:43:47] INFO  Computing alpha diversity (&lt;phip_data&gt;)</span></span>
+<span><span class="co">#&gt; [15:29:00] INFO  Computing alpha diversity (&lt;phip_data&gt;)</span></span>
 <span><span class="co">#&gt;                  -&gt; group_cols: 'group', 'timepoint'; ranks: 'peptide_id'</span></span>
-<span><span class="co">#&gt; [19:43:47] OK    Computing alpha diversity (&lt;phip_data&gt;) - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.212s</span></span>
+<span><span class="co">#&gt; [15:29:00] OK    Computing alpha diversity (&lt;phip_data&gt;) - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.222s</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">alpha_inter_only</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "group * timepoint"</span></span></code></pre></div>
 </div>
@@ -388,10 +388,10 @@ tidy.</p>
 <span>  ranks      <span class="op">=</span> <span class="st">"peptide_id"</span>,</span>
 <span>  metrics    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"richness"</span>, <span class="st">"shannon"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [19:43:47] INFO  Computing alpha diversity (&lt;phip_data&gt;)</span></span>
+<span><span class="co">#&gt; [15:29:00] INFO  Computing alpha diversity (&lt;phip_data&gt;)</span></span>
 <span><span class="co">#&gt;                  -&gt; group_cols: 'group'; ranks: 'peptide_id'</span></span>
-<span><span class="co">#&gt; [19:43:47] OK    Computing alpha diversity (&lt;phip_data&gt;) - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.187s</span></span>
+<span><span class="co">#&gt; [15:29:00] OK    Computing alpha diversity (&lt;phip_data&gt;) - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.169s</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">alpha_light</span><span class="op">$</span><span class="va">group</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "rank"              "sample_id"         "group"            </span></span>
 <span><span class="co">#&gt; [4] "richness"          "shannon_diversity"</span></span></code></pre></div>
@@ -405,20 +405,20 @@ tidy.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">alpha_ln</span>   <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compute_alpha.html">compute_alpha</a></span><span class="op">(</span><span class="va">pd</span>, group_cols <span class="op">=</span> <span class="st">"group"</span>, ranks <span class="op">=</span> <span class="st">"peptide_id"</span>,</span>
 <span>                             metrics <span class="op">=</span> <span class="st">"shannon"</span>, shannon_base <span class="op">=</span> <span class="st">"ln"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [19:43:47] INFO  Computing alpha diversity (&lt;phip_data&gt;)</span></span>
+<span><span class="co">#&gt; [15:29:00] INFO  Computing alpha diversity (&lt;phip_data&gt;)</span></span>
 <span><span class="co">#&gt;                  -&gt; group_cols: 'group'; ranks: 'peptide_id'</span></span>
-<span><span class="co">#&gt; [19:43:47] OK    Computing alpha diversity (&lt;phip_data&gt;) - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.156s</span></span>
+<span><span class="co">#&gt; [15:29:00] OK    Computing alpha diversity (&lt;phip_data&gt;) - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.166s</span></span>
 <span><span class="va">alpha_log2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compute_alpha.html">compute_alpha</a></span><span class="op">(</span><span class="va">pd</span>, group_cols <span class="op">=</span> <span class="st">"group"</span>, ranks <span class="op">=</span> <span class="st">"peptide_id"</span>,</span>
 <span>                             metrics <span class="op">=</span> <span class="st">"shannon"</span>, shannon_base <span class="op">=</span> <span class="st">"log2"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [19:43:47] INFO  Computing alpha diversity (&lt;phip_data&gt;)</span></span>
+<span><span class="co">#&gt; [15:29:00] INFO  Computing alpha diversity (&lt;phip_data&gt;)</span></span>
 <span><span class="co">#&gt;                  -&gt; group_cols: 'group'; ranks: 'peptide_id'</span></span>
-<span><span class="co">#&gt; [19:43:48] OK    Computing alpha diversity (&lt;phip_data&gt;) - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.158s</span></span>
+<span><span class="co">#&gt; [15:29:01] OK    Computing alpha diversity (&lt;phip_data&gt;) - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.161s</span></span>
 <span></span>
 <span><span class="co"># log2 values are ln values divided by ln(2)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">alpha_ln</span><span class="op">$</span><span class="va">group</span><span class="op">$</span><span class="va">shannon_diversity</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">2</span><span class="op">)</span> <span class="op">-</span> <span class="va">alpha_log2</span><span class="op">$</span><span class="va">group</span><span class="op">$</span><span class="va">shannon_diversity</span>, <span class="fl">3</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.1985457 0.2397536 0.7165461</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] -0.2186403 -0.0984037  1.0988534</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="presence-modes">Presence modes<a class="anchor" aria-label="anchor" href="#presence-modes"></a>
@@ -464,10 +464,10 @@ counts as present whenever <code>exist &gt; 0</code>.</p>
 <span>  mode       <span class="op">=</span> <span class="st">"binary"</span>,</span>
 <span>  metrics    <span class="op">=</span> <span class="st">"richness"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [19:43:48] INFO  Computing alpha diversity (&lt;phip_data&gt;)</span></span>
+<span><span class="co">#&gt; [15:29:01] INFO  Computing alpha diversity (&lt;phip_data&gt;)</span></span>
 <span><span class="co">#&gt;                  -&gt; group_cols: 'group'; ranks: 'peptide_id'</span></span>
-<span><span class="co">#&gt; [19:43:48] OK    Computing alpha diversity (&lt;phip_data&gt;) - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.154s</span></span>
+<span><span class="co">#&gt; [15:29:01] OK    Computing alpha diversity (&lt;phip_data&gt;) - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.192s</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">alpha_bin</span><span class="op">$</span><span class="va">group</span><span class="op">$</span><span class="va">richness</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
 <span><span class="co">#&gt;   141.0   173.2   201.0   233.8   304.2   339.0</span></span></code></pre></div>
@@ -491,10 +491,10 @@ richness.</p>
 <span>  threshold  <span class="op">=</span> <span class="fl">10</span>,</span>
 <span>  metrics    <span class="op">=</span> <span class="st">"richness"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [19:43:48] INFO  Computing alpha diversity (&lt;phip_data&gt;)</span></span>
+<span><span class="co">#&gt; [15:29:01] INFO  Computing alpha diversity (&lt;phip_data&gt;)</span></span>
 <span><span class="co">#&gt;                  -&gt; group_cols: 'group'; ranks: 'peptide_id'</span></span>
-<span><span class="co">#&gt; [19:43:48] OK    Computing alpha diversity (&lt;phip_data&gt;) - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.238s</span></span>
+<span><span class="co">#&gt; [15:29:01] OK    Computing alpha diversity (&lt;phip_data&gt;) - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.241s</span></span>
 <span></span>
 <span><span class="co"># Strict threshold: fold_change &gt; 100</span></span>
 <span><span class="va">alpha_thr100</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compute_alpha.html">compute_alpha</a></span><span class="op">(</span></span>
@@ -505,10 +505,10 @@ richness.</p>
 <span>  threshold  <span class="op">=</span> <span class="fl">100</span>,</span>
 <span>  metrics    <span class="op">=</span> <span class="st">"richness"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [19:43:48] INFO  Computing alpha diversity (&lt;phip_data&gt;)</span></span>
+<span><span class="co">#&gt; [15:29:01] INFO  Computing alpha diversity (&lt;phip_data&gt;)</span></span>
 <span><span class="co">#&gt;                  -&gt; group_cols: 'group'; ranks: 'peptide_id'</span></span>
-<span><span class="co">#&gt; [19:43:48] OK    Computing alpha diversity (&lt;phip_data&gt;) - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.197s</span></span>
+<span><span class="co">#&gt; [15:29:01] OK    Computing alpha diversity (&lt;phip_data&gt;) - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.209s</span></span>
 <span></span>
 <span><span class="co"># Richness drops as the threshold increases</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
@@ -562,10 +562,10 @@ with <code><a href="https://dplyr.tidyverse.org/reference/compute.html" class="e
 <span>  abundance_col <span class="op">=</span> <span class="st">"fold_change"</span>,</span>
 <span>  metrics       <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"richness"</span>, <span class="st">"shannon"</span>, <span class="st">"simpson"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [19:43:49] INFO  Computing alpha diversity (data.frame)</span></span>
+<span><span class="co">#&gt; [15:29:02] INFO  Computing alpha diversity (data.frame)</span></span>
 <span><span class="co">#&gt;                  -&gt; group_cols: 'group'; ranks: 'peptide_id'</span></span>
-<span><span class="co">#&gt; [19:43:50] OK    Computing alpha diversity (data.frame) - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 1.878s</span></span>
+<span><span class="co">#&gt; [15:29:04] OK    Computing alpha diversity (data.frame) - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 1.99s</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">alpha_abund</span><span class="op">$</span><span class="va">group</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sample_id"</span>, <span class="st">"group"</span>, <span class="st">"richness"</span>,</span>
 <span>                            <span class="st">"shannon_diversity"</span>, <span class="st">"simpson_diversity"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 5</span></span></span>
@@ -639,9 +639,9 @@ within each rank category:</p>
 <span>  metric    <span class="op">=</span> <span class="st">"richness"</span>,</span>
 <span>  group_col <span class="op">=</span> <span class="st">"group"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [19:43:51] INFO  plotting alpha diversity (precomputed)</span></span>
+<span><span class="co">#&gt; [15:29:04] INFO  plotting alpha diversity (precomputed)</span></span>
 <span><span class="co">#&gt;                  -&gt; metric: richness</span></span>
-<span><span class="co">#&gt; [19:43:51] OK    plotting alpha diversity (precomputed) - done</span></span>
+<span><span class="co">#&gt; [15:29:04] OK    plotting alpha diversity (precomputed) - done</span></span>
 <span><span class="co">#&gt;                  -&gt; elapsed: 0.088s</span></span></code></pre></div>
 <p><img src="alpha-diversity_files/figure-html/plot-basic-1.png" class="r-plt" alt="" width="672"></p>
 </div>
@@ -653,30 +653,30 @@ within each rank category:</p>
 <span>            <span class="st">"pielou_evenness"</span>, <span class="st">"berger_parker_dominance"</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="../reference/plot_alpha.html">plot_alpha</a></span><span class="op">(</span><span class="va">alpha_group</span>, metric <span class="op">=</span> <span class="va">m</span>, group_col <span class="op">=</span> <span class="st">"group"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
-<span><span class="co">#&gt; [19:43:51] INFO  plotting alpha diversity (precomputed)</span></span>
+<span><span class="co">#&gt; [15:29:04] INFO  plotting alpha diversity (precomputed)</span></span>
 <span><span class="co">#&gt;                  -&gt; metric: richness</span></span>
-<span><span class="co">#&gt; [19:43:51] OK    plotting alpha diversity (precomputed) - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.092s</span></span></code></pre></div>
+<span><span class="co">#&gt; [15:29:04] OK    plotting alpha diversity (precomputed) - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.062s</span></span></code></pre></div>
 <p><img src="alpha-diversity_files/figure-html/plot-all-metrics-1.png" class="r-plt" alt="" width="672"></p>
-<pre><code><span><span class="co">#&gt; [19:43:51] INFO  plotting alpha diversity (precomputed)</span></span>
+<pre><code><span><span class="co">#&gt; [15:29:05] INFO  plotting alpha diversity (precomputed)</span></span>
 <span><span class="co">#&gt;                  -&gt; metric: shannon_diversity</span></span>
-<span><span class="co">#&gt; [19:43:52] OK    plotting alpha diversity (precomputed) - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.09s</span></span></code></pre>
+<span><span class="co">#&gt; [15:29:05] OK    plotting alpha diversity (precomputed) - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.063s</span></span></code></pre>
 <p><img src="alpha-diversity_files/figure-html/plot-all-metrics-2.png" class="r-plt" alt="" width="672"></p>
-<pre><code><span><span class="co">#&gt; [19:43:52] INFO  plotting alpha diversity (precomputed)</span></span>
+<pre><code><span><span class="co">#&gt; [15:29:05] INFO  plotting alpha diversity (precomputed)</span></span>
 <span><span class="co">#&gt;                  -&gt; metric: simpson_diversity</span></span>
-<span><span class="co">#&gt; [19:43:52] OK    plotting alpha diversity (precomputed) - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.118s</span></span></code></pre>
+<span><span class="co">#&gt; [15:29:05] OK    plotting alpha diversity (precomputed) - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.062s</span></span></code></pre>
 <p><img src="alpha-diversity_files/figure-html/plot-all-metrics-3.png" class="r-plt" alt="" width="672"></p>
-<pre><code><span><span class="co">#&gt; [19:43:52] INFO  plotting alpha diversity (precomputed)</span></span>
+<pre><code><span><span class="co">#&gt; [15:29:05] INFO  plotting alpha diversity (precomputed)</span></span>
 <span><span class="co">#&gt;                  -&gt; metric: pielou_evenness</span></span>
-<span><span class="co">#&gt; [19:43:52] OK    plotting alpha diversity (precomputed) - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.059s</span></span></code></pre>
+<span><span class="co">#&gt; [15:29:05] OK    plotting alpha diversity (precomputed) - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.098s</span></span></code></pre>
 <p><img src="alpha-diversity_files/figure-html/plot-all-metrics-4.png" class="r-plt" alt="" width="672"></p>
-<pre><code><span><span class="co">#&gt; [19:43:52] INFO  plotting alpha diversity (precomputed)</span></span>
+<pre><code><span><span class="co">#&gt; [15:29:06] INFO  plotting alpha diversity (precomputed)</span></span>
 <span><span class="co">#&gt;                  -&gt; metric: berger_parker_dominance</span></span>
-<span><span class="co">#&gt; [19:43:52] OK    plotting alpha diversity (precomputed) - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.09s</span></span></code></pre>
+<span><span class="co">#&gt; [15:29:06] OK    plotting alpha diversity (precomputed) - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.061s</span></span></code></pre>
 <p><img src="alpha-diversity_files/figure-html/plot-all-metrics-5.png" class="r-plt" alt="" width="672"></p>
 </div>
 <div class="section level3">
@@ -703,10 +703,10 @@ of each patient’s reactivity.</p>
 <span>  facet_by_rank <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  ncol          <span class="op">=</span> <span class="fl">3</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [19:43:53] INFO  plotting alpha diversity (precomputed)</span></span>
+<span><span class="co">#&gt; [15:29:06] INFO  plotting alpha diversity (precomputed)</span></span>
 <span><span class="co">#&gt;                  -&gt; metric: richness</span></span>
-<span><span class="co">#&gt; [19:43:53] OK    plotting alpha diversity (precomputed) - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.063s</span></span></code></pre></div>
+<span><span class="co">#&gt; [15:29:06] OK    plotting alpha diversity (precomputed) - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.105s</span></span></code></pre></div>
 <p><img src="alpha-diversity_files/figure-html/plot-facets-1.png" class="r-plt" alt="" width="672"></p>
 <p>Disable faceting and restrict to a single rank with
 <code>filter_ranks</code>.</p>
@@ -718,10 +718,10 @@ of each patient’s reactivity.</p>
 <span>  filter_ranks  <span class="op">=</span> <span class="st">"peptide_id"</span>,</span>
 <span>  facet_by_rank <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [19:43:54] INFO  plotting alpha diversity (precomputed)</span></span>
+<span><span class="co">#&gt; [15:29:07] INFO  plotting alpha diversity (precomputed)</span></span>
 <span><span class="co">#&gt;                  -&gt; metric: richness</span></span>
-<span><span class="co">#&gt; [19:43:54] OK    plotting alpha diversity (precomputed) - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.06s</span></span></code></pre></div>
+<span><span class="co">#&gt; [15:29:07] OK    plotting alpha diversity (precomputed) - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.064s</span></span></code></pre></div>
 <p><img src="alpha-diversity_files/figure-html/plot-filter-rank-1.png" class="r-plt" alt="" width="672"></p>
 </div>
 <div class="section level3">
@@ -738,10 +738,10 @@ of each patient’s reactivity.</p>
 <span>  x_order       <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"T1"</span>, <span class="st">"T2"</span><span class="op">)</span>,</span>
 <span>  x_labels      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>T1 <span class="op">=</span> <span class="st">"Baseline"</span>, T2 <span class="op">=</span> <span class="st">"Follow-up"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [19:43:54] INFO  plotting alpha diversity (precomputed)</span></span>
+<span><span class="co">#&gt; [15:29:08] INFO  plotting alpha diversity (precomputed)</span></span>
 <span><span class="co">#&gt;                  -&gt; metric: shannon_diversity</span></span>
-<span><span class="co">#&gt; [19:43:54] OK    plotting alpha diversity (precomputed) - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.059s</span></span></code></pre></div>
+<span><span class="co">#&gt; [15:29:08] OK    plotting alpha diversity (precomputed) - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.098s</span></span></code></pre></div>
 <p><img src="alpha-diversity_files/figure-html/plot-filter-order-1.png" class="r-plt" alt="" width="672"></p>
 </div>
 <div class="section level3">
@@ -763,10 +763,10 @@ within-group spread that would otherwise be invisible.</p>
 <span>  point_size    <span class="op">=</span> <span class="fl">2.5</span>,</span>
 <span>  point_alpha   <span class="op">=</span> <span class="fl">0.6</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [19:43:54] INFO  plotting alpha diversity (precomputed)</span></span>
+<span><span class="co">#&gt; [15:29:08] INFO  plotting alpha diversity (precomputed)</span></span>
 <span><span class="co">#&gt;                  -&gt; metric: simpson_diversity</span></span>
-<span><span class="co">#&gt; [19:43:55] OK    plotting alpha diversity (precomputed) - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.06s</span></span></code></pre></div>
+<span><span class="co">#&gt; [15:29:08] OK    plotting alpha diversity (precomputed) - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.101s</span></span></code></pre></div>
 <p><img src="alpha-diversity_files/figure-html/plot-custom-1.png" class="r-plt" alt="" width="672"></p>
 </div>
 <div class="section level3">
@@ -782,12 +782,12 @@ stores the combined label in a column called
 <span>  group_col        <span class="op">=</span> <span class="st">"phip_interaction"</span>,</span>
 <span>  interaction_only <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [19:43:55] INFO  plotting alpha diversity (precomputed)</span></span>
+<span><span class="co">#&gt; [15:29:08] INFO  plotting alpha diversity (precomputed)</span></span>
 <span><span class="co">#&gt;                  -&gt; metric: richness</span></span>
-<span><span class="co">#&gt; [19:43:55] INFO  selected interaction table</span></span>
+<span><span class="co">#&gt; [15:29:08] INFO  selected interaction table</span></span>
 <span><span class="co">#&gt;                    - group * timepoint</span></span>
-<span><span class="co">#&gt; [19:43:55] OK    plotting alpha diversity (precomputed) - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.059s</span></span></code></pre></div>
+<span><span class="co">#&gt; [15:29:09] OK    plotting alpha diversity (precomputed) - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.1s</span></span></code></pre></div>
 <p><img src="alpha-diversity_files/figure-html/plot-interaction-1.png" class="r-plt" alt="" width="672"></p>
 </div>
 <div class="section level3">
@@ -1050,10 +1050,10 @@ installed.</p>
 <span>  show_significance <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  sig_p_threshold   <span class="op">=</span> <span class="fl">0.05</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [19:43:57] INFO  plotting alpha diversity (precomputed)</span></span>
+<span><span class="co">#&gt; [15:29:10] INFO  plotting alpha diversity (precomputed)</span></span>
 <span><span class="co">#&gt;                  -&gt; metric: richness</span></span>
-<span><span class="co">#&gt; [19:43:57] OK    plotting alpha diversity (precomputed) - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.132s</span></span></code></pre></div>
+<span><span class="co">#&gt; [15:29:11] OK    plotting alpha diversity (precomputed) - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.147s</span></span></code></pre></div>
 <p><img src="alpha-diversity_files/figure-html/brackets-1.png" class="r-plt" alt="" width="672"></p>
 <p>Tune the bracket geometry with <code>sig_step_increase</code> and
 <code>sig_tip_length</code>:</p>
@@ -1068,10 +1068,10 @@ installed.</p>
 <span>  sig_step_increase <span class="op">=</span> <span class="fl">0.08</span>,</span>
 <span>  sig_tip_length    <span class="op">=</span> <span class="fl">0.005</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [19:43:57] INFO  plotting alpha diversity (precomputed)</span></span>
+<span><span class="co">#&gt; [15:29:11] INFO  plotting alpha diversity (precomputed)</span></span>
 <span><span class="co">#&gt;                  -&gt; metric: shannon_diversity</span></span>
-<span><span class="co">#&gt; [19:43:57] OK    plotting alpha diversity (precomputed) - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.103s</span></span></code></pre></div>
+<span><span class="co">#&gt; [15:29:11] OK    plotting alpha diversity (precomputed) - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.109s</span></span></code></pre></div>
 <p><img src="alpha-diversity_files/figure-html/brackets-tuned-1.png" class="r-plt" alt="" width="672"></p>
 <hr>
 </div>
