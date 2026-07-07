@@ -1462,6 +1462,7 @@ testthat::test_that("compute_distance: distance method fallbacks", {
 
   # test vegan fallback methods (when parallelDist not available or method not supported)
   testthat::skip_if_not_installed("vegan")
+  testthat::skip_if_not_installed("parallelDist")
 
   # test a method that should use vegan
   d_jaccard <- suppressWarnings(compute_distance(
