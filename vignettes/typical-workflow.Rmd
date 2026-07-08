@@ -41,6 +41,7 @@ library(phiperio)
 library(phiper)
 library(dplyr)
 library(ggplot2)
+library(ggsignif) # Only needed for plotting significance levels in alpha diversity plots
 ```
 
 ## Load data
@@ -85,7 +86,10 @@ Let's now load in the metadata for our samples and include them into our `pd` ob
 metadata <- read.delim(file.path(vig_dir, "metadata.txt")) %>%
   tibble()
 
-pd_with_metadata <- left_join(pd, metadata, by = "sample_id", copy = TRUE) # copy = TRUE is necessary because of DuckDB
+pd_with_metadata <- left_join(pd, 
+                              metadata, 
+                              by = "sample_id", copy = TRUE # copy = TRUE is necessary because of DuckDB
+                              ) 
 ```
 
 `pd_with_metadata` will be the main input for most of `phiper`'s functions in this tutorial.
@@ -99,7 +103,7 @@ As a first overview, let's plot the distribution of enriched peptide counts acro
 ```{r enriched_peptides}
 p_enrichment_counts <- plot_enrichment_counts(
   pd_with_metadata,
-  group_cols = "treatment" # makes a separate panel for each group in this metadata column
+  group_cols = "treatment" # Would also work for more than two groups. Makes a separate panel for each group in this metadata column.
 )
 ```
 
@@ -122,7 +126,7 @@ p_alpha_richness <- plot_alpha(
   metric = "richness",
   group_col = "treatment",
   significance = alpha_sig,
-  show_significance = TRUE # needs the package ggsignif
+  show_significance = TRUE # Needs the package ggsignif
 )
 ```
 
@@ -144,7 +148,7 @@ beta_dist <- compute_distance(
 
 pcoa <- compute_pcoa(beta_dist)
 
-# add the treatment column to the coordinate dataframe in order to plot centroids later
+# Add the treatment column to the coordinate dataframe in order to plot centroids later:
 pcoa$sample_coords <- pcoa$sample_coords %>%
   left_join(
     pd_with_metadata$data_long %>% select(sample_id, treatment) %>% distinct(),
@@ -257,9 +261,9 @@ delta <- compute_delta(
   x = pd_with_metadata,
   rank_cols = c("peptide_id", "species"),
   group_cols = "treatment",
-  B_permutations = 100
+  B_permutations = 100 # You will usually want much more iterations (see default). It's set to 100 here to reduce runtime.
 ) %>%
-  filter(m_eff > 5) # highly recommended: results based on fewer than 5 peptides can be unreliable
+  filter(m_eff > 5) # Highly recommended. Results based on fewer than 5 peptides can be unreliable.
 ```
 
 The most common way to visualize these results is by a forest plot to display the features whose prevalence shifted the most.
@@ -301,3 +305,10 @@ p_delta_interactive$species$plot
 We assume you already know how to save tables and ggplot objects to disk. The interactive plots can for example be saved to HTML with `htmlwidgets::saveWidget()`.
 
 `phip_data` objects can be stored as `.parquet` files using `phiperio`'s `export_parquet()`.
+
+```{r save_output, echo=TRUE}
+export_parquet(
+  pd_with_metadata,
+  "path/to/output_dir"
+)
+```
