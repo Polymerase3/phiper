@@ -13,6 +13,14 @@ template:
     btn-border-radius: 0.25rem
     danger: "#A6081A"
 
+navbar:
+  structure:
+    left: [reference, articles, peptide-library, news]
+  components:
+    peptide-library:
+      text: "Peptide library"
+      href: articles/peptide-library.html
+
 articles:
   - title: "Get started"
     navbar: "Get started"
@@ -25,3 +33,7 @@ articles:
       - beta-diversity
       - pop-analysis
       - delta-analysis
+  - title: "Peptide library"
+    navbar: "Peptide library"
+    contents:
+      - peptide-library
