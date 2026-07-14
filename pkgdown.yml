@@ -1,13 +1,14 @@
 pandoc: 3.8.3
-pkgdown: 2.2.0
+pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   alpha-diversity: alpha-diversity.html
   beta-diversity: beta-diversity.html
   delta-analysis: delta-analysis.html
+  peptide-library: peptide-library.html
   pop-analysis: pop-analysis.html
   typical-workflow: typical-workflow.html
-last_built: 2026-07-07T15:28Z
+last_built: 2026-07-14T09:28Z
 urls:
   reference: https://polymerase3.github.io/phiper/reference
   article: https://polymerase3.github.io/phiper/articles

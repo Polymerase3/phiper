@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -48,8 +48,12 @@
     <li><a class="dropdown-item" href="../articles/beta-diversity.html">Beta Diversity Analysis in PhIP-seq</a></li>
     <li><a class="dropdown-item" href="../articles/pop-analysis.html">Prevalence of Presence (POP) Analysis in PhIP-seq</a></li>
     <li><a class="dropdown-item" href="../articles/delta-analysis.html">Delta Analysis in PhIP-seq</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Peptide library</h6></li>
+    <li><a class="dropdown-item" href="../articles/peptide-library.html">Peptide Library Metadata</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../articles/peptide-library.html">Peptide library</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -130,41 +134,41 @@ features ranked by that statistic.</li>
 (<code>T1</code>, <code>T2</code>) across 1 000 simulated peptides.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pd</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/load_example_data.html">load_example_data</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:29:38] INFO  Constructing &lt;phip_data&gt; object</span></span>
+<span><span class="co">#&gt; [09:30:25] INFO  Constructing &lt;phip_data&gt; object</span></span>
 <span><span class="co">#&gt;                  -&gt; create_data()</span></span>
-<span><span class="co">#&gt; [15:29:38] INFO  Fetching peptide metadata library via get_peptide_library()</span></span>
-<span><span class="co">#&gt; [15:29:38] INFO  Retrieving peptide metadata into DuckDB cache</span></span>
+<span><span class="co">#&gt; [09:30:25] INFO  Fetching peptide metadata library via get_peptide_library()</span></span>
+<span><span class="co">#&gt; [09:30:25] INFO  Retrieving peptide metadata into DuckDB cache</span></span>
 <span><span class="co">#&gt;                  -&gt; get_peptide_library(force_refresh = FALSE)</span></span>
-<span><span class="co">#&gt; [15:29:39] INFO  Opened DuckDB connection</span></span>
+<span><span class="co">#&gt; [09:30:25] INFO  Opened DuckDB connection</span></span>
 <span><span class="co">#&gt;                    - cache dir:</span></span>
 <span><span class="co">#&gt;                      /home/runner/.cache/R/phiperio/peptide_meta/phip_cache.duckdb</span></span>
 <span><span class="co">#&gt;                    - table: peptide_meta</span></span>
-<span><span class="co">#&gt; [15:29:39] OK    Using cached download (SHA-256 match)</span></span>
-<span><span class="co">#&gt; [15:29:41] OK    Download complete and loaded into R</span></span>
-<span><span class="co">#&gt; [15:29:47] INFO  Importing sanitized metadata into DuckDB cache...</span></span>
-<span><span class="co">#&gt; [15:29:48] OK    peptide_meta table created in DuckDB cache</span></span>
-<span><span class="co">#&gt; [15:29:48] OK    Retrieving peptide metadata into DuckDB cache - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 9.91s</span></span>
-<span><span class="co">#&gt; [15:29:48] OK    Peptide metadata acquired</span></span>
-<span><span class="co">#&gt; [15:29:48] INFO  Validating &lt;phip_data&gt;</span></span>
+<span><span class="co">#&gt; [09:30:25] OK    Using cached download (SHA-256 match)</span></span>
+<span><span class="co">#&gt; [09:30:28] OK    Download complete and loaded into R</span></span>
+<span><span class="co">#&gt; [09:30:32] INFO  Importing sanitized metadata into DuckDB cache...</span></span>
+<span><span class="co">#&gt; [09:30:34] OK    peptide_meta table created in DuckDB cache</span></span>
+<span><span class="co">#&gt; [09:30:34] OK    Retrieving peptide metadata into DuckDB cache - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 9.51s</span></span>
+<span><span class="co">#&gt; [09:30:34] OK    Peptide metadata acquired</span></span>
+<span><span class="co">#&gt; [09:30:34] INFO  Validating &lt;phip_data&gt;</span></span>
 <span><span class="co">#&gt;                  -&gt; validate_phip_data()</span></span>
-<span><span class="co">#&gt; [15:29:48] INFO  Checking structural requirements (shape &amp; mandatory columns)</span></span>
-<span><span class="co">#&gt; [15:29:48] INFO  Checking outcome family availability (exist / fold_change /</span></span>
+<span><span class="co">#&gt; [09:30:34] INFO  Checking structural requirements (shape &amp; mandatory columns)</span></span>
+<span><span class="co">#&gt; [09:30:34] INFO  Checking outcome family availability (exist / fold_change /</span></span>
 <span><span class="co">#&gt;                  raw_counts)</span></span>
-<span><span class="co">#&gt; [15:29:48] INFO  Checking collisions with reserved names</span></span>
+<span><span class="co">#&gt; [09:30:34] INFO  Checking collisions with reserved names</span></span>
 <span><span class="co">#&gt;                    - subject_id, sample_id, timepoint, peptide_id, exist,</span></span>
 <span><span class="co">#&gt;                      fold_change, counts_input, counts_hit</span></span>
-<span><span class="co">#&gt; [15:29:48] INFO  Ensuring all columns are atomic (no list-cols)</span></span>
-<span><span class="co">#&gt; [15:29:48] INFO  Checking key uniqueness</span></span>
-<span><span class="co">#&gt; [15:29:48] INFO  Validating value ranges &amp; types for outcomes</span></span>
-<span><span class="co">#&gt; [15:29:48] INFO  Assessing sparsity (NA/zero prevalence vs threshold)</span></span>
+<span><span class="co">#&gt; [09:30:34] INFO  Ensuring all columns are atomic (no list-cols)</span></span>
+<span><span class="co">#&gt; [09:30:34] INFO  Checking key uniqueness</span></span>
+<span><span class="co">#&gt; [09:30:34] INFO  Validating value ranges &amp; types for outcomes</span></span>
+<span><span class="co">#&gt; [09:30:34] INFO  Assessing sparsity (NA/zero prevalence vs threshold)</span></span>
 <span><span class="co">#&gt;                    - warn threshold: 50%</span></span>
-<span><span class="co">#&gt; [15:29:48] INFO  Checking peptide_id coverage against peptide_library</span></span>
-<span><span class="co">#&gt; [15:29:49] INFO  Checking full grid completeness (peptide * sample)</span></span>
-<span><span class="co">#&gt; [15:29:49] OK    Validating &lt;phip_data&gt; - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.466s</span></span>
-<span><span class="co">#&gt; [15:29:49] OK    Constructing &lt;phip_data&gt; object - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 10.382s</span></span>
+<span><span class="co">#&gt; [09:30:34] INFO  Checking peptide_id coverage against peptide_library</span></span>
+<span><span class="co">#&gt; [09:30:34] INFO  Checking full grid completeness (peptide * sample)</span></span>
+<span><span class="co">#&gt; [09:30:35] OK    Validating &lt;phip_data&gt; - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.448s</span></span>
+<span><span class="co">#&gt; [09:30:35] OK    Constructing &lt;phip_data&gt; object - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 9.961s</span></span>
 <span><span class="va">pd</span></span>
 <span><span class="co">#&gt; ── &lt;phip_data&gt; ───────────────────────────────────────────────────────────────── </span></span>
 <span><span class="co">#&gt; </span></span>
@@ -183,16 +187,16 @@ features ranked by that statistic.</li>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">peptide library preview (first 5 rows):</span> </span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 8</span></span></span>
-<span><span class="co">#&gt;   peptide_id Fullname                    species genus family order class common</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> agilent_1  Chromodomain-helicase-DNA-… Homo s… Homo  Homin… Prim… Mamm… Human </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> agilent_2  integral membrane protein   Mycoba… Myco… Mycob… Myco… Acti… <span style="color: #BB0000;">NA</span>    </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> agilent_3  hypothetical protein (6/16… Mycoba… Myco… Mycob… Myco… Acti… <span style="color: #BB0000;">NA</span>    </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> agilent_4  envelope protein (5/8) &amp; a… Orthof… Orth… Flavi… Amar… Flas… JEV   </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> agilent_5  Myosin-7 &amp; beta-myosin hea… Homo s… Homo  Homin… Prim… Mamm… Human </span></span>
-<span><span class="co">#&gt; ... plus 36 more columns</span></span>
+<span><span class="co">#&gt;   peptide_id    Fullname                 species genus family order class common</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> agilent_1     Chromodomain-helicase-D… Homo s… Homo  Homin… Prim… Mamm… Human </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> agilent_10    Lipase 2 precursor (Gly… Staphy… Stap… Staph… Baci… Baci… <span style="color: #BB0000;">NA</span>    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> agilent_100   cell surface protein pr… Porphy… Porp… Porph… Bact… Bact… <span style="color: #BB0000;">NA</span>    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> agilent_1000  Coagulation factor VIII… Homo s… Homo  Homin… Prim… Mamm… Human </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> agilent_10000 transmembrane serine/th… Mycoba… Myco… Mycob… Myco… Acti… <span style="color: #BB0000;">NA</span>    </span></span>
+<span><span class="co">#&gt; ... plus 37 more columns</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; library size: 357,190 rows x 44 columns</span></span>
+<span><span class="co">#&gt; library size: 357,190 rows x 45 columns</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">meta flags:</span> </span></span>
 <span><span class="co">#&gt;   con:            &lt;duckdb_connection&gt;</span></span>
@@ -219,27 +223,27 @@ group-level prevalence table first:</p>
 <span>  rank_cols  <span class="op">=</span> <span class="st">"peptide_id"</span>,</span>
 <span>  group_cols <span class="op">=</span> <span class="st">"group"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:29:49] INFO  compute_pop</span></span>
-<span><span class="co">#&gt; [15:29:49] INFO  compute_pop</span></span>
+<span><span class="co">#&gt; [09:30:35] INFO  compute_pop</span></span>
+<span><span class="co">#&gt; [09:30:35] INFO  compute_pop</span></span>
 <span><span class="co">#&gt;                    - ranks : peptide_id</span></span>
 <span><span class="co">#&gt;                    - group_cols: group</span></span>
 <span><span class="co">#&gt;                    - exist_col : exist</span></span>
 <span><span class="co">#&gt;                    - pop_k_min : 1</span></span>
 <span><span class="co">#&gt;                    - paired : FALSE</span></span>
-<span><span class="co">#&gt; [15:29:49] INFO  ranks resolved</span></span>
+<span><span class="co">#&gt; [09:30:35] INFO  ranks resolved</span></span>
 <span><span class="co">#&gt;                    - available: peptide_id</span></span>
-<span><span class="co">#&gt; [15:29:49] INFO  computing cohort sizes and validating binary group_cols</span></span>
-<span><span class="co">#&gt; [15:29:49] INFO  computing presence per sample via k-of-n rule</span></span>
-<span><span class="co">#&gt; [15:29:49] INFO  counting present samples per feature (pop, unpaired)</span></span>
-<span><span class="co">#&gt; [15:29:49] INFO  building pairwise comparisons</span></span>
-<span><span class="co">#&gt; [15:29:51] OK    materialized; computing Fisher p-values</span></span>
-<span><span class="co">#&gt;                    - table: ph_pop_20260707_152949</span></span>
-<span><span class="co">#&gt; [15:29:52] OK    done (compute_pop, unpaired)</span></span>
+<span><span class="co">#&gt; [09:30:35] INFO  computing cohort sizes and validating binary group_cols</span></span>
+<span><span class="co">#&gt; [09:30:35] INFO  computing presence per sample via k-of-n rule</span></span>
+<span><span class="co">#&gt; [09:30:35] INFO  counting present samples per feature (pop, unpaired)</span></span>
+<span><span class="co">#&gt; [09:30:35] INFO  building pairwise comparisons</span></span>
+<span><span class="co">#&gt; [09:30:37] OK    materialized; computing Fisher p-values</span></span>
+<span><span class="co">#&gt;                    - table: ph_pop_20260714_093035</span></span>
+<span><span class="co">#&gt; [09:30:38] OK    done (compute_pop, unpaired)</span></span>
 <span><span class="co">#&gt;                    - rows : 1950</span></span>
 <span><span class="co">#&gt;                    - ranks : peptide_id</span></span>
 <span><span class="co">#&gt;                    - k_min : 1</span></span>
-<span><span class="co">#&gt; [15:29:52] OK    compute_pop - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 2.921s</span></span>
+<span><span class="co">#&gt; [09:30:38] OK    compute_pop - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 2.929s</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">pop_group</span><span class="op">)</span></span>
 <span><span class="co">#&gt;         rank feature group_col group1 n1 N1     prop1 percent1 group2 n2 N2</span></span>
 <span><span class="co">#&gt; 1 peptide_id   10003     group      A 31 38 0.8157895 81.57895      B  0 42</span></span>
@@ -295,7 +299,7 @@ returns.</p>
 <span>  group_pair_values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"B"</span><span class="op">)</span>,</span>
 <span>  group_labels      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Group A"</span>, <span class="st">"Group B"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:29:52] INFO  Preparing delta prevalence plot.</span></span></code></pre></div>
+<span><span class="co">#&gt; [09:30:38] INFO  Preparing delta prevalence plot.</span></span></code></pre></div>
 <p><img src="delta-analysis_files/figure-html/deltaplot-basic-1.png" class="r-plt" alt="" width="672"></p>
 <p>Use <code>group_pair_values</code> to select a specific contrast when
 the table contains more than one pair. <code>group_labels</code>
@@ -315,7 +319,7 @@ Lower values produce smoother curves; set
 <span>  point_alpha        <span class="op">=</span> <span class="fl">0.15</span>,</span>
 <span>  point_size         <span class="op">=</span> <span class="fl">0.4</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:29:54] INFO  Preparing delta prevalence plot.</span></span></code></pre></div>
+<span><span class="co">#&gt; [09:30:39] INFO  Preparing delta prevalence plot.</span></span></code></pre></div>
 <p><img src="delta-analysis_files/figure-html/deltaplot-smooth-1.png" class="r-plt" alt="" width="672"></p>
 </div>
 <div class="section level4">
@@ -331,7 +335,7 @@ Lower values produce smoother curves; set
 <span>  point_alpha         <span class="op">=</span> <span class="fl">0.20</span>,</span>
 <span>  arrow_color         <span class="op">=</span> <span class="st">"steelblue"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:29:54] INFO  Preparing delta prevalence plot.</span></span></code></pre></div>
+<span><span class="co">#&gt; [09:30:40] INFO  Preparing delta prevalence plot.</span></span></code></pre></div>
 <p><img src="delta-analysis_files/figure-html/deltaplot-custom-1.png" class="r-plt" alt="" width="672"></p>
 </div>
 </div>
@@ -805,7 +809,7 @@ value.</p>
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt; [1] phiper_0.4.2</span></span>
+<span><span class="co">#&gt; [1] phiper_0.4.3</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
 <span><span class="co">#&gt;  [1] future_1.70.0         tidyr_1.3.2           utf8_1.2.6           </span></span>
@@ -816,19 +820,19 @@ value.</p>
 <span><span class="co">#&gt; [16] fastmap_1.2.0         Matrix_1.7-5          jsonlite_2.0.0       </span></span>
 <span><span class="co">#&gt; [19] DBI_1.3.0             mgcv_1.9-4            purrr_1.2.2          </span></span>
 <span><span class="co">#&gt; [22] scales_1.4.0          codetools_0.2-20      textshaping_1.0.5    </span></span>
-<span><span class="co">#&gt; [25] jquerylib_0.1.4       duckdb_1.5.4.2        cli_3.6.6            </span></span>
+<span><span class="co">#&gt; [25] jquerylib_0.1.4       duckdb_1.5.4.3        cli_3.6.6            </span></span>
 <span><span class="co">#&gt; [28] rlang_1.3.0           chk_0.10.0            dbplyr_2.6.0         </span></span>
-<span><span class="co">#&gt; [31] phiperio_0.5.0        future.apply_1.20.2   parallelly_1.48.0    </span></span>
+<span><span class="co">#&gt; [31] phiperio_0.5.2        future.apply_1.20.2   parallelly_1.48.0    </span></span>
 <span><span class="co">#&gt; [34] splines_4.6.1         withr_3.0.3           cachem_1.1.0         </span></span>
 <span><span class="co">#&gt; [37] yaml_2.3.12           otel_0.2.0            parallel_4.6.1       </span></span>
 <span><span class="co">#&gt; [40] tools_4.6.1           dplyr_1.2.1           ggplot2_4.0.3        </span></span>
 <span><span class="co">#&gt; [43] showtext_0.9-8        globals_0.19.1        vctrs_0.7.3          </span></span>
 <span><span class="co">#&gt; [46] R6_2.6.1              lifecycle_1.0.5       fs_2.1.0             </span></span>
 <span><span class="co">#&gt; [49] htmlwidgets_1.6.4     ragg_1.5.2            pkgconfig_2.0.3      </span></span>
-<span><span class="co">#&gt; [52] desc_1.4.3            pkgdown_2.2.0         RcppParallel_5.1.11-2</span></span>
+<span><span class="co">#&gt; [52] desc_1.4.3            pkgdown_2.2.1         RcppParallel_5.1.11-2</span></span>
 <span><span class="co">#&gt; [55] pillar_1.11.1         bslib_0.11.0          gtable_0.3.6         </span></span>
 <span><span class="co">#&gt; [58] glue_1.8.1            Rcpp_1.1.2            systemfonts_1.3.2    </span></span>
-<span><span class="co">#&gt; [61] xfun_0.59             tibble_3.3.1          tidyselect_1.2.1     </span></span>
+<span><span class="co">#&gt; [61] xfun_0.60             tibble_3.3.1          tidyselect_1.2.1     </span></span>
 <span><span class="co">#&gt; [64] knitr_1.51            farver_2.1.2          nlme_3.1-169         </span></span>
 <span><span class="co">#&gt; [67] htmltools_0.5.9       labeling_0.4.3        rmarkdown_2.31       </span></span>
 <span><span class="co">#&gt; [70] compiler_4.6.1        S7_0.2.2</span></span></code></pre></div>
@@ -844,7 +848,7 @@ value.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

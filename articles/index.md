@@ -15,3 +15,8 @@
   PhIP-seq](https://polymerase3.github.io/phiper/articles/pop-analysis.md):
 - [Delta Analysis in
   PhIP-seq](https://polymerase3.github.io/phiper/articles/delta-analysis.md):
+
+### Peptide library
+
+- [Peptide Library
+  Metadata](https://polymerase3.github.io/phiper/articles/peptide-library.md):

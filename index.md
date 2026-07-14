@@ -89,6 +89,11 @@ tutorial**](https://polymerase3.github.io/phiper/articles/typical-workflow.html)
 walks through a full cross-sectional analysis — loading data, alpha/beta
 diversity, POP, and DELTA — using a bundled dummy dataset.
 
+The [**Peptide Library
+Metadata**](https://polymerase3.github.io/phiper/articles/peptide-library.html)
+vignette describes the Agilent, Twist, and Corona2 peptide library
+annotation columns.
+
 ## Contributing
 
 Bug reports, feature requests, and questions are welcome. Please open an

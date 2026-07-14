@@ -50,41 +50,41 @@ peptides.
 ``` r
 
 pd <- load_example_data()
-#> [15:29:38] INFO  Constructing <phip_data> object
+#> [09:30:25] INFO  Constructing <phip_data> object
 #>                  -> create_data()
-#> [15:29:38] INFO  Fetching peptide metadata library via get_peptide_library()
-#> [15:29:38] INFO  Retrieving peptide metadata into DuckDB cache
+#> [09:30:25] INFO  Fetching peptide metadata library via get_peptide_library()
+#> [09:30:25] INFO  Retrieving peptide metadata into DuckDB cache
 #>                  -> get_peptide_library(force_refresh = FALSE)
-#> [15:29:39] INFO  Opened DuckDB connection
+#> [09:30:25] INFO  Opened DuckDB connection
 #>                    - cache dir:
 #>                      /home/runner/.cache/R/phiperio/peptide_meta/phip_cache.duckdb
 #>                    - table: peptide_meta
-#> [15:29:39] OK    Using cached download (SHA-256 match)
-#> [15:29:41] OK    Download complete and loaded into R
-#> [15:29:47] INFO  Importing sanitized metadata into DuckDB cache...
-#> [15:29:48] OK    peptide_meta table created in DuckDB cache
-#> [15:29:48] OK    Retrieving peptide metadata into DuckDB cache - done
-#>                  -> elapsed: 9.91s
-#> [15:29:48] OK    Peptide metadata acquired
-#> [15:29:48] INFO  Validating <phip_data>
+#> [09:30:25] OK    Using cached download (SHA-256 match)
+#> [09:30:28] OK    Download complete and loaded into R
+#> [09:30:32] INFO  Importing sanitized metadata into DuckDB cache...
+#> [09:30:34] OK    peptide_meta table created in DuckDB cache
+#> [09:30:34] OK    Retrieving peptide metadata into DuckDB cache - done
+#>                  -> elapsed: 9.51s
+#> [09:30:34] OK    Peptide metadata acquired
+#> [09:30:34] INFO  Validating <phip_data>
 #>                  -> validate_phip_data()
-#> [15:29:48] INFO  Checking structural requirements (shape & mandatory columns)
-#> [15:29:48] INFO  Checking outcome family availability (exist / fold_change /
+#> [09:30:34] INFO  Checking structural requirements (shape & mandatory columns)
+#> [09:30:34] INFO  Checking outcome family availability (exist / fold_change /
 #>                  raw_counts)
-#> [15:29:48] INFO  Checking collisions with reserved names
+#> [09:30:34] INFO  Checking collisions with reserved names
 #>                    - subject_id, sample_id, timepoint, peptide_id, exist,
 #>                      fold_change, counts_input, counts_hit
-#> [15:29:48] INFO  Ensuring all columns are atomic (no list-cols)
-#> [15:29:48] INFO  Checking key uniqueness
-#> [15:29:48] INFO  Validating value ranges & types for outcomes
-#> [15:29:48] INFO  Assessing sparsity (NA/zero prevalence vs threshold)
+#> [09:30:34] INFO  Ensuring all columns are atomic (no list-cols)
+#> [09:30:34] INFO  Checking key uniqueness
+#> [09:30:34] INFO  Validating value ranges & types for outcomes
+#> [09:30:34] INFO  Assessing sparsity (NA/zero prevalence vs threshold)
 #>                    - warn threshold: 50%
-#> [15:29:48] INFO  Checking peptide_id coverage against peptide_library
-#> [15:29:49] INFO  Checking full grid completeness (peptide * sample)
-#> [15:29:49] OK    Validating <phip_data> - done
-#>                  -> elapsed: 0.466s
-#> [15:29:49] OK    Constructing <phip_data> object - done
-#>                  -> elapsed: 10.382s
+#> [09:30:34] INFO  Checking peptide_id coverage against peptide_library
+#> [09:30:34] INFO  Checking full grid completeness (peptide * sample)
+#> [09:30:35] OK    Validating <phip_data> - done
+#>                  -> elapsed: 0.448s
+#> [09:30:35] OK    Constructing <phip_data> object - done
+#>                  -> elapsed: 9.961s
 pd
 #> ── <phip_data> ───────────────────────────────────────────────────────────────── 
 #> 
@@ -103,16 +103,16 @@ pd
 #> 
 #> peptide library preview (first 5 rows): 
 #> # A tibble: 5 × 8
-#>   peptide_id Fullname                    species genus family order class common
-#>   <chr>      <chr>                       <chr>   <chr> <chr>  <chr> <chr> <chr> 
-#> 1 agilent_1  Chromodomain-helicase-DNA-… Homo s… Homo  Homin… Prim… Mamm… Human 
-#> 2 agilent_2  integral membrane protein   Mycoba… Myco… Mycob… Myco… Acti… NA    
-#> 3 agilent_3  hypothetical protein (6/16… Mycoba… Myco… Mycob… Myco… Acti… NA    
-#> 4 agilent_4  envelope protein (5/8) & a… Orthof… Orth… Flavi… Amar… Flas… JEV   
-#> 5 agilent_5  Myosin-7 & beta-myosin hea… Homo s… Homo  Homin… Prim… Mamm… Human 
-#> ... plus 36 more columns
+#>   peptide_id    Fullname                 species genus family order class common
+#>   <chr>         <chr>                    <chr>   <chr> <chr>  <chr> <chr> <chr> 
+#> 1 agilent_1     Chromodomain-helicase-D… Homo s… Homo  Homin… Prim… Mamm… Human 
+#> 2 agilent_10    Lipase 2 precursor (Gly… Staphy… Stap… Staph… Baci… Baci… NA    
+#> 3 agilent_100   cell surface protein pr… Porphy… Porp… Porph… Bact… Bact… NA    
+#> 4 agilent_1000  Coagulation factor VIII… Homo s… Homo  Homin… Prim… Mamm… Human 
+#> 5 agilent_10000 transmembrane serine/th… Mycoba… Myco… Mycob… Myco… Acti… NA    
+#> ... plus 37 more columns
 #> 
-#> library size: 357,190 rows x 44 columns
+#> library size: 357,190 rows x 45 columns
 #> 
 #> meta flags: 
 #>   con:            <duckdb_connection>
@@ -142,27 +142,27 @@ pop_group <- compute_pop(
   rank_cols  = "peptide_id",
   group_cols = "group"
 )
-#> [15:29:49] INFO  compute_pop
-#> [15:29:49] INFO  compute_pop
+#> [09:30:35] INFO  compute_pop
+#> [09:30:35] INFO  compute_pop
 #>                    - ranks : peptide_id
 #>                    - group_cols: group
 #>                    - exist_col : exist
 #>                    - pop_k_min : 1
 #>                    - paired : FALSE
-#> [15:29:49] INFO  ranks resolved
+#> [09:30:35] INFO  ranks resolved
 #>                    - available: peptide_id
-#> [15:29:49] INFO  computing cohort sizes and validating binary group_cols
-#> [15:29:49] INFO  computing presence per sample via k-of-n rule
-#> [15:29:49] INFO  counting present samples per feature (pop, unpaired)
-#> [15:29:49] INFO  building pairwise comparisons
-#> [15:29:51] OK    materialized; computing Fisher p-values
-#>                    - table: ph_pop_20260707_152949
-#> [15:29:52] OK    done (compute_pop, unpaired)
+#> [09:30:35] INFO  computing cohort sizes and validating binary group_cols
+#> [09:30:35] INFO  computing presence per sample via k-of-n rule
+#> [09:30:35] INFO  counting present samples per feature (pop, unpaired)
+#> [09:30:35] INFO  building pairwise comparisons
+#> [09:30:37] OK    materialized; computing Fisher p-values
+#>                    - table: ph_pop_20260714_093035
+#> [09:30:38] OK    done (compute_pop, unpaired)
 #>                    - rows : 1950
 #>                    - ranks : peptide_id
 #>                    - k_min : 1
-#> [15:29:52] OK    compute_pop - done
-#>                  -> elapsed: 2.921s
+#> [09:30:38] OK    compute_pop - done
+#>                  -> elapsed: 2.929s
 head(pop_group)
 #>         rank feature group_col group1 n1 N1     prop1 percent1 group2 n2 N2
 #> 1 peptide_id   10003     group      A 31 38 0.8157895 81.57895      B  0 42
@@ -218,7 +218,7 @@ deltaplot(
   group_pair_values = c("A", "B"),
   group_labels      = c("Group A", "Group B")
 )
-#> [15:29:52] INFO  Preparing delta prevalence plot.
+#> [09:30:38] INFO  Preparing delta prevalence plot.
 ```
 
 ![](delta-analysis_files/figure-html/deltaplot-basic-1.png)
@@ -242,7 +242,7 @@ deltaplot(
   point_alpha        = 0.15,
   point_size         = 0.4
 )
-#> [15:29:54] INFO  Preparing delta prevalence plot.
+#> [09:30:39] INFO  Preparing delta prevalence plot.
 ```
 
 ![](delta-analysis_files/figure-html/deltaplot-smooth-1.png)
@@ -260,7 +260,7 @@ deltaplot(
   point_alpha         = 0.20,
   arrow_color         = "steelblue"
 )
-#> [15:29:54] INFO  Preparing delta prevalence plot.
+#> [09:30:40] INFO  Preparing delta prevalence plot.
 ```
 
 ![](delta-analysis_files/figure-html/deltaplot-custom-1.png)
@@ -646,7 +646,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] phiper_0.4.2
+#> [1] phiper_0.4.3
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] future_1.70.0         tidyr_1.3.2           utf8_1.2.6           
@@ -657,19 +657,19 @@ sessionInfo()
 #> [16] fastmap_1.2.0         Matrix_1.7-5          jsonlite_2.0.0       
 #> [19] DBI_1.3.0             mgcv_1.9-4            purrr_1.2.2          
 #> [22] scales_1.4.0          codetools_0.2-20      textshaping_1.0.5    
-#> [25] jquerylib_0.1.4       duckdb_1.5.4.2        cli_3.6.6            
+#> [25] jquerylib_0.1.4       duckdb_1.5.4.3        cli_3.6.6            
 #> [28] rlang_1.3.0           chk_0.10.0            dbplyr_2.6.0         
-#> [31] phiperio_0.5.0        future.apply_1.20.2   parallelly_1.48.0    
+#> [31] phiperio_0.5.2        future.apply_1.20.2   parallelly_1.48.0    
 #> [34] splines_4.6.1         withr_3.0.3           cachem_1.1.0         
 #> [37] yaml_2.3.12           otel_0.2.0            parallel_4.6.1       
 #> [40] tools_4.6.1           dplyr_1.2.1           ggplot2_4.0.3        
 #> [43] showtext_0.9-8        globals_0.19.1        vctrs_0.7.3          
 #> [46] R6_2.6.1              lifecycle_1.0.5       fs_2.1.0             
 #> [49] htmlwidgets_1.6.4     ragg_1.5.2            pkgconfig_2.0.3      
-#> [52] desc_1.4.3            pkgdown_2.2.0         RcppParallel_5.1.11-2
+#> [52] desc_1.4.3            pkgdown_2.2.1         RcppParallel_5.1.11-2
 #> [55] pillar_1.11.1         bslib_0.11.0          gtable_0.3.6         
 #> [58] glue_1.8.1            Rcpp_1.1.2            systemfonts_1.3.2    
-#> [61] xfun_0.59             tibble_3.3.1          tidyselect_1.2.1     
+#> [61] xfun_0.60             tibble_3.3.1          tidyselect_1.2.1     
 #> [64] knitr_1.51            farver_2.1.2          nlme_3.1-169         
 #> [67] htmltools_0.5.9       labeling_0.4.3        rmarkdown_2.31       
 #> [70] compiler_4.6.1        S7_0.2.2

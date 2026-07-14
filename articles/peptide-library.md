@@ -1,0 +1,187 @@
+# Peptide Library Metadata
+
+## Overview
+
+This vignette describes the metadata fields available for the peptide
+libraries used in `phiper`’s PhIP-seq analyses. The annotations
+described here apply to the **Agilent**, **Twist**, and **Corona2**
+libraries where available, and can be retrieved for any `phip_data`
+object via `phiperio`’s
+[`get_peptide_library()`](https://polymerase3.github.io/phiperio/reference/get_peptide_library.html):
+
+``` r
+
+library(phiperio)
+library(phiper)
+library(dplyr)
+
+peplib <- get_peptide_library() %>%
+  collect()
+#> [09:36:50] INFO  Retrieving peptide metadata into DuckDB cache
+#>                  -> get_peptide_library(force_refresh = FALSE)
+#> [09:36:50] INFO  Opened DuckDB connection
+#>                    - cache dir:
+#>                      /home/runner/.cache/R/phiperio/peptide_meta/phip_cache.duckdb
+#>                    - table: peptide_meta
+#> [09:36:50] OK    Using cached download (SHA-256 match)
+#> [09:36:53] OK    Download complete and loaded into R
+#> [09:36:58] INFO  Importing sanitized metadata into DuckDB cache...
+#> [09:36:59] OK    peptide_meta table created in DuckDB cache
+#> [09:36:59] OK    Retrieving peptide metadata into DuckDB cache - done
+#>                  -> elapsed: 9.8s
+```
+
+## General library information
+
+The following columns describe peptide-level and protein-level
+information.
+
+| Column | Description |
+|----|----|
+| `peptide_id` | Peptide alphanumeric ID. Format: `"${Library}_${PeptideNumber}"`, e.g. `"agilent_1"`, `"twist_2"`, `"corona2_3"`. |
+| `aa_seq` | Amino acid sequence of the peptide. |
+| `pos` | Start position of the peptide within the source protein. |
+| `len_seq` | Length of the source protein from which the peptide is derived. |
+| `Fullname` | Full name of the protein, derived from several databases. |
+| `full_aa_seq` | Full amino acid sequence of the source protein. Optional column; not included in `phiper` because of large file size. |
+
+## Taxonomic information
+
+Taxonomic information was derived from NCBI where possible. For Agilent,
+UniRef source IDs were used; for Twist, Allergome database IDs were also
+used where applicable.
+
+| Column | Description |
+|----|----|
+| `Description` | Protein description, usually based on UniRef annotations. If UniRef information is missing, other columns are used for lookup. |
+| `domain` | Taxonomic domain. |
+| `kingdom` | Taxonomic kingdom. |
+| `phylum` | Taxonomic phylum. |
+| `class` | Taxonomic class. |
+| `order` | Taxonomic order. |
+| `family` | Taxonomic family. |
+| `genus` | Taxonomic genus. |
+| `species` | Taxonomic species. |
+| `common` | Common organism name, based on NCBI standard guidelines. |
+
+## Additional annotations
+
+### Original annotations from Vogl et al. 2021
+
+| Column | Description |
+|----|----|
+| `is_IEDB_or_cntrl` | Peptides from the Immune Epitope Database or control peptides. |
+| `is_auto` | Autoantigens. |
+| `is_infect` | Infectious disease antigens; subgroup of IEDB. |
+| `is_EBV` | Epstein-Barr virus antigens. |
+| `is_toxin` | Virulence Factor Database proteins. |
+| `is_PNP` | Metagenomic antigens. |
+| `is_EM` | Microbiota strains. |
+| `is_MPA` | Microbiota genes. |
+| `is_patho` | Gut pathogens. |
+| `is_probio` | Probiotic strains. |
+| `is_IgA` | IgA-covered strains. |
+| `is_flagellum` | Flagellar proteins. |
+| `signalp6_slow` | Signal peptides annotated with SignalP6, run in 2023. |
+| `is_topgraph_new` | Membrane proteins annotated with the TopGraph tool, 2023. |
+| `is_allergens` | Peptides derived from allergen databases. |
+
+### Manual annotations from Sasha Zhernakova
+
+The following 14 manually curated `anno_*` columns classify enriched
+peptides into broader biological groups: bacteria & archaea, viruses &
+bacteriophages, human proteins, food (with subcategory and item), fungi,
+eukaryotic pathogens, insects/arthropods, plants & grasses, animals, and
+other.
+
+| Column | Description |
+|----|----|
+| `anno_other` | Other manually curated category. |
+| `anno_eucaryotic_pathogens` | Eukaryotic pathogens. |
+| `anno_animals` | Animal-derived proteins or antigens. |
+| `anno_fly_worm_bee_cocroach_mite_mosquito` | Insects, worms, mites, mosquitoes, cockroaches, bees, or flies. |
+| `anno_plant_grass` | Plant or grass-derived annotations. |
+| `anno_is_fungi` | Fungal annotations. |
+| `anno_fungi_type` | Fungal subtype or category. |
+| `anno_is_food` | Food-related peptides. |
+| `anno_food_subcategory` | Food subcategory. |
+| `anno_food_item` | Specific food item. |
+| `anno_bacteria_archaea` | Bacterial or archaeal annotations. |
+| `anno_is_homo_sapiens` | Human proteins, Homo sapiens. |
+| `anno_viruses_bacteriophage` | Viruses or bacteriophages. |
+| `anno_is_lacto_phage` | Lactobacillus-associated phages. |
+
+Note: these `anno_*` columns were curated for the set of peptides
+detected in at least one individual in a previous cohort/measurement
+(97,866 peptides), and may differ from the peptide set detected in your
+own cohort.
+
+## Notes on taxonomic harmonization
+
+The original metadata contained several inconsistencies and dispersed
+identifiers:
+
+- Inconsistent organism names.
+- Missing or variable taxonomic ranks.
+- Organism or species names sometimes scattered across multiple columns,
+  or embedded in protein names/comments.
+- UniRef IDs, protein accessions, representative IDs, and taxonomic IDs
+  scattered across different columns.
+
+Carlos Reyna-Blanco resolved these issues through the following
+harmonization steps:
+
+| Step | Description |
+|----|----|
+| Standardize metadata | Parsed and cleaned organism and protein names. |
+| Consolidate names and IDs | Combined names and identifiers from UniRef, accession numbers, representative IDs, or taxonomic IDs. |
+| Retrieve and map IDs | Queried NCBI, UniProt, and AllergomeDB APIs for UniRef IDs, accession numbers, representative IDs, and taxonomic IDs. |
+| Resolve ambiguities | Manually reviewed outdated or conflicting entries. |
+| Enrich taxonomy | Retrieved taxonomic lineages from NCBI, from domain to species and common name. |
+
+Not all taxonomic fields are always available or returned by NCBI.
+
+## Practical usage
+
+The peptide library metadata can be used to:
+
+- filter peptides by taxonomic group;
+- group peptides by species, genus, family, or broader taxonomic rank;
+- select allergen, pathogen, microbiota, or food-derived peptides;
+- compare enriched peptides across biological categories;
+- summarize reactivity patterns at peptide, protein, species, or
+  annotation level.
+
+``` r
+
+# Select Helicobacter pylori peptides
+hpylori_peptides <- peplib %>% filter(species == "Helicobacter pylori")
+
+# Select allergen-derived peptides
+allergen_peptides <- peplib %>% filter(is_allergens == TRUE)
+
+# Select food-related manually curated peptides
+food_peptides <- peplib %>% filter(anno_is_food == TRUE)
+
+# Count peptides per species
+table(peplib$species)
+
+# Count peptides per manually curated category
+table(peplib$anno_bacteria_archaea)
+```
+
+Ranks such as `species` can also be passed directly to `phiper`’s
+analysis functions, e.g. via `rank_cols` in
+[`compute_pop()`](https://polymerase3.github.io/phiper/reference/compute_pop.md)
+or
+[`compute_delta()`](https://polymerase3.github.io/phiper/reference/compute_delta.md)
+(see the [typical workflow
+vignette](https://polymerase3.github.io/phiper/articles/typical-workflow.md)).
+
+## Credits
+
+This documentation of the peptide library metadata fields was written by
+**Gabriel Innocenti**. The underlying library annotations themselves
+draw on the original framework from Vogl et al. 2021, manual curation of
+the `anno_*` columns by **Sasha Zhernakova**, and taxonomic
+harmonization by **Carlos Reyna-Blanco**.

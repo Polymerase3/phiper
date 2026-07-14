@@ -123,6 +123,6 @@ p <- deltaplot(
   group_pair_values = c("A", "B"),
   group_labels      = c("Group A", "Group B")
 )
-#> [15:28:32] INFO  Preparing delta prevalence plot.
+#> [09:29:18] INFO  Preparing delta prevalence plot.
 print(p)
 ```

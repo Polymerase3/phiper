@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -48,8 +48,12 @@
     <li><a class="dropdown-item" href="../articles/beta-diversity.html">Beta Diversity Analysis in PhIP-seq</a></li>
     <li><a class="dropdown-item" href="../articles/pop-analysis.html">Prevalence of Presence (POP) Analysis in PhIP-seq</a></li>
     <li><a class="dropdown-item" href="../articles/delta-analysis.html">Delta Analysis in PhIP-seq</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Peptide library</h6></li>
+    <li><a class="dropdown-item" href="../articles/peptide-library.html">Peptide Library Metadata</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../articles/peptide-library.html">Peptide library</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -135,41 +139,41 @@ timepoint.</p>
 (<code>T1</code>, <code>T2</code>) across 1 000 simulated peptides.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pd</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/load_example_data.html">load_example_data</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:29:15] INFO  Constructing &lt;phip_data&gt; object</span></span>
+<span><span class="co">#&gt; [09:30:02] INFO  Constructing &lt;phip_data&gt; object</span></span>
 <span><span class="co">#&gt;                  -&gt; create_data()</span></span>
-<span><span class="co">#&gt; [15:29:15] INFO  Fetching peptide metadata library via get_peptide_library()</span></span>
-<span><span class="co">#&gt; [15:29:15] INFO  Retrieving peptide metadata into DuckDB cache</span></span>
+<span><span class="co">#&gt; [09:30:02] INFO  Fetching peptide metadata library via get_peptide_library()</span></span>
+<span><span class="co">#&gt; [09:30:02] INFO  Retrieving peptide metadata into DuckDB cache</span></span>
 <span><span class="co">#&gt;                  -&gt; get_peptide_library(force_refresh = FALSE)</span></span>
-<span><span class="co">#&gt; [15:29:16] INFO  Opened DuckDB connection</span></span>
+<span><span class="co">#&gt; [09:30:02] INFO  Opened DuckDB connection</span></span>
 <span><span class="co">#&gt;                    - cache dir:</span></span>
 <span><span class="co">#&gt;                      /home/runner/.cache/R/phiperio/peptide_meta/phip_cache.duckdb</span></span>
 <span><span class="co">#&gt;                    - table: peptide_meta</span></span>
-<span><span class="co">#&gt; [15:29:16] OK    Using cached download (SHA-256 match)</span></span>
-<span><span class="co">#&gt; [15:29:18] OK    Download complete and loaded into R</span></span>
-<span><span class="co">#&gt; [15:29:23] INFO  Importing sanitized metadata into DuckDB cache...</span></span>
-<span><span class="co">#&gt; [15:29:25] OK    peptide_meta table created in DuckDB cache</span></span>
-<span><span class="co">#&gt; [15:29:25] OK    Retrieving peptide metadata into DuckDB cache - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 9.593s</span></span>
-<span><span class="co">#&gt; [15:29:25] OK    Peptide metadata acquired</span></span>
-<span><span class="co">#&gt; [15:29:25] INFO  Validating &lt;phip_data&gt;</span></span>
+<span><span class="co">#&gt; [09:30:02] OK    Using cached download (SHA-256 match)</span></span>
+<span><span class="co">#&gt; [09:30:05] OK    Download complete and loaded into R</span></span>
+<span><span class="co">#&gt; [09:30:10] INFO  Importing sanitized metadata into DuckDB cache...</span></span>
+<span><span class="co">#&gt; [09:30:11] OK    peptide_meta table created in DuckDB cache</span></span>
+<span><span class="co">#&gt; [09:30:11] OK    Retrieving peptide metadata into DuckDB cache - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 9.539s</span></span>
+<span><span class="co">#&gt; [09:30:11] OK    Peptide metadata acquired</span></span>
+<span><span class="co">#&gt; [09:30:11] INFO  Validating &lt;phip_data&gt;</span></span>
 <span><span class="co">#&gt;                  -&gt; validate_phip_data()</span></span>
-<span><span class="co">#&gt; [15:29:25] INFO  Checking structural requirements (shape &amp; mandatory columns)</span></span>
-<span><span class="co">#&gt; [15:29:25] INFO  Checking outcome family availability (exist / fold_change /</span></span>
+<span><span class="co">#&gt; [09:30:11] INFO  Checking structural requirements (shape &amp; mandatory columns)</span></span>
+<span><span class="co">#&gt; [09:30:11] INFO  Checking outcome family availability (exist / fold_change /</span></span>
 <span><span class="co">#&gt;                  raw_counts)</span></span>
-<span><span class="co">#&gt; [15:29:25] INFO  Checking collisions with reserved names</span></span>
+<span><span class="co">#&gt; [09:30:11] INFO  Checking collisions with reserved names</span></span>
 <span><span class="co">#&gt;                    - subject_id, sample_id, timepoint, peptide_id, exist,</span></span>
 <span><span class="co">#&gt;                      fold_change, counts_input, counts_hit</span></span>
-<span><span class="co">#&gt; [15:29:25] INFO  Ensuring all columns are atomic (no list-cols)</span></span>
-<span><span class="co">#&gt; [15:29:25] INFO  Checking key uniqueness</span></span>
-<span><span class="co">#&gt; [15:29:25] INFO  Validating value ranges &amp; types for outcomes</span></span>
-<span><span class="co">#&gt; [15:29:25] INFO  Assessing sparsity (NA/zero prevalence vs threshold)</span></span>
+<span><span class="co">#&gt; [09:30:11] INFO  Ensuring all columns are atomic (no list-cols)</span></span>
+<span><span class="co">#&gt; [09:30:11] INFO  Checking key uniqueness</span></span>
+<span><span class="co">#&gt; [09:30:11] INFO  Validating value ranges &amp; types for outcomes</span></span>
+<span><span class="co">#&gt; [09:30:11] INFO  Assessing sparsity (NA/zero prevalence vs threshold)</span></span>
 <span><span class="co">#&gt;                    - warn threshold: 50%</span></span>
-<span><span class="co">#&gt; [15:29:25] INFO  Checking peptide_id coverage against peptide_library</span></span>
-<span><span class="co">#&gt; [15:29:25] INFO  Checking full grid completeness (peptide * sample)</span></span>
-<span><span class="co">#&gt; [15:29:25] OK    Validating &lt;phip_data&gt; - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.469s</span></span>
-<span><span class="co">#&gt; [15:29:25] OK    Constructing &lt;phip_data&gt; object - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 10.068s</span></span>
+<span><span class="co">#&gt; [09:30:12] INFO  Checking peptide_id coverage against peptide_library</span></span>
+<span><span class="co">#&gt; [09:30:12] INFO  Checking full grid completeness (peptide * sample)</span></span>
+<span><span class="co">#&gt; [09:30:12] OK    Validating &lt;phip_data&gt; - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.445s</span></span>
+<span><span class="co">#&gt; [09:30:12] OK    Constructing &lt;phip_data&gt; object - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 9.987s</span></span>
 <span><span class="va">pd</span></span>
 <span><span class="co">#&gt; ── &lt;phip_data&gt; ───────────────────────────────────────────────────────────────── </span></span>
 <span><span class="co">#&gt; </span></span>
@@ -188,16 +192,16 @@ timepoint.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">peptide library preview (first 5 rows):</span> </span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 8</span></span></span>
-<span><span class="co">#&gt;   peptide_id Fullname                    species genus family order class common</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> agilent_1  Chromodomain-helicase-DNA-… Homo s… Homo  Homin… Prim… Mamm… Human </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> agilent_2  integral membrane protein   Mycoba… Myco… Mycob… Myco… Acti… <span style="color: #BB0000;">NA</span>    </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> agilent_3  hypothetical protein (6/16… Mycoba… Myco… Mycob… Myco… Acti… <span style="color: #BB0000;">NA</span>    </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> agilent_4  envelope protein (5/8) &amp; a… Orthof… Orth… Flavi… Amar… Flas… JEV   </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> agilent_5  Myosin-7 &amp; beta-myosin hea… Homo s… Homo  Homin… Prim… Mamm… Human </span></span>
-<span><span class="co">#&gt; ... plus 36 more columns</span></span>
+<span><span class="co">#&gt;   peptide_id    Fullname                 species genus family order class common</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> agilent_1     Chromodomain-helicase-D… Homo s… Homo  Homin… Prim… Mamm… Human </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> agilent_10    Lipase 2 precursor (Gly… Staphy… Stap… Staph… Baci… Baci… <span style="color: #BB0000;">NA</span>    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> agilent_100   cell surface protein pr… Porphy… Porp… Porph… Bact… Bact… <span style="color: #BB0000;">NA</span>    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> agilent_1000  Coagulation factor VIII… Homo s… Homo  Homin… Prim… Mamm… Human </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> agilent_10000 transmembrane serine/th… Mycoba… Myco… Mycob… Myco… Acti… <span style="color: #BB0000;">NA</span>    </span></span>
+<span><span class="co">#&gt; ... plus 37 more columns</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; library size: 357,190 rows x 44 columns</span></span>
+<span><span class="co">#&gt; library size: 357,190 rows x 45 columns</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">meta flags:</span> </span></span>
 <span><span class="co">#&gt;   con:            &lt;duckdb_connection&gt;</span></span>
@@ -226,10 +230,10 @@ annotate ordination plots later:</p>
 <span><span class="fu"><a href="https://pillar.r-lib.org/reference/glimpse.html" class="external-link">glimpse</a></span><span class="op">(</span><span class="va">meta</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Rows: 80</span></span>
 <span><span class="co">#&gt; Columns: 4</span></span>
-<span><span class="co">#&gt; $ sample_id  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> "B_T2_12"<span style="color: #949494;">, </span>"A_T1_14"<span style="color: #949494;">, </span>"B_T2_1"<span style="color: #949494;">, </span>"B_T1_10"<span style="color: #949494;">, </span>"B_T2_10"<span style="color: #949494;">, </span>"B_T1…</span></span>
-<span><span class="co">#&gt; $ subject_id <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> "12"<span style="color: #949494;">, </span>"14"<span style="color: #949494;">, </span>"1"<span style="color: #949494;">, </span>"10"<span style="color: #949494;">, </span>"10"<span style="color: #949494;">, </span>"13"<span style="color: #949494;">, </span>"14"<span style="color: #949494;">, </span>"16"<span style="color: #949494;">, </span>"17"<span style="color: #949494;">, </span>"18"<span style="color: #949494;">, </span>…</span></span>
-<span><span class="co">#&gt; $ group      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> "B"<span style="color: #949494;">, </span>"A"<span style="color: #949494;">, </span>"B"<span style="color: #949494;">, </span>"B"<span style="color: #949494;">, </span>"B"<span style="color: #949494;">, </span>"B"<span style="color: #949494;">, </span>"B"<span style="color: #949494;">, </span>"B"<span style="color: #949494;">, </span>"B"<span style="color: #949494;">, </span>"A"<span style="color: #949494;">, </span>"A"<span style="color: #949494;">, </span>"A"<span style="color: #949494;">,</span>…</span></span>
-<span><span class="co">#&gt; $ timepoint  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> "T2"<span style="color: #949494;">, </span>"T1"<span style="color: #949494;">, </span>"T2"<span style="color: #949494;">, </span>"T1"<span style="color: #949494;">, </span>"T2"<span style="color: #949494;">, </span>"T1"<span style="color: #949494;">, </span>"T1"<span style="color: #949494;">, </span>"T2"<span style="color: #949494;">, </span>"T2"<span style="color: #949494;">, </span>"T2"<span style="color: #949494;">,</span>…</span></span></code></pre></div>
+<span><span class="co">#&gt; $ sample_id  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> "A_T2_10"<span style="color: #949494;">, </span>"B_T2_11"<span style="color: #949494;">, </span>"A_T1_12"<span style="color: #949494;">, </span>"A_T2_12"<span style="color: #949494;">, </span>"B_T1_18"<span style="color: #949494;">, </span>"B_T…</span></span>
+<span><span class="co">#&gt; $ subject_id <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> "10"<span style="color: #949494;">, </span>"11"<span style="color: #949494;">, </span>"12"<span style="color: #949494;">, </span>"12"<span style="color: #949494;">, </span>"18"<span style="color: #949494;">, </span>"3"<span style="color: #949494;">, </span>"3"<span style="color: #949494;">, </span>"4"<span style="color: #949494;">, </span>"4"<span style="color: #949494;">, </span>"1"<span style="color: #949494;">, </span>"11"…</span></span>
+<span><span class="co">#&gt; $ group      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> "A"<span style="color: #949494;">, </span>"B"<span style="color: #949494;">, </span>"A"<span style="color: #949494;">, </span>"A"<span style="color: #949494;">, </span>"B"<span style="color: #949494;">, </span>"B"<span style="color: #949494;">, </span>"A"<span style="color: #949494;">, </span>"A"<span style="color: #949494;">, </span>"B"<span style="color: #949494;">, </span>"A"<span style="color: #949494;">, </span>"B"<span style="color: #949494;">, </span>"A"<span style="color: #949494;">,</span>…</span></span>
+<span><span class="co">#&gt; $ timepoint  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> "T2"<span style="color: #949494;">, </span>"T2"<span style="color: #949494;">, </span>"T1"<span style="color: #949494;">, </span>"T2"<span style="color: #949494;">, </span>"T1"<span style="color: #949494;">, </span>"T1"<span style="color: #949494;">, </span>"T2"<span style="color: #949494;">, </span>"T1"<span style="color: #949494;">, </span>"T1"<span style="color: #949494;">, </span>"T2"<span style="color: #949494;">,</span>…</span></span></code></pre></div>
 <hr>
 </div>
 <div class="section level2">
@@ -291,16 +295,16 @@ dissimilarity throughout this vignette.</p>
 <span>  method_normalization <span class="op">=</span> <span class="st">"hellinger"</span>,</span>
 <span>  distance             <span class="op">=</span> <span class="st">"bray"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:29:26] INFO  building abundance matrix from `ps` using `fold_change`.</span></span>
-<span><span class="co">#&gt; [15:29:26] INFO  building pivot spec (sample_id x peptide_id).</span></span>
-<span><span class="co">#&gt; [15:29:26] INFO  Collecting long table (sample_id, peptide_id, value).</span></span>
+<span><span class="co">#&gt; [09:30:12] INFO  building abundance matrix from `ps` using `fold_change`.</span></span>
+<span><span class="co">#&gt; [09:30:12] INFO  building pivot spec (sample_id x peptide_id).</span></span>
+<span><span class="co">#&gt; [09:30:12] INFO  Collecting long table (sample_id, peptide_id, value).</span></span>
 <span><span class="co">#&gt;                  -&gt; compute_distance</span></span>
-<span><span class="co">#&gt; [15:29:26] INFO  Pivoting to wide abundance matrix in R.</span></span>
+<span><span class="co">#&gt; [09:30:12] INFO  Pivoting to wide abundance matrix in R.</span></span>
 <span><span class="co">#&gt;                  -&gt; compute_distance</span></span>
-<span><span class="co">#&gt; [15:29:26] INFO  abundance matrix has 80 samples and 1950 features after</span></span>
+<span><span class="co">#&gt; [09:30:12] INFO  abundance matrix has 80 samples and 1950 features after</span></span>
 <span><span class="co">#&gt;                  preprocessing.</span></span>
-<span><span class="co">#&gt; [15:29:26] INFO  computing distance: bray</span></span>
-<span><span class="co">#&gt; [15:29:26] INFO  distance matrix computation complete.</span></span>
+<span><span class="co">#&gt; [09:30:12] INFO  computing distance: bray</span></span>
+<span><span class="co">#&gt; [09:30:12] INFO  distance matrix computation complete.</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">class</a></span><span class="op">(</span><span class="va">d</span><span class="op">)</span>                       <span class="co"># a standard dist object</span></span>
 <span><span class="co">#&gt; [1] "dist"</span></span>
@@ -333,10 +337,10 @@ coordinates, eigenvalues, variance explained, and eigenvalue
 diagnostics.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pcoa_res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compute_pcoa.html">compute_pcoa</a></span><span class="op">(</span><span class="va">d</span>, neg_correction <span class="op">=</span> <span class="st">"none"</span>, n_axes <span class="op">=</span> <span class="fl">5L</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:29:26] INFO  performing principal coordinates analysis</span></span>
-<span><span class="co">#&gt; [15:29:26] INFO  extracting sample coordinates.</span></span>
-<span><span class="co">#&gt; [15:29:26] INFO  summarizing eigenvalues and variance explained.</span></span>
-<span><span class="co">#&gt; [15:29:26] INFO  pcoa analysis complete.</span></span>
+<span><span class="co">#&gt; [09:30:12] INFO  performing principal coordinates analysis</span></span>
+<span><span class="co">#&gt; [09:30:12] INFO  extracting sample coordinates.</span></span>
+<span><span class="co">#&gt; [09:30:12] INFO  summarizing eigenvalues and variance explained.</span></span>
+<span><span class="co">#&gt; [09:30:12] INFO  pcoa analysis complete.</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">pcoa_res</span><span class="op">)</span>           <span class="co"># components of the result</span></span>
 <span><span class="co">#&gt; [1] "sample_coords"     "eigenvalues"       "var_explained"    </span></span>
@@ -453,7 +457,7 @@ metadata table before plotting:</p>
 <span>  <span class="va">pcoa_res</span>,</span>
 <span>  group_col <span class="op">=</span> <span class="st">"group"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:29:27] INFO  Plotting PCoA: n=80 | group_col=group | time_col=&lt;none&gt; |</span></span>
+<span><span class="co">#&gt; [09:30:13] INFO  Plotting PCoA: n=80 | group_col=group | time_col=&lt;none&gt; |</span></span>
 <span><span class="co">#&gt;                  centroid_by=group</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_pcoa</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-pcoa-group-1.png" class="r-plt" alt="" width="672"></p>
@@ -470,7 +474,7 @@ group.</p>
 <span>  group_col <span class="op">=</span> <span class="st">"group"</span>,</span>
 <span>  time_col  <span class="op">=</span> <span class="st">"timepoint"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:29:28] INFO  Plotting PCoA: n=80 | group_col=group | time_col=timepoint |</span></span>
+<span><span class="co">#&gt; [09:30:14] INFO  Plotting PCoA: n=80 | group_col=group | time_col=timepoint |</span></span>
 <span><span class="co">#&gt;                  centroid_by=group_time</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_pcoa</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-pcoa-group-time-1.png" class="r-plt" alt="" width="672"></p>
@@ -491,7 +495,7 @@ longitudinal change.</p>
 <span>  centroid_by       <span class="op">=</span> <span class="st">"group_time"</span>,</span>
 <span>  connect_centroids <span class="op">=</span> <span class="st">"group"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:29:28] INFO  Plotting PCoA: n=80 | group_col=group | time_col=timepoint |</span></span>
+<span><span class="co">#&gt; [09:30:14] INFO  Plotting PCoA: n=80 | group_col=group | time_col=timepoint |</span></span>
 <span><span class="co">#&gt;                  centroid_by=group_time</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_pcoa</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-pcoa-centroids-1.png" class="r-plt" alt="" width="672"></p>
@@ -511,7 +515,7 @@ ellipse types can be overlaid simultaneously. Possible values are
 <span>  show_centroids <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  ellipse_by     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"group"</span>, <span class="st">"group_time"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:29:29] INFO  Plotting PCoA: n=80 | group_col=group | time_col=timepoint |</span></span>
+<span><span class="co">#&gt; [09:30:15] INFO  Plotting PCoA: n=80 | group_col=group | time_col=timepoint |</span></span>
 <span><span class="co">#&gt;                  centroid_by=group_time</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_pcoa</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-pcoa-ellipses-1.png" class="r-plt" alt="" width="672"></p>
@@ -525,7 +529,7 @@ ellipse types can be overlaid simultaneously. Possible values are
 <span>  axes      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span>,</span>
 <span>  group_col <span class="op">=</span> <span class="st">"group"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:29:29] INFO  Plotting PCoA: n=80 | group_col=group | time_col=&lt;none&gt; |</span></span>
+<span><span class="co">#&gt; [09:30:16] INFO  Plotting PCoA: n=80 | group_col=group | time_col=&lt;none&gt; |</span></span>
 <span><span class="co">#&gt;                  centroid_by=group</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_pcoa</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-pcoa-axes23-1.png" class="r-plt" alt="" width="672"></p>
@@ -548,13 +552,13 @@ structure is explained by known metadata variables?</strong>
 <span>  formula      <span class="op">=</span> <span class="op">~</span> <span class="va">group</span> <span class="op">+</span> <span class="va">timepoint</span>,</span>
 <span>  permutations <span class="op">=</span> <span class="fl">99L</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:29:30] INFO  building metadata from `ps$data_long`.</span></span>
-<span><span class="co">#&gt; [15:29:30] INFO  fitting constrained ordination (cap/db-rda)</span></span>
+<span><span class="co">#&gt; [09:30:16] INFO  building metadata from `ps$data_long`.</span></span>
+<span><span class="co">#&gt; [09:30:16] INFO  fitting constrained ordination (cap/db-rda)</span></span>
 <span><span class="co">#&gt;                    - formula: ~group + timepoint</span></span>
-<span><span class="co">#&gt; [15:29:31] INFO  extracting constrained sample scores.</span></span>
-<span><span class="co">#&gt; [15:29:31] INFO  computing variance partitioning and permutation tests.</span></span>
-<span><span class="co">#&gt; [15:29:31] INFO  computing feature associations: weighted_average.</span></span>
-<span><span class="co">#&gt; [15:29:31] INFO  cap analysis complete.</span></span>
+<span><span class="co">#&gt; [09:30:17] INFO  extracting constrained sample scores.</span></span>
+<span><span class="co">#&gt; [09:30:17] INFO  computing variance partitioning and permutation tests.</span></span>
+<span><span class="co">#&gt; [09:30:17] INFO  computing feature associations: weighted_average.</span></span>
+<span><span class="co">#&gt; [09:30:17] INFO  cap analysis complete.</span></span>
 <span></span>
 <span><span class="va">cap_res</span><span class="op">$</span><span class="va">variance_partition</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 3</span></span></span>
@@ -601,7 +605,7 @@ before plotting:</p>
 <span>  connect_centroids <span class="op">=</span> <span class="st">"group"</span>,</span>
 <span>  ellipse_by        <span class="op">=</span> <span class="st">"group"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:29:31] INFO  CAP plot: n=80 samples | groups=2 | times=0</span></span>
+<span><span class="co">#&gt; [09:30:17] INFO  CAP plot: n=80 samples | groups=2 | times=0</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_cap</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-cap-1.png" class="r-plt" alt="" width="672"></p>
 <p><code><a href="../reference/plot_cap.html">plot_cap()</a></code> accepts the same <code>axes</code>,
@@ -628,15 +632,15 @@ scope.</p>
 <span>  permutations <span class="op">=</span> <span class="fl">99L</span>,</span>
 <span>  p_adjust     <span class="op">=</span> <span class="st">"BH"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:29:31] INFO  preparing distance labels and metadata.</span></span>
-<span><span class="co">#&gt; [15:29:31] INFO  building metadata from `ps`.</span></span>
-<span><span class="co">#&gt; [15:29:31] INFO  filtering samples with missing grouping variables.</span></span>
-<span><span class="co">#&gt; [15:29:31] INFO  subsetting distance matrix to complete cases.</span></span>
-<span><span class="co">#&gt; [15:29:31] INFO  preparing global permanova model.</span></span>
-<span><span class="co">#&gt; [15:29:31] INFO  running global permanova</span></span>
+<span><span class="co">#&gt; [09:30:18] INFO  preparing distance labels and metadata.</span></span>
+<span><span class="co">#&gt; [09:30:18] INFO  building metadata from `ps`.</span></span>
+<span><span class="co">#&gt; [09:30:18] INFO  filtering samples with missing grouping variables.</span></span>
+<span><span class="co">#&gt; [09:30:18] INFO  subsetting distance matrix to complete cases.</span></span>
+<span><span class="co">#&gt; [09:30:18] INFO  preparing global permanova model.</span></span>
+<span><span class="co">#&gt; [09:30:18] INFO  running global permanova</span></span>
 <span><span class="co">#&gt;                    - model: d_resp ~ group + timepoint + group * timepoint</span></span>
 <span><span class="co">#&gt;                    - permutations stratified by subject</span></span>
-<span><span class="co">#&gt; [15:29:31] INFO  running pairwise permanova contrasts.</span></span>
+<span><span class="co">#&gt; [09:30:18] INFO  running pairwise permanova contrasts.</span></span>
 <span></span>
 <span><span class="va">perm_res</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 8</span></span></span>
@@ -699,11 +703,11 @@ location, a significant PERMANOVA result can be misleading.
 <span>  permutations <span class="op">=</span> <span class="fl">99L</span>,</span>
 <span>  p_adjust     <span class="op">=</span> <span class="st">"BH"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:29:32] INFO  preparing distance labels and metadata.</span></span>
-<span><span class="co">#&gt; [15:29:32] INFO  building metadata from `ps`.</span></span>
-<span><span class="co">#&gt; [15:29:32] INFO  filtering samples with missing grouping variables.</span></span>
-<span><span class="co">#&gt; [15:29:32] INFO  computing global dispersion tests.</span></span>
-<span><span class="co">#&gt; [15:29:32] INFO  running pairwise dispersion contrasts.</span></span>
+<span><span class="co">#&gt; [09:30:18] INFO  preparing distance labels and metadata.</span></span>
+<span><span class="co">#&gt; [09:30:18] INFO  building metadata from `ps`.</span></span>
+<span><span class="co">#&gt; [09:30:18] INFO  filtering samples with missing grouping variables.</span></span>
+<span><span class="co">#&gt; [09:30:18] INFO  computing global dispersion tests.</span></span>
+<span><span class="co">#&gt; [09:30:18] INFO  running pairwise dispersion contrasts.</span></span>
 <span></span>
 <span><span class="va">disp_res</span><span class="op">$</span><span class="va">tests</span>        <span class="co"># permutation test results per scope</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 6</span></span></span>
@@ -755,7 +759,7 @@ that appear in <code>disp_res$distances</code>.</p>
 <span>  scope    <span class="op">=</span> <span class="st">"group"</span>,</span>
 <span>  contrast <span class="op">=</span> <span class="st">"&lt;global&gt;"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:29:32] INFO  Plotting dispersion for scope = 'group', contrast = '&lt;global&gt;'</span></span>
+<span><span class="co">#&gt; [09:30:18] INFO  Plotting dispersion for scope = 'group', contrast = '&lt;global&gt;'</span></span>
 <span><span class="co">#&gt;                  (n = 80).</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_dispersion</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-dispersion-group-1.png" class="r-plt" alt="" width="672"></p>
@@ -769,7 +773,7 @@ that appear in <code>disp_res$distances</code>.</p>
 <span>  scope    <span class="op">=</span> <span class="st">"time"</span>,</span>
 <span>  contrast <span class="op">=</span> <span class="st">"&lt;global&gt;"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:29:33] INFO  Plotting dispersion for scope = 'time', contrast = '&lt;global&gt;'</span></span>
+<span><span class="co">#&gt; [09:30:19] INFO  Plotting dispersion for scope = 'time', contrast = '&lt;global&gt;'</span></span>
 <span><span class="co">#&gt;                  (n = 80).</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_dispersion</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-dispersion-time-1.png" class="r-plt" alt="" width="672"></p>
@@ -783,7 +787,7 @@ that appear in <code>disp_res$distances</code>.</p>
 <span>  show_box    <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  show_points <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:29:33] INFO  Plotting dispersion for scope = 'group', contrast = '&lt;global&gt;'</span></span>
+<span><span class="co">#&gt; [09:30:19] INFO  Plotting dispersion for scope = 'group', contrast = '&lt;global&gt;'</span></span>
 <span><span class="co">#&gt;                  (n = 80).</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_dispersion</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-dispersion-style-1.png" class="r-plt" alt="" width="672"></p>
@@ -808,10 +812,10 @@ always set a <code>seed</code>.</p>
 <span>  meta_cols  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"group"</span>, <span class="st">"timepoint"</span><span class="op">)</span>,</span>
 <span>  seed       <span class="op">=</span> <span class="fl">42L</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:29:34] INFO  Running t-SNE with dims = 3, perplexity = 15 on 80 samples</span></span>
+<span><span class="co">#&gt; [09:30:20] INFO  Running t-SNE with dims = 3, perplexity = 15 on 80 samples</span></span>
 <span><span class="co">#&gt;                  (distance input).</span></span>
-<span><span class="co">#&gt; [15:29:34] INFO  Attaching metadata columns to t-SNE result: group, timepoint</span></span>
-<span><span class="co">#&gt; [15:29:34] INFO  t-SNE embedding computation finished.</span></span>
+<span><span class="co">#&gt; [09:30:20] INFO  Attaching metadata columns to t-SNE result: group, timepoint</span></span>
+<span><span class="co">#&gt; [09:30:20] INFO  t-SNE embedding computation finished.</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">tsne_res</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 6</span></span></span>
@@ -850,12 +854,12 @@ always set a <code>seed</code>.</p>
 </h3>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_tsne.html">plot_tsne</a></span><span class="op">(</span><span class="va">tsne_res</span>, view <span class="op">=</span> <span class="st">"2d"</span>, colour <span class="op">=</span> <span class="st">"group"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:29:34] INFO  Creating 2D t-SNE plot (ggplot2).</span></span>
+<span><span class="co">#&gt; [09:30:20] INFO  Creating 2D t-SNE plot (ggplot2).</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_tsne</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-tsne-2d-group-1.png" class="r-plt" alt="" width="672"></p>
 <div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_tsne.html">plot_tsne</a></span><span class="op">(</span><span class="va">tsne_res</span>, view <span class="op">=</span> <span class="st">"2d"</span>, colour <span class="op">=</span> <span class="st">"timepoint"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:29:34] INFO  Creating 2D t-SNE plot (ggplot2).</span></span>
+<span><span class="co">#&gt; [09:30:21] INFO  Creating 2D t-SNE plot (ggplot2).</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_tsne</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-tsne-2d-time-1.png" class="r-plt" alt="" width="672"></p>
 <p>Axis labels (<code>t-SNE 1</code>, <code>t-SNE 2</code>) carry no
@@ -946,7 +950,7 @@ best explored interactively in an HTML report or the RStudio viewer.</p>
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt; [1] dplyr_1.2.1  phiper_0.4.2</span></span>
+<span><span class="co">#&gt; [1] dplyr_1.2.1  phiper_0.4.3</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
 <span><span class="co">#&gt;  [1] tidyr_1.3.2           utf8_1.2.6            sass_0.4.10          </span></span>
@@ -956,19 +960,19 @@ best explored interactively in an HTML report or the RStudio viewer.</p>
 <span><span class="co">#&gt; [13] blob_1.3.0            fastmap_1.2.0         Matrix_1.7-5         </span></span>
 <span><span class="co">#&gt; [16] jsonlite_2.0.0        DBI_1.3.0             mgcv_1.9-4           </span></span>
 <span><span class="co">#&gt; [19] purrr_1.2.2           scales_1.4.0          permute_0.9-10       </span></span>
-<span><span class="co">#&gt; [22] textshaping_1.0.5     jquerylib_0.1.4       duckdb_1.5.4.2       </span></span>
+<span><span class="co">#&gt; [22] textshaping_1.0.5     jquerylib_0.1.4       duckdb_1.5.4.3       </span></span>
 <span><span class="co">#&gt; [25] cli_3.6.6             rlang_1.3.0           chk_0.10.0           </span></span>
-<span><span class="co">#&gt; [28] dbplyr_2.6.0          phiperio_0.5.0        splines_4.6.1        </span></span>
+<span><span class="co">#&gt; [28] dbplyr_2.6.0          phiperio_0.5.2        splines_4.6.1        </span></span>
 <span><span class="co">#&gt; [31] withr_3.0.3           cachem_1.1.0          yaml_2.3.12          </span></span>
 <span><span class="co">#&gt; [34] vegan_2.7-5           otel_0.2.0            Rtsne_0.17           </span></span>
 <span><span class="co">#&gt; [37] parallel_4.6.1        tools_4.6.1           ggplot2_4.0.3        </span></span>
 <span><span class="co">#&gt; [40] showtext_0.9-8        vctrs_0.7.3           R6_2.6.1             </span></span>
 <span><span class="co">#&gt; [43] lifecycle_1.0.5       fs_2.1.0              htmlwidgets_1.6.4    </span></span>
 <span><span class="co">#&gt; [46] MASS_7.3-65           cluster_2.1.8.2       ragg_1.5.2           </span></span>
-<span><span class="co">#&gt; [49] pkgconfig_2.0.3       desc_1.4.3            pkgdown_2.2.0        </span></span>
+<span><span class="co">#&gt; [49] pkgconfig_2.0.3       desc_1.4.3            pkgdown_2.2.1        </span></span>
 <span><span class="co">#&gt; [52] RcppParallel_5.1.11-2 pillar_1.11.1         bslib_0.11.0         </span></span>
 <span><span class="co">#&gt; [55] gtable_0.3.6          glue_1.8.1            Rcpp_1.1.2           </span></span>
-<span><span class="co">#&gt; [58] systemfonts_1.3.2     xfun_0.59             tibble_3.3.1         </span></span>
+<span><span class="co">#&gt; [58] systemfonts_1.3.2     xfun_0.60             tibble_3.3.1         </span></span>
 <span><span class="co">#&gt; [61] tidyselect_1.2.1      knitr_1.51            farver_2.1.2         </span></span>
 <span><span class="co">#&gt; [64] nlme_3.1-169          htmltools_0.5.9       labeling_0.4.3       </span></span>
 <span><span class="co">#&gt; [67] parallelDist_0.2.7    rmarkdown_2.31        compiler_4.6.1       </span></span>
@@ -985,7 +989,7 @@ best explored interactively in an HTML report or the RStudio viewer.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>
