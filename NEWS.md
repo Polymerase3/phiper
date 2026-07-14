@@ -1,3 +1,13 @@
+# phiper 0.4.3 (2026-07-14)
+
+## New vignette
+
+- Added "Peptide Library Metadata" vignette documenting the Agilent, Twist, and Corona2 peptide library metadata columns (documentation by Gabriel Innocenti, based on prior annotation work by Sasha Zhernakova and Carlos Reyna-Blanco).
+
+## Documentation
+
+- pkgdown navbar and Articles page now include a dedicated "Peptide library" entry.
+
 # phiper 0.4.2 (2026-07-06)
 
 ## New vignette
