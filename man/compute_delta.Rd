@@ -20,6 +20,7 @@ compute_delta(
   aggregate_stat = c("stouffer", "maxmean", "af"),
   strat_bins = c(0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5),
   winsor_z = 4,
+  min_m_eff = 0,
   rank_feature_keep = NULL,
   peptide_library = NULL,
   log = FALSE,
@@ -78,6 +79,15 @@ bin-level z-scores is used as the global test statistic.}
 
 \item{winsor_z}{Winsorization threshold applied to peptide-level z-scores.
 Values beyond \verb{±winsor_z} are truncated. Default \code{4.0}.}
+
+\item{min_m_eff}{Minimum effective number of peptides (the \code{m_eff} column of
+the returned tibble) required for a stratum to be tested. Strata with
+\code{m_eff < min_m_eff} are skipped \strong{before} any permutation is drawn and are
+dropped from the returned tibble. The permutation test is only considered
+reliable for \code{m_eff > 5}, so \code{min_m_eff = 5} is a sensible choice. Default
+\code{0}, which disables the filter and tests every stratum. Note that under
+\code{weight_mode = "equal"} all weights are identical, so \code{m_eff} reduces to
+\code{n_peptides_used} and this argument acts as a plain minimum-peptide filter.}
 
 \item{rank_feature_keep}{Optional \strong{named list} mapping \code{rank} to a vector
 of \code{feature} values to keep. Only rank–feature strata in this list are
@@ -209,6 +219,11 @@ a Stouffer statistic \eqn{T_b} is computed within each bin. The
 and \code{0.20}, then peptides with pooled prevalence in (0.10, 0.20] share
 a bin.
 }
+
+If \code{min_m_eff} is greater than 0, strata whose effective number of
+peptides \code{m_eff} falls below it are skipped \strong{before} any permutation is
+drawn and are dropped from the result, since the permutation test is only
+reliable for \code{m_eff > 5}.
 \item \strong{Multiplicity.}
 No multiple-testing correction is performed; \code{p_perm} is returned as
 computed.
