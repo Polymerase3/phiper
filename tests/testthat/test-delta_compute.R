@@ -770,6 +770,78 @@ test_that("compute_delta min_m_eff can drop every stratum", {
   expect_setequal(names(res_none), names(res_all))
 })
 
+# Paired counterpart of the fixture above. `weight_mode = "equal"` makes m_eff
+# equal to n_peptides_used, so "sp_big" sits at 8 and "sp_small" at 2.
+.delta_min_m_eff_paired_fixture <- function() {
+  peps_big <- paste0("big", 1:8)
+  peps_small <- paste0("small", 1:2)
+  peps <- c(peps_big, peps_small)
+
+  samples <- tibble::tibble(
+    sample_id  = paste0("s", 1:12),
+    subject_id = rep(paste0("id", 1:6), each = 2),
+    group      = rep(c("A", "B"), 6)
+  )
+
+  set.seed(3)
+  x <- tidyr::expand_grid(samples, peptide_id = peps) |>
+    dplyr::mutate(
+      exist = stats::rbinom(dplyr::n(), 1L, ifelse(group == "A", 0.8, 0.35))
+    )
+
+  list(
+    x = x,
+    peplib = data.frame(
+      peptide_id = peps,
+      species    = c(rep("sp_big", length(peps_big)),
+                     rep("sp_small", length(peps_small))),
+      stringsAsFactors = FALSE
+    )
+  )
+}
+
+.delta_min_m_eff_paired_run <- function(fx, ...) {
+  set.seed(11)
+  compute_delta(
+    x                  = fx$x,
+    exist_col          = "exist",
+    rank_cols          = "species",
+    group_cols         = "group",
+    peptide_library    = fx$peplib,
+    paired_by          = "subject_id",
+    B_permutations     = 200L,
+    weight_mode        = "equal",
+    stat_mode          = "asin",
+    strat_bins         = 0,
+    winsor_z           = Inf,
+    rank_feature_keep  = list(species = NULL),
+    log                = FALSE,
+    ...
+  )
+}
+
+test_that("compute_delta min_m_eff filters paired strata as well", {
+  fx <- .delta_min_m_eff_paired_fixture()
+
+  res_all <- .delta_min_m_eff_paired_run(fx)
+
+  # the skip has a separate implementation in the paired branch, so the
+  # fixture must actually resolve to a paired design
+  expect_identical(unique(res_all$design), "paired")
+  expect_equal(nrow(res_all), 2L)
+  expect_gte(res_all$m_eff[res_all$feature == "sp_big"], 5)
+  expect_lt(res_all$m_eff[res_all$feature == "sp_small"], 5)
+
+  res_filt <- .delta_min_m_eff_paired_run(fx, min_m_eff = 5)
+
+  expect_equal(nrow(res_filt), 1L)
+  expect_identical(res_filt$feature, "sp_big")
+  expect_equal(
+    res_filt$T_obs,
+    res_all$T_obs[res_all$feature == "sp_big"]
+  )
+})
+
 test_that("compute_delta rejects an invalid min_m_eff", {
   fx <- .delta_min_m_eff_fixture()
 
