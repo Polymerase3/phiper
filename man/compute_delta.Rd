@@ -233,11 +233,13 @@ computed.
 \itemize{
 \item \code{exist_col} is treated as 0/1 presence.
 \item There must be \strong{at most one positive} per
-(\code{subject_id}, \code{peptide_id}, \code{group_col}, \code{group_value}); paired designs
-can have up to two positives across the two group levels. Violations
-trigger an error. Example (group levels A/B): for a single subject and
-peptide, you may have A=1 and B=0 (or A=0 and B=1, or A=1 and B=1), but you
-cannot have two rows both with A=1 (or two rows both with B=1).
+(pairing unit, \code{peptide_id}, \code{group_col}, \code{group_value}); paired designs
+can have up to two positives across the two group levels. The pairing unit
+is the column named by \code{paired_by}, or \code{subject_id} when \code{paired_by} is not
+supplied. Violations trigger an error. Example (group levels A/B): for a
+single pairing unit and peptide, you may have A=1 and B=0 (or A=0 and B=1,
+or A=1 and B=1), but you cannot have two rows both with A=1 (or two rows
+both with B=1).
 \item Non-peptide ranks specified in \code{rank_cols} must be resolvable from a
 peptide library (see \code{peptide_library} below).
 }

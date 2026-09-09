@@ -152,11 +152,13 @@
 #'
 #' - `exist_col` is treated as 0/1 presence.
 #' - There must be **at most one positive** per
-#'   (`subject_id`, `peptide_id`, `group_col`, `group_value`); paired designs
-#'   can have up to two positives across the two group levels. Violations
-#'   trigger an error. Example (group levels A/B): for a single subject and
-#'   peptide, you may have A=1 and B=0 (or A=0 and B=1, or A=1 and B=1), but you
-#'   cannot have two rows both with A=1 (or two rows both with B=1).
+#'   (pairing unit, `peptide_id`, `group_col`, `group_value`); paired designs
+#'   can have up to two positives across the two group levels. The pairing unit
+#'   is the column named by `paired_by`, or `subject_id` when `paired_by` is not
+#'   supplied. Violations trigger an error. Example (group levels A/B): for a
+#'   single pairing unit and peptide, you may have A=1 and B=0 (or A=0 and B=1,
+#'   or A=1 and B=1), but you cannot have two rows both with A=1 (or two rows
+#'   both with B=1).
 #' - Non-peptide ranks specified in `rank_cols` must be resolvable from a
 #'   peptide library (see `peptide_library` below).
 #'
@@ -359,6 +361,10 @@ compute_delta <- function(
   }
   need_cols <- unique(need_cols)
 
+  # Unit the uniqueness rule below applies to: the pairing column when one is
+  # given, otherwise the subject.
+  pair_unit <- if (is.null(paired_by)) "subject_id" else paired_by
+
   if (inherits(x, "phip_data")) {
     df_long <- x$data_long |>
       dplyr::select(tidyselect::any_of(need_cols))
@@ -374,24 +380,25 @@ compute_delta <- function(
       dplyr::select(tidyselect::any_of(need_cols))
   }
 
-  # --- STRICT HITS GUARD: at most one positive per (subject_id, peptide_id,
+  # --- STRICT HITS GUARD: at most one positive per (pair_unit, peptide_id,
   # group value) ---
   dup_pos <- df_long |>
     dplyr::filter(!!rlang::sym(exist_col) > 0L) |>
     tidyr::pivot_longer(tidyselect::all_of(group_cols),
       names_to = "group_col", values_to = "group_value"
     ) |>
-    dplyr::count(subject_id, peptide_id, group_col, group_value,
+    dplyr::count(!!rlang::sym(pair_unit), peptide_id, group_col, group_value,
       name = "n_pos"
     ) |>
     dplyr::filter(n_pos > 1L) |>
-    dplyr::collect()
+    dplyr::collect() |>
+    dplyr::rename(pair_id = tidyselect::all_of(pair_unit))
 
   if (nrow(dup_pos) > 0L) {
     eg <- dup_pos |>
       dplyr::slice_head(n = 10) |>
       dplyr::mutate(example = paste0(
-        "subject=", subject_id,
+        pair_unit, "=", pair_id,
         ", peptide=", peptide_id,
         ", group_col=", group_col,
         ", group_value=", group_value,
@@ -399,9 +406,12 @@ compute_delta <- function(
       )) |>
       dplyr::pull(example)
     .ph_abort(
-      "Invalid input: duplicate positives within the SAME group for some
-      (subject_id, peptide_id). One positive per group is allowed (paired
-      designs can have up to 2 across groups).",
+      sprintf(
+        "Invalid input: duplicate positives within the SAME group for some
+        (%s, peptide_id). One positive per group is allowed (paired designs
+        can have up to 2 across groups).",
+        pair_unit
+      ),
       bullets = c(eg, if (nrow(dup_pos) > 10) {
         sprintf(
           "... and %d more.",
