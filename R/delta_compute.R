@@ -271,13 +271,19 @@
 #' # Small unpaired subset with a mock peptide library
 #' pd_filt <- pd |>
 #'   dplyr::filter(
-#'     peptide_id %in% c("16627", "5243", "24799", "16196", "18003"),
+#'     peptide_id %in% c(
+#'       "agilent_151084", "agilent_216446", "agilent_218320",
+#'       "agilent_97112", "twist_96563"
+#'     ),
 #'     timepoint == "T1"
 #'   ) |>
 #'   dplyr::collect()
 #'
 #' mock_peplib <- data.frame(
-#'   peptide_id = c("16627", "5243", "24799", "16196", "18003"),
+#'   peptide_id = c(
+#'     "agilent_151084", "agilent_216446", "agilent_218320",
+#'     "agilent_97112", "twist_96563"
+#'   ),
 #'   species    = rep("mock_species", 5),
 #'   stringsAsFactors = FALSE
 #' )
