@@ -407,9 +407,13 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
  * @param B, seed, winsor_z numeric.
  * @param weight_mode, stat_mode, aggregate_stat, design strings.
  * @param strat_bins Numeric vector of pooled prevalence cutpoints or 0 for no stratification.
+ * @param min_m_eff double: minimum effective number of peptides (m_eff) required to run the
+ *        permutation test. If > 0 and m_eff < min_m_eff, the contrast is skipped before any
+ *        permutation is drawn. 0 disables the filter.
  *
  * @return List with fields: n_peptides_used, m_eff, T_obs, T_null_mean, T_null_sd,
- *         b, p_perm, max_delta, frac_delta_pos, frac_delta_pos_w.
+ *         b, p_perm, max_delta, frac_delta_pos, frac_delta_pos_w; or a single-field list
+ *         List(skipped = true) when the contrast is skipped via min_m_eff.
  */
 // [[Rcpp::export]]
 Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
@@ -428,7 +432,8 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
                               const std::string& perm_method,
                               const Rcpp::NumericVector& strat_bins,
                               const double winsor_z,
-                              const std::string& design) {
+                              const std::string& design,
+                              const double min_m_eff) {
   std::vector<double> strat_bins_vec = Rcpp::as<std::vector<double> >(strat_bins);
   const bool paired_only_stat = (stat_mode == "mcnemar" || stat_mode == "srlr_paired");
 
@@ -525,6 +530,10 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     double sum_w2 = 0.0;
     for (double wn : obs.w_norm) sum_w2 += wn * wn;
     const double m_eff = 1.0 / std::max(sum_w2, 1e-12);
+
+    if (min_m_eff > 0.0 && m_eff < min_m_eff) {
+      return Rcpp::List::create(_["skipped"] = true);
+    }
 
     // Permutations: flip labels per subject with prob 0.5
     std::mt19937_64 rng((uint64_t)seed);
@@ -685,6 +694,10 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     double sum_w2 = 0.0;
     for (double wn : obs.w_norm) sum_w2 += wn * wn;
     const double m_eff = 1.0 / std::max(sum_w2, 1e-12);
+
+    if (min_m_eff > 0.0 && m_eff < min_m_eff) {
+      return Rcpp::List::create(_["skipped"] = true);
+    }
 
     // Permutations (two-sided add-one)
     std::mt19937_64 rng((uint64_t)seed);

@@ -1,3 +1,13 @@
+# phiper 0.4.4 (2026-09-08)
+
+## New features
+
+- `compute_delta()` gains a `min_m_eff` argument (#54). Strata whose effective
+  number of peptides (`m_eff`) falls below the threshold are skipped **before**
+  any permutation is drawn and are dropped from the returned tibble, since the
+  permutation test is only reliable for `m_eff > 5`. Defaults to `0`, which
+  preserves the previous behaviour of testing every stratum.
+
 # phiper 0.4.3 (2026-07-14)
 
 ## New vignette

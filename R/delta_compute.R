@@ -139,6 +139,11 @@
 #’      which reduces the conservative bias of the standard test for discrete
 #’      statistics.
 #'
+#'    If `min_m_eff` is greater than 0, strata whose effective number of
+#'    peptides `m_eff` falls below it are skipped **before** any permutation is
+#'    drawn and are dropped from the result, since the permutation test is only
+#'    reliable for `m_eff > 5`.
+#'
 #' 6. **Multiplicity.**
 #'    No multiple-testing correction is performed; `p_perm` is returned as
 #'    computed.
@@ -218,6 +223,14 @@
 #'   bin-level z-scores is used as the global test statistic.
 #' @param winsor_z Winsorization threshold applied to peptide-level z-scores.
 #'   Values beyond `±winsor_z` are truncated. Default `4.0`.
+#' @param min_m_eff Minimum effective number of peptides (the `m_eff` column of
+#'   the returned tibble) required for a stratum to be tested. Strata with
+#'   `m_eff < min_m_eff` are skipped **before** any permutation is drawn and are
+#'   dropped from the returned tibble. The permutation test is only considered
+#'   reliable for `m_eff > 5`, so `min_m_eff = 5` is a sensible choice. Default
+#'   `0`, which disables the filter and tests every stratum. Note that under
+#'   `weight_mode = "equal"` all weights are identical, so `m_eff` reduces to
+#'   `n_peptides_used` and this argument acts as a plain minimum-peptide filter.
 #' @param rank_feature_keep Optional **named list** mapping `rank` to a vector
 #'   of `feature` values to keep. Only rank–feature strata in this list are
 #'   tested; others are dropped after the peptide-level pivot.
@@ -258,13 +271,19 @@
 #' # Small unpaired subset with a mock peptide library
 #' pd_filt <- pd |>
 #'   dplyr::filter(
-#'     peptide_id %in% c("16627", "5243", "24799", "16196", "18003"),
+#'     peptide_id %in% c(
+#'       "agilent_151084", "agilent_216446", "agilent_218320",
+#'       "agilent_97112", "twist_96563"
+#'     ),
 #'     timepoint == "T1"
 #'   ) |>
 #'   dplyr::collect()
 #'
 #' mock_peplib <- data.frame(
-#'   peptide_id = c("16627", "5243", "24799", "16196", "18003"),
+#'   peptide_id = c(
+#'     "agilent_151084", "agilent_216446", "agilent_218320",
+#'     "agilent_97112", "twist_96563"
+#'   ),
 #'   species    = rep("mock_species", 5),
 #'   stringsAsFactors = FALSE
 #' )
@@ -301,6 +320,7 @@ compute_delta <- function(
   aggregate_stat = c("stouffer", "maxmean", "af"),
   strat_bins = c(0.002, 0.005, 0.01, 0.02, 0.05, 0.10, 0.20, 0.50),
   winsor_z = 4.0,
+  min_m_eff = 0,
   rank_feature_keep = NULL,
   peptide_library = NULL,
   log = FALSE,
@@ -328,6 +348,8 @@ compute_delta <- function(
     chk::chk_true(all(strat_bins >= 0 & strat_bins <= 1))
     strat_bins <- sort(unique(as.numeric(strat_bins)))
   }
+  chk::chk_number(min_m_eff)
+  chk::chk_true(min_m_eff >= 0)
 
   # --- 1) Prepare data once ---------------------------------------------------
   # Required columns from `x`
@@ -831,9 +853,13 @@ compute_delta <- function(
       perm_method      = perm_method,
       strat_bins       = strat_bins,
       winsor_z         = winsor_z,
-      design           = st$design
+      design           = st$design,
+      min_m_eff        = as.numeric(min_m_eff)
     )
     if (is.null(res)) {
+      return(NULL)
+    }
+    if (isTRUE(res$skipped)) {
       return(NULL)
     }
 
