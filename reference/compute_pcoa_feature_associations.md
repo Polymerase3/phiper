@@ -78,34 +78,34 @@ d <- compute_distance(
   distance = "jaccard",
   n_threads = 2L
 )
-#> [09:29:17] INFO  building abundance matrix from `ps` using `fold_change`.
-#> [09:29:17] INFO  building pivot spec (sample_id x peptide_id).
-#> [09:29:17] INFO  Collecting long table (sample_id, peptide_id, value).
+#> [11:56:49] INFO  building abundance matrix from `ps` using `fold_change`.
+#> [11:56:49] INFO  building pivot spec (sample_id x peptide_id).
+#> [11:56:49] INFO  Collecting long table (sample_id, peptide_id, value).
 #>                  -> compute_distance
-#> [09:29:17] INFO  Pivoting to wide abundance matrix in R.
+#> [11:56:49] INFO  Pivoting to wide abundance matrix in R.
 #>                  -> compute_distance
-#> [09:29:17] INFO  abundance matrix has 43 samples and 5 features after
+#> [11:56:49] INFO  abundance matrix has 43 samples and 5 features after
 #>                  preprocessing.
-#> [09:29:17] INFO  auto normalization selected -> using relative
-#> [09:29:17] INFO  computing distance: jaccard
-#> [09:29:17] INFO  distance matrix computation complete.
+#> [11:56:49] INFO  auto normalization selected -> using relative
+#> [11:56:49] INFO  computing distance: jaccard
+#> [11:56:49] INFO  distance matrix computation complete.
 
 # Compute PCoA vectors on these distances
 pcoa_res <- compute_pcoa(d, neg_correction = "none", n_axes = 3L)
-#> [09:29:17] INFO  performing principal coordinates analysis
-#> [09:29:17] INFO  extracting sample coordinates.
-#> [09:29:17] INFO  summarizing eigenvalues and variance explained.
-#> [09:29:17] INFO  pcoa analysis complete.
+#> [11:56:49] INFO  performing principal coordinates analysis
+#> [11:56:49] INFO  extracting sample coordinates.
+#> [11:56:49] INFO  summarizing eigenvalues and variance explained.
+#> [11:56:49] INFO  pcoa analysis complete.
 
 feature_associations <- compute_pcoa_feature_associations(d, pcoa_res)
 feature_associations
 #> # A tibble: 5 × 4
-#>   feature  PCoA1   PCoA2     PCoA3
-#>   <chr>    <dbl>   <dbl>     <dbl>
-#> 1 16196    0.456 -0.0108  0.0469  
-#> 2 16627   -0.409 -0.149   0.000312
-#> 3 18003    0.451 -0.0100 -0.200   
-#> 4 24799    0.456 -0.0106  0.115   
-#> 5 5243    -0.383  0.159   0.000490
+#>   feature         PCoA1   PCoA2     PCoA3
+#>   <chr>           <dbl>   <dbl>     <dbl>
+#> 1 agilent_175212  0.456 -0.0108  0.0469  
+#> 2 agilent_196916  0.451 -0.0100 -0.200   
+#> 3 agilent_21155   0.456 -0.0106  0.115   
+#> 4 agilent_238554 -0.383  0.159   0.000490
+#> 5 corona2_2925   -0.409 -0.149   0.000312
 # }
 ```

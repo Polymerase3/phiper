@@ -1,5 +1,31 @@
 # Changelog
 
+## phiper 0.4.5 (2026-09-09)
+
+### Bug fixes
+
+- [`compute_delta()`](https://polymerase3.github.io/phiper/reference/compute_delta.md)
+  no longer ignores `paired_by` in the strict hits guard
+  ([\#56](https://github.com/Polymerase3/phiper/issues/56)). The guard
+  rejected duplicate positives per `subject_id` even when a different
+  pairing column was supplied, so a subject contributing two samples to
+  the same group aborted the call although the pairing unit was unique
+  within that group. The guard now keys on `paired_by` when given, and
+  its error message names the column it actually checked.
+
+## phiper 0.4.4 (2026-09-08)
+
+### New features
+
+- [`compute_delta()`](https://polymerase3.github.io/phiper/reference/compute_delta.md)
+  gains a `min_m_eff` argument
+  ([\#54](https://github.com/Polymerase3/phiper/issues/54)). Strata
+  whose effective number of peptides (`m_eff`) falls below the threshold
+  are skipped **before** any permutation is drawn and are dropped from
+  the returned tibble, since the permutation test is only reliable for
+  `m_eff > 5`. Defaults to `0`, which preserves the previous behaviour
+  of testing every stratum.
+
 ## phiper 0.4.3 (2026-07-14)
 
 ### New vignette

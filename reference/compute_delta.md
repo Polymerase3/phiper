@@ -24,6 +24,7 @@ compute_delta(
   aggregate_stat = c("stouffer", "maxmean", "af"),
   strat_bins = c(0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5),
   winsor_z = 4,
+  min_m_eff = 0,
   rank_feature_keep = NULL,
   peptide_library = NULL,
   log = FALSE,
@@ -115,6 +116,18 @@ compute_delta(
 
   Winsorization threshold applied to peptide-level z-scores. Values
   beyond `±winsor_z` are truncated. Default `4.0`.
+
+- min_m_eff:
+
+  Minimum effective number of peptides (the `m_eff` column of the
+  returned tibble) required for a stratum to be tested. Strata with
+  `m_eff < min_m_eff` are skipped **before** any permutation is drawn
+  and are dropped from the returned tibble. The permutation test is only
+  considered reliable for `m_eff > 5`, so `min_m_eff = 5` is a sensible
+  choice. Default `0`, which disables the filter and tests every
+  stratum. Note that under `weight_mode = "equal"` all weights are
+  identical, so `m_eff` reduces to `n_peptides_used` and this argument
+  acts as a plain minimum-peptide filter.
 
 - rank_feature_keep:
 
@@ -244,6 +257,11 @@ pair of groups `(g1, g2)`, the procedure is:
       `strat_bins` includes `0.10` and `0.20`, then peptides with pooled
       prevalence in (0.10, 0.20\] share a bin.
 
+    If `min_m_eff` is greater than 0, strata whose effective number of
+    peptides `m_eff` falls below it are skipped **before** any
+    permutation is drawn and are dropped from the result, since the
+    permutation test is only reliable for `m_eff > 5`.
+
 5.  **Multiplicity.** No multiple-testing correction is performed;
     `p_perm` is returned as computed.
 
@@ -251,12 +269,14 @@ pair of groups `(g1, g2)`, the procedure is:
 
 - `exist_col` is treated as 0/1 presence.
 
-- There must be **at most one positive** per (`subject_id`,
+- There must be **at most one positive** per (pairing unit,
   `peptide_id`, `group_col`, `group_value`); paired designs can have up
-  to two positives across the two group levels. Violations trigger an
-  error. Example (group levels A/B): for a single subject and peptide,
-  you may have A=1 and B=0 (or A=0 and B=1, or A=1 and B=1), but you
-  cannot have two rows both with A=1 (or two rows both with B=1).
+  to two positives across the two group levels. The pairing unit is the
+  column named by `paired_by`, or `subject_id` when `paired_by` is not
+  supplied. Violations trigger an error. Example (group levels A/B): for
+  a single pairing unit and peptide, you may have A=1 and B=0 (or A=0
+  and B=1, or A=1 and B=1), but you cannot have two rows both with A=1
+  (or two rows both with B=1).
 
 - Non-peptide ranks specified in `rank_cols` must be resolvable from a
   peptide library (see `peptide_library` below).
@@ -306,13 +326,19 @@ pd <- load_example_data()
 # Small unpaired subset with a mock peptide library
 pd_filt <- pd |>
   dplyr::filter(
-    peptide_id %in% c("16627", "5243", "24799", "16196", "18003"),
+    peptide_id %in% c(
+      "agilent_151084", "agilent_216446", "agilent_218320",
+      "agilent_97112", "twist_96563"
+    ),
     timepoint == "T1"
   ) |>
   dplyr::collect()
 
 mock_peplib <- data.frame(
-  peptide_id = c("16627", "5243", "24799", "16196", "18003"),
+  peptide_id = c(
+    "agilent_151084", "agilent_216446", "agilent_218320",
+    "agilent_97112", "twist_96563"
+  ),
   species    = rep("mock_species", 5),
   stringsAsFactors = FALSE
 )

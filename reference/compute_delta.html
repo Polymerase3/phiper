@@ -19,7 +19,7 @@ statistic and assessing significance via label permutation."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -92,6 +92,7 @@ statistic and assessing significance via <strong>label permutation</strong>.</p>
 <span>  aggregate_stat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"stouffer"</span>, <span class="st">"maxmean"</span>, <span class="st">"af"</span><span class="op">)</span>,</span>
 <span>  strat_bins <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.002</span>, <span class="fl">0.005</span>, <span class="fl">0.01</span>, <span class="fl">0.02</span>, <span class="fl">0.05</span>, <span class="fl">0.1</span>, <span class="fl">0.2</span>, <span class="fl">0.5</span><span class="op">)</span>,</span>
 <span>  winsor_z <span class="op">=</span> <span class="fl">4</span>,</span>
+<span>  min_m_eff <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  rank_feature_keep <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  peptide_library <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  log <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -183,6 +184,17 @@ bin-level z-scores is used as the global test statistic.</p></dd>
 <dt id="arg-winsor-z">winsor_z<a class="anchor" aria-label="anchor" href="#arg-winsor-z"></a></dt>
 <dd><p>Winsorization threshold applied to peptide-level z-scores.
 Values beyond <code>±winsor_z</code> are truncated. Default <code>4.0</code>.</p></dd>
+
+
+<dt id="arg-min-m-eff">min_m_eff<a class="anchor" aria-label="anchor" href="#arg-min-m-eff"></a></dt>
+<dd><p>Minimum effective number of peptides (the <code>m_eff</code> column of
+the returned tibble) required for a stratum to be tested. Strata with
+<code>m_eff &lt; min_m_eff</code> are skipped <strong>before</strong> any permutation is drawn and are
+dropped from the returned tibble. The permutation test is only considered
+reliable for <code>m_eff &gt; 5</code>, so <code>min_m_eff = 5</code> is a sensible choice. Default
+<code>0</code>, which disables the filter and tests every stratum. Note that under
+<code>weight_mode = "equal"</code> all weights are identical, so <code>m_eff</code> reduces to
+<code>n_peptides_used</code> and this argument acts as a plain minimum-peptide filter.</p></dd>
 
 
 <dt id="arg-rank-feature-keep">rank_feature_keep<a class="anchor" aria-label="anchor" href="#arg-rank-feature-keep"></a></dt>
@@ -305,17 +317,22 @@ a Stouffer statistic \(T_b\) is computed within each bin. The
 \(T_{\mathrm{obs}}\). For example, if <code>strat_bins</code> includes <code>0.10</code>
 and <code>0.20</code>, then peptides with pooled prevalence in (0.10, 0.20] share
 a bin.</p></li>
-</ul></li>
+</ul><p>If <code>min_m_eff</code> is greater than 0, strata whose effective number of
+peptides <code>m_eff</code> falls below it are skipped <strong>before</strong> any permutation is
+drawn and are dropped from the result, since the permutation test is only
+reliable for <code>m_eff &gt; 5</code>.</p></li>
 <li><p><strong>Multiplicity.</strong>
 No multiple-testing correction is performed; <code>p_perm</code> is returned as
 computed.</p></li>
 </ol><p><strong>Input requirements.</strong></p><ul><li><p><code>exist_col</code> is treated as 0/1 presence.</p></li>
 <li><p>There must be <strong>at most one positive</strong> per
-(<code>subject_id</code>, <code>peptide_id</code>, <code>group_col</code>, <code>group_value</code>); paired designs
-can have up to two positives across the two group levels. Violations
-trigger an error. Example (group levels A/B): for a single subject and
-peptide, you may have A=1 and B=0 (or A=0 and B=1, or A=1 and B=1), but you
-cannot have two rows both with A=1 (or two rows both with B=1).</p></li>
+(pairing unit, <code>peptide_id</code>, <code>group_col</code>, <code>group_value</code>); paired designs
+can have up to two positives across the two group levels. The pairing unit
+is the column named by <code>paired_by</code>, or <code>subject_id</code> when <code>paired_by</code> is not
+supplied. Violations trigger an error. Example (group levels A/B): for a
+single pairing unit and peptide, you may have A=1 and B=0 (or A=0 and B=1,
+or A=1 and B=1), but you cannot have two rows both with A=1 (or two rows
+both with B=1).</p></li>
 <li><p>Non-peptide ranks specified in <code>rank_cols</code> must be resolvable from a
 peptide library (see <code>peptide_library</code> below).</p></li>
 </ul><p><strong>Peptide library resolution.</strong></p>
@@ -350,13 +367,19 @@ results; each contrast draws its own seed from the global RNG state.</p>
 <span class="r-in"><span><span class="co"># Small unpaired subset with a mock peptide library</span></span></span>
 <span class="r-in"><span><span class="va">pd_filt</span> <span class="op">&lt;-</span> <span class="va">pd</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>    <span class="va">peptide_id</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"16627"</span>, <span class="st">"5243"</span>, <span class="st">"24799"</span>, <span class="st">"16196"</span>, <span class="st">"18003"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    <span class="va">peptide_id</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>      <span class="st">"agilent_151084"</span>, <span class="st">"agilent_216446"</span>, <span class="st">"agilent_218320"</span>,</span></span>
+<span class="r-in"><span>      <span class="st">"agilent_97112"</span>, <span class="st">"twist_96563"</span></span></span>
+<span class="r-in"><span>    <span class="op">)</span>,</span></span>
 <span class="r-in"><span>    <span class="va">timepoint</span> <span class="op">==</span> <span class="st">"T1"</span></span></span>
 <span class="r-in"><span>  <span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">mock_peplib</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  peptide_id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"16627"</span>, <span class="st">"5243"</span>, <span class="st">"24799"</span>, <span class="st">"16196"</span>, <span class="st">"18003"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  peptide_id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    <span class="st">"agilent_151084"</span>, <span class="st">"agilent_216446"</span>, <span class="st">"agilent_218320"</span>,</span></span>
+<span class="r-in"><span>    <span class="st">"agilent_97112"</span>, <span class="st">"twist_96563"</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span>,</span></span>
 <span class="r-in"><span>  species    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"mock_species"</span>, <span class="fl">5</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  stringsAsFactors <span class="op">=</span> <span class="cn">FALSE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>

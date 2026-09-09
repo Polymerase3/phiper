@@ -25,9 +25,11 @@ Useful links:
 
 Other contributors:
 
-- Alon Alexander <a.alexander@umcg.nl> \[contributor, copyright holder\]
+- Alon Alexander <a.alexander@umcg.nl> (contributed code and shaped the
+  package concept) \[contributor, copyright holder\]
 
-- Nikolas Basler <nikolas.basler@meduniwien.ac.at> \[contributor\]
+- Nikolas Basler <nikolas.basler@meduniwien.ac.at>
+  ([ORCID](https://orcid.org/0000-0003-0791-4369)) \[contributor\]
 
 - Thomas Vogl <thomas.vogl@meduniwien.ac.at>
   ([ORCID](https://orcid.org/0000-0002-3892-1740)) \[copyright holder,

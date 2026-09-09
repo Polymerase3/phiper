@@ -19,7 +19,7 @@ attached."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -189,16 +189,16 @@ result but will have <code>NA</code> values for those metadata columns.</p>
 <span class="r-in"><span>  distance <span class="op">=</span> <span class="st">"bray"</span>,</span></span>
 <span class="r-in"><span>  n_threads <span class="op">=</span> <span class="fl">2L</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [09:29:18] INFO  building abundance matrix from `ps` using `fold_change`.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [09:29:18] INFO  building pivot spec (sample_id x peptide_id).</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [09:29:18] INFO  Collecting long table (sample_id, peptide_id, value).</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [11:56:50] INFO  building abundance matrix from `ps` using `fold_change`.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [11:56:50] INFO  building pivot spec (sample_id x peptide_id).</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [11:56:50] INFO  Collecting long table (sample_id, peptide_id, value).</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; compute_distance</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [09:29:18] INFO  Pivoting to wide abundance matrix in R.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [11:56:50] INFO  Pivoting to wide abundance matrix in R.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                  -&gt; compute_distance</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [09:29:18] INFO  abundance matrix has 43 samples and 5 features after</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [11:56:50] INFO  abundance matrix has 43 samples and 5 features after</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                  preprocessing.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [09:29:18] INFO  computing distance: bray</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [09:29:18] INFO  distance matrix computation complete.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [11:56:50] INFO  computing distance: bray</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [11:56:50] INFO  distance matrix computation complete.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Compute t-SNE embeddings</span></span></span>
 <span class="r-in"><span><span class="va">tsne_res</span> <span class="op">&lt;-</span> <span class="fu">compute_tsne</span><span class="op">(</span></span></span>
@@ -209,24 +209,24 @@ result but will have <code>NA</code> values for those metadata columns.</p>
 <span class="r-in"><span>  meta_cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"subject_id"</span>, <span class="st">"timepoint"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  seed <span class="op">=</span> <span class="fl">42</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>[09:29:18] WARN  Perplexity (15) is high for n = 43; reducing to 14.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [09:29:18] INFO  Running t-SNE with dims = 3, perplexity = 14 on 43 samples</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>[11:56:50] WARN  Perplexity (15) is high for n = 43; reducing to 14.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [11:56:50] INFO  Running t-SNE with dims = 3, perplexity = 14 on 43 samples</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                  (distance input).</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [09:29:18] INFO  Attaching metadata columns to t-SNE result: subject_id,</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [11:56:50] INFO  Attaching metadata columns to t-SNE result: subject_id,</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                  timepoint</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [09:29:18] INFO  t-SNE embedding computation finished.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [11:56:50] INFO  t-SNE embedding computation finished.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># View results</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">tsne_res</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 6 × 6</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   sample_id tSNE1 tSNE2 tSNE3 subject_id timepoint</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> A_T1_1    -<span style="color: #BB0000;">6.33</span>  3.08  27.8 1          T1       </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> B_T1_1     5.25 -<span style="color: #BB0000;">2.96</span> -<span style="color: #BB0000;">27.0</span> 1          T1       </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> A_T1_10   -<span style="color: #BB0000;">6.63</span>  3.05  28.9 10         T1       </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> B_T1_10    4.96 -<span style="color: #BB0000;">3.00</span> -<span style="color: #BB0000;">24.6</span> 10         T1       </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> A_T1_11   -<span style="color: #BB0000;">5.01</span>  3.78  30.2 11         T1       </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span> B_T1_11    4.93 -<span style="color: #BB0000;">2.61</span> -<span style="color: #BB0000;">27.1</span> 11         T1       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> A_T1_1    -<span style="color: #BB0000;">36.5</span>  6.95  26.0 1          T1       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> B_T1_1     30.5 -<span style="color: #BB0000;">5.97</span> -<span style="color: #BB0000;">21.7</span> 1          T1       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> A_T1_10   -<span style="color: #BB0000;">36.5</span>  6.92  27.2 10         T1       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> B_T1_10    31.1 -<span style="color: #BB0000;">5.77</span> -<span style="color: #BB0000;">24.1</span> 10         T1       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> A_T1_11   -<span style="color: #BB0000;">34.4</span>  6.86  27.9 11         T1       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span> B_T1_11    30.6 -<span style="color: #BB0000;">6.47</span> -<span style="color: #BB0000;">21.6</span> 11         T1       </span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

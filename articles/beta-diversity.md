@@ -53,53 +53,56 @@ peptides.
 ``` r
 
 pd <- load_example_data()
-#> [09:30:02] INFO  Constructing <phip_data> object
+#> [11:57:26] INFO  Constructing <phip_data> object
 #>                  -> create_data()
-#> [09:30:02] INFO  Fetching peptide metadata library via get_peptide_library()
-#> [09:30:02] INFO  Retrieving peptide metadata into DuckDB cache
+#> [11:57:26] INFO  Fetching peptide metadata library via get_peptide_library()
+#> [11:57:26] INFO  Retrieving peptide metadata into DuckDB cache
 #>                  -> get_peptide_library(force_refresh = FALSE)
-#> [09:30:02] INFO  Opened DuckDB connection
+#> [11:57:27] INFO  Opened DuckDB connection
 #>                    - cache dir:
 #>                      /home/runner/.cache/R/phiperio/peptide_meta/phip_cache.duckdb
 #>                    - table: peptide_meta
-#> [09:30:02] OK    Using cached download (SHA-256 match)
-#> [09:30:05] OK    Download complete and loaded into R
-#> [09:30:10] INFO  Importing sanitized metadata into DuckDB cache...
-#> [09:30:11] OK    peptide_meta table created in DuckDB cache
-#> [09:30:11] OK    Retrieving peptide metadata into DuckDB cache - done
-#>                  -> elapsed: 9.539s
-#> [09:30:11] OK    Peptide metadata acquired
-#> [09:30:11] INFO  Validating <phip_data>
+#> [11:57:27] OK    Using cached download (SHA-256 match)
+#> [11:57:29] OK    Download complete and loaded into R
+#> [11:57:33] INFO  Importing sanitized metadata into DuckDB cache...
+#> [11:57:35] OK    peptide_meta table created in DuckDB cache
+#> [11:57:35] OK    Retrieving peptide metadata into DuckDB cache - done
+#>                  -> elapsed: 8.271s
+#> [11:57:35] OK    Peptide metadata acquired
+#> [11:57:35] INFO  Validating <phip_data>
 #>                  -> validate_phip_data()
-#> [09:30:11] INFO  Checking structural requirements (shape & mandatory columns)
-#> [09:30:11] INFO  Checking outcome family availability (exist / fold_change /
+#> [11:57:35] INFO  Checking structural requirements (shape & mandatory columns)
+#> [11:57:35] INFO  Checking outcome family availability (exist / fold_change /
 #>                  raw_counts)
-#> [09:30:11] INFO  Checking collisions with reserved names
+#> [11:57:35] INFO  Checking collisions with reserved names
 #>                    - subject_id, sample_id, timepoint, peptide_id, exist,
 #>                      fold_change, counts_input, counts_hit
-#> [09:30:11] INFO  Ensuring all columns are atomic (no list-cols)
-#> [09:30:11] INFO  Checking key uniqueness
-#> [09:30:11] INFO  Validating value ranges & types for outcomes
-#> [09:30:11] INFO  Assessing sparsity (NA/zero prevalence vs threshold)
+#> [11:57:35] INFO  Ensuring all columns are atomic (no list-cols)
+#> [11:57:35] INFO  Checking key uniqueness
+#> [11:57:35] INFO  Validating value ranges & types for outcomes
+#> [11:57:35] INFO  Assessing sparsity (NA/zero prevalence vs threshold)
 #>                    - warn threshold: 50%
-#> [09:30:12] INFO  Checking peptide_id coverage against peptide_library
-#> [09:30:12] INFO  Checking full grid completeness (peptide * sample)
-#> [09:30:12] OK    Validating <phip_data> - done
-#>                  -> elapsed: 0.445s
-#> [09:30:12] OK    Constructing <phip_data> object - done
-#>                  -> elapsed: 9.987s
+#> [11:57:35] INFO  Checking peptide_id coverage against peptide_library
+#> [11:57:35] INFO  Checking full grid completeness (peptide * sample)
+#> [11:57:35] INFO  Counts table is not a full peptide * sample grid
+#>                    - observed rows: 78200
+#>                    - expected rows: 156000
+#> [11:57:35] OK    Validating <phip_data> - done
+#>                  -> elapsed: 0.396s
+#> [11:57:35] OK    Constructing <phip_data> object - done
+#>                  -> elapsed: 8.669s
 pd
 #> ── <phip_data> ───────────────────────────────────────────────────────────────── 
 #> 
 #> counts (first 5 rows): 
 #> # A tibble: 5 × 9
-#>   sample_id subject_id group timepoint peptide_id exist counts_control
-#>   <chr>     <chr>      <chr> <chr>     <chr>      <int>          <int>
-#> 1 A_T1_1    1          A     T1        10003          1              5
-#> 2 A_T1_1    1          A     T1        10017          1             37
-#> 3 A_T1_1    1          A     T1        10023          1             11
-#> 4 A_T1_1    1          A     T1        10062          1              0
-#> 5 B_T1_1    1          B     T1        10087          1              1
+#>   sample_id subject_id group timepoint peptide_id     exist counts_control
+#>   <chr>     <chr>      <chr> <chr>     <chr>          <int>          <int>
+#> 1 B_T1_1    1          B     T1        agilent_100642     0             16
+#> 2 B_T1_1    1          B     T1        agilent_100997     1             18
+#> 3 B_T1_1    1          B     T1        agilent_10133      0             15
+#> 4 B_T1_1    1          B     T1        agilent_101516     0             29
+#> 5 B_T1_1    1          B     T1        agilent_101615     0             16
 #> # ℹ 2 more variables: counts_hits <int>, fold_change <dbl>
 #> 
 #> table size: 78,200 rows x 9 columns
@@ -146,10 +149,10 @@ meta <- pd$data_long |>
 glimpse(meta)
 #> Rows: 80
 #> Columns: 4
-#> $ sample_id  <chr> "A_T2_10", "B_T2_11", "A_T1_12", "A_T2_12", "B_T1_18", "B_T…
-#> $ subject_id <chr> "10", "11", "12", "12", "18", "3", "3", "4", "4", "1", "11"…
-#> $ group      <chr> "A", "B", "A", "A", "B", "B", "A", "A", "B", "A", "B", "A",…
-#> $ timepoint  <chr> "T2", "T2", "T1", "T2", "T1", "T1", "T2", "T1", "T1", "T2",…
+#> $ sample_id  <chr> "B_T1_12", "A_T1_15", "B_T1_19", "B_T2_23", "A_T2_6", "B_T1…
+#> $ subject_id <chr> "12", "15", "19", "23", "6", "8", "10", "13", "16", "17", "…
+#> $ group      <chr> "B", "A", "B", "B", "A", "B", "A", "B", "A", "B", "B", "A",…
+#> $ timepoint  <chr> "T1", "T1", "T1", "T2", "T2", "T1", "T1", "T2", "T1", "T1",…
 ```
 
 ------------------------------------------------------------------------
@@ -186,16 +189,16 @@ d <- compute_distance(
   method_normalization = "hellinger",
   distance             = "bray"
 )
-#> [09:30:12] INFO  building abundance matrix from `ps` using `fold_change`.
-#> [09:30:12] INFO  building pivot spec (sample_id x peptide_id).
-#> [09:30:12] INFO  Collecting long table (sample_id, peptide_id, value).
+#> [11:57:35] INFO  building abundance matrix from `ps` using `fold_change`.
+#> [11:57:35] INFO  building pivot spec (sample_id x peptide_id).
+#> [11:57:35] INFO  Collecting long table (sample_id, peptide_id, value).
 #>                  -> compute_distance
-#> [09:30:12] INFO  Pivoting to wide abundance matrix in R.
+#> [11:57:35] INFO  Pivoting to wide abundance matrix in R.
 #>                  -> compute_distance
-#> [09:30:12] INFO  abundance matrix has 80 samples and 1950 features after
+#> [11:57:35] INFO  abundance matrix has 80 samples and 1950 features after
 #>                  preprocessing.
-#> [09:30:12] INFO  computing distance: bray
-#> [09:30:12] INFO  distance matrix computation complete.
+#> [11:57:35] INFO  computing distance: bray
+#> [11:57:35] INFO  distance matrix computation complete.
 
 class(d)                       # a standard dist object
 #> [1] "dist"
@@ -234,10 +237,10 @@ diagnostics.
 ``` r
 
 pcoa_res <- compute_pcoa(d, neg_correction = "none", n_axes = 5L)
-#> [09:30:12] INFO  performing principal coordinates analysis
-#> [09:30:12] INFO  extracting sample coordinates.
-#> [09:30:12] INFO  summarizing eigenvalues and variance explained.
-#> [09:30:12] INFO  pcoa analysis complete.
+#> [11:57:36] INFO  performing principal coordinates analysis
+#> [11:57:36] INFO  extracting sample coordinates.
+#> [11:57:36] INFO  summarizing eigenvalues and variance explained.
+#> [11:57:36] INFO  pcoa analysis complete.
 
 names(pcoa_res)           # components of the result
 #> [1] "sample_coords"     "eigenvalues"       "var_explained"    
@@ -251,7 +254,7 @@ pcoa_res$eigen_diagnostics
 #> # A tibble: 1 × 6
 #>   sum_negative sum_positive ratio_negative_positive min_eigenvalue n_negative
 #>          <dbl>        <dbl>                   <dbl>          <dbl>      <int>
-#> 1            0         22.4                       0       3.77e-16          0
+#> 1     1.68e-16         22.4                7.50e-18      -1.68e-16          1
 #> # ℹ 1 more variable: frac_negative <dbl>
 ```
 
@@ -308,18 +311,18 @@ feat_assoc <- compute_pcoa_feature_associations(
 
 feat_assoc
 #> # A tibble: 98 × 6
-#>    feature  PCoA1   PCoA2    PCoA3    PCoA4    PCoA5
-#>    <chr>    <dbl>   <dbl>    <dbl>    <dbl>    <dbl>
-#>  1 10108   -0.630  0.104  -0.0650  -0.0137   0.320  
-#>  2 10318    0.888 -0.0356 -0.0395  -0.00477 -0.0226 
-#>  3 10325   -0.550  0.0967 -0.173   -0.344    0.00182
-#>  4 11172    0.596  0.338  -0.163    0.0509  -0.111  
-#>  5 11218   -0.591  0.220  -0.00398  0.145    0.326  
-#>  6 11380    0.757 -0.0383 -0.307    0.0732  -0.0374 
-#>  7 11395    0.895 -0.0285 -0.0424  -0.00987  0.00961
-#>  8 11773    0.886  0.0296  0.0986  -0.0248   0.00470
-#>  9 11832    0.567 -0.0343 -0.319    0.0806  -0.0335 
-#> 10 12041    0.578  0.0570  0.307   -0.0432   0.0448 
+#>    feature         PCoA1     PCoA2    PCoA3    PCoA4   PCoA5
+#>    <chr>           <dbl>     <dbl>    <dbl>    <dbl>   <dbl>
+#>  1 agilent_104965  0.575 -0.166     0.0563   0.00412 -0.364 
+#>  2 agilent_10520   0.665 -0.0385    0.0844  -0.0901  -0.318 
+#>  3 agilent_106897 -0.641 -0.0424    0.340    0.0646   0.0485
+#>  4 agilent_108992 -0.574 -0.0405    0.318    0.0751   0.0234
+#>  5 agilent_112642  0.659 -0.101     0.0261   0.0492  -0.348 
+#>  6 agilent_112881 -0.890  0.000964  0.0303   0.0307  -0.0148
+#>  7 agilent_113090  0.665 -0.0726    0.0605  -0.310   -0.0235
+#>  8 agilent_113632 -0.580 -0.349     0.0697  -0.0848   0.0485
+#>  9 agilent_122851 -0.417 -0.386     0.103    0.114   -0.102 
+#> 10 agilent_12596   0.581  0.123    -0.00273 -0.0334   0.339 
 #> # ℹ 88 more rows
 ```
 
@@ -354,7 +357,7 @@ plot_pcoa(
   pcoa_res,
   group_col = "group"
 )
-#> [09:30:13] INFO  Plotting PCoA: n=80 | group_col=group | time_col=<none> |
+#> [11:57:36] INFO  Plotting PCoA: n=80 | group_col=group | time_col=<none> |
 #>                  centroid_by=group
 #>                  -> plot_pcoa
 ```
@@ -373,7 +376,7 @@ plot_pcoa(
   group_col = "group",
   time_col  = "timepoint"
 )
-#> [09:30:14] INFO  Plotting PCoA: n=80 | group_col=group | time_col=timepoint |
+#> [11:57:37] INFO  Plotting PCoA: n=80 | group_col=group | time_col=timepoint |
 #>                  centroid_by=group_time
 #>                  -> plot_pcoa
 ```
@@ -396,7 +399,7 @@ plot_pcoa(
   centroid_by       = "group_time",
   connect_centroids = "group"
 )
-#> [09:30:14] INFO  Plotting PCoA: n=80 | group_col=group | time_col=timepoint |
+#> [11:57:37] INFO  Plotting PCoA: n=80 | group_col=group | time_col=timepoint |
 #>                  centroid_by=group_time
 #>                  -> plot_pcoa
 ```
@@ -418,7 +421,7 @@ plot_pcoa(
   show_centroids = FALSE,
   ellipse_by     = c("group", "group_time")
 )
-#> [09:30:15] INFO  Plotting PCoA: n=80 | group_col=group | time_col=timepoint |
+#> [11:57:38] INFO  Plotting PCoA: n=80 | group_col=group | time_col=timepoint |
 #>                  centroid_by=group_time
 #>                  -> plot_pcoa
 ```
@@ -434,7 +437,7 @@ plot_pcoa(
   axes      = c(2, 3),
   group_col = "group"
 )
-#> [09:30:16] INFO  Plotting PCoA: n=80 | group_col=group | time_col=<none> |
+#> [11:57:38] INFO  Plotting PCoA: n=80 | group_col=group | time_col=<none> |
 #>                  centroid_by=group
 #>                  -> plot_pcoa
 ```
@@ -461,13 +464,13 @@ cap_res <- compute_capscale(
   formula      = ~ group + timepoint,
   permutations = 99L
 )
-#> [09:30:16] INFO  building metadata from `ps$data_long`.
-#> [09:30:16] INFO  fitting constrained ordination (cap/db-rda)
+#> [11:57:38] INFO  building metadata from `ps$data_long`.
+#> [11:57:38] INFO  fitting constrained ordination (cap/db-rda)
 #>                    - formula: ~group + timepoint
-#> [09:30:17] INFO  extracting constrained sample scores.
-#> [09:30:17] INFO  computing variance partitioning and permutation tests.
-#> [09:30:17] INFO  computing feature associations: weighted_average.
-#> [09:30:17] INFO  cap analysis complete.
+#> [11:57:39] INFO  extracting constrained sample scores.
+#> [11:57:39] INFO  computing variance partitioning and permutation tests.
+#> [11:57:39] INFO  computing feature associations: weighted_average.
+#> [11:57:39] INFO  cap analysis complete.
 
 cap_res$variance_partition
 #> # A tibble: 3 × 3
@@ -488,7 +491,7 @@ cap_res$perm_terms
 #>   term         Df SumOfSqs       F `Pr(>F)`
 #>   <chr>     <dbl>    <dbl>   <dbl>    <dbl>
 #> 1 group         1  17.1    252.        0.01
-#> 2 timepoint     1   0.0676   0.995     0.39
+#> 2 timepoint     1   0.0676   0.995     0.48
 #> 3 Residual     77   5.23    NA        NA
 ```
 
@@ -520,7 +523,7 @@ plot_cap(
   connect_centroids = "group",
   ellipse_by        = "group"
 )
-#> [09:30:17] INFO  CAP plot: n=80 samples | groups=2 | times=0
+#> [11:57:39] INFO  CAP plot: n=80 samples | groups=2 | times=0
 #>                  -> plot_cap
 ```
 
@@ -552,25 +555,25 @@ perm_res <- compute_permanova(
   permutations = 99L,
   p_adjust     = "BH"
 )
-#> [09:30:18] INFO  preparing distance labels and metadata.
-#> [09:30:18] INFO  building metadata from `ps`.
-#> [09:30:18] INFO  filtering samples with missing grouping variables.
-#> [09:30:18] INFO  subsetting distance matrix to complete cases.
-#> [09:30:18] INFO  preparing global permanova model.
-#> [09:30:18] INFO  running global permanova
+#> [11:57:40] INFO  preparing distance labels and metadata.
+#> [11:57:40] INFO  building metadata from `ps`.
+#> [11:57:40] INFO  filtering samples with missing grouping variables.
+#> [11:57:40] INFO  subsetting distance matrix to complete cases.
+#> [11:57:40] INFO  preparing global permanova model.
+#> [11:57:40] INFO  running global permanova
 #>                    - model: d_resp ~ group + timepoint + group * timepoint
 #>                    - permutations stratified by subject
-#> [09:30:18] INFO  running pairwise permanova contrasts.
+#> [11:57:40] INFO  running pairwise permanova contrasts.
 
 perm_res
 #> # A tibble: 5 × 8
 #>   scope          contrast term            F_stat      R2 p_value p_adjust n_perm
 #>   <chr>          <chr>    <chr>            <dbl>   <dbl>   <dbl>    <dbl>  <int>
 #> 1 global         <global> group          252.    0.764      0.01     0.03     99
-#> 2 global         <global> timepoint        0.995 0.00302    0.42     0.44     99
-#> 3 global         <global> group:timepoi…   0.990 0.00300    0.44     0.44     99
-#> 4 group_pairwise A vs B   group          252.    0.763      0.01     0.01     99
-#> 5 time_pairwise  T1 vs T2 timepoint        0.995 0.00302    0.35     0.35     99
+#> 2 global         <global> timepoint        0.995 0.00302    0.39     0.51     99
+#> 3 global         <global> group:timepoi…   0.990 0.00300    0.51     0.51     99
+#> 4 group_pairwise B vs A   group          252.    0.763      0.01     0.01     99
+#> 5 time_pairwise  T1 vs T2 timepoint        0.995 0.00302    0.38     0.38     99
 ```
 
 The `scope` column distinguishes three levels of inference:
@@ -613,29 +616,29 @@ disp_res <- compute_dispersion(
   permutations = 99L,
   p_adjust     = "BH"
 )
-#> [09:30:18] INFO  preparing distance labels and metadata.
-#> [09:30:18] INFO  building metadata from `ps`.
-#> [09:30:18] INFO  filtering samples with missing grouping variables.
-#> [09:30:18] INFO  computing global dispersion tests.
-#> [09:30:18] INFO  running pairwise dispersion contrasts.
+#> [11:57:40] INFO  preparing distance labels and metadata.
+#> [11:57:40] INFO  building metadata from `ps`.
+#> [11:57:40] INFO  filtering samples with missing grouping variables.
+#> [11:57:40] INFO  computing global dispersion tests.
+#> [11:57:40] INFO  running pairwise dispersion contrasts.
 
 disp_res$tests        # permutation test results per scope
 #> # A tibble: 3 × 6
 #>   scope      contrast term       p_value p_adjust n_perm
 #>   <chr>      <chr>    <chr>        <dbl>    <dbl>  <int>
-#> 1 group      <global> dispersion    0.5      0.5      99
-#> 2 time       <global> dispersion    0.86     0.86     99
-#> 3 group:time <global> dispersion    0.71     0.71     99
+#> 1 group      <global> dispersion    0.56     0.56     99
+#> 2 time       <global> dispersion    0.9      0.9      99
+#> 3 group:time <global> dispersion    0.74     0.74     99
 head(disp_res$distances)  # per-sample distances to centroid
 #> # A tibble: 6 × 5
 #>   sample_id distance level scope contrast
 #>   <chr>        <dbl> <chr> <chr> <chr>   
-#> 1 A_T1_1       0.266 A     group <global>
-#> 2 B_T1_1       0.248 B     group <global>
-#> 3 A_T2_1       0.253 A     group <global>
-#> 4 B_T2_1       0.249 B     group <global>
-#> 5 A_T1_10      0.274 A     group <global>
-#> 6 B_T1_10      0.254 B     group <global>
+#> 1 B_T1_1       0.248 B     group <global>
+#> 2 A_T1_1       0.266 A     group <global>
+#> 3 B_T2_1       0.249 B     group <global>
+#> 4 A_T2_1       0.253 A     group <global>
+#> 5 B_T1_10      0.254 B     group <global>
+#> 6 A_T1_10      0.274 A     group <global>
 ```
 
 The returned object is of class `"beta_dispersion"` and contains two
@@ -661,7 +664,7 @@ plot_dispersion(
   scope    = "group",
   contrast = "<global>"
 )
-#> [09:30:18] INFO  Plotting dispersion for scope = 'group', contrast = '<global>'
+#> [11:57:40] INFO  Plotting dispersion for scope = 'group', contrast = '<global>'
 #>                  (n = 80).
 #>                  -> plot_dispersion
 ```
@@ -677,7 +680,7 @@ plot_dispersion(
   scope    = "time",
   contrast = "<global>"
 )
-#> [09:30:19] INFO  Plotting dispersion for scope = 'time', contrast = '<global>'
+#> [11:57:41] INFO  Plotting dispersion for scope = 'time', contrast = '<global>'
 #>                  (n = 80).
 #>                  -> plot_dispersion
 ```
@@ -696,7 +699,7 @@ plot_dispersion(
   show_box    = TRUE,
   show_points = TRUE
 )
-#> [09:30:19] INFO  Plotting dispersion for scope = 'group', contrast = '<global>'
+#> [11:57:41] INFO  Plotting dispersion for scope = 'group', contrast = '<global>'
 #>                  (n = 80).
 #>                  -> plot_dispersion
 ```
@@ -722,21 +725,21 @@ tsne_res <- compute_tsne(
   meta_cols  = c("group", "timepoint"),
   seed       = 42L
 )
-#> [09:30:20] INFO  Running t-SNE with dims = 3, perplexity = 15 on 80 samples
+#> [11:57:41] INFO  Running t-SNE with dims = 3, perplexity = 15 on 80 samples
 #>                  (distance input).
-#> [09:30:20] INFO  Attaching metadata columns to t-SNE result: group, timepoint
-#> [09:30:20] INFO  t-SNE embedding computation finished.
+#> [11:57:41] INFO  Attaching metadata columns to t-SNE result: group, timepoint
+#> [11:57:41] INFO  t-SNE embedding computation finished.
 
 head(tsne_res)
 #> # A tibble: 6 × 6
-#>   sample_id tSNE1 tSNE2 tSNE3 group timepoint
-#>   <chr>     <dbl> <dbl> <dbl> <chr> <chr>    
-#> 1 A_T1_1    -4.20 -18.0 -24.9 A     T1       
-#> 2 B_T1_1     5.11  19.2  27.1 B     T1       
-#> 3 A_T2_1    -9.39 -19.1 -27.8 A     T2       
-#> 4 B_T2_1     8.02  17.4  25.7 B     T2       
-#> 5 A_T1_10   -3.81 -20.8 -22.8 A     T1       
-#> 6 B_T1_10    6.41  14.8  23.2 B     T1
+#>   sample_id  tSNE1 tSNE2  tSNE3 group timepoint
+#>   <chr>      <dbl> <dbl>  <dbl> <chr> <chr>    
+#> 1 B_T1_1    -11.6  -27.2 -10.9  B     T1       
+#> 2 A_T1_1     14.5   29.4  15.8  A     T1       
+#> 3 B_T2_1    -11.8  -30.6 -12.8  B     T2       
+#> 4 A_T2_1      9.13  30.7   9.58 A     T2       
+#> 5 B_T1_10   -11.3  -33.4 -11.4  B     T1       
+#> 6 A_T1_10    12.1   26.7  15.1  A     T1
 attr(tsne_res, "tsne_params")
 #> $dims
 #> [1] 3
@@ -766,7 +769,7 @@ attr(tsne_res, "tsne_params")
 ``` r
 
 plot_tsne(tsne_res, view = "2d", colour = "group")
-#> [09:30:20] INFO  Creating 2D t-SNE plot (ggplot2).
+#> [11:57:42] INFO  Creating 2D t-SNE plot (ggplot2).
 #>                  -> plot_tsne
 ```
 
@@ -775,7 +778,7 @@ plot_tsne(tsne_res, view = "2d", colour = "group")
 ``` r
 
 plot_tsne(tsne_res, view = "2d", colour = "timepoint")
-#> [09:30:21] INFO  Creating 2D t-SNE plot (ggplot2).
+#> [11:57:42] INFO  Creating 2D t-SNE plot (ggplot2).
 #>                  -> plot_tsne
 ```
 
@@ -874,31 +877,25 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] dplyr_1.2.1  phiper_0.4.3
+#> [1] dplyr_1.2.1  phiper_0.4.5
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] tidyr_1.3.2           utf8_1.2.6            sass_0.4.10          
-#>  [4] generics_0.1.4        lattice_0.22-9        digest_0.6.39        
-#>  [7] magrittr_2.0.5        evaluate_1.0.5        grid_4.6.1           
-#> [10] RColorBrewer_1.1-3    sysfonts_0.8.9        showtextdb_3.0       
-#> [13] blob_1.3.0            fastmap_1.2.0         Matrix_1.7-5         
-#> [16] jsonlite_2.0.0        DBI_1.3.0             mgcv_1.9-4           
-#> [19] purrr_1.2.2           scales_1.4.0          permute_0.9-10       
-#> [22] textshaping_1.0.5     jquerylib_0.1.4       duckdb_1.5.4.3       
-#> [25] cli_3.6.6             rlang_1.3.0           chk_0.10.0           
-#> [28] dbplyr_2.6.0          phiperio_0.5.2        splines_4.6.1        
-#> [31] withr_3.0.3           cachem_1.1.0          yaml_2.3.12          
-#> [34] vegan_2.7-5           otel_0.2.0            Rtsne_0.17           
-#> [37] parallel_4.6.1        tools_4.6.1           ggplot2_4.0.3        
-#> [40] showtext_0.9-8        vctrs_0.7.3           R6_2.6.1             
-#> [43] lifecycle_1.0.5       fs_2.1.0              htmlwidgets_1.6.4    
-#> [46] MASS_7.3-65           cluster_2.1.8.2       ragg_1.5.2           
-#> [49] pkgconfig_2.0.3       desc_1.4.3            pkgdown_2.2.1        
-#> [52] RcppParallel_5.1.11-2 pillar_1.11.1         bslib_0.11.0         
-#> [55] gtable_0.3.6          glue_1.8.1            Rcpp_1.1.2           
-#> [58] systemfonts_1.3.2     xfun_0.60             tibble_3.3.1         
-#> [61] tidyselect_1.2.1      knitr_1.51            farver_2.1.2         
-#> [64] nlme_3.1-169          htmltools_0.5.9       labeling_0.4.3       
-#> [67] parallelDist_0.2.7    rmarkdown_2.31        compiler_4.6.1       
-#> [70] S7_0.2.2
+#>  [1] tidyr_1.3.2        utf8_1.2.6         sass_0.4.10        generics_0.1.4    
+#>  [5] lattice_0.22-9     digest_0.6.39      magrittr_2.0.5     evaluate_1.0.5    
+#>  [9] grid_4.6.1         RColorBrewer_1.1-3 sysfonts_0.8.9     showtextdb_3.0    
+#> [13] blob_1.3.0         fastmap_1.2.0      Matrix_1.7-5       jsonlite_2.0.0    
+#> [17] DBI_1.3.0          mgcv_1.9-4         purrr_1.2.2        scales_1.4.0      
+#> [21] permute_0.9-10     textshaping_1.0.5  jquerylib_0.1.4    duckdb_1.5.5      
+#> [25] cli_3.6.6          rlang_1.3.0        chk_0.11.0         dbplyr_2.6.0      
+#> [29] phiperio_0.5.5     splines_4.6.1      withr_3.0.3        cachem_1.1.0      
+#> [33] yaml_2.3.12        vegan_2.7-6        otel_0.2.0         Rtsne_0.17        
+#> [37] parallel_4.6.1     tools_4.6.1        ggplot2_4.0.3      showtext_0.9-8    
+#> [41] vctrs_0.7.3        R6_2.6.1           lifecycle_1.0.5    fs_2.1.0          
+#> [45] htmlwidgets_1.6.4  MASS_7.3-65        cluster_2.1.8.2    ragg_1.5.2        
+#> [49] pkgconfig_2.0.3    desc_1.4.3         pkgdown_2.2.1      RcppParallel_6.2.1
+#> [53] pillar_1.11.1      bslib_0.12.0       gtable_0.3.6       glue_1.8.1        
+#> [57] Rcpp_1.1.2         systemfonts_1.3.2  xfun_0.60          tibble_3.3.1      
+#> [61] tidyselect_1.2.1   knitr_1.52         farver_2.1.2       nlme_3.1-169      
+#> [65] htmltools_0.5.9    labeling_0.4.3     parallelDist_0.2.7 rmarkdown_2.32    
+#> [69] compiler_4.6.1     S7_0.2.2
 ```

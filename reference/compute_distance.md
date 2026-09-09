@@ -124,23 +124,23 @@ d <- compute_distance(
   distance = "bray",
   n_threads = 2L
 )
-#> [09:29:16] INFO  building abundance matrix from `ps` using `fold_change`.
-#> [09:29:16] INFO  building pivot spec (sample_id x peptide_id).
-#> [09:29:16] INFO  Collecting long table (sample_id, peptide_id, value).
+#> [11:56:48] INFO  building abundance matrix from `ps` using `fold_change`.
+#> [11:56:48] INFO  building pivot spec (sample_id x peptide_id).
+#> [11:56:48] INFO  Collecting long table (sample_id, peptide_id, value).
 #>                  -> compute_distance
-#> [09:29:16] INFO  Pivoting to wide abundance matrix in R.
+#> [11:56:48] INFO  Pivoting to wide abundance matrix in R.
 #>                  -> compute_distance
-#> [09:29:16] INFO  abundance matrix has 43 samples and 5 features after
+#> [11:56:48] INFO  abundance matrix has 43 samples and 5 features after
 #>                  preprocessing.
-#> [09:29:16] INFO  computing distance: bray
-#> [09:29:16] INFO  distance matrix computation complete.
+#> [11:56:48] INFO  computing distance: bray
+#> [11:56:48] INFO  distance matrix computation complete.
 
 a <- attr(d, "abundances")
 a[1:min(5, nrow(a)), 1:min(5, ncol(a)), drop = FALSE]
-#>             16196     16627     18003     24799      5243
-#> A_T1_1  0.3191635 0.0000000 0.7566979 0.5705637 0.0000000
-#> B_T1_1  0.0000000 0.5056957 0.0000000 0.0000000 0.8627119
-#> A_T1_10 0.5965746 0.0000000 0.6709044 0.4404385 0.0000000
-#> B_T1_10 0.0000000 0.7612047 0.0000000 0.0000000 0.6485117
-#> A_T1_11 0.7955740 0.0000000 0.1061303 0.5964884 0.0000000
+#>         agilent_175212 agilent_196916 agilent_21155 agilent_238554 corona2_2925
+#> A_T1_1       0.3191635      0.7566979     0.5705637      0.0000000    0.0000000
+#> B_T1_1       0.0000000      0.0000000     0.0000000      0.8627119    0.5056957
+#> A_T1_10      0.5965746      0.6709044     0.4404385      0.0000000    0.0000000
+#> B_T1_10      0.0000000      0.0000000     0.0000000      0.6485117    0.7612047
+#> A_T1_11      0.7955740      0.1061303     0.5964884      0.0000000    0.0000000
 ```

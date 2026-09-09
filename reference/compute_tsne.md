@@ -131,16 +131,16 @@ d <- compute_distance(
   distance = "bray",
   n_threads = 2L
 )
-#> [09:29:18] INFO  building abundance matrix from `ps` using `fold_change`.
-#> [09:29:18] INFO  building pivot spec (sample_id x peptide_id).
-#> [09:29:18] INFO  Collecting long table (sample_id, peptide_id, value).
+#> [11:56:50] INFO  building abundance matrix from `ps` using `fold_change`.
+#> [11:56:50] INFO  building pivot spec (sample_id x peptide_id).
+#> [11:56:50] INFO  Collecting long table (sample_id, peptide_id, value).
 #>                  -> compute_distance
-#> [09:29:18] INFO  Pivoting to wide abundance matrix in R.
+#> [11:56:50] INFO  Pivoting to wide abundance matrix in R.
 #>                  -> compute_distance
-#> [09:29:18] INFO  abundance matrix has 43 samples and 5 features after
+#> [11:56:50] INFO  abundance matrix has 43 samples and 5 features after
 #>                  preprocessing.
-#> [09:29:18] INFO  computing distance: bray
-#> [09:29:18] INFO  distance matrix computation complete.
+#> [11:56:50] INFO  computing distance: bray
+#> [11:56:50] INFO  distance matrix computation complete.
 
 # Compute t-SNE embeddings
 tsne_res <- compute_tsne(
@@ -151,23 +151,23 @@ tsne_res <- compute_tsne(
   meta_cols = c("subject_id", "timepoint"),
   seed = 42
 )
-#> Warning: [09:29:18] WARN  Perplexity (15) is high for n = 43; reducing to 14.
-#> [09:29:18] INFO  Running t-SNE with dims = 3, perplexity = 14 on 43 samples
+#> Warning: [11:56:50] WARN  Perplexity (15) is high for n = 43; reducing to 14.
+#> [11:56:50] INFO  Running t-SNE with dims = 3, perplexity = 14 on 43 samples
 #>                  (distance input).
-#> [09:29:18] INFO  Attaching metadata columns to t-SNE result: subject_id,
+#> [11:56:50] INFO  Attaching metadata columns to t-SNE result: subject_id,
 #>                  timepoint
-#> [09:29:18] INFO  t-SNE embedding computation finished.
+#> [11:56:50] INFO  t-SNE embedding computation finished.
 
 # View results
 head(tsne_res)
 #> # A tibble: 6 × 6
 #>   sample_id tSNE1 tSNE2 tSNE3 subject_id timepoint
 #>   <chr>     <dbl> <dbl> <dbl> <chr>      <chr>    
-#> 1 A_T1_1    -6.33  3.08  27.8 1          T1       
-#> 2 B_T1_1     5.25 -2.96 -27.0 1          T1       
-#> 3 A_T1_10   -6.63  3.05  28.9 10         T1       
-#> 4 B_T1_10    4.96 -3.00 -24.6 10         T1       
-#> 5 A_T1_11   -5.01  3.78  30.2 11         T1       
-#> 6 B_T1_11    4.93 -2.61 -27.1 11         T1       
+#> 1 A_T1_1    -36.5  6.95  26.0 1          T1       
+#> 2 B_T1_1     30.5 -5.97 -21.7 1          T1       
+#> 3 A_T1_10   -36.5  6.92  27.2 10         T1       
+#> 4 B_T1_10    31.1 -5.77 -24.1 10         T1       
+#> 5 A_T1_11   -34.4  6.86  27.9 11         T1       
+#> 6 B_T1_11    30.6 -6.47 -21.6 11         T1       
 # }
 ```
