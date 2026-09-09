@@ -11,12 +11,14 @@ Authors@R: c(
   person(
     "Alon", "Alexander",
     email = "a.alexander@umcg.nl",
-    role = c("ctb", "cph")
+    role = c("ctb", "cph"),
+    comment = "contributed code and shaped the package concept"
   ),
   person(
     "Nikolas", "Basler",
     email = "nikolas.basler@meduniwien.ac.at",
-    role = c("ctb")
+    role = c("ctb"),
+    comment = c(ORCID = "0000-0003-0791-4369")
   ),
   person(
     "Thomas", "Vogl",

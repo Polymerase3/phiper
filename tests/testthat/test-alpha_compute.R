@@ -23,7 +23,10 @@
   dat_cols <- dplyr::tbl_vars(ps$data_long)
   tp_col <- "timepoint"
 
-  cand_pep <- c("16627", "5243", "24799", "16196", "18003")
+  cand_pep <- c(
+    "agilent_151084", "agilent_216446", "agilent_218320",
+    "agilent_97112", "twist_96563"
+  )
   .data <- rlang::.data
 
   pep_avail <- ps$data_long |>
@@ -351,9 +354,13 @@ testthat::test_that("compute_alpha returns pielou_evenness and berger_parker_dom
   res <- out$all_samples
   testthat::expect_true("pielou_evenness"         %in% names(res))
   testthat::expect_true("berger_parker_dominance" %in% names(res))
-  # values in [0, 1] for non-empty samples
+  # values in [0, 1] for non-empty samples; presence/absence data makes every
+  # sample perfectly even, so allow for floating-point error at the upper bound
   present <- res[res$richness > 0, ]
-  testthat::expect_true(all(present$pielou_evenness >= 0 & present$pielou_evenness <= 1, na.rm = TRUE))
+  testthat::expect_true(all(
+    present$pielou_evenness >= 0 & present$pielou_evenness <= 1 + 1e-8,
+    na.rm = TRUE
+  ))
   testthat::expect_true(all(present$berger_parker_dominance > 0 & present$berger_parker_dominance <= 1, na.rm = TRUE))
 })
 

@@ -7,13 +7,19 @@ test_that("compute_delta works for unpaired design (mock species)", {
   # small unpaired subset: one species, two groups at T1
   ps_filt <- ps |>
     dplyr::filter(
-      peptide_id %in% c("16627", "5243", "24799", "16196", "18003"),
+      peptide_id %in% c(
+        "agilent_151084", "agilent_216446", "agilent_218320",
+        "agilent_97112", "twist_96563"
+      ),
       timepoint == "T1"
     ) |>
     dplyr::collect()
 
   mock_peplib <- data.frame(
-    peptide_id = c("16627", "5243", "24799", "16196", "18003"),
+    peptide_id = c(
+      "agilent_151084", "agilent_216446", "agilent_218320",
+      "agilent_97112", "twist_96563"
+    ),
     species    = rep("mock_species", 5),
     stringsAsFactors = FALSE
   )
@@ -68,13 +74,19 @@ test_that("compute_delta handles paired design via paired_by and returns
   # subset: one mock species, group A, two timepoints
   ps_filt2 <- ps |>
     dplyr::filter(
-      peptide_id %in% c("2269", "21399", "7789", "13588", "10180"),
+      peptide_id %in% c(
+        "agilent_226442", "agilent_40881", "twist_45472",
+        "twist_46405", "agilent_71497"
+      ),
       group == "A"
     ) |>
     dplyr::collect()
 
   mock_peplib <- data.frame(
-    peptide_id = c("2269", "21399", "7789", "13588", "10180"),
+    peptide_id = c(
+      "agilent_226442", "agilent_40881", "twist_45472",
+      "twist_46405", "agilent_71497"
+    ),
     species    = rep("mock_species", 5),
     stringsAsFactors = FALSE
   )
@@ -186,13 +198,19 @@ test_that("compute_delta gives consistent direction for T_obs,
 
   ps_filt <- ps |>
     dplyr::filter(
-      peptide_id %in% c("16627", "5243", "24799", "16196", "18003"),
+      peptide_id %in% c(
+        "agilent_151084", "agilent_216446", "agilent_218320",
+        "agilent_97112", "twist_96563"
+      ),
       timepoint == "T1"
     ) |>
     dplyr::collect()
 
   mock_peplib <- data.frame(
-    peptide_id = c("16627", "5243", "24799", "16196", "18003"),
+    peptide_id = c(
+      "agilent_151084", "agilent_216446", "agilent_218320",
+      "agilent_97112", "twist_96563"
+    ),
     species    = rep("mock_species", 5),
     stringsAsFactors = FALSE
   )
