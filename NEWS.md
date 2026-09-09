@@ -1,3 +1,14 @@
+# phiper 0.4.5 (2026-09-09)
+
+## Bug fixes
+
+- `compute_delta()` no longer ignores `paired_by` in the strict hits guard
+  (#56). The guard rejected duplicate positives per `subject_id` even when a
+  different pairing column was supplied, so a subject contributing two samples
+  to the same group aborted the call although the pairing unit was unique
+  within that group. The guard now keys on `paired_by` when given, and its
+  error message names the column it actually checked.
+
 # phiper 0.4.4 (2026-09-08)
 
 ## New features

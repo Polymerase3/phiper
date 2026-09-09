@@ -174,6 +174,7 @@ utils::globalVariables(c(
   "p_adj_rank_wbh",
   "p_perm",
   "p_raw",
+  "pair_id",
   "passed_rank_bh",
   "passed_rank_wbh",
   "pct1val",

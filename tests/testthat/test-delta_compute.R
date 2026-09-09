@@ -777,6 +777,80 @@ test_that("compute_delta rejects an invalid min_m_eff", {
   expect_error(.delta_min_m_eff_run(fx, min_m_eff = "5"))
 })
 
+# --- paired_by as the uniqueness unit (#56) ---------------------------------
+
+# Fixture: each subject contributes two samples to the SAME group, so
+# subject_id repeats within a group while pair_col stays unique within it.
+# The hits guard must key on pair_col, not subject_id.
+.delta_paired_by_fixture <- function() {
+  peps <- paste0("pep", 1:6)
+  samples <- tibble::tibble(
+    sample_id  = paste0("x", 1:12),
+    group_char = rep(c("A", "B"), each = 6),
+    subject_id = rep(c("s1", "s1", "s2", "s2", "s3", "s3"), 2),
+    pair_col   = rep(paste0("p", 1:6), 2)
+  )
+  tidyr::expand_grid(samples, peptide_id = peps) |>
+    dplyr::mutate(
+      exist = as.integer(
+        (group_char == "A" & peptide_id %in% peps[1:4]) |
+          (group_char == "B" & peptide_id %in% peps[1:2])
+      )
+    )
+}
+
+.delta_paired_by_run <- function(x) {
+  set.seed(7)
+  compute_delta(
+    x              = x,
+    aggregate_stat = "af",
+    exist_col      = "exist",
+    rank_cols      = "peptide_id",
+    group_cols     = "group_char",
+    weight_mode    = "equal",
+    stat_mode      = "srlr_paired",
+    paired_by      = "pair_col",
+    B_permutations = 200L,
+    log            = FALSE
+  )
+}
+
+test_that("compute_delta keys the hits guard on paired_by, not subject_id", {
+  dat <- .delta_paired_by_fixture()
+
+  # duplicated within a group by subject_id, unique by pair_col
+  expect_true(any(
+    dplyr::count(dat, group_char, subject_id, peptide_id)$n > 1L
+  ))
+  expect_false(any(
+    dplyr::count(dat, group_char, pair_col, peptide_id)$n > 1L
+  ))
+
+  res <- .delta_paired_by_run(dat)
+  expect_s3_class(res, "tbl_df")
+  expect_identical(unique(res$design), "paired")
+
+  # renaming the pairing column to subject_id was the documented workaround,
+  # so it must give the same answer
+  res_renamed <- .delta_paired_by_run(
+    dplyr::mutate(dat, subject_id = pair_col)
+  )
+  expect_equal(res, res_renamed)
+})
+
+test_that("compute_delta still rejects duplicates within the pairing unit", {
+  dat <- .delta_paired_by_fixture()
+
+  dup <- dplyr::bind_rows(
+    dat,
+    dat |>
+      dplyr::filter(pair_col == "p1", group_char == "A", exist > 0L) |>
+      dplyr::mutate(sample_id = "dup")
+  )
+
+  expect_error(.delta_paired_by_run(dup), "duplicate positives")
+})
+
 test_that("compute_delta aborts on bitset/peptide dimension mismatch", {
   toy_df <- tibble::tibble(
     sample_id  = c("s1", "s2"),
