@@ -13,7 +13,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -60,14 +60,6 @@
       <small>Source: <a href="https://github.com/Polymerase3/phiper/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
-    <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.4.5" id="phiper-045-2026-09-09">phiper 0.4.5 (2026-09-09)<a class="anchor" aria-label="anchor" href="#phiper-045-2026-09-09"></a></h2>
-<div class="section level3">
-<h3 id="bug-fixes-0-4-5">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-4-5"></a></h3>
-<ul><li>
-<code><a href="../reference/compute_delta.html">compute_delta()</a></code> no longer ignores <code>paired_by</code> in the strict hits guard (<a href="https://github.com/Polymerase3/phiper/issues/56" class="external-link">#56</a>). The guard rejected duplicate positives per <code>subject_id</code> even when a different pairing column was supplied, so a subject contributing two samples to the same group aborted the call although the pairing unit was unique within that group. The guard now keys on <code>paired_by</code> when given, and its error message names the column it actually checked.</li>
-</ul></div>
-</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.4.4" id="phiper-044-2026-09-08">phiper 0.4.4 (2026-09-08)<a class="anchor" aria-label="anchor" href="#phiper-044-2026-09-08"></a></h2>
 <div class="section level3">

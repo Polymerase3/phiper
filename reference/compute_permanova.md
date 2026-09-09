@@ -140,17 +140,17 @@ dist_bc <- compute_distance(
   distance = "jaccard",
   n_threads = 2L
 )
-#> [11:56:49] INFO  building abundance matrix from `ps` using `fold_change`.
-#> [11:56:49] INFO  building pivot spec (sample_id x peptide_id).
-#> [11:56:49] INFO  Collecting long table (sample_id, peptide_id, value).
+#> [12:07:14] INFO  building abundance matrix from `ps` using `fold_change`.
+#> [12:07:14] INFO  building pivot spec (sample_id x peptide_id).
+#> [12:07:14] INFO  Collecting long table (sample_id, peptide_id, value).
 #>                  -> compute_distance
-#> [11:56:49] INFO  Pivoting to wide abundance matrix in R.
+#> [12:07:14] INFO  Pivoting to wide abundance matrix in R.
 #>                  -> compute_distance
-#> [11:56:49] INFO  abundance matrix has 43 samples and 5 features after
+#> [12:07:14] INFO  abundance matrix has 43 samples and 5 features after
 #>                  preprocessing.
-#> [11:56:49] INFO  auto normalization selected -> using relative
-#> [11:56:49] INFO  computing distance: jaccard
-#> [11:56:49] INFO  distance matrix computation complete.
+#> [12:07:14] INFO  auto normalization selected -> using relative
+#> [12:07:14] INFO  computing distance: jaccard
+#> [12:07:14] INFO  distance matrix computation complete.
 
 permanova_res <- compute_permanova(
   dist_bc,
@@ -158,16 +158,16 @@ permanova_res <- compute_permanova(
   group_col = "group",
   time_col  = "timepoint"
 )
-#> [11:56:49] INFO  preparing distance labels and metadata.
-#> Warning: [11:56:49] WARN  column `subject_id` found in `ps`, but `subject_col` is NULL;
+#> [12:07:14] INFO  preparing distance labels and metadata.
+#> Warning: [12:07:14] WARN  column `subject_id` found in `ps`, but `subject_col` is NULL;
 #>                  repeated-measures stratification is disabled.
-#> [11:56:49] INFO  building metadata from `ps`.
-#> [11:56:49] INFO  filtering samples with missing grouping variables.
-#> [11:56:49] INFO  subsetting distance matrix to complete cases.
-#> [11:56:49] INFO  preparing global permanova model.
-#> [11:56:49] INFO  running global permanova
+#> [12:07:14] INFO  building metadata from `ps`.
+#> [12:07:14] INFO  filtering samples with missing grouping variables.
+#> [12:07:14] INFO  subsetting distance matrix to complete cases.
+#> [12:07:14] INFO  preparing global permanova model.
+#> [12:07:14] INFO  running global permanova
 #>                    - model: d_resp ~ group
-#> [11:56:49] INFO  running pairwise permanova contrasts.
+#> [12:07:14] INFO  running pairwise permanova contrasts.
 #> Warning: number of items to replace is not a multiple of replacement length
 
 permanova_res2 <- compute_permanova(
@@ -177,16 +177,16 @@ permanova_res2 <- compute_permanova(
   time_col  = "timepoint",
   p_adjust  = "BH"
 )
-#> [11:56:49] INFO  preparing distance labels and metadata.
-#> Warning: [11:56:49] WARN  column `subject_id` found in `ps`, but `subject_col` is NULL;
+#> [12:07:14] INFO  preparing distance labels and metadata.
+#> Warning: [12:07:14] WARN  column `subject_id` found in `ps`, but `subject_col` is NULL;
 #>                  repeated-measures stratification is disabled.
-#> [11:56:49] INFO  building metadata from `ps`.
-#> [11:56:49] INFO  filtering samples with missing grouping variables.
-#> [11:56:49] INFO  subsetting distance matrix to complete cases.
-#> [11:56:49] INFO  preparing global permanova model.
-#> [11:56:49] INFO  running global permanova
+#> [12:07:14] INFO  building metadata from `ps`.
+#> [12:07:14] INFO  filtering samples with missing grouping variables.
+#> [12:07:14] INFO  subsetting distance matrix to complete cases.
+#> [12:07:14] INFO  preparing global permanova model.
+#> [12:07:14] INFO  running global permanova
 #>                    - model: d_resp ~ group
-#> [11:56:49] INFO  running pairwise permanova contrasts.
+#> [12:07:14] INFO  running pairwise permanova contrasts.
 #> Warning: number of items to replace is not a multiple of replacement length
 # }
 ```

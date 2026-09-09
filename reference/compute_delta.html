@@ -19,7 +19,7 @@ statistic and assessing significance via label permutation."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -326,13 +326,11 @@ No multiple-testing correction is performed; <code>p_perm</code> is returned as
 computed.</p></li>
 </ol><p><strong>Input requirements.</strong></p><ul><li><p><code>exist_col</code> is treated as 0/1 presence.</p></li>
 <li><p>There must be <strong>at most one positive</strong> per
-(pairing unit, <code>peptide_id</code>, <code>group_col</code>, <code>group_value</code>); paired designs
-can have up to two positives across the two group levels. The pairing unit
-is the column named by <code>paired_by</code>, or <code>subject_id</code> when <code>paired_by</code> is not
-supplied. Violations trigger an error. Example (group levels A/B): for a
-single pairing unit and peptide, you may have A=1 and B=0 (or A=0 and B=1,
-or A=1 and B=1), but you cannot have two rows both with A=1 (or two rows
-both with B=1).</p></li>
+(<code>subject_id</code>, <code>peptide_id</code>, <code>group_col</code>, <code>group_value</code>); paired designs
+can have up to two positives across the two group levels. Violations
+trigger an error. Example (group levels A/B): for a single subject and
+peptide, you may have A=1 and B=0 (or A=0 and B=1, or A=1 and B=1), but you
+cannot have two rows both with A=1 (or two rows both with B=1).</p></li>
 <li><p>Non-peptide ranks specified in <code>rank_cols</code> must be resolvable from a
 peptide library (see <code>peptide_library</code> below).</p></li>
 </ul><p><strong>Peptide library resolution.</strong></p>

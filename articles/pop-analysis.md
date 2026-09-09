@@ -36,44 +36,44 @@ peptides.
 ``` r
 
 pd <- load_example_data()
-#> [12:03:13] INFO  Constructing <phip_data> object
+#> [12:15:27] INFO  Constructing <phip_data> object
 #>                  -> create_data()
-#> [12:03:13] INFO  Fetching peptide metadata library via get_peptide_library()
-#> [12:03:13] INFO  Retrieving peptide metadata into DuckDB cache
+#> [12:15:27] INFO  Fetching peptide metadata library via get_peptide_library()
+#> [12:15:27] INFO  Retrieving peptide metadata into DuckDB cache
 #>                  -> get_peptide_library(force_refresh = FALSE)
-#> [12:03:13] INFO  Opened DuckDB connection
+#> [12:15:27] INFO  Opened DuckDB connection
 #>                    - cache dir:
 #>                      /home/runner/.cache/R/phiperio/peptide_meta/phip_cache.duckdb
 #>                    - table: peptide_meta
-#> [12:03:14] OK    Using cached download (SHA-256 match)
-#> [12:03:16] OK    Download complete and loaded into R
-#> [12:03:20] INFO  Importing sanitized metadata into DuckDB cache...
-#> [12:03:22] OK    peptide_meta table created in DuckDB cache
-#> [12:03:22] OK    Retrieving peptide metadata into DuckDB cache - done
-#>                  -> elapsed: 8.368s
-#> [12:03:22] OK    Peptide metadata acquired
-#> [12:03:22] INFO  Validating <phip_data>
+#> [12:15:27] OK    Using cached download (SHA-256 match)
+#> [12:15:30] OK    Download complete and loaded into R
+#> [12:15:35] INFO  Importing sanitized metadata into DuckDB cache...
+#> [12:15:37] OK    peptide_meta table created in DuckDB cache
+#> [12:15:37] OK    Retrieving peptide metadata into DuckDB cache - done
+#>                  -> elapsed: 9.865s
+#> [12:15:37] OK    Peptide metadata acquired
+#> [12:15:37] INFO  Validating <phip_data>
 #>                  -> validate_phip_data()
-#> [12:03:22] INFO  Checking structural requirements (shape & mandatory columns)
-#> [12:03:22] INFO  Checking outcome family availability (exist / fold_change /
+#> [12:15:37] INFO  Checking structural requirements (shape & mandatory columns)
+#> [12:15:37] INFO  Checking outcome family availability (exist / fold_change /
 #>                  raw_counts)
-#> [12:03:22] INFO  Checking collisions with reserved names
+#> [12:15:37] INFO  Checking collisions with reserved names
 #>                    - subject_id, sample_id, timepoint, peptide_id, exist,
 #>                      fold_change, counts_input, counts_hit
-#> [12:03:22] INFO  Ensuring all columns are atomic (no list-cols)
-#> [12:03:22] INFO  Checking key uniqueness
-#> [12:03:22] INFO  Validating value ranges & types for outcomes
-#> [12:03:22] INFO  Assessing sparsity (NA/zero prevalence vs threshold)
+#> [12:15:37] INFO  Ensuring all columns are atomic (no list-cols)
+#> [12:15:37] INFO  Checking key uniqueness
+#> [12:15:37] INFO  Validating value ranges & types for outcomes
+#> [12:15:37] INFO  Assessing sparsity (NA/zero prevalence vs threshold)
 #>                    - warn threshold: 50%
-#> [12:03:22] INFO  Checking peptide_id coverage against peptide_library
-#> [12:03:22] INFO  Checking full grid completeness (peptide * sample)
-#> [12:03:22] INFO  Counts table is not a full peptide * sample grid
+#> [12:15:37] INFO  Checking peptide_id coverage against peptide_library
+#> [12:15:37] INFO  Checking full grid completeness (peptide * sample)
+#> [12:15:37] INFO  Counts table is not a full peptide * sample grid
 #>                    - observed rows: 78200
 #>                    - expected rows: 156000
-#> [12:03:22] OK    Validating <phip_data> - done
-#>                  -> elapsed: 0.378s
-#> [12:03:22] OK    Constructing <phip_data> object - done
-#>                  -> elapsed: 8.748s
+#> [12:15:37] OK    Validating <phip_data> - done
+#>                  -> elapsed: 0.465s
+#> [12:15:37] OK    Constructing <phip_data> object - done
+#>                  -> elapsed: 10.334s
 pd
 #> ── <phip_data> ───────────────────────────────────────────────────────────────── 
 #> 
@@ -137,27 +137,27 @@ pop_group <- compute_pop(
   rank_cols  = "peptide_id",
   group_cols = "group"
 )
-#> [12:03:22] INFO  compute_pop
-#> [12:03:22] INFO  compute_pop
+#> [12:15:37] INFO  compute_pop
+#> [12:15:37] INFO  compute_pop
 #>                    - ranks : peptide_id
 #>                    - group_cols: group
 #>                    - exist_col : exist
 #>                    - pop_k_min : 1
 #>                    - paired : FALSE
-#> [12:03:22] INFO  ranks resolved
+#> [12:15:37] INFO  ranks resolved
 #>                    - available: peptide_id
-#> [12:03:22] INFO  computing cohort sizes and validating binary group_cols
-#> [12:03:22] INFO  computing presence per sample via k-of-n rule
-#> [12:03:22] INFO  counting present samples per feature (pop, unpaired)
-#> [12:03:22] INFO  building pairwise comparisons
-#> [12:03:24] OK    materialized; computing Fisher p-values
-#>                    - table: ph_pop_20260909_120323
-#> [12:03:24] OK    done (compute_pop, unpaired)
+#> [12:15:38] INFO  computing cohort sizes and validating binary group_cols
+#> [12:15:38] INFO  computing presence per sample via k-of-n rule
+#> [12:15:38] INFO  counting present samples per feature (pop, unpaired)
+#> [12:15:38] INFO  building pairwise comparisons
+#> [12:15:39] OK    materialized; computing Fisher p-values
+#>                    - table: ph_pop_20260909_121538
+#> [12:15:40] OK    done (compute_pop, unpaired)
 #>                    - rows : 1950
 #>                    - ranks : peptide_id
 #>                    - k_min : 1
-#> [12:03:24] OK    compute_pop - done
-#>                  -> elapsed: 2.227s
+#> [12:15:40] OK    compute_pop - done
+#>                  -> elapsed: 2.917s
 ```
 
 The result is a plain `data.frame` with one row per
@@ -222,27 +222,27 @@ pop_multi <- compute_pop(
   rank_cols  = "peptide_id",
   group_cols = c("group", "timepoint")
 )
-#> [12:03:25] INFO  compute_pop
-#> [12:03:25] INFO  compute_pop
+#> [12:15:41] INFO  compute_pop
+#> [12:15:41] INFO  compute_pop
 #>                    - ranks : peptide_id
 #>                    - group_cols: group, timepoint
 #>                    - exist_col : exist
 #>                    - pop_k_min : 1
 #>                    - paired : FALSE
-#> [12:03:25] INFO  ranks resolved
+#> [12:15:41] INFO  ranks resolved
 #>                    - available: peptide_id
-#> [12:03:25] INFO  computing cohort sizes and validating binary group_cols
-#> [12:03:25] INFO  computing presence per sample via k-of-n rule
-#> [12:03:25] INFO  counting present samples per feature (pop, unpaired)
-#> [12:03:25] INFO  building pairwise comparisons
-#> [12:03:27] OK    materialized; computing Fisher p-values
-#>                    - table: ph_pop_20260909_120325
-#> [12:03:28] OK    done (compute_pop, unpaired)
+#> [12:15:41] INFO  computing cohort sizes and validating binary group_cols
+#> [12:15:41] INFO  computing presence per sample via k-of-n rule
+#> [12:15:41] INFO  counting present samples per feature (pop, unpaired)
+#> [12:15:41] INFO  building pairwise comparisons
+#> [12:15:43] OK    materialized; computing Fisher p-values
+#>                    - table: ph_pop_20260909_121541
+#> [12:15:45] OK    done (compute_pop, unpaired)
 #>                    - rows : 3900
 #>                    - ranks : peptide_id
 #>                    - k_min : 1
-#> [12:03:28] OK    compute_pop - done
-#>                  -> elapsed: 3.646s
+#> [12:15:45] OK    compute_pop - done
+#>                  -> elapsed: 4.806s
 
 # One block of rows per group column
 table(pop_multi$group_col)
@@ -287,27 +287,27 @@ pop_k2 <- compute_pop(
   group_cols = "group",
   pop_k_min  = 2L
 )
-#> [12:03:28] INFO  compute_pop
-#> [12:03:28] INFO  compute_pop
+#> [12:15:45] INFO  compute_pop
+#> [12:15:45] INFO  compute_pop
 #>                    - ranks : peptide_id
 #>                    - group_cols: group
 #>                    - exist_col : exist
 #>                    - pop_k_min : 2
 #>                    - paired : FALSE
-#> [12:03:28] INFO  ranks resolved
+#> [12:15:45] INFO  ranks resolved
 #>                    - available: peptide_id
-#> [12:03:28] INFO  computing cohort sizes and validating binary group_cols
-#> [12:03:28] INFO  computing presence per sample via k-of-n rule
-#> [12:03:29] INFO  counting present samples per feature (pop, unpaired)
-#> [12:03:29] INFO  building pairwise comparisons
-#> [12:03:30] OK    materialized; computing Fisher p-values
-#>                    - table: ph_pop_20260909_120329
-#> [12:03:30] OK    done (compute_pop, unpaired)
+#> [12:15:46] INFO  computing cohort sizes and validating binary group_cols
+#> [12:15:46] INFO  computing presence per sample via k-of-n rule
+#> [12:15:46] INFO  counting present samples per feature (pop, unpaired)
+#> [12:15:46] INFO  building pairwise comparisons
+#> [12:15:47] OK    materialized; computing Fisher p-values
+#>                    - table: ph_pop_20260909_121546
+#> [12:15:48] OK    done (compute_pop, unpaired)
 #>                    - rows : 0
 #>                    - ranks :
 #>                    - k_min : 2
-#> [12:03:30] OK    compute_pop - done
-#>                  -> elapsed: 1.559s
+#> [12:15:48] OK    compute_pop - done
+#>                  -> elapsed: 2.022s
 
 # Higher k_min → fewer positives
 mean(pop_k2$n1) < mean(pop_group$n1)
@@ -334,24 +334,24 @@ pop_paired <- compute_pop(
   group_cols = "timepoint",
   paired     = "subject_id"
 )
-#> [12:03:30] INFO  compute_pop
-#> [12:03:30] INFO  compute_pop
+#> [12:15:48] INFO  compute_pop
+#> [12:15:48] INFO  compute_pop
 #>                    - ranks : peptide_id
 #>                    - group_cols: timepoint
 #>                    - exist_col : exist
 #>                    - pop_k_min : 1
 #>                    - paired : subject_id
-#> [12:03:30] INFO  ranks resolved
+#> [12:15:48] INFO  ranks resolved
 #>                    - available: peptide_id
-#> [12:03:30] INFO  computing cohort sizes and validating binary group_cols
-#> [12:03:30] INFO  computing presence per sample via k-of-n rule
-#> [12:03:30] INFO  paired design: running McNemar exact (binomial)
-#> [12:03:32] OK    done (compute_pop, paired)
+#> [12:15:48] INFO  computing cohort sizes and validating binary group_cols
+#> [12:15:48] INFO  computing presence per sample via k-of-n rule
+#> [12:15:48] INFO  paired design: running McNemar exact (binomial)
+#> [12:15:50] OK    done (compute_pop, paired)
 #>                    - rows : 1950
 #>                    - ranks : peptide_id
 #>                    - k_min : 1
-#> [12:03:32] OK    compute_pop - done
-#>                  -> elapsed: 1.781s
+#> [12:15:50] OK    compute_pop - done
+#>                  -> elapsed: 2.29s
 
 head(pop_paired)
 #>         rank        feature group_col group1 n1 N1      prop1  percent1 group2
@@ -642,7 +642,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] phiper_0.4.5
+#> [1] phiper_0.4.4
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] future_1.75.0       tidyr_1.3.2         utf8_1.2.6         
