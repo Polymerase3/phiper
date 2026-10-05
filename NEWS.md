@@ -1,3 +1,13 @@
+# phiper 0.4.9 (2026-10-05)
+
+## Continuous integration
+
+- New `phipflow-compat` workflow runs the end-to-end smoke test of the
+  [phipflow](https://github.com/csReynaB/phipflow) Nextflow pipeline with the
+  phiper version under test, on every pull request and push to `main` that
+  touches the package. Changes that break phipflow now fail before they are
+  merged.
+
 # phiper 0.4.8 (2026-10-05)
 
 ## Documentation
