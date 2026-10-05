@@ -1,3 +1,16 @@
+# phiper 0.4.6 (2026-10-05)
+
+## Peptide libraries
+
+- Added two peptide libraries to `library-metadata/`, next to the combined
+  Agilent, Twist and Corona2 library: the human proteome library
+  (`human_proteome_library_16.09.26.rds`, 300,000 `humanProteome_*` peptides)
+  and the ICAM library (`icam_library_01.10.26.rds`, 420,000 `icam_*`
+  peptides). phiperio's `get_peptide_library()` serves them as
+  `"human_proteome"` and `"icam"`. Both omit the full protein sequence
+  (`full_aa_seq`), which kept the files above GitHub's 100 MB limit; the
+  curation scripts are in phiperio's `data-raw/`.
+
 # phiper 0.4.5 (2026-09-09)
 
 ## Bug fixes
