@@ -1,5 +1,22 @@
 # Changelog
 
+## phiper 0.4.9 (2026-10-05)
+
+### Bug fixes
+
+- [`compute_alpha()`](https://polymerase3.github.io/phiper/reference/compute_alpha.md)
+  no longer corrupts phiperio’s peptide-library cache. It attached the
+  cache’s DuckDB file to the data connection in read-write mode, so when
+  [`get_peptide_library()`](https://polymerase3.github.io/phiperio/reference/get_peptide_library.html)
+  later wrote another library to the cache in the same R session, that
+  table became unreadable (“INTERNAL Error: invalid
+  fsst_symbol_table_offset”). This broke the human proteome vignette in
+  `R CMD check` on Linux and macOS. The cache is now attached read-only.
+  An already corrupted cache is rebuilt with
+  `phiperio::get_peptide_library(..., force_refresh = TRUE)`, or by
+  deleting `phip_cache.duckdb` from
+  `tools::R_user_dir("phiperio", "cache")`.
+
 ## phiper 0.4.8 (2026-10-05)
 
 ### Documentation

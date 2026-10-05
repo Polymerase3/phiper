@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.8</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.9</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -114,23 +114,23 @@ library can be retrieved via <code>phiperio</code>’s
 <span></span>
 <span><span class="va">peplib</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://polymerase3.github.io/phiperio/reference/get_peptide_library.html">get_peptide_library</a></span><span class="op">(</span><span class="st">"human_proteome"</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [10:31:20] INFO  Retrieving peptide metadata into DuckDB cache</span></span>
+<span><span class="co">#&gt; [13:04:43] INFO  Retrieving peptide metadata into DuckDB cache</span></span>
 <span><span class="co">#&gt;                  -&gt; get_peptide_library(library = human_proteome, force_refresh</span></span>
 <span><span class="co">#&gt;                     = FALSE)</span></span>
-<span><span class="co">#&gt; [10:31:21] INFO  Opened DuckDB connection</span></span>
+<span><span class="co">#&gt; [13:04:43] INFO  Opened DuckDB connection</span></span>
 <span><span class="co">#&gt;                    - cache dir:</span></span>
 <span><span class="co">#&gt;                      /home/runner/.cache/R/phiperio/peptide_meta/phip_cache.duckdb</span></span>
 <span><span class="co">#&gt;                    - tables: peptide_meta_human_proteome</span></span>
-<span><span class="co">#&gt; [10:31:21] INFO  Starting download</span></span>
+<span><span class="co">#&gt; [13:04:43] INFO  Starting download</span></span>
 <span><span class="co">#&gt;                    - dest:</span></span>
 <span><span class="co">#&gt;                      /home/runner/.cache/R/phiperio/peptide_meta/human_proteome_library_16.09.26.rds</span></span>
-<span><span class="co">#&gt; [10:31:21] OK    Download succeeded (method = &lt;getOption()&gt;)</span></span>
-<span><span class="co">#&gt; [10:31:21] OK    Checksum verified (SHA-256 match)</span></span>
-<span><span class="co">#&gt; [10:31:26] OK    Download complete and loaded into R</span></span>
-<span><span class="co">#&gt; [10:31:31] INFO  Importing sanitized metadata into DuckDB cache...</span></span>
-<span><span class="co">#&gt; [10:31:33] OK    peptide_meta_human_proteome table created in DuckDB cache</span></span>
-<span><span class="co">#&gt; [10:31:33] OK    Retrieving peptide metadata into DuckDB cache - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 12.501s</span></span></code></pre></div>
+<span><span class="co">#&gt; [13:04:43] OK    Download succeeded (method = &lt;getOption()&gt;)</span></span>
+<span><span class="co">#&gt; [13:04:43] OK    Checksum verified (SHA-256 match)</span></span>
+<span><span class="co">#&gt; [13:04:48] OK    Download complete and loaded into R</span></span>
+<span><span class="co">#&gt; [13:04:53] INFO  Importing sanitized metadata into DuckDB cache...</span></span>
+<span><span class="co">#&gt; [13:04:55] OK    peptide_meta_human_proteome table created in DuckDB cache</span></span>
+<span><span class="co">#&gt; [13:04:55] OK    Retrieving peptide metadata into DuckDB cache - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 12.6s</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="metadata-fields">Metadata fields<a class="anchor" aria-label="anchor" href="#metadata-fields"></a>

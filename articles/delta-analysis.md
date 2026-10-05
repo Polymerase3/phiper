@@ -50,46 +50,43 @@ peptides.
 ``` r
 
 pd <- load_example_data()
-#> [10:24:36] INFO  Constructing <phip_data> object
+#> [12:57:35] INFO  Constructing <phip_data> object
 #>                  -> create_data()
-#> [10:24:36] INFO  Fetching peptide metadata library via get_peptide_library()
+#> [12:57:35] INFO  Fetching peptide metadata library via get_peptide_library()
 #>                    - libraries: combined
-#> [10:24:36] INFO  Retrieving peptide metadata into DuckDB cache
+#> [12:57:35] INFO  Retrieving peptide metadata into DuckDB cache
 #>                  -> get_peptide_library(library = combined, force_refresh =
 #>                     FALSE)
-#> [10:24:36] INFO  Opened DuckDB connection
+#> [12:57:35] INFO  Opened DuckDB connection
 #>                    - cache dir:
 #>                      /home/runner/.cache/R/phiperio/peptide_meta/phip_cache.duckdb
 #>                    - tables: peptide_meta_combined
-#> [10:24:36] OK    Using cached download (SHA-256 match)
-#> [10:24:39] OK    Download complete and loaded into R
-#> [10:24:44] INFO  Importing sanitized metadata into DuckDB cache...
-#> [10:24:46] OK    peptide_meta_combined table created in DuckDB cache
-#> [10:24:46] OK    Retrieving peptide metadata into DuckDB cache - done
-#>                  -> elapsed: 9.923s
-#> [10:24:46] OK    Peptide metadata acquired
-#> [10:24:46] INFO  Validating <phip_data>
+#> [12:57:35] OK    Using cached peptide_meta_combined (fast path)
+#> [12:57:35] OK    Retrieving peptide metadata into DuckDB cache - done
+#>                  -> elapsed: 0.051s
+#> [12:57:35] OK    Peptide metadata acquired
+#> [12:57:35] INFO  Validating <phip_data>
 #>                  -> validate_phip_data()
-#> [10:24:46] INFO  Checking structural requirements (shape & mandatory columns)
-#> [10:24:46] INFO  Checking outcome family availability (exist / fold_change /
+#> [12:57:35] INFO  Checking structural requirements (shape & mandatory columns)
+#> [12:57:35] INFO  Checking outcome family availability (exist / fold_change /
 #>                  raw_counts)
-#> [10:24:46] INFO  Checking collisions with reserved names
+#> [12:57:35] INFO  Checking collisions with reserved names
 #>                    - subject_id, sample_id, timepoint, peptide_id, exist,
 #>                      fold_change, counts_input, counts_hit
-#> [10:24:46] INFO  Ensuring all columns are atomic (no list-cols)
-#> [10:24:46] INFO  Checking key uniqueness
-#> [10:24:46] INFO  Validating value ranges & types for outcomes
-#> [10:24:46] INFO  Assessing sparsity (NA/zero prevalence vs threshold)
+#> [12:57:35] INFO  Ensuring all columns are atomic (no list-cols)
+#> [12:57:35] INFO  Checking key uniqueness
+#> [12:57:36] INFO  Validating value ranges & types for outcomes
+#> [12:57:36] INFO  Assessing sparsity (NA/zero prevalence vs threshold)
 #>                    - warn threshold: 50%
-#> [10:24:46] INFO  Checking peptide_id coverage against peptide_library
-#> [10:24:46] INFO  Checking full grid completeness (peptide * sample)
-#> [10:24:46] INFO  Counts table is not a full peptide * sample grid
+#> [12:57:36] INFO  Checking peptide_id coverage against peptide_library
+#> [12:57:36] INFO  Checking full grid completeness (peptide * sample)
+#> [12:57:36] INFO  Counts table is not a full peptide * sample grid
 #>                    - observed rows: 78200
 #>                    - expected rows: 156000
-#> [10:24:46] OK    Validating <phip_data> - done
-#>                  -> elapsed: 0.436s
-#> [10:24:46] OK    Constructing <phip_data> object - done
-#>                  -> elapsed: 10.404s
+#> [12:57:36] OK    Validating <phip_data> - done
+#>                  -> elapsed: 0.525s
+#> [12:57:36] OK    Constructing <phip_data> object - done
+#>                  -> elapsed: 0.627s
 pd
 #> ── <phip_data> ───────────────────────────────────────────────────────────────── 
 #> 
@@ -148,27 +145,27 @@ pop_group <- compute_pop(
   rank_cols  = "peptide_id",
   group_cols = "group"
 )
-#> [10:24:47] INFO  compute_pop
-#> [10:24:47] INFO  compute_pop
+#> [12:57:36] INFO  compute_pop
+#> [12:57:36] INFO  compute_pop
 #>                    - ranks : peptide_id
 #>                    - group_cols: group
 #>                    - exist_col : exist
 #>                    - pop_k_min : 1
 #>                    - paired : FALSE
-#> [10:24:47] INFO  ranks resolved
+#> [12:57:36] INFO  ranks resolved
 #>                    - available: peptide_id
-#> [10:24:47] INFO  computing cohort sizes and validating binary group_cols
-#> [10:24:47] INFO  computing presence per sample via k-of-n rule
-#> [10:24:47] INFO  counting present samples per feature (pop, unpaired)
-#> [10:24:47] INFO  building pairwise comparisons
-#> [10:24:49] OK    materialized; computing Fisher p-values
-#>                    - table: ph_pop_20261005_102447
-#> [10:24:50] OK    done (compute_pop, unpaired)
+#> [12:57:36] INFO  computing cohort sizes and validating binary group_cols
+#> [12:57:37] INFO  computing presence per sample via k-of-n rule
+#> [12:57:37] INFO  counting present samples per feature (pop, unpaired)
+#> [12:57:37] INFO  building pairwise comparisons
+#> [12:57:38] OK    materialized; computing Fisher p-values
+#>                    - table: ph_pop_20261005_125737
+#> [12:57:39] OK    done (compute_pop, unpaired)
 #>                    - rows : 1950
 #>                    - ranks : peptide_id
 #>                    - k_min : 1
-#> [10:24:50] OK    compute_pop - done
-#>                  -> elapsed: 2.964s
+#> [12:57:39] OK    compute_pop - done
+#>                  -> elapsed: 2.904s
 head(pop_group)
 #>         rank        feature group_col group1 n1 N1 prop1 percent1 group2 n2 N2
 #> 1 peptide_id agilent_100642     group      A  0 38     0        0      B  8 42
@@ -224,7 +221,7 @@ deltaplot(
   group_pair_values = c("A", "B"),
   group_labels      = c("Group A", "Group B")
 )
-#> [10:24:50] INFO  Preparing delta prevalence plot.
+#> [12:57:39] INFO  Preparing delta prevalence plot.
 ```
 
 ![](delta-analysis_files/figure-html/deltaplot-basic-1.png)
@@ -248,7 +245,7 @@ deltaplot(
   point_alpha        = 0.15,
   point_size         = 0.4
 )
-#> [10:24:51] INFO  Preparing delta prevalence plot.
+#> [12:57:41] INFO  Preparing delta prevalence plot.
 ```
 
 ![](delta-analysis_files/figure-html/deltaplot-smooth-1.png)
@@ -266,7 +263,7 @@ deltaplot(
   point_alpha         = 0.20,
   arrow_color         = "steelblue"
 )
-#> [10:24:51] INFO  Preparing delta prevalence plot.
+#> [12:57:41] INFO  Preparing delta prevalence plot.
 ```
 
 ![](delta-analysis_files/figure-html/deltaplot-custom-1.png)
@@ -652,7 +649,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] phiper_0.4.8
+#> [1] phiper_0.4.9
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] future_1.76.0       tidyr_1.3.2         utf8_1.2.6         

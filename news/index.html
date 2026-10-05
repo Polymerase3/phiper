@@ -13,7 +13,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.8</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.9</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,6 +67,14 @@
       <small>Source: <a href="https://github.com/Polymerase3/phiper/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.4.9" id="phiper-049-2026-10-05">phiper 0.4.9 (2026-10-05)<a class="anchor" aria-label="anchor" href="#phiper-049-2026-10-05"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-0-4-9">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-4-9"></a></h3>
+<ul><li>
+<code><a href="../reference/compute_alpha.html">compute_alpha()</a></code> no longer corrupts phiperio’s peptide-library cache. It attached the cache’s DuckDB file to the data connection in read-write mode, so when <code><a href="https://polymerase3.github.io/phiperio/reference/get_peptide_library.html">get_peptide_library()</a></code> later wrote another library to the cache in the same R session, that table became unreadable (“INTERNAL Error: invalid fsst_symbol_table_offset”). This broke the human proteome vignette in <code>R CMD check</code> on Linux and macOS. The cache is now attached read-only. An already corrupted cache is rebuilt with <code>phiperio::get_peptide_library(..., force_refresh = TRUE)</code>, or by deleting <code>phip_cache.duckdb</code> from <code>tools::R_user_dir("phiperio", "cache")</code>.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.4.8" id="phiper-048-2026-10-05">phiper 0.4.8 (2026-10-05)<a class="anchor" aria-label="anchor" href="#phiper-048-2026-10-05"></a></h2>
 <div class="section level3">
