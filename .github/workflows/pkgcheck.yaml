@@ -2,7 +2,7 @@ name: pkgcheck
 
 # This will cancel running jobs once a new run is triggered
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref }}
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
 on:
@@ -25,5 +25,18 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       issues: write
+      actions: read
     steps:
+      # pkgcheck reads the latest push runs of R-CMD-check and test-coverage
+      # and fails if they have not finished yet, so wait for them first.
+      - name: Wait for R-CMD-check and test-coverage
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for wf in R-CMD-check.yaml test-coverage.yaml; do
+            until [ "$(gh api "repos/${{ github.repository }}/actions/workflows/$wf/runs?event=push&per_page=1" \
+                  --jq '.workflow_runs[0].status')" = "completed" ]; do
+              sleep 60
+            done
+          done
       - uses: ropensci-review-tools/pkgcheck-action@main

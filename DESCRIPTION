@@ -11,7 +11,7 @@ Authors@R: c(
   person(
     "Alon", "Alexander",
     email = "a.alexander@umcg.nl",
-    role = c("ctb", "cph"),
+    role = c("cph"),
     comment = "contributed code and shaped the package concept"
   ),
   person(
