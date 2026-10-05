@@ -140,7 +140,8 @@ compute_delta(
   Optional data frame providing peptide annotations for non-peptide
   ranks. Must at least contain `peptide_id` and all requested
   `rank_cols` besides `"peptide_id"`. If `NULL`, the function falls back
-  to `x$peptide_library` or `get_peptide_library()` (from phiperio).
+  to `x$peptide_library` or the phiperio libraries the peptide IDs
+  belong to.
 
 - log:
 
@@ -291,8 +292,9 @@ required. It is resolved in the following order:
 2.  `x$peptide_library` if `x` is a `phip_data` with an attached
     library.
 
-3.  `get_peptide_library()` from phiperio (always available as a
-    dependency).
+3.  The phiperio libraries the peptide IDs belong to, detected from
+    their prefixes with `detect_peptide_libraries()` and fetched with
+    `get_peptide_library()`.
 
 ## Parallelization
 

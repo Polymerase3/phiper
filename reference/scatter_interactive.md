@@ -77,8 +77,10 @@ scatter_interactive(
 
 - peplib:
 
-  Optional peptide metadata table used to resolve `color_by` when not
-  available via the global library.
+  Optional peptide metadata table used to resolve `color_by` and the
+  hover metadata. If `NULL`, the phiperio peptide libraries the peptide
+  IDs belong to are detected from their prefixes and fetched with
+  `get_peptide_library()`.
 
 - background_df:
 

@@ -161,78 +161,80 @@ formula:
 ``` r
 pd <- load_example_data()
 #> duckdb keeps downloaded extensions and secrets in a temporary directory:
-#> ℹ /tmp/RtmplNKjlQ/duckdb
+#> ℹ /tmp/Rtmp3Lv2x0/duckdb
 #> This is removed when the R session ends.
 #> • Extensions are re-downloaded each session.
 #> • Secrets are lost.
 #> ℹ Run duckdb(shared_home = TRUE) (or create ~/.duckdb) to keep them (suitable for most users).
 #> ℹ Run duckdb(shared_home = FALSE) to accept the temporary directory (and silence this message).
 #> ℹ See ?duckdb_storage for details and alternatives.
-#> [08:18:35] INFO  Constructing <phip_data> object
+#> [09:05:27] INFO  Constructing <phip_data> object
 #>                  -> create_data()
-#> [08:18:35] INFO  Fetching peptide metadata library via get_peptide_library()
-#> [08:18:35] INFO  Retrieving peptide metadata into DuckDB cache
-#>                  -> get_peptide_library(force_refresh = FALSE)
+#> [09:05:27] INFO  Fetching peptide metadata library via get_peptide_library()
+#>                    - libraries: combined
+#> [09:05:27] INFO  Retrieving peptide metadata into DuckDB cache
+#>                  -> get_peptide_library(library = combined, force_refresh =
+#>                     FALSE)
 #> duckdb keeps downloaded extensions and secrets in a temporary directory:
-#> ℹ /tmp/RtmplNKjlQ/duckdb
+#> ℹ /tmp/Rtmp3Lv2x0/duckdb
 #> This is removed when the R session ends.
 #> • Extensions are re-downloaded each session.
 #> • Secrets are lost.
 #> ℹ Run duckdb(shared_home = TRUE) (or create ~/.duckdb) to keep them (suitable for most users).
 #> ℹ Run duckdb(shared_home = FALSE) to accept the temporary directory (and silence this message).
 #> ℹ See ?duckdb_storage for details and alternatives.
-#> [08:18:35] INFO  Opened DuckDB connection
+#> [09:05:27] INFO  Opened DuckDB connection
 #>                    - cache dir:
 #>                      /home/runner/.cache/R/phiperio/peptide_meta/phip_cache.duckdb
-#>                    - table: peptide_meta
-#> [08:18:35] INFO  Starting download
+#>                    - tables: peptide_meta_combined
+#> [09:05:27] INFO  Starting download
 #>                    - dest:
 #>                      /home/runner/.cache/R/phiperio/peptide_meta/combined_library_06.07.26.rds
-#> [08:18:36] OK    Download succeeded (method = <getOption()>)
-#> [08:18:36] OK    Checksum verified (SHA-256 match)
-#> [08:18:39] OK    Download complete and loaded into R
-#> [08:18:44] INFO  Importing sanitized metadata into DuckDB cache...
-#> [08:18:46] OK    peptide_meta table created in DuckDB cache
-#> [08:18:46] OK    Retrieving peptide metadata into DuckDB cache - done
-#>                  -> elapsed: 10.43s
-#> [08:18:46] OK    Peptide metadata acquired
-#> [08:18:46] INFO  Validating <phip_data>
+#> [09:05:28] OK    Download succeeded (method = <getOption()>)
+#> [09:05:28] OK    Checksum verified (SHA-256 match)
+#> [09:05:31] OK    Download complete and loaded into R
+#> [09:05:35] INFO  Importing sanitized metadata into DuckDB cache...
+#> [09:05:37] OK    peptide_meta_combined table created in DuckDB cache
+#> [09:05:37] OK    Retrieving peptide metadata into DuckDB cache - done
+#>                  -> elapsed: 9.477s
+#> [09:05:37] OK    Peptide metadata acquired
+#> [09:05:37] INFO  Validating <phip_data>
 #>                  -> validate_phip_data()
-#> [08:18:46] INFO  Checking structural requirements (shape & mandatory columns)
-#> [08:18:46] INFO  Checking outcome family availability (exist / fold_change /
+#> [09:05:37] INFO  Checking structural requirements (shape & mandatory columns)
+#> [09:05:37] INFO  Checking outcome family availability (exist / fold_change /
 #>                  raw_counts)
-#> [08:18:46] INFO  Checking collisions with reserved names
+#> [09:05:37] INFO  Checking collisions with reserved names
 #>                    - subject_id, sample_id, timepoint, peptide_id, exist,
 #>                      fold_change, counts_input, counts_hit
-#> [08:18:46] INFO  Ensuring all columns are atomic (no list-cols)
-#> [08:18:46] INFO  Checking key uniqueness
-#> [08:18:46] INFO  Validating value ranges & types for outcomes
+#> [09:05:37] INFO  Ensuring all columns are atomic (no list-cols)
+#> [09:05:37] INFO  Checking key uniqueness
+#> [09:05:37] INFO  Validating value ranges & types for outcomes
 #> Warning: Missing values are always removed in SQL aggregation functions.
 #> Use `na.rm = TRUE` to silence this warning
 #> This warning is displayed once every 8 hours.
-#> [08:18:46] INFO  Assessing sparsity (NA/zero prevalence vs threshold)
+#> [09:05:37] INFO  Assessing sparsity (NA/zero prevalence vs threshold)
 #>                    - warn threshold: 50%
-#> [08:18:46] INFO  Checking peptide_id coverage against peptide_library
-#> [08:18:46] INFO  Checking full grid completeness (peptide * sample)
-#> [08:18:46] INFO  Counts table is not a full peptide * sample grid
+#> [09:05:37] INFO  Checking peptide_id coverage against peptide_library
+#> [09:05:37] INFO  Checking full grid completeness (peptide * sample)
+#> [09:05:37] INFO  Counts table is not a full peptide * sample grid
 #>                    - observed rows: 78200
 #>                    - expected rows: 156000
-#> Warning: [08:18:46] WARN  Grid remains incomplete (auto_expand = FALSE).
+#> Warning: [09:05:37] WARN  Grid remains incomplete (auto_expand = FALSE).
 #>                  -> grid completeness
 #>                    - observed rows: 78200
 #>                    - expected rows: 156000.
-#> [08:18:46] OK    Validating <phip_data> - done
-#>                  -> elapsed: 0.395s
-#> [08:18:46] OK    Constructing <phip_data> object - done
-#>                  -> elapsed: 10.828s
+#> [09:05:37] OK    Validating <phip_data> - done
+#>                  -> elapsed: 0.341s
+#> [09:05:37] OK    Constructing <phip_data> object - done
+#>                  -> elapsed: 9.857s
 # phip_data input: peptide-level diversity by group
 out <- compute_alpha(
   pd, group_cols = "group", ranks = "peptide_id"
 )
-#> [08:18:46] INFO  Computing alpha diversity (<phip_data>)
+#> [09:05:37] INFO  Computing alpha diversity (<phip_data>)
 #>                  -> group_cols: 'group'; ranks: 'peptide_id'
-#> [08:18:46] OK    Computing alpha diversity (<phip_data>) - done
-#>                  -> elapsed: 0.227s
+#> [09:05:37] OK    Computing alpha diversity (<phip_data>) - done
+#>                  -> elapsed: 0.196s
 
 # include interaction of multiple grouping variables
 out2 <- compute_alpha(
@@ -241,11 +243,11 @@ out2 <- compute_alpha(
   ranks = c("peptide_id", "family", "genus"),
   group_interaction = TRUE
 )
-#> [08:18:46] INFO  Computing alpha diversity (<phip_data>)
+#> [09:05:37] INFO  Computing alpha diversity (<phip_data>)
 #>                  -> group_cols: 'group', 'timepoint'; ranks: 'peptide_id',
 #>                     'family', 'genus'
-#> [08:18:48] OK    Computing alpha diversity (<phip_data>) - done
-#>                  -> elapsed: 1.594s
+#> [09:05:39] OK    Computing alpha diversity (<phip_data>) - done
+#>                  -> elapsed: 1.356s
 
 # interaction only (returns a single element named "group * timepoint")
 out3 <- compute_alpha(
@@ -255,10 +257,10 @@ out3 <- compute_alpha(
   group_interaction = TRUE,
   interaction_only = TRUE
 )
-#> [08:18:48] INFO  Computing alpha diversity (<phip_data>)
+#> [09:05:39] INFO  Computing alpha diversity (<phip_data>)
 #>                  -> group_cols: 'group', 'timepoint'; ranks: 'peptide_id'
-#> [08:18:48] OK    Computing alpha diversity (<phip_data>) - done
-#>                  -> elapsed: 0.222s
+#> [09:05:39] OK    Computing alpha diversity (<phip_data>) - done
+#>                  -> elapsed: 0.193s
 
 if (FALSE) { # \dontrun{
 # data.frame input: ranks must be columns in the data
@@ -272,8 +274,8 @@ out_thr <- compute_alpha(
   pd, group_cols = "group", ranks = "peptide_id",
   mode = "threshold", threshold = 1.5
 )
-#> [08:18:48] INFO  Computing alpha diversity (<phip_data>)
+#> [09:05:39] INFO  Computing alpha diversity (<phip_data>)
 #>                  -> group_cols: 'group'; ranks: 'peptide_id'
-#> [08:18:49] OK    Computing alpha diversity (<phip_data>) - done
-#>                  -> elapsed: 0.227s
+#> [09:05:39] OK    Computing alpha diversity (<phip_data>) - done
+#>                  -> elapsed: 0.192s
 ```

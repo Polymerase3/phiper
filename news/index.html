@@ -13,7 +13,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -60,6 +60,13 @@
       <small>Source: <a href="https://github.com/Polymerase3/phiper/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.4.7" id="phiper-047-2026-10-05">phiper 0.4.7 (2026-10-05)<a class="anchor" aria-label="anchor" href="#phiper-047-2026-10-05"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-0-4-7">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-4-7"></a></h3>
+<ul><li>When no peptide library is supplied, <code><a href="../reference/scatter_interactive.html">scatter_interactive()</a></code>, the <code>color_by</code> highlighting of the scatter and volcano plots, and <code><a href="../reference/compute_delta.html">compute_delta()</a></code> now fetch the phiperio libraries the peptide IDs belong to, detected from their prefixes with <code><a href="https://polymerase3.github.io/phiperio/reference/detect_peptide_libraries.html">phiperio::detect_peptide_libraries()</a></code>. They previously always fell back to the combined Agilent, Twist and Corona2 library, so human proteome and ICAM peptides got no hover metadata and could not be highlighted or grouped by taxonomy. Peptides that match no known library get no library: plots leave every point uncoloured, and <code><a href="../reference/compute_delta.html">compute_delta()</a></code> asks for <code>peptide_library</code> instead of reporting missing columns. Requires phiperio 0.6.1.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.4.6" id="phiper-046-2026-10-05">phiper 0.4.6 (2026-10-05)<a class="anchor" aria-label="anchor" href="#phiper-046-2026-10-05"></a></h2>
 <div class="section level3">

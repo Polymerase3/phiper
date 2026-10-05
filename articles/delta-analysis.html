@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -134,44 +134,46 @@ features ranked by that statistic.</li>
 (<code>T1</code>, <code>T2</code>) across 1 000 simulated peptides.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pd</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/load_example_data.html">load_example_data</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [08:20:03] INFO  Constructing &lt;phip_data&gt; object</span></span>
+<span><span class="co">#&gt; [09:06:42] INFO  Constructing &lt;phip_data&gt; object</span></span>
 <span><span class="co">#&gt;                  -&gt; create_data()</span></span>
-<span><span class="co">#&gt; [08:20:03] INFO  Fetching peptide metadata library via get_peptide_library()</span></span>
-<span><span class="co">#&gt; [08:20:03] INFO  Retrieving peptide metadata into DuckDB cache</span></span>
-<span><span class="co">#&gt;                  -&gt; get_peptide_library(force_refresh = FALSE)</span></span>
-<span><span class="co">#&gt; [08:20:03] INFO  Opened DuckDB connection</span></span>
+<span><span class="co">#&gt; [09:06:42] INFO  Fetching peptide metadata library via get_peptide_library()</span></span>
+<span><span class="co">#&gt;                    - libraries: combined</span></span>
+<span><span class="co">#&gt; [09:06:42] INFO  Retrieving peptide metadata into DuckDB cache</span></span>
+<span><span class="co">#&gt;                  -&gt; get_peptide_library(library = combined, force_refresh =</span></span>
+<span><span class="co">#&gt;                     FALSE)</span></span>
+<span><span class="co">#&gt; [09:06:42] INFO  Opened DuckDB connection</span></span>
 <span><span class="co">#&gt;                    - cache dir:</span></span>
 <span><span class="co">#&gt;                      /home/runner/.cache/R/phiperio/peptide_meta/phip_cache.duckdb</span></span>
-<span><span class="co">#&gt;                    - table: peptide_meta</span></span>
-<span><span class="co">#&gt; [08:20:03] OK    Using cached download (SHA-256 match)</span></span>
-<span><span class="co">#&gt; [08:20:06] OK    Download complete and loaded into R</span></span>
-<span><span class="co">#&gt; [08:20:11] INFO  Importing sanitized metadata into DuckDB cache...</span></span>
-<span><span class="co">#&gt; [08:20:13] OK    peptide_meta table created in DuckDB cache</span></span>
-<span><span class="co">#&gt; [08:20:13] OK    Retrieving peptide metadata into DuckDB cache - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 9.832s</span></span>
-<span><span class="co">#&gt; [08:20:13] OK    Peptide metadata acquired</span></span>
-<span><span class="co">#&gt; [08:20:13] INFO  Validating &lt;phip_data&gt;</span></span>
+<span><span class="co">#&gt;                    - tables: peptide_meta_combined</span></span>
+<span><span class="co">#&gt; [09:06:42] OK    Using cached download (SHA-256 match)</span></span>
+<span><span class="co">#&gt; [09:06:45] OK    Download complete and loaded into R</span></span>
+<span><span class="co">#&gt; [09:06:49] INFO  Importing sanitized metadata into DuckDB cache...</span></span>
+<span><span class="co">#&gt; [09:06:51] OK    peptide_meta_combined table created in DuckDB cache</span></span>
+<span><span class="co">#&gt; [09:06:51] OK    Retrieving peptide metadata into DuckDB cache - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 8.894s</span></span>
+<span><span class="co">#&gt; [09:06:51] OK    Peptide metadata acquired</span></span>
+<span><span class="co">#&gt; [09:06:51] INFO  Validating &lt;phip_data&gt;</span></span>
 <span><span class="co">#&gt;                  -&gt; validate_phip_data()</span></span>
-<span><span class="co">#&gt; [08:20:13] INFO  Checking structural requirements (shape &amp; mandatory columns)</span></span>
-<span><span class="co">#&gt; [08:20:13] INFO  Checking outcome family availability (exist / fold_change /</span></span>
+<span><span class="co">#&gt; [09:06:51] INFO  Checking structural requirements (shape &amp; mandatory columns)</span></span>
+<span><span class="co">#&gt; [09:06:51] INFO  Checking outcome family availability (exist / fold_change /</span></span>
 <span><span class="co">#&gt;                  raw_counts)</span></span>
-<span><span class="co">#&gt; [08:20:13] INFO  Checking collisions with reserved names</span></span>
+<span><span class="co">#&gt; [09:06:51] INFO  Checking collisions with reserved names</span></span>
 <span><span class="co">#&gt;                    - subject_id, sample_id, timepoint, peptide_id, exist,</span></span>
 <span><span class="co">#&gt;                      fold_change, counts_input, counts_hit</span></span>
-<span><span class="co">#&gt; [08:20:13] INFO  Ensuring all columns are atomic (no list-cols)</span></span>
-<span><span class="co">#&gt; [08:20:13] INFO  Checking key uniqueness</span></span>
-<span><span class="co">#&gt; [08:20:13] INFO  Validating value ranges &amp; types for outcomes</span></span>
-<span><span class="co">#&gt; [08:20:13] INFO  Assessing sparsity (NA/zero prevalence vs threshold)</span></span>
+<span><span class="co">#&gt; [09:06:51] INFO  Ensuring all columns are atomic (no list-cols)</span></span>
+<span><span class="co">#&gt; [09:06:51] INFO  Checking key uniqueness</span></span>
+<span><span class="co">#&gt; [09:06:51] INFO  Validating value ranges &amp; types for outcomes</span></span>
+<span><span class="co">#&gt; [09:06:51] INFO  Assessing sparsity (NA/zero prevalence vs threshold)</span></span>
 <span><span class="co">#&gt;                    - warn threshold: 50%</span></span>
-<span><span class="co">#&gt; [08:20:13] INFO  Checking peptide_id coverage against peptide_library</span></span>
-<span><span class="co">#&gt; [08:20:13] INFO  Checking full grid completeness (peptide * sample)</span></span>
-<span><span class="co">#&gt; [08:20:13] INFO  Counts table is not a full peptide * sample grid</span></span>
+<span><span class="co">#&gt; [09:06:51] INFO  Checking peptide_id coverage against peptide_library</span></span>
+<span><span class="co">#&gt; [09:06:51] INFO  Checking full grid completeness (peptide * sample)</span></span>
+<span><span class="co">#&gt; [09:06:51] INFO  Counts table is not a full peptide * sample grid</span></span>
 <span><span class="co">#&gt;                    - observed rows: 78200</span></span>
 <span><span class="co">#&gt;                    - expected rows: 156000</span></span>
-<span><span class="co">#&gt; [08:20:13] OK    Validating &lt;phip_data&gt; - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.473s</span></span>
-<span><span class="co">#&gt; [08:20:13] OK    Constructing &lt;phip_data&gt; object - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 10.308s</span></span>
+<span><span class="co">#&gt; [09:06:51] OK    Validating &lt;phip_data&gt; - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.383s</span></span>
+<span><span class="co">#&gt; [09:06:51] OK    Constructing &lt;phip_data&gt; object - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 9.317s</span></span>
 <span><span class="va">pd</span></span>
 <span><span class="co">#&gt; ── &lt;phip_data&gt; ───────────────────────────────────────────────────────────────── </span></span>
 <span><span class="co">#&gt; </span></span>
@@ -203,6 +205,7 @@ features ranked by that statistic.</li>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">meta flags:</span> </span></span>
 <span><span class="co">#&gt;   con:            &lt;duckdb_connection&gt;</span></span>
+<span><span class="co">#&gt;   peptide_libraries: combined</span></span>
 <span><span class="co">#&gt;   longitudinal:   TRUE</span></span>
 <span><span class="co">#&gt;   exist:          TRUE</span></span>
 <span><span class="co">#&gt;   fold_change:    TRUE</span></span>
@@ -226,27 +229,27 @@ group-level prevalence table first:</p>
 <span>  rank_cols  <span class="op">=</span> <span class="st">"peptide_id"</span>,</span>
 <span>  group_cols <span class="op">=</span> <span class="st">"group"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [08:20:13] INFO  compute_pop</span></span>
-<span><span class="co">#&gt; [08:20:13] INFO  compute_pop</span></span>
+<span><span class="co">#&gt; [09:06:51] INFO  compute_pop</span></span>
+<span><span class="co">#&gt; [09:06:51] INFO  compute_pop</span></span>
 <span><span class="co">#&gt;                    - ranks : peptide_id</span></span>
 <span><span class="co">#&gt;                    - group_cols: group</span></span>
 <span><span class="co">#&gt;                    - exist_col : exist</span></span>
 <span><span class="co">#&gt;                    - pop_k_min : 1</span></span>
 <span><span class="co">#&gt;                    - paired : FALSE</span></span>
-<span><span class="co">#&gt; [08:20:13] INFO  ranks resolved</span></span>
+<span><span class="co">#&gt; [09:06:51] INFO  ranks resolved</span></span>
 <span><span class="co">#&gt;                    - available: peptide_id</span></span>
-<span><span class="co">#&gt; [08:20:13] INFO  computing cohort sizes and validating binary group_cols</span></span>
-<span><span class="co">#&gt; [08:20:14] INFO  computing presence per sample via k-of-n rule</span></span>
-<span><span class="co">#&gt; [08:20:14] INFO  counting present samples per feature (pop, unpaired)</span></span>
-<span><span class="co">#&gt; [08:20:14] INFO  building pairwise comparisons</span></span>
-<span><span class="co">#&gt; [08:20:15] OK    materialized; computing Fisher p-values</span></span>
-<span><span class="co">#&gt;                    - table: ph_pop_20261005_082014</span></span>
-<span><span class="co">#&gt; [08:20:16] OK    done (compute_pop, unpaired)</span></span>
+<span><span class="co">#&gt; [09:06:52] INFO  computing cohort sizes and validating binary group_cols</span></span>
+<span><span class="co">#&gt; [09:06:52] INFO  computing presence per sample via k-of-n rule</span></span>
+<span><span class="co">#&gt; [09:06:52] INFO  counting present samples per feature (pop, unpaired)</span></span>
+<span><span class="co">#&gt; [09:06:52] INFO  building pairwise comparisons</span></span>
+<span><span class="co">#&gt; [09:06:53] OK    materialized; computing Fisher p-values</span></span>
+<span><span class="co">#&gt;                    - table: ph_pop_20261005_090652</span></span>
+<span><span class="co">#&gt; [09:06:54] OK    done (compute_pop, unpaired)</span></span>
 <span><span class="co">#&gt;                    - rows : 1950</span></span>
 <span><span class="co">#&gt;                    - ranks : peptide_id</span></span>
 <span><span class="co">#&gt;                    - k_min : 1</span></span>
-<span><span class="co">#&gt; [08:20:16] OK    compute_pop - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 2.938s</span></span>
+<span><span class="co">#&gt; [09:06:54] OK    compute_pop - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 2.573s</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">pop_group</span><span class="op">)</span></span>
 <span><span class="co">#&gt;         rank        feature group_col group1 n1 N1 prop1 percent1 group2 n2 N2</span></span>
 <span><span class="co">#&gt; 1 peptide_id agilent_100642     group      A  0 38     0        0      B  8 42</span></span>
@@ -302,7 +305,7 @@ returns.</p>
 <span>  group_pair_values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"B"</span><span class="op">)</span>,</span>
 <span>  group_labels      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Group A"</span>, <span class="st">"Group B"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [08:20:16] INFO  Preparing delta prevalence plot.</span></span></code></pre></div>
+<span><span class="co">#&gt; [09:06:54] INFO  Preparing delta prevalence plot.</span></span></code></pre></div>
 <p><img src="delta-analysis_files/figure-html/deltaplot-basic-1.png" class="r-plt" alt="" width="672"></p>
 <p>Use <code>group_pair_values</code> to select a specific contrast when
 the table contains more than one pair. <code>group_labels</code>
@@ -322,7 +325,7 @@ Lower values produce smoother curves; set
 <span>  point_alpha        <span class="op">=</span> <span class="fl">0.15</span>,</span>
 <span>  point_size         <span class="op">=</span> <span class="fl">0.4</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [08:20:18] INFO  Preparing delta prevalence plot.</span></span></code></pre></div>
+<span><span class="co">#&gt; [09:06:55] INFO  Preparing delta prevalence plot.</span></span></code></pre></div>
 <p><img src="delta-analysis_files/figure-html/deltaplot-smooth-1.png" class="r-plt" alt="" width="672"></p>
 </div>
 <div class="section level4">
@@ -338,7 +341,7 @@ Lower values produce smoother curves; set
 <span>  point_alpha         <span class="op">=</span> <span class="fl">0.20</span>,</span>
 <span>  arrow_color         <span class="op">=</span> <span class="st">"steelblue"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [08:20:18] INFO  Preparing delta prevalence plot.</span></span></code></pre></div>
+<span><span class="co">#&gt; [09:06:56] INFO  Preparing delta prevalence plot.</span></span></code></pre></div>
 <p><img src="delta-analysis_files/figure-html/deltaplot-custom-1.png" class="r-plt" alt="" width="672"></p>
 </div>
 </div>
@@ -812,7 +815,7 @@ value.</p>
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt; [1] phiper_0.4.6</span></span>
+<span><span class="co">#&gt; [1] phiper_0.4.7</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
 <span><span class="co">#&gt;  [1] future_1.76.0       tidyr_1.3.2         utf8_1.2.6         </span></span>
@@ -825,7 +828,7 @@ value.</p>
 <span><span class="co">#&gt; [22] scales_1.4.0        codetools_0.2-20    textshaping_1.0.5  </span></span>
 <span><span class="co">#&gt; [25] jquerylib_0.1.4     duckdb_1.5.6        cli_3.6.6          </span></span>
 <span><span class="co">#&gt; [28] rlang_1.3.0         chk_0.11.0          dbplyr_2.6.0       </span></span>
-<span><span class="co">#&gt; [31] phiperio_0.5.5      future.apply_1.20.2 parallelly_1.48.0  </span></span>
+<span><span class="co">#&gt; [31] phiperio_0.6.1      future.apply_1.20.2 parallelly_1.48.0  </span></span>
 <span><span class="co">#&gt; [34] splines_4.6.1       withr_3.0.3         cachem_1.1.0       </span></span>
 <span><span class="co">#&gt; [37] yaml_2.3.12         otel_0.2.0          parallel_4.6.1     </span></span>
 <span><span class="co">#&gt; [40] tools_4.6.1         dplyr_1.2.1         ggplot2_4.0.3      </span></span>

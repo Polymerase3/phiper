@@ -19,7 +19,7 @@ statistic and assessing significance via label permutation."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -207,7 +207,7 @@ tested; others are dropped after the peptide-level pivot.</p></dd>
 <dd><p>Optional data frame providing peptide annotations for
 non-peptide ranks. Must at least contain <code>peptide_id</code> and all requested
 <code>rank_cols</code> besides <code>"peptide_id"</code>. If <code>NULL</code>, the function falls back to
-<code>x$peptide_library</code> or <code>get_peptide_library()</code> (from phiperio).</p></dd>
+<code>x$peptide_library</code> or the phiperio libraries the peptide IDs belong to.</p></dd>
 
 
 <dt id="arg-log">log<a class="anchor" aria-label="anchor" href="#arg-log"></a></dt>
@@ -339,7 +339,9 @@ peptide library (see <code>peptide_library</code> below).</p></li>
 <p>When <code>rank_cols</code> includes non-<code>"peptide_id"</code> ranks, a peptide library is
 required. It is resolved in the following order:</p><ol><li><p>The explicit <code>peptide_library</code> argument.</p></li>
 <li><p><code>x$peptide_library</code> if <code>x</code> is a <code>phip_data</code> with an attached library.</p></li>
-<li><p><code>get_peptide_library()</code> from phiperio (always available as a dependency).</p></li>
+<li><p>The phiperio libraries the peptide IDs belong to, detected from their
+prefixes with <code>detect_peptide_libraries()</code> and fetched with
+<code>get_peptide_library()</code>.</p></li>
 </ol></div>
     <div class="section level2">
     <h2 id="parallelization">Parallelization<a class="anchor" aria-label="anchor" href="#parallelization"></a></h2>

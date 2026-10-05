@@ -43,7 +43,7 @@ peptide-library values:
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -160,7 +160,9 @@ highlight, e.g. <code>c("is_flagellum" = TRUE)</code> or
 
 <dt id="arg-peplib">peplib<a class="anchor" aria-label="anchor" href="#arg-peplib"></a></dt>
 <dd><p>Optional peptide metadata table used to resolve <code>color_by</code>
-when not available via the global library.</p></dd>
+and the hover metadata. If <code>NULL</code>, the phiperio peptide libraries the
+peptide IDs belong to are detected from their prefixes and fetched with
+<code>get_peptide_library()</code>.</p></dd>
 
 
 <dt id="arg-background-df">background_df<a class="anchor" aria-label="anchor" href="#arg-background-df"></a></dt>
