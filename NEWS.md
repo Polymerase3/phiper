@@ -1,3 +1,25 @@
+# phiper 0.4.11 (2026-10-05)
+
+## Documentation
+
+- The human proteome library article now documents the library's metadata
+  fields: general peptide and source-protein information, taxonomic
+  information, and the `is_*` annotation flags (proteome, mitochondrial, HLA,
+  HLA eplet, control, neoantigen, cryptic peptide, transposable element ORF
+  and therapeutic antibody sources). Written by Nicolai Hörstke.
+- The function reference on the website is now grouped by module (alpha
+  diversity, beta diversity, POP analysis, delta analysis, plot styling and
+  example data).
+
+## Continuous integration
+
+- `pkgcheck` passes again under pkgcheck 0.2.0.44. The workflow now waits for
+  the latest `R-CMD-check` and `test-coverage` push runs to finish before
+  running pkgcheck, which previously sampled them mid-run and reported a
+  failing CI. Push-triggered pkgcheck runs on different branches no longer
+  cancel each other. Alon Alexander is now listed as copyright holder only, as
+  pkgcheck requires an ORCID for every contributor.
+
 # phiper 0.4.10 (2026-10-05)
 
 ## Continuous integration

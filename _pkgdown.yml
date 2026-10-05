@@ -27,6 +27,56 @@ navbar:
         - text: "Human proteome"
           href: articles/peptide-library-human-proteome.html
 
+reference:
+  - title: "Alpha diversity"
+    contents:
+      - compute_alpha
+      - compute_alpha_significance
+      - plot_alpha
+      - plot_alpha_interactive
+      - plot_alpha_significance
+      - plot_enrichment_counts
+  - title: "Beta diversity"
+    contents:
+      - compute_distance
+      - compute_pcoa
+      - compute_pcoa_feature_associations
+      - compute_capscale
+      - compute_permanova
+      - compute_dispersion
+      - compute_tsne
+      - plot_pcoa
+      - plot_scree
+      - plot_cap
+      - plot_dispersion
+      - plot_tsne
+  - title: "POP analysis"
+    contents:
+      - compute_pop
+      - scatter_static
+      - scatter_interactive
+      - volcano_static
+      - volcano_interactive
+  - title: "Delta analysis"
+    contents:
+      - compute_delta
+      - deltaplot
+      - deltaplot_interactive
+      - forestplot
+      - forestplot_interactive
+      - ecdf_plot
+      - ecdf_plot_interactive
+  - title: "Plot styling"
+    contents:
+      - theme_phip
+      - phip_palette
+      - scale_colour_phip
+      - scale_fill_phip
+  - title: "Example data"
+    contents:
+      - load_example_data
+      - get_example_path
+
 articles:
   - title: "Get started"
     navbar: "Get started"
