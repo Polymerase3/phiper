@@ -50,44 +50,44 @@ peptides.
 ``` r
 
 pd <- load_example_data()
-#> [12:08:23] INFO  Constructing <phip_data> object
+#> [08:20:03] INFO  Constructing <phip_data> object
 #>                  -> create_data()
-#> [12:08:23] INFO  Fetching peptide metadata library via get_peptide_library()
-#> [12:08:23] INFO  Retrieving peptide metadata into DuckDB cache
+#> [08:20:03] INFO  Fetching peptide metadata library via get_peptide_library()
+#> [08:20:03] INFO  Retrieving peptide metadata into DuckDB cache
 #>                  -> get_peptide_library(force_refresh = FALSE)
-#> [12:08:24] INFO  Opened DuckDB connection
+#> [08:20:03] INFO  Opened DuckDB connection
 #>                    - cache dir:
 #>                      /home/runner/.cache/R/phiperio/peptide_meta/phip_cache.duckdb
 #>                    - table: peptide_meta
-#> [12:08:24] OK    Using cached download (SHA-256 match)
-#> [12:08:27] OK    Download complete and loaded into R
-#> [12:08:32] INFO  Importing sanitized metadata into DuckDB cache...
-#> [12:08:33] OK    peptide_meta table created in DuckDB cache
-#> [12:08:33] OK    Retrieving peptide metadata into DuckDB cache - done
-#>                  -> elapsed: 10.028s
-#> [12:08:33] OK    Peptide metadata acquired
-#> [12:08:33] INFO  Validating <phip_data>
+#> [08:20:03] OK    Using cached download (SHA-256 match)
+#> [08:20:06] OK    Download complete and loaded into R
+#> [08:20:11] INFO  Importing sanitized metadata into DuckDB cache...
+#> [08:20:13] OK    peptide_meta table created in DuckDB cache
+#> [08:20:13] OK    Retrieving peptide metadata into DuckDB cache - done
+#>                  -> elapsed: 9.832s
+#> [08:20:13] OK    Peptide metadata acquired
+#> [08:20:13] INFO  Validating <phip_data>
 #>                  -> validate_phip_data()
-#> [12:08:33] INFO  Checking structural requirements (shape & mandatory columns)
-#> [12:08:33] INFO  Checking outcome family availability (exist / fold_change /
+#> [08:20:13] INFO  Checking structural requirements (shape & mandatory columns)
+#> [08:20:13] INFO  Checking outcome family availability (exist / fold_change /
 #>                  raw_counts)
-#> [12:08:33] INFO  Checking collisions with reserved names
+#> [08:20:13] INFO  Checking collisions with reserved names
 #>                    - subject_id, sample_id, timepoint, peptide_id, exist,
 #>                      fold_change, counts_input, counts_hit
-#> [12:08:33] INFO  Ensuring all columns are atomic (no list-cols)
-#> [12:08:33] INFO  Checking key uniqueness
-#> [12:08:34] INFO  Validating value ranges & types for outcomes
-#> [12:08:34] INFO  Assessing sparsity (NA/zero prevalence vs threshold)
+#> [08:20:13] INFO  Ensuring all columns are atomic (no list-cols)
+#> [08:20:13] INFO  Checking key uniqueness
+#> [08:20:13] INFO  Validating value ranges & types for outcomes
+#> [08:20:13] INFO  Assessing sparsity (NA/zero prevalence vs threshold)
 #>                    - warn threshold: 50%
-#> [12:08:34] INFO  Checking peptide_id coverage against peptide_library
-#> [12:08:34] INFO  Checking full grid completeness (peptide * sample)
-#> [12:08:34] INFO  Counts table is not a full peptide * sample grid
+#> [08:20:13] INFO  Checking peptide_id coverage against peptide_library
+#> [08:20:13] INFO  Checking full grid completeness (peptide * sample)
+#> [08:20:13] INFO  Counts table is not a full peptide * sample grid
 #>                    - observed rows: 78200
 #>                    - expected rows: 156000
-#> [12:08:34] OK    Validating <phip_data> - done
-#>                  -> elapsed: 0.504s
-#> [12:08:34] OK    Constructing <phip_data> object - done
-#>                  -> elapsed: 10.536s
+#> [08:20:13] OK    Validating <phip_data> - done
+#>                  -> elapsed: 0.473s
+#> [08:20:13] OK    Constructing <phip_data> object - done
+#>                  -> elapsed: 10.308s
 pd
 #> ── <phip_data> ───────────────────────────────────────────────────────────────── 
 #> 
@@ -145,27 +145,27 @@ pop_group <- compute_pop(
   rank_cols  = "peptide_id",
   group_cols = "group"
 )
-#> [12:08:34] INFO  compute_pop
-#> [12:08:34] INFO  compute_pop
+#> [08:20:13] INFO  compute_pop
+#> [08:20:13] INFO  compute_pop
 #>                    - ranks : peptide_id
 #>                    - group_cols: group
 #>                    - exist_col : exist
 #>                    - pop_k_min : 1
 #>                    - paired : FALSE
-#> [12:08:34] INFO  ranks resolved
+#> [08:20:13] INFO  ranks resolved
 #>                    - available: peptide_id
-#> [12:08:34] INFO  computing cohort sizes and validating binary group_cols
-#> [12:08:34] INFO  computing presence per sample via k-of-n rule
-#> [12:08:34] INFO  counting present samples per feature (pop, unpaired)
-#> [12:08:35] INFO  building pairwise comparisons
-#> [12:08:36] OK    materialized; computing Fisher p-values
-#>                    - table: ph_pop_20260909_120835
-#> [12:08:37] OK    done (compute_pop, unpaired)
+#> [08:20:13] INFO  computing cohort sizes and validating binary group_cols
+#> [08:20:14] INFO  computing presence per sample via k-of-n rule
+#> [08:20:14] INFO  counting present samples per feature (pop, unpaired)
+#> [08:20:14] INFO  building pairwise comparisons
+#> [08:20:15] OK    materialized; computing Fisher p-values
+#>                    - table: ph_pop_20261005_082014
+#> [08:20:16] OK    done (compute_pop, unpaired)
 #>                    - rows : 1950
 #>                    - ranks : peptide_id
 #>                    - k_min : 1
-#> [12:08:37] OK    compute_pop - done
-#>                  -> elapsed: 2.956s
+#> [08:20:16] OK    compute_pop - done
+#>                  -> elapsed: 2.938s
 head(pop_group)
 #>         rank        feature group_col group1 n1 N1 prop1 percent1 group2 n2 N2
 #> 1 peptide_id agilent_100642     group      A  0 38     0        0      B  8 42
@@ -221,7 +221,7 @@ deltaplot(
   group_pair_values = c("A", "B"),
   group_labels      = c("Group A", "Group B")
 )
-#> [12:08:37] INFO  Preparing delta prevalence plot.
+#> [08:20:16] INFO  Preparing delta prevalence plot.
 ```
 
 ![](delta-analysis_files/figure-html/deltaplot-basic-1.png)
@@ -245,7 +245,7 @@ deltaplot(
   point_alpha        = 0.15,
   point_size         = 0.4
 )
-#> [12:08:39] INFO  Preparing delta prevalence plot.
+#> [08:20:18] INFO  Preparing delta prevalence plot.
 ```
 
 ![](delta-analysis_files/figure-html/deltaplot-smooth-1.png)
@@ -263,7 +263,7 @@ deltaplot(
   point_alpha         = 0.20,
   arrow_color         = "steelblue"
 )
-#> [12:08:39] INFO  Preparing delta prevalence plot.
+#> [08:20:18] INFO  Preparing delta prevalence plot.
 ```
 
 ![](delta-analysis_files/figure-html/deltaplot-custom-1.png)
@@ -630,7 +630,7 @@ forestplot_interactive(delta, rank_of_interest = "peptide_id",
 sessionInfo()
 #> R version 4.6.1 (2026-06-24)
 #> Platform: x86_64-pc-linux-gnu
-#> Running under: Ubuntu 24.04.4 LTS
+#> Running under: Ubuntu 24.04.5 LTS
 #> 
 #> Matrix products: default
 #> BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
@@ -649,18 +649,18 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] phiper_0.4.4
+#> [1] phiper_0.4.6
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] future_1.75.0       tidyr_1.3.2         utf8_1.2.6         
+#>  [1] future_1.76.0       tidyr_1.3.2         utf8_1.2.6         
 #>  [4] sass_0.4.10         generics_0.1.4      lattice_0.22-9     
-#>  [7] listenv_1.0.0       digest_0.6.39       magrittr_2.0.5     
+#>  [7] listenv_1.1.0       digest_0.6.39       magrittr_2.0.5     
 #> [10] evaluate_1.0.5      grid_4.6.1          RColorBrewer_1.1-3 
 #> [13] sysfonts_0.8.9      showtextdb_3.0      blob_1.3.0         
 #> [16] fastmap_1.2.0       Matrix_1.7-5        jsonlite_2.0.0     
 #> [19] DBI_1.3.0           mgcv_1.9-4          purrr_1.2.2        
 #> [22] scales_1.4.0        codetools_0.2-20    textshaping_1.0.5  
-#> [25] jquerylib_0.1.4     duckdb_1.5.5        cli_3.6.6          
+#> [25] jquerylib_0.1.4     duckdb_1.5.6        cli_3.6.6          
 #> [28] rlang_1.3.0         chk_0.11.0          dbplyr_2.6.0       
 #> [31] phiperio_0.5.5      future.apply_1.20.2 parallelly_1.48.0  
 #> [34] splines_4.6.1       withr_3.0.3         cachem_1.1.0       
@@ -672,7 +672,7 @@ sessionInfo()
 #> [52] desc_1.4.3          pkgdown_2.2.1       RcppParallel_6.2.1 
 #> [55] pillar_1.11.1       bslib_0.12.0        gtable_0.3.6       
 #> [58] glue_1.8.1          Rcpp_1.1.2          systemfonts_1.3.2  
-#> [61] xfun_0.60           tibble_3.3.1        tidyselect_1.2.1   
+#> [61] xfun_0.61           tibble_3.3.1        tidyselect_1.2.1   
 #> [64] knitr_1.52          farver_2.1.2        nlme_3.1-169       
 #> [67] htmltools_0.5.9     labeling_0.4.3      rmarkdown_2.32     
 #> [70] compiler_4.6.1      S7_0.2.2

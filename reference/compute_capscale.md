@@ -122,60 +122,60 @@ A list of class `"beta_capscale"` with elements:
 # \donttest{
 ps <- load_example_data("small_mixture")
 #> duckdb keeps downloaded extensions and secrets in a temporary directory:
-#> ℹ /tmp/RtmpY2D2Ld/duckdb
+#> ℹ /tmp/RtmplNKjlQ/duckdb
 #> This is removed when the R session ends.
 #> • Extensions are re-downloaded each session.
 #> • Secrets are lost.
 #> ℹ Run duckdb(shared_home = TRUE) (or create ~/.duckdb) to keep them (suitable for most users).
 #> ℹ Run duckdb(shared_home = FALSE) to accept the temporary directory (and silence this message).
 #> ℹ See ?duckdb_storage for details and alternatives.
-#> [12:07:09] INFO  Constructing <phip_data> object
+#> [08:18:49] INFO  Constructing <phip_data> object
 #>                  -> create_data()
-#> [12:07:09] INFO  Fetching peptide metadata library via get_peptide_library()
-#> [12:07:09] INFO  Retrieving peptide metadata into DuckDB cache
+#> [08:18:49] INFO  Fetching peptide metadata library via get_peptide_library()
+#> [08:18:49] INFO  Retrieving peptide metadata into DuckDB cache
 #>                  -> get_peptide_library(force_refresh = FALSE)
 #> duckdb keeps downloaded extensions and secrets in a temporary directory:
-#> ℹ /tmp/RtmpY2D2Ld/duckdb
+#> ℹ /tmp/RtmplNKjlQ/duckdb
 #> This is removed when the R session ends.
 #> • Extensions are re-downloaded each session.
 #> • Secrets are lost.
 #> ℹ Run duckdb(shared_home = TRUE) (or create ~/.duckdb) to keep them (suitable for most users).
 #> ℹ Run duckdb(shared_home = FALSE) to accept the temporary directory (and silence this message).
 #> ℹ See ?duckdb_storage for details and alternatives.
-#> [12:07:09] INFO  Opened DuckDB connection
+#> [08:18:49] INFO  Opened DuckDB connection
 #>                    - cache dir:
 #>                      /home/runner/.cache/R/phiperio/peptide_meta/phip_cache.duckdb
 #>                    - table: peptide_meta
-#> [12:07:09] OK    Using cached peptide_meta (fast path)
-#> [12:07:09] OK    Retrieving peptide metadata into DuckDB cache - done
-#>                  -> elapsed: 0.044s
-#> [12:07:09] OK    Peptide metadata acquired
-#> [12:07:09] INFO  Validating <phip_data>
+#> [08:18:49] OK    Using cached peptide_meta (fast path)
+#> [08:18:49] OK    Retrieving peptide metadata into DuckDB cache - done
+#>                  -> elapsed: 0.028s
+#> [08:18:49] OK    Peptide metadata acquired
+#> [08:18:49] INFO  Validating <phip_data>
 #>                  -> validate_phip_data()
-#> [12:07:09] INFO  Checking structural requirements (shape & mandatory columns)
-#> [12:07:09] INFO  Checking outcome family availability (exist / fold_change /
+#> [08:18:49] INFO  Checking structural requirements (shape & mandatory columns)
+#> [08:18:49] INFO  Checking outcome family availability (exist / fold_change /
 #>                  raw_counts)
-#> [12:07:09] INFO  Checking collisions with reserved names
+#> [08:18:49] INFO  Checking collisions with reserved names
 #>                    - subject_id, sample_id, timepoint, peptide_id, exist,
 #>                      fold_change, counts_input, counts_hit
-#> [12:07:10] INFO  Ensuring all columns are atomic (no list-cols)
-#> [12:07:10] INFO  Checking key uniqueness
-#> [12:07:10] INFO  Validating value ranges & types for outcomes
-#> [12:07:10] INFO  Assessing sparsity (NA/zero prevalence vs threshold)
+#> [08:18:49] INFO  Ensuring all columns are atomic (no list-cols)
+#> [08:18:49] INFO  Checking key uniqueness
+#> [08:18:49] INFO  Validating value ranges & types for outcomes
+#> [08:18:49] INFO  Assessing sparsity (NA/zero prevalence vs threshold)
 #>                    - warn threshold: 50%
-#> [12:07:10] INFO  Checking peptide_id coverage against peptide_library
-#> [12:07:10] INFO  Checking full grid completeness (peptide * sample)
-#> [12:07:10] INFO  Counts table is not a full peptide * sample grid
+#> [08:18:49] INFO  Checking peptide_id coverage against peptide_library
+#> [08:18:50] INFO  Checking full grid completeness (peptide * sample)
+#> [08:18:50] INFO  Counts table is not a full peptide * sample grid
 #>                    - observed rows: 78200
 #>                    - expected rows: 156000
-#> Warning: [12:07:10] WARN  Grid remains incomplete (auto_expand = FALSE).
+#> Warning: [08:18:50] WARN  Grid remains incomplete (auto_expand = FALSE).
 #>                  -> grid completeness
 #>                    - observed rows: 78200
 #>                    - expected rows: 156000.
-#> [12:07:10] OK    Validating <phip_data> - done
-#>                  -> elapsed: 0.394s
-#> [12:07:10] OK    Constructing <phip_data> object - done
-#>                  -> elapsed: 0.44s
+#> [08:18:50] OK    Validating <phip_data> - done
+#>                  -> elapsed: 0.385s
+#> [08:18:50] OK    Constructing <phip_data> object - done
+#>                  -> elapsed: 0.414s
 
 # compute distance matrix
 val_col <- "fold_change"
@@ -187,16 +187,16 @@ dist_bc <- compute_distance(
   distance = "bray",
   n_threads = 2L
 )
-#> [12:07:10] INFO  building abundance matrix from `ps` using `fold_change`.
-#> [12:07:10] INFO  building pivot spec (sample_id x peptide_id).
-#> [12:07:10] INFO  Collecting long table (sample_id, peptide_id, value).
+#> [08:18:50] INFO  building abundance matrix from `ps` using `fold_change`.
+#> [08:18:50] INFO  building pivot spec (sample_id x peptide_id).
+#> [08:18:50] INFO  Collecting long table (sample_id, peptide_id, value).
 #>                  -> compute_distance
-#> [12:07:10] INFO  Pivoting to wide abundance matrix in R.
+#> [08:18:50] INFO  Pivoting to wide abundance matrix in R.
 #>                  -> compute_distance
-#> [12:07:10] INFO  abundance matrix has 43 samples and 5 features after
+#> [08:18:50] INFO  abundance matrix has 43 samples and 5 features after
 #>                  preprocessing.
-#> [12:07:10] INFO  computing distance: bray
-#> [12:07:10] INFO  distance matrix computation complete.
+#> [08:18:50] INFO  computing distance: bray
+#> [08:18:50] INFO  distance matrix computation complete.
 
 # pick a simple constraint that exists in the example data (fallback order)
 dat <- ps
@@ -210,13 +210,13 @@ cap_res <- compute_capscale(
   neg_correction = "none",
   top_features = 30L
 )
-#> [12:07:10] INFO  building metadata from `ps$data_long`.
-#> [12:07:10] INFO  fitting constrained ordination (cap/db-rda)
+#> [08:18:50] INFO  building metadata from `ps$data_long`.
+#> [08:18:50] INFO  fitting constrained ordination (cap/db-rda)
 #>                    - formula: ~group
-#> [12:07:11] INFO  extracting constrained sample scores.
-#> [12:07:11] INFO  computing variance partitioning and permutation tests.
-#> [12:07:11] INFO  computing feature associations: weighted_average.
-#> [12:07:11] INFO  cap analysis complete.
+#> [08:18:50] INFO  extracting constrained sample scores.
+#> [08:18:50] INFO  computing variance partitioning and permutation tests.
+#> [08:18:50] INFO  computing feature associations: weighted_average.
+#> [08:18:50] INFO  cap analysis complete.
 
 cap_res$variance_partition
 #> # A tibble: 3 × 3

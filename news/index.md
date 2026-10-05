@@ -1,5 +1,32 @@
 # Changelog
 
+## phiper 0.4.6 (2026-10-05)
+
+### Peptide libraries
+
+- Added two peptide libraries to `library-metadata/`, next to the
+  combined Agilent, Twist and Corona2 library: the human proteome
+  library (`human_proteome_library_16.09.26.rds`, 300,000
+  `humanProteome_*` peptides) and the ICAM library
+  (`icam_library_01.10.26.rds`, 420,000 `icam_*` peptides). phiperio’s
+  [`get_peptide_library()`](https://polymerase3.github.io/phiperio/reference/get_peptide_library.html)
+  serves them as `"human_proteome"` and `"icam"`. Both omit the full
+  protein sequence (`full_aa_seq`), which kept the files above GitHub’s
+  100 MB limit; the curation scripts are in phiperio’s `data-raw/`.
+
+## phiper 0.4.5 (2026-09-09)
+
+### Bug fixes
+
+- [`compute_delta()`](https://polymerase3.github.io/phiper/reference/compute_delta.md)
+  no longer ignores `paired_by` in the strict hits guard
+  ([\#56](https://github.com/Polymerase3/phiper/issues/56)). The guard
+  rejected duplicate positives per `subject_id` even when a different
+  pairing column was supplied, so a subject contributing two samples to
+  the same group aborted the call although the pairing unit was unique
+  within that group. The guard now keys on `paired_by` when given, and
+  its error message names the column it actually checked.
+
 ## phiper 0.4.4 (2026-09-08)
 
 ### New features
