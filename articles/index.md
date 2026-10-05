@@ -18,5 +18,9 @@
 
 ### Peptide library
 
-- [Peptide Library
+- [Agilent, Twist and Corona2 Library
   Metadata](https://polymerase3.github.io/phiper/articles/peptide-library.md):
+- [ICAM Library
+  Metadata](https://polymerase3.github.io/phiper/articles/peptide-library-icam.md):
+- [Human Proteome Library
+  Metadata](https://polymerase3.github.io/phiper/articles/peptide-library-human-proteome.md):
