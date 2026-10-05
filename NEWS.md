@@ -1,3 +1,13 @@
+# phiper 0.4.11 (2026-10-05)
+
+## Documentation
+
+- The human proteome library article now documents the library's metadata
+  fields: general peptide and source-protein information, taxonomic
+  information, and the `is_*` annotation flags (proteome, mitochondrial, HLA,
+  HLA eplet, control, neoantigen, cryptic peptide, transposable element ORF
+  and therapeutic antibody sources). Written by Nicolai Hörstke.
+
 # phiper 0.4.10 (2026-10-05)
 
 ## Continuous integration
