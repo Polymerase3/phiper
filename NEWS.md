@@ -1,3 +1,14 @@
+# phiper 0.4.8 (2026-10-05)
+
+## Documentation
+
+- The "Peptide library" navbar item is now a dropdown with one article per
+  library. The existing article now covers the Agilent, Twist and Corona2
+  library, and two articles are new: the ICAM library, documenting its
+  general, taxonomic, annotation-flag and fused-protein fields (written by
+  Gabriel Innocenti), and the human proteome library (curated by Nicolai
+  Hörstke), whose field documentation is coming soon.
+
 # phiper 0.4.7 (2026-10-05)
 
 ## Bug fixes
