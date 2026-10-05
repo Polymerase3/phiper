@@ -1,12 +1,12 @@
 ---
-title: "Peptide Library Metadata"
+title: "Agilent, Twist and Corona2 Library Metadata"
 output:
   rmarkdown::html_vignette:
     toc: true
     toc_depth: 3
     number_sections: true
 vignette: >
-  %\VignetteIndexEntry{Peptide Library Metadata}
+  %\VignetteIndexEntry{Agilent, Twist and Corona2 Library Metadata}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

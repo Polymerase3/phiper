@@ -1,0 +1,42 @@
+---
+title: "Human Proteome Library Metadata"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+vignette: >
+  %\VignetteIndexEntry{Human Proteome Library Metadata}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment  = "#>",
+  warning  = FALSE,
+  message  = FALSE
+)
+```
+
+## Overview
+
+This vignette describes the **human proteome** PhIP-seq peptide library (300,000 `humanProteome_*` peptides). The library can be retrieved via `phiperio`'s `get_peptide_library()`:
+
+```{r load_peplib}
+library(phiperio)
+library(phiper)
+library(dplyr)
+
+peplib <- get_peptide_library("human_proteome") %>%
+  collect()
+```
+
+## Metadata fields
+
+Detailed documentation of the metadata fields is coming soon.
+
+## Credits
+
+The human proteome library was curated by **Nicolai Hörstke**.

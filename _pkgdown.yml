@@ -19,7 +19,13 @@ navbar:
   components:
     peptide-library:
       text: "Peptide library"
-      href: articles/peptide-library.html
+      menu:
+        - text: "Agilent, Twist & Corona2"
+          href: articles/peptide-library.html
+        - text: "ICAM"
+          href: articles/peptide-library-icam.html
+        - text: "Human proteome"
+          href: articles/peptide-library-human-proteome.html
 
 articles:
   - title: "Get started"
@@ -37,3 +43,5 @@ articles:
     navbar: "Peptide library"
     contents:
       - peptide-library
+      - peptide-library-icam
+      - peptide-library-human-proteome
