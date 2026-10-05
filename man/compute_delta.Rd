@@ -96,7 +96,7 @@ tested; others are dropped after the peptide-level pivot.}
 \item{peptide_library}{Optional data frame providing peptide annotations for
 non-peptide ranks. Must at least contain \code{peptide_id} and all requested
 \code{rank_cols} besides \code{"peptide_id"}. If \code{NULL}, the function falls back to
-\code{x$peptide_library} or \code{get_peptide_library()} (from phiperio).}
+\code{x$peptide_library} or the phiperio libraries the peptide IDs belong to.}
 
 \item{log}{Logical; if \code{TRUE}, write progress messages (per contrast and
 overall) using the package's logging helpers.}
@@ -251,7 +251,9 @@ required. It is resolved in the following order:
 \enumerate{
 \item The explicit \code{peptide_library} argument.
 \item \code{x$peptide_library} if \code{x} is a \code{phip_data} with an attached library.
-\item \code{get_peptide_library()} from phiperio (always available as a dependency).
+\item The phiperio libraries the peptide IDs belong to, detected from their
+prefixes with \code{detect_peptide_libraries()} and fetched with
+\code{get_peptide_library()}.
 }
 }
 \section{Parallelization}{

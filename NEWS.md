@@ -1,3 +1,18 @@
+# phiper 0.4.7 (2026-10-05)
+
+## Bug fixes
+
+- When no peptide library is supplied, `scatter_interactive()`, the
+  `color_by` highlighting of the scatter and volcano plots, and
+  `compute_delta()` now fetch the phiperio libraries the peptide IDs belong
+  to, detected from their prefixes with `phiperio::detect_peptide_libraries()`.
+  They previously always fell back to the combined Agilent, Twist and Corona2
+  library, so human proteome and ICAM peptides got no hover metadata and could
+  not be highlighted or grouped by taxonomy. Peptides that match no known
+  library get no library: plots leave every point uncoloured, and
+  `compute_delta()` asks for `peptide_library` instead of reporting missing
+  columns. Requires phiperio 0.6.1.
+
 # phiper 0.4.6 (2026-10-05)
 
 ## Peptide libraries

@@ -306,6 +306,55 @@ testthat::test_that(".build_color_group: returns factor with 'other' level", {
   testthat::expect_true("is_flag: TRUE" %in% levs)
 })
 
+testthat::test_that(".build_color_group: without peplib uses the peptides' libraries", {
+  df <- .make_prev_df(n = 4L, seed = 23L)
+  df$feature <- c("agilent_1", "icam_2", "agilent_3", "icam_4")
+  ids_seen <- NULL
+  testthat::local_mocked_bindings(
+    .ph_library_for_peptides = function(peptide_ids) {
+      ids_seen <<- peptide_ids
+      tibble::tibble(
+        peptide_id = c("agilent_1", "icam_2", "agilent_3", "icam_4"),
+        is_flag    = c(TRUE, FALSE, FALSE, TRUE)
+      )
+    }
+  )
+
+  res <- phiper:::.build_color_group(df, c("is_flag" = TRUE))
+
+  testthat::expect_identical(ids_seen, df$feature)
+  testthat::expect_identical(
+    as.character(res$df$.color_group),
+    c("is_flag: TRUE", "other", "other", "is_flag: TRUE")
+  )
+})
+
+testthat::test_that(".build_color_group: no matching library leaves every point 'other'", {
+  # pep1, pep2, ... belong to no known library, so nothing is fetched
+  df  <- .make_prev_df(n = 4L, seed = 24L)
+  res <- phiper:::.build_color_group(df, c("is_flag" = TRUE))
+  testthat::expect_true(all(as.character(res$df$.color_group) == "other"))
+})
+
+testthat::test_that("scatter_interactive: hover metadata comes from the peptides' libraries", {
+  df <- .make_prev_df(n = 2L, seed = 25L)
+  df$feature <- c("humanProteome_0", "icam_0")
+  testthat::local_mocked_bindings(
+    .ph_library_for_peptides = function(peptide_ids) {
+      tibble::tibble(
+        peptide_id = c("humanProteome_0", "icam_0"),
+        species    = c("Homo sapiens", "Collinsella aerofaciens")
+      )
+    }
+  )
+
+  built <- plotly::plotly_build(scatter_interactive(df))
+  hover <- unlist(lapply(built$x$data, `[[`, "text"))
+
+  testthat::expect_true(any(grepl("species: Homo sapiens", hover)))
+  testthat::expect_true(any(grepl("species: Collinsella aerofaciens", hover)))
+})
+
 # ===========================================================================
 # volcano_static — return type & basic structure
 # ===========================================================================
