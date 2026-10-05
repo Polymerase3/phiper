@@ -349,3 +349,30 @@ test_that(".ph_resolve_paths() fails when data_long_path given with exist_file",
     .ph_resolve_paths(data_long_path = tmp, exist_file = tmp)
   )
 })
+
+# -------------------------------------------------------------------------
+# .ph_library_for_peptides ------------------------------------------------
+# -------------------------------------------------------------------------
+test_that(".ph_library_for_peptides fetches the libraries the peptides belong to", {
+  lib <- tibble::tibble(peptide_id = c("agilent_1", "icam_2"))
+  requested <- NULL
+  local_mocked_bindings(
+    get_peptide_library = function(library = "combined", force_refresh = FALSE) {
+      requested <<- library
+      lib
+    }
+  )
+
+  out <- .ph_library_for_peptides(c("agilent_1", "icam_2", "agilent_3", NA))
+
+  expect_identical(requested, c("combined", "icam"))
+  expect_identical(out, lib)
+})
+
+test_that(".ph_library_for_peptides returns NULL when no library matches", {
+  local_mocked_bindings(
+    get_peptide_library = function(...) stop("no library should be fetched")
+  )
+
+  expect_null(.ph_library_for_peptides(c("pep1", "pep2")))
+})

@@ -169,7 +169,9 @@
 #'
 #' 1. The explicit `peptide_library` argument.
 #' 2. `x$peptide_library` if `x` is a `phip_data` with an attached library.
-#' 3. `get_peptide_library()` from phiperio (always available as a dependency).
+#' 3. The phiperio libraries the peptide IDs belong to, detected from their
+#'    prefixes with `detect_peptide_libraries()` and fetched with
+#'    `get_peptide_library()`.
 #'
 #' @section Parallelization:
 #' The permutation contrasts are evaluated either sequentially or in parallel
@@ -239,7 +241,7 @@
 #' @param peptide_library Optional data frame providing peptide annotations for
 #'   non-peptide ranks. Must at least contain `peptide_id` and all requested
 #'   `rank_cols` besides `"peptide_id"`. If `NULL`, the function falls back to
-#'   `x$peptide_library` or `get_peptide_library()` (from phiperio).
+#'   `x$peptide_library` or the phiperio libraries the peptide IDs belong to.
 #' @param log Logical; if `TRUE`, write progress messages (per contrast and
 #'   overall) using the package's logging helpers.
 #' @param log_file Path to a log file used by the logging helpers if `log` is
@@ -511,7 +513,16 @@ compute_delta <- function(
     } else if (inherits(x, "phip_data") && !is.null(x$peptide_library)) {
       lib_src <- x$peptide_library
     } else {
-      lib_src <- get_peptide_library()
+      lib_src <- .ph_library_for_peptides(peptides_order)
+      if (is.null(lib_src)) {
+        .ph_abort(
+          "No known peptide library matches the peptide IDs.",
+          bullets = c(
+            paste("- rank needing a library:", ranks_need),
+            "- supply `peptide_library` with these rank columns"
+          )
+        )
+      }
     }
 
     # Select needed columns and collect to R (handles DuckDB/lazy)

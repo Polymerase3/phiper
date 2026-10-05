@@ -361,6 +361,72 @@ test_that("compute_delta aborts when peptide_library misses required
   )
 })
 
+test_that("compute_delta fetches the libraries the peptides belong to", {
+  toy_df <- tibble::tibble(
+    sample_id  = c("s1", "s2"),
+    subject_id = c("id1", "id2"),
+    peptide_id = c("icam_1", "icam_2"),
+    group      = c("A", "B"),
+    exist      = c(1L, 1L)
+  )
+  ids_seen <- NULL
+  testthat::local_mocked_bindings(
+    .ph_library_for_peptides = function(peptide_ids) {
+      ids_seen <<- peptide_ids
+      tibble::tibble(
+        peptide_id = c("icam_1", "icam_2"),
+        species    = c("sp1", "sp1")
+      )
+    }
+  )
+
+  res <- compute_delta(
+    x                  = toy_df,
+    exist_col          = "exist",
+    rank_cols          = "species",
+    group_cols         = "group",
+    B_permutations     = 200L,
+    weight_mode        = "equal",
+    stat_mode          = "diff",
+    strat_bins         = 0,
+    winsor_z           = 4,
+    rank_feature_keep  = NULL,
+    peptide_library    = NULL,
+    log                = FALSE,
+  )
+
+  expect_setequal(ids_seen, c("icam_1", "icam_2"))
+  expect_true(all(res$rank == "species"))
+})
+
+test_that("compute_delta aborts when no library matches the peptides", {
+  toy_df <- tibble::tibble(
+    sample_id  = c("s1", "s2"),
+    subject_id = c("id1", "id2"),
+    peptide_id = c("pep1", "pep2"),
+    group      = c("A", "B"),
+    exist      = c(1L, 1L)
+  )
+
+  expect_error(
+    compute_delta(
+      x                  = toy_df,
+      exist_col          = "exist",
+      rank_cols          = "species",
+      group_cols         = "group",
+      B_permutations     = 200L,
+      weight_mode        = "equal",
+      stat_mode          = "diff",
+      strat_bins         = 0,
+      winsor_z           = 4,
+      rank_feature_keep  = NULL,
+      peptide_library    = NULL,
+      log                = FALSE,
+    ),
+    regexp = "No known peptide library matches the peptide IDs"
+  )
+})
+
 test_that("compute_delta works with rank_cols = 'peptide_id' only", {
   toy_df <- tibble::tibble(
     sample_id  = c("s1", "s2"),

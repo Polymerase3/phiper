@@ -758,6 +758,16 @@
                  temporary = TRUE, overwrite = TRUE)
 }
 
+# Fetch the phiperio peptide libraries the given peptide IDs belong to, detected
+# from their prefixes (agilent_, humanProteome_, icam_, ...). Returns NULL when
+# no ID matches a known library.
+#' @keywords internal
+.ph_library_for_peptides <- function(peptide_ids) {
+  libraries <- detect_peptide_libraries(peptide_ids)
+  if (length(libraries) == 0L) return(NULL)
+  get_peptide_library(libraries)
+}
+
 # ==============================================================================
 # Internal helper: order-agnostic pair filter for ph_prev_result / data.frame
 # ==============================================================================
