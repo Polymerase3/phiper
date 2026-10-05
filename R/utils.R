@@ -703,7 +703,9 @@
 
 # Ensure peptide_library is queryable from the SAME connection as data_long.
 # First tries a zero-copy DuckDB ATTACH; falls back to copy_to() as a temp
-# table when the two connections are incompatible.
+# table when the two connections are incompatible. The ATTACH is READ_ONLY: a
+# writable attach of phiperio's cache file corrupts tables that
+# get_peptide_library() later writes to it in the same R session.
 #' @keywords internal
 .ph_peplib_on_main <- function(x, schema_alias = "peplib") {
   main_con <- dbplyr::remote_con(x$data_long)
@@ -722,7 +724,7 @@
       try(
         DBI::dbExecute(
           main_con,
-          sprintf("ATTACH '%s' AS %s;", pep_db_path, schema_alias)
+          sprintf("ATTACH '%s' AS %s (READ_ONLY);", pep_db_path, schema_alias)
         ),
         silent = TRUE
       )
