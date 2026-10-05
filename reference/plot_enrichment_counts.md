@@ -100,45 +100,45 @@ plot_enrichment_counts(
 # per-group plots
 pd <- load_example_data()
 p <- plot_enrichment_counts(pd, group_cols = c("group","timepoint"))
-#> [14:20:26] INFO  Plotting enrichment counts (<phip_data>)
+#> [14:55:20] INFO  Plotting enrichment counts (<phip_data>)
 #>                  -> group_cols: 'group', 'timepoint'
-#> [14:20:26] INFO  building enrichment count plot
+#> [14:55:20] INFO  building enrichment count plot
 #>                  -> grouping variable: 'group'
-#> [14:20:26] OK    plot built
-#> [14:20:26] OK    building enrichment count plot - done
-#>                  -> elapsed: 0.176s
-#> [14:20:26] INFO  building enrichment count plot
+#> [14:55:20] OK    plot built
+#> [14:55:20] OK    building enrichment count plot - done
+#>                  -> elapsed: 0.191s
+#> [14:55:20] INFO  building enrichment count plot
 #>                  -> grouping variable: 'timepoint'
-#> [14:20:26] OK    plot built
-#> [14:20:26] OK    building enrichment count plot - done
-#>                  -> elapsed: 0.158s
-#> [14:20:26] OK    Plotting enrichment counts (<phip_data>) - done
-#>                  -> elapsed: 0.335s
+#> [14:55:20] OK    plot built
+#> [14:55:20] OK    building enrichment count plot - done
+#>                  -> elapsed: 0.177s
+#> [14:55:20] OK    Plotting enrichment counts (<phip_data>) - done
+#>                  -> elapsed: 0.369s
 
 # add interaction plot
 p2 <- plot_enrichment_counts(pd,
   group_cols = c("group","timepoint"),
   group_interaction = TRUE
 )
-#> [14:20:26] INFO  Plotting enrichment counts (<phip_data>)
+#> [14:55:20] INFO  Plotting enrichment counts (<phip_data>)
 #>                  -> group_cols: 'group', 'timepoint'
-#> [14:20:26] INFO  building enrichment count plot
+#> [14:55:20] INFO  building enrichment count plot
 #>                  -> grouping variable: 'group'
-#> [14:20:26] OK    plot built
-#> [14:20:26] OK    building enrichment count plot - done
-#>                  -> elapsed: 0.171s
-#> [14:20:26] INFO  building enrichment count plot
+#> [14:55:20] OK    plot built
+#> [14:55:20] OK    building enrichment count plot - done
+#>                  -> elapsed: 0.172s
+#> [14:55:20] INFO  building enrichment count plot
 #>                  -> grouping variable: 'timepoint'
-#> [14:20:26] OK    plot built
-#> [14:20:26] OK    building enrichment count plot - done
-#>                  -> elapsed: 0.17s
-#> [14:20:26] INFO  building enrichment count plot
+#> [14:55:21] OK    plot built
+#> [14:55:21] OK    building enrichment count plot - done
+#>                  -> elapsed: 0.172s
+#> [14:55:21] INFO  building enrichment count plot
 #>                  -> grouping variable: '..phip_interaction..'
-#> [14:20:27] OK    plot built
-#> [14:20:27] OK    building enrichment count plot - done
-#>                  -> elapsed: 0.171s
-#> [14:20:27] OK    Plotting enrichment counts (<phip_data>) - done
-#>                  -> elapsed: 0.52s
+#> [14:55:21] OK    plot built
+#> [14:55:21] OK    building enrichment count plot - done
+#>                  -> elapsed: 0.2s
+#> [14:55:21] OK    Plotting enrichment counts (<phip_data>) - done
+#>                  -> elapsed: 0.553s
 
 # interaction only
 p3 <- plot_enrichment_counts(pd,
@@ -146,13 +146,13 @@ p3 <- plot_enrichment_counts(pd,
   group_interaction = TRUE,
   interaction_only = TRUE
 )
-#> [14:20:27] INFO  Plotting enrichment counts (<phip_data>)
+#> [14:55:21] INFO  Plotting enrichment counts (<phip_data>)
 #>                  -> group_cols: 'group', 'timepoint'
-#> [14:20:27] INFO  building enrichment count plot
+#> [14:55:21] INFO  building enrichment count plot
 #>                  -> grouping variable: '..phip_interaction..'
-#> [14:20:27] OK    plot built
-#> [14:20:27] OK    building enrichment count plot - done
-#>                  -> elapsed: 0.183s
-#> [14:20:27] OK    Plotting enrichment counts (<phip_data>) - done
-#>                  -> elapsed: 0.19s
+#> [14:55:21] OK    plot built
+#> [14:55:21] OK    building enrichment count plot - done
+#>                  -> elapsed: 0.192s
+#> [14:55:21] OK    Plotting enrichment counts (<phip_data>) - done
+#>                  -> elapsed: 0.199s
 ```

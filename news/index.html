@@ -13,7 +13,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.10</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.11</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,6 +67,19 @@
       <small>Source: <a href="https://github.com/Polymerase3/phiper/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.4.11" id="phiper-0411-2026-10-05">phiper 0.4.11 (2026-10-05)<a class="anchor" aria-label="anchor" href="#phiper-0411-2026-10-05"></a></h2>
+<div class="section level3">
+<h3 id="documentation-0-4-11">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-4-11"></a></h3>
+<ul><li>The human proteome library article now documents the library’s metadata fields: general peptide and source-protein information, taxonomic information, and the <code>is_*</code> annotation flags (proteome, mitochondrial, HLA, HLA eplet, control, neoantigen, cryptic peptide, transposable element ORF and therapeutic antibody sources). Written by Nicolai Hörstke.</li>
+<li>The function reference on the website is now grouped by module (alpha diversity, beta diversity, POP analysis, delta analysis, plot styling and example data).</li>
+</ul></div>
+<div class="section level3">
+<h3 id="continuous-integration-0-4-11">Continuous integration<a class="anchor" aria-label="anchor" href="#continuous-integration-0-4-11"></a></h3>
+<ul><li>
+<code>pkgcheck</code> passes again under pkgcheck 0.2.0.44. The workflow now waits for the latest <code>R-CMD-check</code> and <code>test-coverage</code> push runs to finish before running pkgcheck, which previously sampled them mid-run and reported a failing CI. Push-triggered pkgcheck runs on different branches no longer cancel each other. Alon Alexander is now listed as copyright holder only, as pkgcheck requires an ORCID for every contributor.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.4.10" id="phiper-0410-2026-10-05">phiper 0.4.10 (2026-10-05)<a class="anchor" aria-label="anchor" href="#phiper-0410-2026-10-05"></a></h2>
 <div class="section level3">

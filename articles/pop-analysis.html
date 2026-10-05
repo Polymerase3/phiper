@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.10</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.11</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -134,43 +134,43 @@ groups?</p>
 (<code>T1</code>, <code>T2</code>) across 1 000 simulated peptides.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pd</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/load_example_data.html">load_example_data</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [14:28:00] INFO  Constructing &lt;phip_data&gt; object</span></span>
+<span><span class="co">#&gt; [15:03:02] INFO  Constructing &lt;phip_data&gt; object</span></span>
 <span><span class="co">#&gt;                  -&gt; create_data()</span></span>
-<span><span class="co">#&gt; [14:28:00] INFO  Fetching peptide metadata library via get_peptide_library()</span></span>
+<span><span class="co">#&gt; [15:03:02] INFO  Fetching peptide metadata library via get_peptide_library()</span></span>
 <span><span class="co">#&gt;                    - libraries: combined</span></span>
-<span><span class="co">#&gt; [14:28:00] INFO  Retrieving peptide metadata into DuckDB cache</span></span>
+<span><span class="co">#&gt; [15:03:02] INFO  Retrieving peptide metadata into DuckDB cache</span></span>
 <span><span class="co">#&gt;                  -&gt; get_peptide_library(library = combined, force_refresh =</span></span>
 <span><span class="co">#&gt;                     FALSE)</span></span>
-<span><span class="co">#&gt; [14:28:00] INFO  Opened DuckDB connection</span></span>
+<span><span class="co">#&gt; [15:03:02] INFO  Opened DuckDB connection</span></span>
 <span><span class="co">#&gt;                    - cache dir:</span></span>
 <span><span class="co">#&gt;                      /home/runner/.cache/R/phiperio/peptide_meta/phip_cache.duckdb</span></span>
 <span><span class="co">#&gt;                    - tables: peptide_meta_combined</span></span>
-<span><span class="co">#&gt; [14:28:00] OK    Using cached peptide_meta_combined (fast path)</span></span>
-<span><span class="co">#&gt; [14:28:00] OK    Retrieving peptide metadata into DuckDB cache - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.045s</span></span>
-<span><span class="co">#&gt; [14:28:00] OK    Peptide metadata acquired</span></span>
-<span><span class="co">#&gt; [14:28:00] INFO  Validating &lt;phip_data&gt;</span></span>
+<span><span class="co">#&gt; [15:03:02] OK    Using cached peptide_meta_combined (fast path)</span></span>
+<span><span class="co">#&gt; [15:03:02] OK    Retrieving peptide metadata into DuckDB cache - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.046s</span></span>
+<span><span class="co">#&gt; [15:03:02] OK    Peptide metadata acquired</span></span>
+<span><span class="co">#&gt; [15:03:02] INFO  Validating &lt;phip_data&gt;</span></span>
 <span><span class="co">#&gt;                  -&gt; validate_phip_data()</span></span>
-<span><span class="co">#&gt; [14:28:00] INFO  Checking structural requirements (shape &amp; mandatory columns)</span></span>
-<span><span class="co">#&gt; [14:28:00] INFO  Checking outcome family availability (exist / fold_change /</span></span>
+<span><span class="co">#&gt; [15:03:02] INFO  Checking structural requirements (shape &amp; mandatory columns)</span></span>
+<span><span class="co">#&gt; [15:03:02] INFO  Checking outcome family availability (exist / fold_change /</span></span>
 <span><span class="co">#&gt;                  raw_counts)</span></span>
-<span><span class="co">#&gt; [14:28:00] INFO  Checking collisions with reserved names</span></span>
+<span><span class="co">#&gt; [15:03:02] INFO  Checking collisions with reserved names</span></span>
 <span><span class="co">#&gt;                    - subject_id, sample_id, timepoint, peptide_id, exist,</span></span>
 <span><span class="co">#&gt;                      fold_change, counts_input, counts_hit</span></span>
-<span><span class="co">#&gt; [14:28:00] INFO  Ensuring all columns are atomic (no list-cols)</span></span>
-<span><span class="co">#&gt; [14:28:00] INFO  Checking key uniqueness</span></span>
-<span><span class="co">#&gt; [14:28:00] INFO  Validating value ranges &amp; types for outcomes</span></span>
-<span><span class="co">#&gt; [14:28:00] INFO  Assessing sparsity (NA/zero prevalence vs threshold)</span></span>
+<span><span class="co">#&gt; [15:03:02] INFO  Ensuring all columns are atomic (no list-cols)</span></span>
+<span><span class="co">#&gt; [15:03:02] INFO  Checking key uniqueness</span></span>
+<span><span class="co">#&gt; [15:03:02] INFO  Validating value ranges &amp; types for outcomes</span></span>
+<span><span class="co">#&gt; [15:03:02] INFO  Assessing sparsity (NA/zero prevalence vs threshold)</span></span>
 <span><span class="co">#&gt;                    - warn threshold: 50%</span></span>
-<span><span class="co">#&gt; [14:28:01] INFO  Checking peptide_id coverage against peptide_library</span></span>
-<span><span class="co">#&gt; [14:28:01] INFO  Checking full grid completeness (peptide * sample)</span></span>
-<span><span class="co">#&gt; [14:28:01] INFO  Counts table is not a full peptide * sample grid</span></span>
+<span><span class="co">#&gt; [15:03:03] INFO  Checking peptide_id coverage against peptide_library</span></span>
+<span><span class="co">#&gt; [15:03:03] INFO  Checking full grid completeness (peptide * sample)</span></span>
+<span><span class="co">#&gt; [15:03:03] INFO  Counts table is not a full peptide * sample grid</span></span>
 <span><span class="co">#&gt;                    - observed rows: 78200</span></span>
 <span><span class="co">#&gt;                    - expected rows: 156000</span></span>
-<span><span class="co">#&gt; [14:28:01] OK    Validating &lt;phip_data&gt; - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.397s</span></span>
-<span><span class="co">#&gt; [14:28:01] OK    Constructing &lt;phip_data&gt; object - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.484s</span></span>
+<span><span class="co">#&gt; [15:03:03] OK    Validating &lt;phip_data&gt; - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.406s</span></span>
+<span><span class="co">#&gt; [15:03:03] OK    Constructing &lt;phip_data&gt; object - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.497s</span></span>
 <span><span class="va">pd</span></span>
 <span><span class="co">#&gt; ── &lt;phip_data&gt; ───────────────────────────────────────────────────────────────── </span></span>
 <span><span class="co">#&gt; </span></span>
@@ -234,27 +234,27 @@ aggregated, and the binary grouping column(s).</p>
 <span>  rank_cols  <span class="op">=</span> <span class="st">"peptide_id"</span>,</span>
 <span>  group_cols <span class="op">=</span> <span class="st">"group"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [14:28:01] INFO  compute_pop</span></span>
-<span><span class="co">#&gt; [14:28:01] INFO  compute_pop</span></span>
+<span><span class="co">#&gt; [15:03:03] INFO  compute_pop</span></span>
+<span><span class="co">#&gt; [15:03:03] INFO  compute_pop</span></span>
 <span><span class="co">#&gt;                    - ranks : peptide_id</span></span>
 <span><span class="co">#&gt;                    - group_cols: group</span></span>
 <span><span class="co">#&gt;                    - exist_col : exist</span></span>
 <span><span class="co">#&gt;                    - pop_k_min : 1</span></span>
 <span><span class="co">#&gt;                    - paired : FALSE</span></span>
-<span><span class="co">#&gt; [14:28:01] INFO  ranks resolved</span></span>
+<span><span class="co">#&gt; [15:03:03] INFO  ranks resolved</span></span>
 <span><span class="co">#&gt;                    - available: peptide_id</span></span>
-<span><span class="co">#&gt; [14:28:01] INFO  computing cohort sizes and validating binary group_cols</span></span>
-<span><span class="co">#&gt; [14:28:01] INFO  computing presence per sample via k-of-n rule</span></span>
-<span><span class="co">#&gt; [14:28:01] INFO  counting present samples per feature (pop, unpaired)</span></span>
-<span><span class="co">#&gt; [14:28:01] INFO  building pairwise comparisons</span></span>
-<span><span class="co">#&gt; [14:28:03] OK    materialized; computing Fisher p-values</span></span>
-<span><span class="co">#&gt;                    - table: ph_pop_20261005_142801</span></span>
-<span><span class="co">#&gt; [14:28:04] OK    done (compute_pop, unpaired)</span></span>
+<span><span class="co">#&gt; [15:03:03] INFO  computing cohort sizes and validating binary group_cols</span></span>
+<span><span class="co">#&gt; [15:03:03] INFO  computing presence per sample via k-of-n rule</span></span>
+<span><span class="co">#&gt; [15:03:03] INFO  counting present samples per feature (pop, unpaired)</span></span>
+<span><span class="co">#&gt; [15:03:03] INFO  building pairwise comparisons</span></span>
+<span><span class="co">#&gt; [15:03:05] OK    materialized; computing Fisher p-values</span></span>
+<span><span class="co">#&gt;                    - table: ph_pop_20261005_150303</span></span>
+<span><span class="co">#&gt; [15:03:06] OK    done (compute_pop, unpaired)</span></span>
 <span><span class="co">#&gt;                    - rows : 1950</span></span>
 <span><span class="co">#&gt;                    - ranks : peptide_id</span></span>
 <span><span class="co">#&gt;                    - k_min : 1</span></span>
-<span><span class="co">#&gt; [14:28:04] OK    compute_pop - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 2.635s</span></span></code></pre></div>
+<span><span class="co">#&gt; [15:03:06] OK    compute_pop - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 2.663s</span></span></code></pre></div>
 <p>The result is a plain <code>data.frame</code> with one row per
 <code>(rank, feature, group pair)</code>:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
@@ -371,27 +371,27 @@ grouping variables in one call.</p>
 <span>  rank_cols  <span class="op">=</span> <span class="st">"peptide_id"</span>,</span>
 <span>  group_cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"group"</span>, <span class="st">"timepoint"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [14:28:04] INFO  compute_pop</span></span>
-<span><span class="co">#&gt; [14:28:04] INFO  compute_pop</span></span>
+<span><span class="co">#&gt; [15:03:06] INFO  compute_pop</span></span>
+<span><span class="co">#&gt; [15:03:06] INFO  compute_pop</span></span>
 <span><span class="co">#&gt;                    - ranks : peptide_id</span></span>
 <span><span class="co">#&gt;                    - group_cols: group, timepoint</span></span>
 <span><span class="co">#&gt;                    - exist_col : exist</span></span>
 <span><span class="co">#&gt;                    - pop_k_min : 1</span></span>
 <span><span class="co">#&gt;                    - paired : FALSE</span></span>
-<span><span class="co">#&gt; [14:28:04] INFO  ranks resolved</span></span>
+<span><span class="co">#&gt; [15:03:06] INFO  ranks resolved</span></span>
 <span><span class="co">#&gt;                    - available: peptide_id</span></span>
-<span><span class="co">#&gt; [14:28:04] INFO  computing cohort sizes and validating binary group_cols</span></span>
-<span><span class="co">#&gt; [14:28:04] INFO  computing presence per sample via k-of-n rule</span></span>
-<span><span class="co">#&gt; [14:28:04] INFO  counting present samples per feature (pop, unpaired)</span></span>
-<span><span class="co">#&gt; [14:28:04] INFO  building pairwise comparisons</span></span>
-<span><span class="co">#&gt; [14:28:06] OK    materialized; computing Fisher p-values</span></span>
-<span><span class="co">#&gt;                    - table: ph_pop_20261005_142804</span></span>
-<span><span class="co">#&gt; [14:28:08] OK    done (compute_pop, unpaired)</span></span>
+<span><span class="co">#&gt; [15:03:06] INFO  computing cohort sizes and validating binary group_cols</span></span>
+<span><span class="co">#&gt; [15:03:06] INFO  computing presence per sample via k-of-n rule</span></span>
+<span><span class="co">#&gt; [15:03:06] INFO  counting present samples per feature (pop, unpaired)</span></span>
+<span><span class="co">#&gt; [15:03:06] INFO  building pairwise comparisons</span></span>
+<span><span class="co">#&gt; [15:03:08] OK    materialized; computing Fisher p-values</span></span>
+<span><span class="co">#&gt;                    - table: ph_pop_20261005_150306</span></span>
+<span><span class="co">#&gt; [15:03:10] OK    done (compute_pop, unpaired)</span></span>
 <span><span class="co">#&gt;                    - rows : 3900</span></span>
 <span><span class="co">#&gt;                    - ranks : peptide_id</span></span>
 <span><span class="co">#&gt;                    - k_min : 1</span></span>
-<span><span class="co">#&gt; [14:28:08] OK    compute_pop - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 4.333s</span></span>
+<span><span class="co">#&gt; [15:03:10] OK    compute_pop - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 4.456s</span></span>
 <span></span>
 <span><span class="co"># One block of rows per group column</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">pop_multi</span><span class="op">$</span><span class="va">group_col</span><span class="op">)</span></span>
@@ -435,27 +435,27 @@ calling a sample positive — useful for filtering out singleton hits.</p>
 <span>  group_cols <span class="op">=</span> <span class="st">"group"</span>,</span>
 <span>  pop_k_min  <span class="op">=</span> <span class="fl">2L</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [14:28:08] INFO  compute_pop</span></span>
-<span><span class="co">#&gt; [14:28:08] INFO  compute_pop</span></span>
+<span><span class="co">#&gt; [15:03:10] INFO  compute_pop</span></span>
+<span><span class="co">#&gt; [15:03:10] INFO  compute_pop</span></span>
 <span><span class="co">#&gt;                    - ranks : peptide_id</span></span>
 <span><span class="co">#&gt;                    - group_cols: group</span></span>
 <span><span class="co">#&gt;                    - exist_col : exist</span></span>
 <span><span class="co">#&gt;                    - pop_k_min : 2</span></span>
 <span><span class="co">#&gt;                    - paired : FALSE</span></span>
-<span><span class="co">#&gt; [14:28:08] INFO  ranks resolved</span></span>
+<span><span class="co">#&gt; [15:03:10] INFO  ranks resolved</span></span>
 <span><span class="co">#&gt;                    - available: peptide_id</span></span>
-<span><span class="co">#&gt; [14:28:08] INFO  computing cohort sizes and validating binary group_cols</span></span>
-<span><span class="co">#&gt; [14:28:08] INFO  computing presence per sample via k-of-n rule</span></span>
-<span><span class="co">#&gt; [14:28:08] INFO  counting present samples per feature (pop, unpaired)</span></span>
-<span><span class="co">#&gt; [14:28:09] INFO  building pairwise comparisons</span></span>
-<span><span class="co">#&gt; [14:28:10] OK    materialized; computing Fisher p-values</span></span>
-<span><span class="co">#&gt;                    - table: ph_pop_20261005_142809</span></span>
-<span><span class="co">#&gt; [14:28:10] OK    done (compute_pop, unpaired)</span></span>
+<span><span class="co">#&gt; [15:03:10] INFO  computing cohort sizes and validating binary group_cols</span></span>
+<span><span class="co">#&gt; [15:03:11] INFO  computing presence per sample via k-of-n rule</span></span>
+<span><span class="co">#&gt; [15:03:11] INFO  counting present samples per feature (pop, unpaired)</span></span>
+<span><span class="co">#&gt; [15:03:11] INFO  building pairwise comparisons</span></span>
+<span><span class="co">#&gt; [15:03:12] OK    materialized; computing Fisher p-values</span></span>
+<span><span class="co">#&gt;                    - table: ph_pop_20261005_150311</span></span>
+<span><span class="co">#&gt; [15:03:12] OK    done (compute_pop, unpaired)</span></span>
 <span><span class="co">#&gt;                    - rows : 0</span></span>
 <span><span class="co">#&gt;                    - ranks :</span></span>
 <span><span class="co">#&gt;                    - k_min : 2</span></span>
-<span><span class="co">#&gt; [14:28:10] OK    compute_pop - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 1.916s</span></span>
+<span><span class="co">#&gt; [15:03:12] OK    compute_pop - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 1.95s</span></span>
 <span></span>
 <span><span class="co"># Higher k_min → fewer positives</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">pop_k2</span><span class="op">$</span><span class="va">n1</span><span class="op">)</span> <span class="op">&lt;</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">pop_group</span><span class="op">$</span><span class="va">n1</span><span class="op">)</span></span>
@@ -479,24 +479,24 @@ from the same subject across timepoints.</p>
 <span>  group_cols <span class="op">=</span> <span class="st">"timepoint"</span>,</span>
 <span>  paired     <span class="op">=</span> <span class="st">"subject_id"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [14:28:10] INFO  compute_pop</span></span>
-<span><span class="co">#&gt; [14:28:10] INFO  compute_pop</span></span>
+<span><span class="co">#&gt; [15:03:12] INFO  compute_pop</span></span>
+<span><span class="co">#&gt; [15:03:12] INFO  compute_pop</span></span>
 <span><span class="co">#&gt;                    - ranks : peptide_id</span></span>
 <span><span class="co">#&gt;                    - group_cols: timepoint</span></span>
 <span><span class="co">#&gt;                    - exist_col : exist</span></span>
 <span><span class="co">#&gt;                    - pop_k_min : 1</span></span>
 <span><span class="co">#&gt;                    - paired : subject_id</span></span>
-<span><span class="co">#&gt; [14:28:10] INFO  ranks resolved</span></span>
+<span><span class="co">#&gt; [15:03:12] INFO  ranks resolved</span></span>
 <span><span class="co">#&gt;                    - available: peptide_id</span></span>
-<span><span class="co">#&gt; [14:28:10] INFO  computing cohort sizes and validating binary group_cols</span></span>
-<span><span class="co">#&gt; [14:28:10] INFO  computing presence per sample via k-of-n rule</span></span>
-<span><span class="co">#&gt; [14:28:10] INFO  paired design: running McNemar exact (binomial)</span></span>
-<span><span class="co">#&gt; [14:28:12] OK    done (compute_pop, paired)</span></span>
+<span><span class="co">#&gt; [15:03:13] INFO  computing cohort sizes and validating binary group_cols</span></span>
+<span><span class="co">#&gt; [15:03:13] INFO  computing presence per sample via k-of-n rule</span></span>
+<span><span class="co">#&gt; [15:03:13] INFO  paired design: running McNemar exact (binomial)</span></span>
+<span><span class="co">#&gt; [15:03:14] OK    done (compute_pop, paired)</span></span>
 <span><span class="co">#&gt;                    - rows : 1950</span></span>
 <span><span class="co">#&gt;                    - ranks : peptide_id</span></span>
 <span><span class="co">#&gt;                    - k_min : 1</span></span>
-<span><span class="co">#&gt; [14:28:12] OK    compute_pop - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 2.019s</span></span>
+<span><span class="co">#&gt; [15:03:14] OK    compute_pop - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 2.057s</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">pop_paired</span><span class="op">)</span></span>
 <span><span class="co">#&gt;         rank        feature group_col group1 n1 N1      prop1  percent1 group2</span></span>
@@ -772,7 +772,7 @@ labels, log₂ ratio, and −log₁₀(p).</p>
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt; [1] phiper_0.4.10</span></span>
+<span><span class="co">#&gt; [1] phiper_0.4.11</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
 <span><span class="co">#&gt;  [1] future_1.76.0       tidyr_1.3.2         utf8_1.2.6         </span></span>

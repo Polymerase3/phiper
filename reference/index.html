@@ -13,7 +13,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.10</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.11</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,7 +67,7 @@
     </div>
 
     <div class="section level2">
-      <h2 id="all-functions">All functions<a class="anchor" aria-label="anchor" href="#all-functions"></a></h2>
+      <h2 id="alpha-diversity">Alpha diversity<a class="anchor" aria-label="anchor" href="#alpha-diversity"></a></h2>
 
 
 
@@ -92,26 +92,42 @@
 
         <dt>
 
-          <code><a href="compute_capscale.html">compute_capscale()</a></code>
+          <code><a href="plot_alpha.html">plot_alpha()</a></code>
 
         </dt>
-        <dd>Constrained Ordination (db-rda / cap) on Distance Matrix</dd>
+        <dd>Plot alpha diversity (richness/Shannon/Simpson) from precomputed results</dd>
 
         <dt>
 
-          <code><a href="compute_delta.html">compute_delta()</a></code>
+          <code><a href="plot_alpha_interactive.html">plot_alpha_interactive()</a></code>
 
         </dt>
-        <dd>Global Shift in Peptide-level Prevalence via Subject-level Permutation</dd>
+        <dd>Plot alpha diversity (precomputed) — interactive (plotly)</dd>
 
         <dt>
 
-          <code><a href="compute_dispersion.html">compute_dispersion()</a></code>
+          <code><a href="plot_alpha_significance.html">plot_alpha_significance()</a></code>
 
         </dt>
-        <dd>Test Homogeneity of Dispersion (Beta Dispersion)</dd>
+        <dd>Visualise alpha diversity significance results</dd>
 
         <dt>
+
+          <code><a href="plot_enrichment_counts.html">plot_enrichment_counts()</a></code>
+
+        </dt>
+        <dd>Plot enrichment counts per group (and optional interaction)</dd>
+      </dl></div><div class="section level2">
+      <h2 id="beta-diversity">Beta diversity<a class="anchor" aria-label="anchor" href="#beta-diversity"></a></h2>
+
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
 
           <code><a href="compute_distance.html">compute_distance()</a></code>
 
@@ -134,6 +150,13 @@
 
         <dt>
 
+          <code><a href="compute_capscale.html">compute_capscale()</a></code>
+
+        </dt>
+        <dd>Constrained Ordination (db-rda / cap) on Distance Matrix</dd>
+
+        <dt>
+
           <code><a href="compute_permanova.html">compute_permanova()</a></code>
 
         </dt>
@@ -141,10 +164,10 @@
 
         <dt>
 
-          <code><a href="compute_pop.html">compute_pop()</a></code>
+          <code><a href="compute_dispersion.html">compute_dispersion()</a></code>
 
         </dt>
-        <dd>Prevalence comparison by group (POP framework)</dd>
+        <dd>Test Homogeneity of Dispersion (Beta Dispersion)</dd>
 
         <dt>
 
@@ -152,111 +175,6 @@
 
         </dt>
         <dd>Compute t-SNE Embeddings for Sample Distances</dd>
-
-        <dt>
-
-          <code><a href="deltaplot.html">deltaplot()</a></code>
-
-        </dt>
-        <dd>Delta-prevalence vs Pooled Prevalence</dd>
-
-        <dt>
-
-          <code><a href="deltaplot_interactive.html">deltaplot_interactive()</a></code>
-
-        </dt>
-        <dd>Interactive Delta-prevalence vs Pooled Prevalence</dd>
-
-        <dt>
-
-          <code><a href="ecdf_plot.html">ecdf_plot()</a></code>
-
-        </dt>
-        <dd>ECDF of Per-peptide Prevalences for Two Groups</dd>
-
-        <dt>
-
-          <code><a href="ecdf_plot_interactive.html">ecdf_plot_interactive()</a></code>
-
-        </dt>
-        <dd>ECDF of Per-peptide Prevalence for Two Groups</dd>
-
-        <dt>
-
-          <code><a href="forestplot.html">forestplot()</a></code>
-
-        </dt>
-        <dd>Forest Plot of Top/Bottom Raw Stouffer T by Rank</dd>
-
-        <dt>
-
-          <code><a href="forestplot_interactive.html">forestplot_interactive()</a></code>
-
-        </dt>
-        <dd>Interactive Forest Plot of Top/Bottom DELTA/Stouffer Statistics</dd>
-
-        <dt>
-
-          <code><a href="get_example_path.html">get_example_path()</a></code>
-
-        </dt>
-        <dd>Path to Example PhIP-Seq Datasets</dd>
-
-        <dt>
-
-          <code><a href="load_example_data.html">load_example_data()</a></code>
-
-        </dt>
-        <dd>Load Example PhIP-Seq Dataset as &lt;phip_data&gt;</dd>
-
-        <dt>
-
-          <code><a href="phip_palette.html">phip_palette</a></code>
-
-        </dt>
-        <dd>PHIP default colour palette</dd>
-
-        <dt>
-
-          <code><a href="plot_alpha.html">plot_alpha()</a></code>
-
-        </dt>
-        <dd>Plot alpha diversity (richness/Shannon/Simpson) from precomputed results</dd>
-
-        <dt>
-
-          <code><a href="plot_alpha_interactive.html">plot_alpha_interactive()</a></code>
-
-        </dt>
-        <dd>Plot alpha diversity (precomputed) — interactive (plotly)</dd>
-
-        <dt>
-
-          <code><a href="plot_alpha_significance.html">plot_alpha_significance()</a></code>
-
-        </dt>
-        <dd>Visualise alpha diversity significance results</dd>
-
-        <dt>
-
-          <code><a href="plot_cap.html">plot_cap()</a></code>
-
-        </dt>
-        <dd>Plot CAP/db-RDA Results (Constrained Ordination)</dd>
-
-        <dt>
-
-          <code><a href="plot_dispersion.html">plot_dispersion()</a></code>
-
-        </dt>
-        <dd>Plot beta dispersion (distance to centroid)</dd>
-
-        <dt>
-
-          <code><a href="plot_enrichment_counts.html">plot_enrichment_counts()</a></code>
-
-        </dt>
-        <dd>Plot enrichment counts per group (and optional interaction)</dd>
 
         <dt>
 
@@ -274,10 +192,149 @@
 
         <dt>
 
+          <code><a href="plot_cap.html">plot_cap()</a></code>
+
+        </dt>
+        <dd>Plot CAP/db-RDA Results (Constrained Ordination)</dd>
+
+        <dt>
+
+          <code><a href="plot_dispersion.html">plot_dispersion()</a></code>
+
+        </dt>
+        <dd>Plot beta dispersion (distance to centroid)</dd>
+
+        <dt>
+
           <code><a href="plot_tsne.html">plot_tsne()</a></code>
 
         </dt>
         <dd>Plot t-SNE embeddings</dd>
+      </dl></div><div class="section level2">
+      <h2 id="pop-analysis">POP analysis<a class="anchor" aria-label="anchor" href="#pop-analysis"></a></h2>
+
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="compute_pop.html">compute_pop()</a></code>
+
+        </dt>
+        <dd>Prevalence comparison by group (POP framework)</dd>
+
+        <dt>
+
+          <code><a href="scatter_static.html">scatter_static()</a></code>
+
+        </dt>
+        <dd>Static scatterplot of percent1 vs percent2 from <code><a href="../reference/compute_pop.html">compute_pop()</a></code></dd>
+
+        <dt>
+
+          <code><a href="scatter_interactive.html">scatter_interactive()</a></code>
+
+        </dt>
+        <dd>Interactive prevalence scatter for prevalence results</dd>
+
+        <dt>
+
+          <code><a href="volcano_static.html">volcano_static()</a></code>
+
+        </dt>
+        <dd>Static volcano plot (log2 ratio vs -log10 p)</dd>
+
+        <dt>
+
+          <code><a href="volcano_interactive.html">volcano_interactive()</a></code>
+
+        </dt>
+        <dd>Interactive volcano plot (log2 ratio vs -log10 p)</dd>
+      </dl></div><div class="section level2">
+      <h2 id="delta-analysis">Delta analysis<a class="anchor" aria-label="anchor" href="#delta-analysis"></a></h2>
+
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="compute_delta.html">compute_delta()</a></code>
+
+        </dt>
+        <dd>Global Shift in Peptide-level Prevalence via Subject-level Permutation</dd>
+
+        <dt>
+
+          <code><a href="deltaplot.html">deltaplot()</a></code>
+
+        </dt>
+        <dd>Delta-prevalence vs Pooled Prevalence</dd>
+
+        <dt>
+
+          <code><a href="deltaplot_interactive.html">deltaplot_interactive()</a></code>
+
+        </dt>
+        <dd>Interactive Delta-prevalence vs Pooled Prevalence</dd>
+
+        <dt>
+
+          <code><a href="forestplot.html">forestplot()</a></code>
+
+        </dt>
+        <dd>Forest Plot of Top/Bottom Raw Stouffer T by Rank</dd>
+
+        <dt>
+
+          <code><a href="forestplot_interactive.html">forestplot_interactive()</a></code>
+
+        </dt>
+        <dd>Interactive Forest Plot of Top/Bottom DELTA/Stouffer Statistics</dd>
+
+        <dt>
+
+          <code><a href="ecdf_plot.html">ecdf_plot()</a></code>
+
+        </dt>
+        <dd>ECDF of Per-peptide Prevalences for Two Groups</dd>
+
+        <dt>
+
+          <code><a href="ecdf_plot_interactive.html">ecdf_plot_interactive()</a></code>
+
+        </dt>
+        <dd>ECDF of Per-peptide Prevalence for Two Groups</dd>
+      </dl></div><div class="section level2">
+      <h2 id="plot-styling">Plot styling<a class="anchor" aria-label="anchor" href="#plot-styling"></a></h2>
+
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="theme_phip.html">theme_phip()</a></code>
+
+        </dt>
+        <dd>Theme <code>theme_phip</code></dd>
+
+        <dt>
+
+          <code><a href="phip_palette.html">phip_palette</a></code>
+
+        </dt>
+        <dd>PHIP default colour palette</dd>
 
         <dt>
 
@@ -292,43 +349,32 @@
 
         </dt>
         <dd>Discrete fill scale using the PHIP palette</dd>
+      </dl></div><div class="section level2">
+      <h2 id="example-data">Example data<a class="anchor" aria-label="anchor" href="#example-data"></a></h2>
+
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="load_example_data.html">load_example_data()</a></code>
+
+        </dt>
+        <dd>Load Example PhIP-Seq Dataset as &lt;phip_data&gt;</dd>
 
         <dt>
 
-          <code><a href="scatter_interactive.html">scatter_interactive()</a></code>
+          <code><a href="get_example_path.html">get_example_path()</a></code>
 
         </dt>
-        <dd>Interactive prevalence scatter for prevalence results</dd>
-
-        <dt>
-
-          <code><a href="scatter_static.html">scatter_static()</a></code>
-
-        </dt>
-        <dd>Static scatterplot of percent1 vs percent2 from <code><a href="../reference/compute_pop.html">compute_pop()</a></code></dd>
-
-        <dt>
-
-          <code><a href="theme_phip.html">theme_phip()</a></code>
-
-        </dt>
-        <dd>Theme <code>theme_phip</code></dd>
-
-        <dt>
-
-          <code><a href="volcano_interactive.html">volcano_interactive()</a></code>
-
-        </dt>
-        <dd>Interactive volcano plot (log2 ratio vs -log10 p)</dd>
-
-        <dt>
-
-          <code><a href="volcano_static.html">volcano_static()</a></code>
-
-        </dt>
-        <dd>Static volcano plot (log2 ratio vs -log10 p)</dd>
+        <dd>Path to Example PhIP-Seq Datasets</dd>
       </dl></div>
-  </main></div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside></div>
 
 
     <footer><div class="pkgdown-footer-left">
