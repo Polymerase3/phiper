@@ -26,7 +26,7 @@ Useful links:
 Other contributors:
 
 - Alon Alexander <a.alexander@umcg.nl> (contributed code and shaped the
-  package concept) \[contributor, copyright holder\]
+  package concept) \[copyright holder\]
 
 - Nikolas Basler <nikolas.basler@meduniwien.ac.at>
   ([ORCID](https://orcid.org/0000-0003-0791-4369)) \[contributor\]

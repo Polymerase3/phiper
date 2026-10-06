@@ -1,5 +1,35 @@
 # Changelog
 
+## phiper 0.4.13 (2026-10-06)
+
+### Dependencies
+
+- phiper now imports 13 packages instead of 20, and installing it pulls
+  in 41 packages instead of 77
+  ([\#25](https://github.com/Polymerase3/phiper/issues/25)). `cli`,
+  `tidyselect`, `scales`, `showtext` and `sysfonts` are no longer
+  needed. `plotly` and `Rtsne` moved to Suggests: install `plotly` to
+  use the `*_interactive()` plots and the 3D t-SNE view, and `Rtsne` to
+  use
+  [`compute_tsne()`](https://polymerase3.github.io/phiper/reference/compute_tsne.md).
+  phiper now requires ggplot2 \>= 4.0.0.
+
+### Plotting
+
+- Loading phiper no longer changes global settings: it does not set the
+  default ggplot2 theme, the discrete colour options, or showtext font
+  rendering. Plots still use the phiper colours, which
+  [`theme_phip()`](https://polymerase3.github.io/phiper/reference/theme_phip.md)
+  now sets.
+- The bundled Montserrat font was removed and plots default to the
+  `"sans"` font family.
+- Static plots now draw Δ, Σ and subscripts (e.g. in
+  [`deltaplot()`](https://polymerase3.github.io/phiper/reference/deltaplot.md)
+  and
+  [`volcano_static()`](https://polymerase3.github.io/phiper/reference/volcano_static.md))
+  with plotmath, so they can be saved to PDF with the standard
+  [`pdf()`](https://rdrr.io/r/grDevices/pdf.html) device.
+
 ## phiper 0.4.12 (2026-10-06)
 
 ### Documentation

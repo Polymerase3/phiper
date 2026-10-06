@@ -1,14 +1,12 @@
 # Theme `theme_phip`
 
-A clean, publication-ready ggplot2 theme tuned for **facetted** plots
-with the **Montserrat** font. The font is registered and **showtext**
-rendering is enabled automatically when the package loads — no setup
-required.
+A clean, publication-ready ggplot2 theme tuned for **facetted** plots,
+with `phip_palette` as the default discrete colour and fill palette.
 
 ## Usage
 
 ``` r
-theme_phip(base_size = 14, base_family = "Montserrat")
+theme_phip(base_size = 14, base_family = "sans")
 ```
 
 ## Arguments
@@ -19,7 +17,7 @@ theme_phip(base_size = 14, base_family = "Montserrat")
 
 - base_family:
 
-  Base font family (default `"Montserrat"`).
+  Base font family (default `"sans"`).
 
 ## Value
 

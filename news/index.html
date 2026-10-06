@@ -13,7 +13,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.12</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.13</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,6 +67,19 @@
       <small>Source: <a href="https://github.com/Polymerase3/phiper/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.4.13" id="phiper-0413-2026-10-06">phiper 0.4.13 (2026-10-06)<a class="anchor" aria-label="anchor" href="#phiper-0413-2026-10-06"></a></h2>
+<div class="section level3">
+<h3 id="dependencies-0-4-13">Dependencies<a class="anchor" aria-label="anchor" href="#dependencies-0-4-13"></a></h3>
+<ul><li>phiper now imports 13 packages instead of 20, and installing it pulls in 41 packages instead of 77 (<a href="https://github.com/Polymerase3/phiper/issues/25" class="external-link">#25</a>). <code>cli</code>, <code>tidyselect</code>, <code>scales</code>, <code>showtext</code> and <code>sysfonts</code> are no longer needed. <code>plotly</code> and <code>Rtsne</code> moved to Suggests: install <code>plotly</code> to use the <code>*_interactive()</code> plots and the 3D t-SNE view, and <code>Rtsne</code> to use <code><a href="../reference/compute_tsne.html">compute_tsne()</a></code>. phiper now requires ggplot2 &gt;= 4.0.0.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="plotting-0-4-13">Plotting<a class="anchor" aria-label="anchor" href="#plotting-0-4-13"></a></h3>
+<ul><li>Loading phiper no longer changes global settings: it does not set the default ggplot2 theme, the discrete colour options, or showtext font rendering. Plots still use the phiper colours, which <code><a href="../reference/theme_phip.html">theme_phip()</a></code> now sets.</li>
+<li>The bundled Montserrat font was removed and plots default to the <code>"sans"</code> font family.</li>
+<li>Static plots now draw Δ, Σ and subscripts (e.g. in <code><a href="../reference/deltaplot.html">deltaplot()</a></code> and <code><a href="../reference/volcano_static.html">volcano_static()</a></code>) with plotmath, so they can be saved to PDF with the standard <code><a href="https://rdrr.io/r/grDevices/pdf.html" class="external-link">pdf()</a></code> device.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.4.12" id="phiper-0412-2026-10-06">phiper 0.4.12 (2026-10-06)<a class="anchor" aria-label="anchor" href="#phiper-0412-2026-10-06"></a></h2>
 <div class="section level3">
