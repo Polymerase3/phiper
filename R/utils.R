@@ -703,7 +703,9 @@
 
 # Ensure peptide_library is queryable from the SAME connection as data_long.
 # First tries a zero-copy DuckDB ATTACH; falls back to copy_to() as a temp
-# table when the two connections are incompatible.
+# table when the two connections are incompatible. The ATTACH is READ_ONLY: a
+# writable attach of phiperio's cache file corrupts tables that
+# get_peptide_library() later writes to it in the same R session.
 #' @keywords internal
 .ph_peplib_on_main <- function(x, schema_alias = "peplib") {
   main_con <- dbplyr::remote_con(x$data_long)
@@ -722,7 +724,7 @@
       try(
         DBI::dbExecute(
           main_con,
-          sprintf("ATTACH '%s' AS %s;", pep_db_path, schema_alias)
+          sprintf("ATTACH '%s' AS %s (READ_ONLY);", pep_db_path, schema_alias)
         ),
         silent = TRUE
       )
@@ -756,6 +758,16 @@
   tmp_name <- paste0("peptide_meta_tmp_", as.integer(Sys.time()))
   dplyr::copy_to(main_con, peplib_local, tmp_name,
                  temporary = TRUE, overwrite = TRUE)
+}
+
+# Fetch the phiperio peptide libraries the given peptide IDs belong to, detected
+# from their prefixes (agilent_, humanProteome_, icam_, ...). Returns NULL when
+# no ID matches a known library.
+#' @keywords internal
+.ph_library_for_peptides <- function(peptide_ids) {
+  libraries <- detect_peptide_libraries(peptide_ids)
+  if (length(libraries) == 0L) return(NULL)
+  get_peptide_library(libraries)
 }
 
 # ==============================================================================

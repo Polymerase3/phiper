@@ -20,6 +20,7 @@ compute_delta(
   aggregate_stat = c("stouffer", "maxmean", "af"),
   strat_bins = c(0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5),
   winsor_z = 4,
+  min_m_eff = 0,
   rank_feature_keep = NULL,
   peptide_library = NULL,
   log = FALSE,
@@ -79,6 +80,15 @@ bin-level z-scores is used as the global test statistic.}
 \item{winsor_z}{Winsorization threshold applied to peptide-level z-scores.
 Values beyond \verb{±winsor_z} are truncated. Default \code{4.0}.}
 
+\item{min_m_eff}{Minimum effective number of peptides (the \code{m_eff} column of
+the returned tibble) required for a stratum to be tested. Strata with
+\code{m_eff < min_m_eff} are skipped \strong{before} any permutation is drawn and are
+dropped from the returned tibble. The permutation test is only considered
+reliable for \code{m_eff > 5}, so \code{min_m_eff = 5} is a sensible choice. Default
+\code{0}, which disables the filter and tests every stratum. Note that under
+\code{weight_mode = "equal"} all weights are identical, so \code{m_eff} reduces to
+\code{n_peptides_used} and this argument acts as a plain minimum-peptide filter.}
+
 \item{rank_feature_keep}{Optional \strong{named list} mapping \code{rank} to a vector
 of \code{feature} values to keep. Only rank–feature strata in this list are
 tested; others are dropped after the peptide-level pivot.}
@@ -86,7 +96,7 @@ tested; others are dropped after the peptide-level pivot.}
 \item{peptide_library}{Optional data frame providing peptide annotations for
 non-peptide ranks. Must at least contain \code{peptide_id} and all requested
 \code{rank_cols} besides \code{"peptide_id"}. If \code{NULL}, the function falls back to
-\code{x$peptide_library} or \code{get_peptide_library()} (from phiperio).}
+\code{x$peptide_library} or the phiperio libraries the peptide IDs belong to.}
 
 \item{log}{Logical; if \code{TRUE}, write progress messages (per contrast and
 overall) using the package's logging helpers.}
@@ -209,6 +219,11 @@ a Stouffer statistic \eqn{T_b} is computed within each bin. The
 and \code{0.20}, then peptides with pooled prevalence in (0.10, 0.20] share
 a bin.
 }
+
+If \code{min_m_eff} is greater than 0, strata whose effective number of
+peptides \code{m_eff} falls below it are skipped \strong{before} any permutation is
+drawn and are dropped from the result, since the permutation test is only
+reliable for \code{m_eff > 5}.
 \item \strong{Multiplicity.}
 No multiple-testing correction is performed; \code{p_perm} is returned as
 computed.
@@ -218,11 +233,13 @@ computed.
 \itemize{
 \item \code{exist_col} is treated as 0/1 presence.
 \item There must be \strong{at most one positive} per
-(\code{subject_id}, \code{peptide_id}, \code{group_col}, \code{group_value}); paired designs
-can have up to two positives across the two group levels. Violations
-trigger an error. Example (group levels A/B): for a single subject and
-peptide, you may have A=1 and B=0 (or A=0 and B=1, or A=1 and B=1), but you
-cannot have two rows both with A=1 (or two rows both with B=1).
+(pairing unit, \code{peptide_id}, \code{group_col}, \code{group_value}); paired designs
+can have up to two positives across the two group levels. The pairing unit
+is the column named by \code{paired_by}, or \code{subject_id} when \code{paired_by} is not
+supplied. Violations trigger an error. Example (group levels A/B): for a
+single pairing unit and peptide, you may have A=1 and B=0 (or A=0 and B=1,
+or A=1 and B=1), but you cannot have two rows both with A=1 (or two rows
+both with B=1).
 \item Non-peptide ranks specified in \code{rank_cols} must be resolvable from a
 peptide library (see \code{peptide_library} below).
 }
@@ -234,7 +251,9 @@ required. It is resolved in the following order:
 \enumerate{
 \item The explicit \code{peptide_library} argument.
 \item \code{x$peptide_library} if \code{x} is a \code{phip_data} with an attached library.
-\item \code{get_peptide_library()} from phiperio (always available as a dependency).
+\item The phiperio libraries the peptide IDs belong to, detected from their
+prefixes with \code{detect_peptide_libraries()} and fetched with
+\code{get_peptide_library()}.
 }
 }
 \section{Parallelization}{
@@ -264,13 +283,19 @@ pd <- load_example_data()
 # Small unpaired subset with a mock peptide library
 pd_filt <- pd |>
   dplyr::filter(
-    peptide_id \%in\% c("16627", "5243", "24799", "16196", "18003"),
+    peptide_id \%in\% c(
+      "agilent_151084", "agilent_216446", "agilent_218320",
+      "agilent_97112", "twist_96563"
+    ),
     timepoint == "T1"
   ) |>
   dplyr::collect()
 
 mock_peplib <- data.frame(
-  peptide_id = c("16627", "5243", "24799", "16196", "18003"),
+  peptide_id = c(
+    "agilent_151084", "agilent_216446", "agilent_218320",
+    "agilent_97112", "twist_96563"
+  ),
   species    = rep("mock_species", 5),
   stringsAsFactors = FALSE
 )

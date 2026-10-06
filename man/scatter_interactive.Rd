@@ -37,7 +37,9 @@ highlight, e.g. \code{c("is_flagellum" = TRUE)} or
 \item{color_title}{optional legend title when \code{color_by} is used.}
 
 \item{peplib}{Optional peptide metadata table used to resolve \code{color_by}
-when not available via the global library.}
+and the hover metadata. If \code{NULL}, the phiperio peptide libraries the
+peptide IDs belong to are detected from their prefixes and fetched with
+\code{get_peptide_library()}.}
 
 \item{background_df}{Optional data frame of background points.}
 

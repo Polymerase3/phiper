@@ -139,6 +139,11 @@
 #’      which reduces the conservative bias of the standard test for discrete
 #’      statistics.
 #'
+#'    If `min_m_eff` is greater than 0, strata whose effective number of
+#'    peptides `m_eff` falls below it are skipped **before** any permutation is
+#'    drawn and are dropped from the result, since the permutation test is only
+#'    reliable for `m_eff > 5`.
+#'
 #' 6. **Multiplicity.**
 #'    No multiple-testing correction is performed; `p_perm` is returned as
 #'    computed.
@@ -147,11 +152,13 @@
 #'
 #' - `exist_col` is treated as 0/1 presence.
 #' - There must be **at most one positive** per
-#'   (`subject_id`, `peptide_id`, `group_col`, `group_value`); paired designs
-#'   can have up to two positives across the two group levels. Violations
-#'   trigger an error. Example (group levels A/B): for a single subject and
-#'   peptide, you may have A=1 and B=0 (or A=0 and B=1, or A=1 and B=1), but you
-#'   cannot have two rows both with A=1 (or two rows both with B=1).
+#'   (pairing unit, `peptide_id`, `group_col`, `group_value`); paired designs
+#'   can have up to two positives across the two group levels. The pairing unit
+#'   is the column named by `paired_by`, or `subject_id` when `paired_by` is not
+#'   supplied. Violations trigger an error. Example (group levels A/B): for a
+#'   single pairing unit and peptide, you may have A=1 and B=0 (or A=0 and B=1,
+#'   or A=1 and B=1), but you cannot have two rows both with A=1 (or two rows
+#'   both with B=1).
 #' - Non-peptide ranks specified in `rank_cols` must be resolvable from a
 #'   peptide library (see `peptide_library` below).
 #'
@@ -162,7 +169,9 @@
 #'
 #' 1. The explicit `peptide_library` argument.
 #' 2. `x$peptide_library` if `x` is a `phip_data` with an attached library.
-#' 3. `get_peptide_library()` from phiperio (always available as a dependency).
+#' 3. The phiperio libraries the peptide IDs belong to, detected from their
+#'    prefixes with `detect_peptide_libraries()` and fetched with
+#'    `get_peptide_library()`.
 #'
 #' @section Parallelization:
 #' The permutation contrasts are evaluated either sequentially or in parallel
@@ -218,13 +227,21 @@
 #'   bin-level z-scores is used as the global test statistic.
 #' @param winsor_z Winsorization threshold applied to peptide-level z-scores.
 #'   Values beyond `±winsor_z` are truncated. Default `4.0`.
+#' @param min_m_eff Minimum effective number of peptides (the `m_eff` column of
+#'   the returned tibble) required for a stratum to be tested. Strata with
+#'   `m_eff < min_m_eff` are skipped **before** any permutation is drawn and are
+#'   dropped from the returned tibble. The permutation test is only considered
+#'   reliable for `m_eff > 5`, so `min_m_eff = 5` is a sensible choice. Default
+#'   `0`, which disables the filter and tests every stratum. Note that under
+#'   `weight_mode = "equal"` all weights are identical, so `m_eff` reduces to
+#'   `n_peptides_used` and this argument acts as a plain minimum-peptide filter.
 #' @param rank_feature_keep Optional **named list** mapping `rank` to a vector
 #'   of `feature` values to keep. Only rank–feature strata in this list are
 #'   tested; others are dropped after the peptide-level pivot.
 #' @param peptide_library Optional data frame providing peptide annotations for
 #'   non-peptide ranks. Must at least contain `peptide_id` and all requested
 #'   `rank_cols` besides `"peptide_id"`. If `NULL`, the function falls back to
-#'   `x$peptide_library` or `get_peptide_library()` (from phiperio).
+#'   `x$peptide_library` or the phiperio libraries the peptide IDs belong to.
 #' @param log Logical; if `TRUE`, write progress messages (per contrast and
 #'   overall) using the package's logging helpers.
 #' @param log_file Path to a log file used by the logging helpers if `log` is
@@ -258,13 +275,19 @@
 #' # Small unpaired subset with a mock peptide library
 #' pd_filt <- pd |>
 #'   dplyr::filter(
-#'     peptide_id %in% c("16627", "5243", "24799", "16196", "18003"),
+#'     peptide_id %in% c(
+#'       "agilent_151084", "agilent_216446", "agilent_218320",
+#'       "agilent_97112", "twist_96563"
+#'     ),
 #'     timepoint == "T1"
 #'   ) |>
 #'   dplyr::collect()
 #'
 #' mock_peplib <- data.frame(
-#'   peptide_id = c("16627", "5243", "24799", "16196", "18003"),
+#'   peptide_id = c(
+#'     "agilent_151084", "agilent_216446", "agilent_218320",
+#'     "agilent_97112", "twist_96563"
+#'   ),
 #'   species    = rep("mock_species", 5),
 #'   stringsAsFactors = FALSE
 #' )
@@ -301,6 +324,7 @@ compute_delta <- function(
   aggregate_stat = c("stouffer", "maxmean", "af"),
   strat_bins = c(0.002, 0.005, 0.01, 0.02, 0.05, 0.10, 0.20, 0.50),
   winsor_z = 4.0,
+  min_m_eff = 0,
   rank_feature_keep = NULL,
   peptide_library = NULL,
   log = FALSE,
@@ -328,6 +352,8 @@ compute_delta <- function(
     chk::chk_true(all(strat_bins >= 0 & strat_bins <= 1))
     strat_bins <- sort(unique(as.numeric(strat_bins)))
   }
+  chk::chk_number(min_m_eff)
+  chk::chk_true(min_m_eff >= 0)
 
   # --- 1) Prepare data once ---------------------------------------------------
   # Required columns from `x`
@@ -336,6 +362,10 @@ compute_delta <- function(
     need_cols <- c(need_cols, paired_by)
   }
   need_cols <- unique(need_cols)
+
+  # Unit the uniqueness rule below applies to: the pairing column when one is
+  # given, otherwise the subject.
+  pair_unit <- if (is.null(paired_by)) "subject_id" else paired_by
 
   if (inherits(x, "phip_data")) {
     df_long <- x$data_long |>
@@ -352,24 +382,25 @@ compute_delta <- function(
       dplyr::select(tidyselect::any_of(need_cols))
   }
 
-  # --- STRICT HITS GUARD: at most one positive per (subject_id, peptide_id,
+  # --- STRICT HITS GUARD: at most one positive per (pair_unit, peptide_id,
   # group value) ---
   dup_pos <- df_long |>
     dplyr::filter(!!rlang::sym(exist_col) > 0L) |>
     tidyr::pivot_longer(tidyselect::all_of(group_cols),
       names_to = "group_col", values_to = "group_value"
     ) |>
-    dplyr::count(subject_id, peptide_id, group_col, group_value,
+    dplyr::count(!!rlang::sym(pair_unit), peptide_id, group_col, group_value,
       name = "n_pos"
     ) |>
     dplyr::filter(n_pos > 1L) |>
-    dplyr::collect()
+    dplyr::collect() |>
+    dplyr::rename(pair_id = tidyselect::all_of(pair_unit))
 
   if (nrow(dup_pos) > 0L) {
     eg <- dup_pos |>
       dplyr::slice_head(n = 10) |>
       dplyr::mutate(example = paste0(
-        "subject=", subject_id,
+        pair_unit, "=", pair_id,
         ", peptide=", peptide_id,
         ", group_col=", group_col,
         ", group_value=", group_value,
@@ -377,9 +408,12 @@ compute_delta <- function(
       )) |>
       dplyr::pull(example)
     .ph_abort(
-      "Invalid input: duplicate positives within the SAME group for some
-      (subject_id, peptide_id). One positive per group is allowed (paired
-      designs can have up to 2 across groups).",
+      sprintf(
+        "Invalid input: duplicate positives within the SAME group for some
+        (%s, peptide_id). One positive per group is allowed (paired designs
+        can have up to 2 across groups).",
+        pair_unit
+      ),
       bullets = c(eg, if (nrow(dup_pos) > 10) {
         sprintf(
           "... and %d more.",
@@ -479,7 +513,16 @@ compute_delta <- function(
     } else if (inherits(x, "phip_data") && !is.null(x$peptide_library)) {
       lib_src <- x$peptide_library
     } else {
-      lib_src <- get_peptide_library()
+      lib_src <- .ph_library_for_peptides(peptides_order)
+      if (is.null(lib_src)) {
+        .ph_abort(
+          "No known peptide library matches the peptide IDs.",
+          bullets = c(
+            paste("- rank needing a library:", ranks_need),
+            "- supply `peptide_library` with these rank columns"
+          )
+        )
+      }
     }
 
     # Select needed columns and collect to R (handles DuckDB/lazy)
@@ -831,9 +874,13 @@ compute_delta <- function(
       perm_method      = perm_method,
       strat_bins       = strat_bins,
       winsor_z         = winsor_z,
-      design           = st$design
+      design           = st$design,
+      min_m_eff        = as.numeric(min_m_eff)
     )
     if (is.null(res)) {
+      return(NULL)
+    }
+    if (isTRUE(res$skipped)) {
       return(NULL)
     }
 

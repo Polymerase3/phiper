@@ -1,3 +1,119 @@
+# phiper 0.4.11 (2026-10-05)
+
+## Documentation
+
+- The human proteome library article now documents the library's metadata
+  fields: general peptide and source-protein information, taxonomic
+  information, and the `is_*` annotation flags (proteome, mitochondrial, HLA,
+  HLA eplet, control, neoantigen, cryptic peptide, transposable element ORF
+  and therapeutic antibody sources). Written by Nicolai Hörstke.
+- The function reference on the website is now grouped by module (alpha
+  diversity, beta diversity, POP analysis, delta analysis, plot styling and
+  example data).
+
+## Continuous integration
+
+- `pkgcheck` passes again under pkgcheck 0.2.0.44. The workflow now waits for
+  the latest `R-CMD-check` and `test-coverage` push runs to finish before
+  running pkgcheck, which previously sampled them mid-run and reported a
+  failing CI. Push-triggered pkgcheck runs on different branches no longer
+  cancel each other. Alon Alexander is now listed as copyright holder only, as
+  pkgcheck requires an ORCID for every contributor.
+
+# phiper 0.4.10 (2026-10-05)
+
+## Continuous integration
+
+- New `phipflow-compat` workflow runs the end-to-end smoke test of the
+  [phipflow](https://github.com/csReynaB/phipflow) Nextflow pipeline with the
+  phiper version under test, on every pull request and push to `main` that
+  touches the package. Changes that break phipflow now fail before they are
+  merged.
+
+# phiper 0.4.9 (2026-10-05)
+
+## Bug fixes
+
+- `compute_alpha()` no longer corrupts phiperio's peptide-library cache. It
+  attached the cache's DuckDB file to the data connection in read-write mode,
+  so when `get_peptide_library()` later wrote another library to the cache in
+  the same R session, that table became unreadable ("INTERNAL Error: invalid
+  fsst_symbol_table_offset"). This broke the human proteome vignette in
+  `R CMD check` on Linux and macOS. The cache is now attached read-only. An
+  already corrupted cache is rebuilt with
+  `phiperio::get_peptide_library(..., force_refresh = TRUE)`, or by deleting
+  `phip_cache.duckdb` from `tools::R_user_dir("phiperio", "cache")`.
+
+# phiper 0.4.8 (2026-10-05)
+
+## Documentation
+
+- The "Peptide library" navbar item is now a dropdown with one article per
+  library. The existing article now covers the Agilent, Twist and Corona2
+  library, and two articles are new: the ICAM library, documenting its
+  general, taxonomic, annotation-flag and fused-protein fields (written by
+  Gabriel Innocenti), and the human proteome library (curated by Nicolai
+  Hörstke), whose field documentation is coming soon.
+
+# phiper 0.4.7 (2026-10-05)
+
+## Bug fixes
+
+- When no peptide library is supplied, `scatter_interactive()`, the
+  `color_by` highlighting of the scatter and volcano plots, and
+  `compute_delta()` now fetch the phiperio libraries the peptide IDs belong
+  to, detected from their prefixes with `phiperio::detect_peptide_libraries()`.
+  They previously always fell back to the combined Agilent, Twist and Corona2
+  library, so human proteome and ICAM peptides got no hover metadata and could
+  not be highlighted or grouped by taxonomy. Peptides that match no known
+  library get no library: plots leave every point uncoloured, and
+  `compute_delta()` asks for `peptide_library` instead of reporting missing
+  columns. Requires phiperio 0.6.1.
+
+# phiper 0.4.6 (2026-10-05)
+
+## Peptide libraries
+
+- Added two peptide libraries to `library-metadata/`, next to the combined
+  Agilent, Twist and Corona2 library: the human proteome library
+  (`human_proteome_library_16.09.26.rds`, 300,000 `humanProteome_*` peptides)
+  and the ICAM library (`icam_library_01.10.26.rds`, 420,000 `icam_*`
+  peptides). phiperio's `get_peptide_library()` serves them as
+  `"human_proteome"` and `"icam"`. Both omit the full protein sequence
+  (`full_aa_seq`), which kept the files above GitHub's 100 MB limit; the
+  curation scripts are in phiperio's `data-raw/`.
+
+# phiper 0.4.5 (2026-09-09)
+
+## Bug fixes
+
+- `compute_delta()` no longer ignores `paired_by` in the strict hits guard
+  (#56). The guard rejected duplicate positives per `subject_id` even when a
+  different pairing column was supplied, so a subject contributing two samples
+  to the same group aborted the call although the pairing unit was unique
+  within that group. The guard now keys on `paired_by` when given, and its
+  error message names the column it actually checked.
+
+# phiper 0.4.4 (2026-09-08)
+
+## New features
+
+- `compute_delta()` gains a `min_m_eff` argument (#54). Strata whose effective
+  number of peptides (`m_eff`) falls below the threshold are skipped **before**
+  any permutation is drawn and are dropped from the returned tibble, since the
+  permutation test is only reliable for `m_eff > 5`. Defaults to `0`, which
+  preserves the previous behaviour of testing every stratum.
+
+# phiper 0.4.3 (2026-07-14)
+
+## New vignette
+
+- Added "Peptide Library Metadata" vignette documenting the Agilent, Twist, and Corona2 peptide library metadata columns (documentation by Gabriel Innocenti, based on prior annotation work by Sasha Zhernakova and Carlos Reyna-Blanco).
+
+## Documentation
+
+- pkgdown navbar and Articles page now include a dedicated "Peptide library" entry.
+
 # phiper 0.4.2 (2026-07-06)
 
 ## New vignette

@@ -22,7 +22,10 @@
     }
 
     # small subset: 5 peptides at time T1
-    keep_pep <- c("16627", "5243", "24799", "16196", "18003")
+    keep_pep <- c(
+      "agilent_151084", "agilent_216446", "agilent_218320",
+      "agilent_97112", "twist_96563"
+    )
 
     ps_filt <- ps %>%
       dplyr::filter(

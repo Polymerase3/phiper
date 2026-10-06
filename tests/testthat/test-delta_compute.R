@@ -7,13 +7,19 @@ test_that("compute_delta works for unpaired design (mock species)", {
   # small unpaired subset: one species, two groups at T1
   ps_filt <- ps |>
     dplyr::filter(
-      peptide_id %in% c("16627", "5243", "24799", "16196", "18003"),
+      peptide_id %in% c(
+        "agilent_151084", "agilent_216446", "agilent_218320",
+        "agilent_97112", "twist_96563"
+      ),
       timepoint == "T1"
     ) |>
     dplyr::collect()
 
   mock_peplib <- data.frame(
-    peptide_id = c("16627", "5243", "24799", "16196", "18003"),
+    peptide_id = c(
+      "agilent_151084", "agilent_216446", "agilent_218320",
+      "agilent_97112", "twist_96563"
+    ),
     species    = rep("mock_species", 5),
     stringsAsFactors = FALSE
   )
@@ -68,13 +74,19 @@ test_that("compute_delta handles paired design via paired_by and returns
   # subset: one mock species, group A, two timepoints
   ps_filt2 <- ps |>
     dplyr::filter(
-      peptide_id %in% c("2269", "21399", "7789", "13588", "10180"),
+      peptide_id %in% c(
+        "agilent_226442", "agilent_40881", "twist_45472",
+        "twist_46405", "agilent_71497"
+      ),
       group == "A"
     ) |>
     dplyr::collect()
 
   mock_peplib <- data.frame(
-    peptide_id = c("2269", "21399", "7789", "13588", "10180"),
+    peptide_id = c(
+      "agilent_226442", "agilent_40881", "twist_45472",
+      "twist_46405", "agilent_71497"
+    ),
     species    = rep("mock_species", 5),
     stringsAsFactors = FALSE
   )
@@ -186,13 +198,19 @@ test_that("compute_delta gives consistent direction for T_obs,
 
   ps_filt <- ps |>
     dplyr::filter(
-      peptide_id %in% c("16627", "5243", "24799", "16196", "18003"),
+      peptide_id %in% c(
+        "agilent_151084", "agilent_216446", "agilent_218320",
+        "agilent_97112", "twist_96563"
+      ),
       timepoint == "T1"
     ) |>
     dplyr::collect()
 
   mock_peplib <- data.frame(
-    peptide_id = c("16627", "5243", "24799", "16196", "18003"),
+    peptide_id = c(
+      "agilent_151084", "agilent_216446", "agilent_218320",
+      "agilent_97112", "twist_96563"
+    ),
     species    = rep("mock_species", 5),
     stringsAsFactors = FALSE
   )
@@ -340,6 +358,72 @@ test_that("compute_delta aborts when peptide_library misses required
       log                = FALSE,
     ),
     regexp = "Peptide library missing required columns"
+  )
+})
+
+test_that("compute_delta fetches the libraries the peptides belong to", {
+  toy_df <- tibble::tibble(
+    sample_id  = c("s1", "s2"),
+    subject_id = c("id1", "id2"),
+    peptide_id = c("icam_1", "icam_2"),
+    group      = c("A", "B"),
+    exist      = c(1L, 1L)
+  )
+  ids_seen <- NULL
+  testthat::local_mocked_bindings(
+    .ph_library_for_peptides = function(peptide_ids) {
+      ids_seen <<- peptide_ids
+      tibble::tibble(
+        peptide_id = c("icam_1", "icam_2"),
+        species    = c("sp1", "sp1")
+      )
+    }
+  )
+
+  res <- compute_delta(
+    x                  = toy_df,
+    exist_col          = "exist",
+    rank_cols          = "species",
+    group_cols         = "group",
+    B_permutations     = 200L,
+    weight_mode        = "equal",
+    stat_mode          = "diff",
+    strat_bins         = 0,
+    winsor_z           = 4,
+    rank_feature_keep  = NULL,
+    peptide_library    = NULL,
+    log                = FALSE,
+  )
+
+  expect_setequal(ids_seen, c("icam_1", "icam_2"))
+  expect_true(all(res$rank == "species"))
+})
+
+test_that("compute_delta aborts when no library matches the peptides", {
+  toy_df <- tibble::tibble(
+    sample_id  = c("s1", "s2"),
+    subject_id = c("id1", "id2"),
+    peptide_id = c("pep1", "pep2"),
+    group      = c("A", "B"),
+    exist      = c(1L, 1L)
+  )
+
+  expect_error(
+    compute_delta(
+      x                  = toy_df,
+      exist_col          = "exist",
+      rank_cols          = "species",
+      group_cols         = "group",
+      B_permutations     = 200L,
+      weight_mode        = "equal",
+      stat_mode          = "diff",
+      strat_bins         = 0,
+      winsor_z           = 4,
+      rank_feature_keep  = NULL,
+      peptide_library    = NULL,
+      log                = FALSE,
+    ),
+    regexp = "No known peptide library matches the peptide IDs"
   )
 })
 
@@ -651,6 +735,258 @@ test_that("compute_delta uses global RNG reproducibly and advances .Random.seed 
 
   # 3) Results are identical when started from the same seed
   expect_equal(res1, res2)
+})
+
+# --- min_m_eff --------------------------------------------------------------
+
+# Fixture: two mock species sharing the example data's group-overlapping
+# peptides. "sp_big" has 8 peptides (m_eff ~ 7.6), "sp_small" has 2
+# (m_eff ~ 2.0), so a threshold of 5 separates them.
+.delta_min_m_eff_fixture <- function() {
+  ps <- load_example_data()
+
+  peps_big <- c(
+    "agilent_129753", "agilent_151084", "agilent_176816", "agilent_181414",
+    "agilent_192254", "agilent_192823", "agilent_204086", "agilent_20982"
+  )
+  peps_small <- c("agilent_216446", "agilent_218320")
+  peps <- c(peps_big, peps_small)
+
+  ps_filt <- ps |>
+    dplyr::filter(peptide_id %in% peps, timepoint == "T1") |>
+    dplyr::collect()
+
+  list(
+    x = ps_filt,
+    peplib = data.frame(
+      peptide_id = peps,
+      species    = c(rep("sp_big", length(peps_big)),
+                     rep("sp_small", length(peps_small))),
+      stringsAsFactors = FALSE
+    )
+  )
+}
+
+.delta_min_m_eff_run <- function(fx, ...) {
+  set.seed(42)
+  compute_delta(
+    x                  = fx$x,
+    exist_col          = "exist",
+    rank_cols          = "species",
+    group_cols         = "group",
+    peptide_library    = fx$peplib,
+    B_permutations     = 200L,
+    weight_mode        = "n_eff_sqrt",
+    stat_mode          = "asin",
+    strat_bins         = 0,
+    winsor_z           = Inf,
+    rank_feature_keep  = list(species = NULL),
+    log                = FALSE,
+    ...
+  )
+}
+
+test_that("compute_delta default min_m_eff = 0 does not filter", {
+  fx <- .delta_min_m_eff_fixture()
+
+  res_default <- .delta_min_m_eff_run(fx)
+  res_zero <- .delta_min_m_eff_run(fx, min_m_eff = 0)
+
+  # both strata tested, and the explicit 0 matches the default exactly
+  expect_equal(nrow(res_default), 2L)
+  expect_setequal(res_default$feature, c("sp_big", "sp_small"))
+  expect_identical(res_default, res_zero)
+
+  # the fixture's m_eff values straddle 5, which the tests below rely on
+  expect_gt(res_default$m_eff[res_default$feature == "sp_big"], 5)
+  expect_lt(res_default$m_eff[res_default$feature == "sp_small"], 5)
+})
+
+test_that("compute_delta min_m_eff drops strata below the threshold", {
+  fx <- .delta_min_m_eff_fixture()
+
+  res_all <- .delta_min_m_eff_run(fx)
+  res_filt <- .delta_min_m_eff_run(fx, min_m_eff = 5)
+
+  # only the high-m_eff stratum survives
+  expect_equal(nrow(res_filt), 1L)
+  expect_identical(res_filt$feature, "sp_big")
+  expect_gte(res_filt$m_eff, 5)
+
+  # kept strata are unaffected by the filter
+  expect_equal(
+    res_filt$T_obs,
+    res_all$T_obs[res_all$feature == "sp_big"]
+  )
+  expect_equal(
+    res_filt$p_perm,
+    res_all$p_perm[res_all$feature == "sp_big"]
+  )
+})
+
+test_that("compute_delta min_m_eff can drop every stratum", {
+  fx <- .delta_min_m_eff_fixture()
+
+  res_all <- .delta_min_m_eff_run(fx)
+  res_none <- .delta_min_m_eff_run(fx, min_m_eff = 1e6)
+
+  # empty result keeps the documented tibble shape
+  expect_s3_class(res_none, "tbl_df")
+  expect_equal(nrow(res_none), 0L)
+  expect_setequal(names(res_none), names(res_all))
+})
+
+# Paired counterpart of the fixture above. `weight_mode = "equal"` makes m_eff
+# equal to n_peptides_used, so "sp_big" sits at 8 and "sp_small" at 2.
+.delta_min_m_eff_paired_fixture <- function() {
+  peps_big <- paste0("big", 1:8)
+  peps_small <- paste0("small", 1:2)
+  peps <- c(peps_big, peps_small)
+
+  samples <- tibble::tibble(
+    sample_id  = paste0("s", 1:12),
+    subject_id = rep(paste0("id", 1:6), each = 2),
+    group      = rep(c("A", "B"), 6)
+  )
+
+  set.seed(3)
+  x <- tidyr::expand_grid(samples, peptide_id = peps) |>
+    dplyr::mutate(
+      exist = stats::rbinom(dplyr::n(), 1L, ifelse(group == "A", 0.8, 0.35))
+    )
+
+  list(
+    x = x,
+    peplib = data.frame(
+      peptide_id = peps,
+      species    = c(rep("sp_big", length(peps_big)),
+                     rep("sp_small", length(peps_small))),
+      stringsAsFactors = FALSE
+    )
+  )
+}
+
+.delta_min_m_eff_paired_run <- function(fx, ...) {
+  set.seed(11)
+  compute_delta(
+    x                  = fx$x,
+    exist_col          = "exist",
+    rank_cols          = "species",
+    group_cols         = "group",
+    peptide_library    = fx$peplib,
+    paired_by          = "subject_id",
+    B_permutations     = 200L,
+    weight_mode        = "equal",
+    stat_mode          = "asin",
+    strat_bins         = 0,
+    winsor_z           = Inf,
+    rank_feature_keep  = list(species = NULL),
+    log                = FALSE,
+    ...
+  )
+}
+
+test_that("compute_delta min_m_eff filters paired strata as well", {
+  fx <- .delta_min_m_eff_paired_fixture()
+
+  res_all <- .delta_min_m_eff_paired_run(fx)
+
+  # the skip has a separate implementation in the paired branch, so the
+  # fixture must actually resolve to a paired design
+  expect_identical(unique(res_all$design), "paired")
+  expect_equal(nrow(res_all), 2L)
+  expect_gte(res_all$m_eff[res_all$feature == "sp_big"], 5)
+  expect_lt(res_all$m_eff[res_all$feature == "sp_small"], 5)
+
+  res_filt <- .delta_min_m_eff_paired_run(fx, min_m_eff = 5)
+
+  expect_equal(nrow(res_filt), 1L)
+  expect_identical(res_filt$feature, "sp_big")
+  expect_equal(
+    res_filt$T_obs,
+    res_all$T_obs[res_all$feature == "sp_big"]
+  )
+})
+
+test_that("compute_delta rejects an invalid min_m_eff", {
+  fx <- .delta_min_m_eff_fixture()
+
+  expect_error(.delta_min_m_eff_run(fx, min_m_eff = -1))
+  expect_error(.delta_min_m_eff_run(fx, min_m_eff = "5"))
+})
+
+# --- paired_by as the uniqueness unit (#56) ---------------------------------
+
+# Fixture: each subject contributes two samples to the SAME group, so
+# subject_id repeats within a group while pair_col stays unique within it.
+# The hits guard must key on pair_col, not subject_id.
+.delta_paired_by_fixture <- function() {
+  peps <- paste0("pep", 1:6)
+  samples <- tibble::tibble(
+    sample_id  = paste0("x", 1:12),
+    group_char = rep(c("A", "B"), each = 6),
+    subject_id = rep(c("s1", "s1", "s2", "s2", "s3", "s3"), 2),
+    pair_col   = rep(paste0("p", 1:6), 2)
+  )
+  tidyr::expand_grid(samples, peptide_id = peps) |>
+    dplyr::mutate(
+      exist = as.integer(
+        (group_char == "A" & peptide_id %in% peps[1:4]) |
+          (group_char == "B" & peptide_id %in% peps[1:2])
+      )
+    )
+}
+
+.delta_paired_by_run <- function(x) {
+  set.seed(7)
+  compute_delta(
+    x              = x,
+    aggregate_stat = "af",
+    exist_col      = "exist",
+    rank_cols      = "peptide_id",
+    group_cols     = "group_char",
+    weight_mode    = "equal",
+    stat_mode      = "srlr_paired",
+    paired_by      = "pair_col",
+    B_permutations = 200L,
+    log            = FALSE
+  )
+}
+
+test_that("compute_delta keys the hits guard on paired_by, not subject_id", {
+  dat <- .delta_paired_by_fixture()
+
+  # duplicated within a group by subject_id, unique by pair_col
+  expect_true(any(
+    dplyr::count(dat, group_char, subject_id, peptide_id)$n > 1L
+  ))
+  expect_false(any(
+    dplyr::count(dat, group_char, pair_col, peptide_id)$n > 1L
+  ))
+
+  res <- .delta_paired_by_run(dat)
+  expect_s3_class(res, "tbl_df")
+  expect_identical(unique(res$design), "paired")
+
+  # renaming the pairing column to subject_id was the documented workaround,
+  # so it must give the same answer
+  res_renamed <- .delta_paired_by_run(
+    dplyr::mutate(dat, subject_id = pair_col)
+  )
+  expect_equal(res, res_renamed)
+})
+
+test_that("compute_delta still rejects duplicates within the pairing unit", {
+  dat <- .delta_paired_by_fixture()
+
+  dup <- dplyr::bind_rows(
+    dat,
+    dat |>
+      dplyr::filter(pair_col == "p1", group_char == "A", exist > 0L) |>
+      dplyr::mutate(sample_id = "dup")
+  )
+
+  expect_error(.delta_paired_by_run(dup), "duplicate positives")
 })
 
 test_that("compute_delta aborts on bitset/peptide dimension mismatch", {

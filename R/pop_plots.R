@@ -25,12 +25,18 @@
         dplyr::select("peptide_id", tidyselect::all_of(col_names)) %>%
         dplyr::distinct(peptide_id, .keep_all = TRUE)
     } else {
-      pm <- get_peptide_library() %>%
-        dplyr::select("peptide_id", tidyselect::all_of(col_names)) %>%
-        dplyr::distinct(peptide_id, .keep_all = TRUE) %>%
-        dplyr::collect()
+      # no usable peplib: fetch the libraries the peptides belong to
+      pm <- .ph_library_for_peptides(df$pep_key)
+      if (!is.null(pm)) {
+        pm <- pm %>%
+          dplyr::select("peptide_id", tidyselect::all_of(col_names)) %>%
+          dplyr::distinct(peptide_id, .keep_all = TRUE) %>%
+          dplyr::collect()
+      }
     }
-    df <- dplyr::left_join(df, pm, by = dplyr::join_by(pep_key == peptide_id))
+    if (!is.null(pm)) {
+      df <- dplyr::left_join(df, pm, by = dplyr::join_by(pep_key == peptide_id))
+    }
 
     # fix list-columns that may arise from Arrow/duckdb
     for (cn in col_names) {
@@ -303,7 +309,9 @@ scatter_static <- function(df,
 #'   `c("species" = "Staphylococcus aureus")`.
 #' @param color_title optional legend title when `color_by` is used.
 #' @param peplib Optional peptide metadata table used to resolve `color_by`
-#'   when not available via the global library.
+#'   and the hover metadata. If `NULL`, the phiperio peptide libraries the
+#'   peptide IDs belong to are detected from their prefixes and fetched with
+#'   `get_peptide_library()`.
 #' @param background_df Optional data frame of background points.
 #' @param ... graphical parameters: `category_colors`, `show_background`,
 #'   `background_name`, `background_color`, `background_size`, `background_alpha`,
@@ -469,7 +477,8 @@ scatter_interactive <- function(df,
 
   if (any(!is.na(pdat$pep_id))) {
     meta_src <- if (!is.null(peplib)) peplib else
-      tryCatch(get_peptide_library(), error = function(...) NULL)
+      tryCatch(.ph_library_for_peptides(pdat$pep_id),
+               error = function(...) NULL)
     if (!is.null(meta_src)) {
       pm2 <- meta_src %>%
         dplyr::select(dplyr::any_of(
