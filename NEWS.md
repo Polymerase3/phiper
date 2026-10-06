@@ -1,3 +1,16 @@
+# phiper 0.4.14 (2026-10-06)
+
+## Reproducibility
+
+- Plot functions no longer reset the global random seed (#65).
+  `scatter_static()`, `scatter_interactive()` and `plot_alpha_interactive()`
+  used to call `set.seed(1)` internally, which overwrote any seed the user
+  had set. Jitter now follows the user's `set.seed()` and leaves the global
+  random state unchanged, the same as `deltaplot()` and
+  `deltaplot_interactive()`. Without a seed, jitter differs between sessions.
+- The background subsample in `scatter_interactive()` still uses
+  `background_seed`, but no longer changes the global random state.
+
 # phiper 0.4.13 (2026-10-06)
 
 ## Dependencies
