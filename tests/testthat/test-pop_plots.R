@@ -130,6 +130,7 @@ testthat::test_that("scatter_static: BH correction applied (significant BH categ
 # ===========================================================================
 
 testthat::test_that("scatter_static: color_by uses peplib via scatter_interactive peplib arg", {
+  testthat::skip_if_not_installed("plotly")
   # Test the .build_color_group helper indirectly through scatter_interactive
   # (which exposes peplib). We verify it returns a ggplot without error.
   df     <- .make_prev_df(n = 10L, seed = 3L)
@@ -145,24 +146,28 @@ testthat::test_that("scatter_static: color_by uses peplib via scatter_interactiv
 # ===========================================================================
 
 testthat::test_that("scatter_interactive returns a plotly object", {
+  testthat::skip_if_not_installed("plotly")
   df <- .make_prev_df()
   p  <- scatter_interactive(df)
   testthat::expect_s3_class(p, "plotly")
 })
 
 testthat::test_that("scatter_interactive: empty df returns a plotly object", {
+  testthat::skip_if_not_installed("plotly")
   df <- .make_prev_df()[0L, ]
   p  <- scatter_interactive(df)
   testthat::expect_s3_class(p, "plotly")
 })
 
 testthat::test_that("scatter_interactive: pair filtering works", {
+  testthat::skip_if_not_installed("plotly")
   df <- .make_prev_df_two_pairs()
   p  <- scatter_interactive(df, pair = c("A", "B"))
   testthat::expect_s3_class(p, "plotly")
 })
 
 testthat::test_that("scatter_interactive: rank filtering works", {
+  testthat::skip_if_not_installed("plotly")
   df  <- .make_prev_df()
   df2 <- dplyr::bind_rows(df, dplyr::mutate(df, rank = "virus"))
   p   <- scatter_interactive(df2, rank = "peptide_id")
@@ -170,12 +175,14 @@ testthat::test_that("scatter_interactive: rank filtering works", {
 })
 
 testthat::test_that("scatter_interactive: throws error when n_peptides column is absent", {
+  testthat::skip_if_not_installed("plotly")
   df <- .make_prev_df()
   df$n_peptides <- NULL
   testthat::expect_error(scatter_interactive(df))
 })
 
 testthat::test_that("scatter_interactive: graphical ... args accepted without error", {
+  testthat::skip_if_not_installed("plotly")
   df <- .make_prev_df()
   testthat::expect_no_error(
     scatter_interactive(df,
@@ -191,6 +198,7 @@ testthat::test_that("scatter_interactive: graphical ... args accepted without er
 # ===========================================================================
 
 testthat::test_that("scatter_interactive: color_by logical value highlights group", {
+  testthat::skip_if_not_installed("plotly")
   df     <- .make_prev_df(n = 12L, seed = 7L)
   peplib <- .make_peplib(df$feature, col = "is_flag",
                          vals = c(rep(TRUE, 6L), rep(FALSE, 6L)))
@@ -199,6 +207,7 @@ testthat::test_that("scatter_interactive: color_by logical value highlights grou
 })
 
 testthat::test_that("scatter_interactive: color_by string value highlights group", {
+  testthat::skip_if_not_installed("plotly")
   df     <- .make_prev_df(n = 12L, seed = 8L)
   peplib <- tibble::tibble(
     peptide_id = df$feature,
@@ -212,6 +221,7 @@ testthat::test_that("scatter_interactive: color_by string value highlights group
 })
 
 testthat::test_that("scatter_interactive: multiple color_by entries", {
+  testthat::skip_if_not_installed("plotly")
   df     <- .make_prev_df(n = 12L, seed = 9L)
   peplib <- tibble::tibble(
     peptide_id = df$feature,
@@ -226,6 +236,7 @@ testthat::test_that("scatter_interactive: multiple color_by entries", {
 })
 
 testthat::test_that("scatter_interactive: color_by with no matching keys → other group", {
+  testthat::skip_if_not_installed("plotly")
   df              <- .make_prev_df(n = 6L, seed = 10L)
   df$rank         <- "protein"   # not "peptide_id" → pep_key all NA → join skipped
   peplib          <- .make_peplib(paste0("pep", 1:6))
@@ -237,6 +248,7 @@ testthat::test_that("scatter_interactive: color_by with no matching keys → oth
 })
 
 testthat::test_that("scatter_interactive: color_title sets legend title", {
+  testthat::skip_if_not_installed("plotly")
   df     <- .make_prev_df(n = 8L, seed = 11L)
   peplib <- .make_peplib(df$feature)
   p <- scatter_interactive(df,
@@ -252,6 +264,7 @@ testthat::test_that("scatter_interactive: color_title sets legend title", {
 # ===========================================================================
 
 testthat::test_that("scatter_interactive: background_df overlay accepted", {
+  testthat::skip_if_not_installed("plotly")
   df  <- .make_prev_df(n = 15L, seed = 12L)
   bg  <- .make_prev_df(n = 50L, seed = 99L)
   p   <- scatter_interactive(df,
@@ -337,6 +350,7 @@ testthat::test_that(".build_color_group: no matching library leaves every point 
 })
 
 testthat::test_that("scatter_interactive: hover metadata comes from the peptides' libraries", {
+  testthat::skip_if_not_installed("plotly")
   df <- .make_prev_df(n = 2L, seed = 25L)
   df$feature <- c("humanProteome_0", "icam_0")
   testthat::local_mocked_bindings(
@@ -428,34 +442,40 @@ testthat::test_that("volcano_static: color_by with peplib colors points", {
 # ===========================================================================
 
 testthat::test_that("volcano_interactive returns a plotly object", {
+  testthat::skip_if_not_installed("plotly")
   df <- .make_prev_df()
   p  <- volcano_interactive(df)
   testthat::expect_s3_class(p, "plotly")
 })
 
 testthat::test_that("volcano_interactive: empty df returns a plotly object", {
+  testthat::skip_if_not_installed("plotly")
   df <- .make_prev_df()[0L, ]
   p  <- volcano_interactive(df)
   testthat::expect_s3_class(p, "plotly")
 })
 
 testthat::test_that("volcano_interactive: p_mode raw", {
+  testthat::skip_if_not_installed("plotly")
   df <- .make_prev_df()
   testthat::expect_no_error(volcano_interactive(df, p_mode = "raw"))
 })
 
 testthat::test_that("volcano_interactive: p_mode bh", {
+  testthat::skip_if_not_installed("plotly")
   df <- .make_prev_df()
   testthat::expect_no_error(volcano_interactive(df, p_mode = "bh"))
 })
 
 testthat::test_that("volcano_interactive: pair filtering works", {
+  testthat::skip_if_not_installed("plotly")
   df <- .make_prev_df_two_pairs()
   p  <- volcano_interactive(df, pair = c("A", "B"))
   testthat::expect_s3_class(p, "plotly")
 })
 
 testthat::test_that("volcano_interactive: rank filtering works", {
+  testthat::skip_if_not_installed("plotly")
   df  <- .make_prev_df()
   df2 <- dplyr::bind_rows(df, dplyr::mutate(df, rank = "virus"))
   p   <- volcano_interactive(df2, rank = "peptide_id")
@@ -463,6 +483,7 @@ testthat::test_that("volcano_interactive: rank filtering works", {
 })
 
 testthat::test_that("volcano_interactive: ratio derived from prop1/prop2 when absent", {
+  testthat::skip_if_not_installed("plotly")
   df       <- .make_prev_df(with_ratio = FALSE)
   df$ratio <- NULL
   p  <- volcano_interactive(df)
@@ -470,6 +491,7 @@ testthat::test_that("volcano_interactive: ratio derived from prop1/prop2 when ab
 })
 
 testthat::test_that("volcano_interactive: invalid p_mode raises error", {
+  testthat::skip_if_not_installed("plotly")
   df <- .make_prev_df()
   testthat::expect_error(
     volcano_interactive(df, p_mode = "wbh"),

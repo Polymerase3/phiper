@@ -23,7 +23,7 @@ forestplot_interactive(
   use_diverging_colors = FALSE,
   show_grid = FALSE,
   base_text_pt = 12,
-  font_family = "Montserrat",
+  font_family = "sans",
   seg_width = 1.6,
   point_size = 11
 )

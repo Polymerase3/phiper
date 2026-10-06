@@ -22,14 +22,14 @@
     if (!is.null(peplib) &&
         all(c("peptide_id", col_names) %in% names(peplib))) {
       pm <- peplib %>%
-        dplyr::select("peptide_id", tidyselect::all_of(col_names)) %>%
+        dplyr::select("peptide_id", dplyr::all_of(col_names)) %>%
         dplyr::distinct(peptide_id, .keep_all = TRUE)
     } else {
       # no usable peplib: fetch the libraries the peptides belong to
       pm <- .ph_library_for_peptides(df$pep_key)
       if (!is.null(pm)) {
         pm <- pm %>%
-          dplyr::select("peptide_id", tidyselect::all_of(col_names)) %>%
+          dplyr::select("peptide_id", dplyr::all_of(col_names)) %>%
           dplyr::distinct(peptide_id, .keep_all = TRUE) %>%
           dplyr::collect()
       }
@@ -344,6 +344,7 @@ scatter_interactive <- function(df,
                                 peplib        = NULL,
                                 background_df = NULL,
                                 ...) {
+  rlang::check_installed("plotly")
   dots             <- list(...)
   category_colors  <- dots[["category_colors"]] %||% c(
     "significant (BH)" = "#009E73",
@@ -491,7 +492,7 @@ scatter_interactive <- function(df,
       )
       if (length(meta_cols) > 0L) {
         pdat <- pdat %>%
-          dplyr::select(-tidyselect::all_of(meta_cols)) %>%
+          dplyr::select(-dplyr::all_of(meta_cols)) %>%
           dplyr::left_join(pm2, by = c("pep_id" = "peptide_id"))
         for (col in setdiff(c("species", "common", "Fullname", "Description"), names(pdat)))
           pdat[[col]] <- NA_character_
@@ -864,8 +865,8 @@ volcano_static <- function(df,
     ggplot2::geom_vline(xintercept = c(-prep$fc_cut, 0, prep$fc_cut),
                         linetype = "dashed", color = "gray50") +
     ggplot2::labs(
-      x = "log\u2082 ratio (group1 / group2)",
-      y = "-log\u2081\u2080(p)"
+      x = expression(bold(log[2] ~ "ratio (group1 / group2)")),
+      y = expression(bold(-log[10](p)))
     ) +
     theme_phip(base_size = 12) +
     ggplot2::theme(
@@ -916,6 +917,7 @@ volcano_interactive <- function(df,
                                   "significant prior correction"    = "#1b9e77",
                                   "significant post fdr correction" = "#e31a1c"
                                 )) {
+  rlang::check_installed("plotly")
   prep <- .volcano_prepare(
     df, pair, rank,
     color_by, color_title, fc_cut, p_cut, p_mode, significant_colors

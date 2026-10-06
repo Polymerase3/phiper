@@ -300,7 +300,7 @@ plot_alpha <- function(
     point_size   = 1.8,
     point_alpha  = 0.70,
     text_size    = 12,
-    font_family  = "Montserrat",
+    font_family  = "sans",
     show_grids   = TRUE,
     x_order      = NULL,
     x_labels     = NULL,
@@ -378,7 +378,7 @@ plot_alpha <- function(
         need_metric,
         richness                = "Richness",
         shannon_diversity       = "Shannon diversity",
-        simpson_diversity       = "Simpson diversity (1 - \u03A3 p^2)",
+        simpson_diversity       = expression(bold("Simpson diversity (1 -" ~ Sigma ~ p^2 * ")")),
         pielou_evenness         = "Pielou's evenness (J')",
         berger_parker_dominance = "Berger-Parker dominance",
         need_metric
@@ -587,10 +587,11 @@ plot_alpha_interactive <- function(
     point_size   = 6,
     point_alpha  = 0.85,
     text_size    = 12,
-    font_family  = "Montserrat",
+    font_family  = "sans",
     show_grids   = TRUE,
     ...
 ) {
+  rlang::check_installed("plotly")
   .data  <- rlang::.data
   metric <- tolower(match.arg(metric))
   quartile_method <- match.arg(quartile_method)
@@ -981,7 +982,7 @@ plot_alpha_interactive <- function(
         ) +
         ggplot2::scale_y_log10(
           breaks = 10^(0:6),
-          labels = scales::trans_format("log10", scales::math_format(10^.x)),
+          labels = .ph_log10_labels,
           expand = ggplot2::expansion(mult = c(0, .15))
         ) +
         ggplot2::annotation_logticks(sides = "l", scaled = TRUE) +

@@ -4,21 +4,20 @@
 \alias{theme_phip}
 \title{Theme \code{theme_phip}}
 \usage{
-theme_phip(base_size = 14, base_family = "Montserrat")
+theme_phip(base_size = 14, base_family = "sans")
 }
 \arguments{
 \item{base_size}{Base font size.}
 
-\item{base_family}{Base font family (default \code{"Montserrat"}).}
+\item{base_family}{Base font family (default \code{"sans"}).}
 }
 \value{
 A ggplot2 \code{theme} object.
 }
 \description{
 A clean, publication-ready ggplot2 theme tuned for \strong{facetted}
-plots with the \strong{Montserrat} font. The font is registered and
-\strong{showtext} rendering is enabled automatically when the package loads —
-no setup required.
+plots, with \code{phip_palette} as the default discrete colour and
+fill palette.
 }
 \examples{
 \dontrun{

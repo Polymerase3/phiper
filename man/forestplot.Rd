@@ -24,7 +24,7 @@ forestplot(
   arrow_head_length_mm = 3,
   use_diverging_colors = FALSE,
   base_text_pt = 12,
-  font_family = "Montserrat",
+  font_family = "sans",
   seg_width = 1.2,
   point_size = 3.6,
   show_grid = FALSE

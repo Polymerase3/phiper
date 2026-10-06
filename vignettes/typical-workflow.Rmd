@@ -220,7 +220,7 @@ for (rank_name in c("peptide_id", "species")) {
 
 You can also create interactive plots with plotly that you can later save as HTML files.
 
-```{r plot_pop_inter}
+```{r plot_pop_inter, eval = requireNamespace("plotly", quietly = TRUE)}
 p_pop_interactive <- list()
 for (rank_name in c("peptide_id", "species")) {
 
@@ -246,7 +246,7 @@ for (rank_name in c("peptide_id", "species")) {
 
 Let's display one of the plots as an example:
 
-```{r display_pop, echo=TRUE}
+```{r display_pop, echo=TRUE, eval = requireNamespace("plotly", quietly = TRUE)}
 p_pop_interactive$species
 ```
 
@@ -268,7 +268,7 @@ delta <- compute_delta(
 
 The most common way to visualize these results is by a forest plot to display the features whose prevalence shifted the most.
 
-```{r plot_delta}
+```{r plot_delta, eval = requireNamespace("plotly", quietly = TRUE)}
 p_delta_static <- list()
 p_delta_interactive <- list()
 for (rank_name in c("peptide_id", "species")) {
@@ -296,7 +296,7 @@ for (rank_name in c("peptide_id", "species")) {
 
 Let's again look at one of these plots as an example:
 
-```{r display_delta, echo=TRUE}
+```{r display_delta, echo=TRUE, eval = requireNamespace("plotly", quietly = TRUE)}
 p_delta_interactive$species$plot
 ```
 

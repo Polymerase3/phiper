@@ -1,5 +1,5 @@
-# keep ggplot2's replace operator available
-"%+replace%" <- ggplot2::"%+replace%"
+#' @importFrom ggplot2 %+replace%
+NULL
 
 #' @title PHIP default colour palette
 #'
@@ -93,12 +93,11 @@ scale_fill_phip <- function(...) {
 #' @title Theme `theme_phip`
 #'
 #' @description A clean, publication-ready ggplot2 theme tuned for **facetted**
-#'   plots with the **Montserrat** font. The font is registered and
-#'   **showtext** rendering is enabled automatically when the package loads —
-#'   no setup required.
+#'   plots, with \code{phip_palette} as the default discrete colour and
+#'   fill palette.
 #'
 #' @param base_size   Base font size.
-#' @param base_family Base font family (default `"Montserrat"`).
+#' @param base_family Base font family (default `"sans"`).
 #'
 #' @return A ggplot2 `theme` object.
 #' @family phip-ggplot
@@ -111,13 +110,16 @@ scale_fill_phip <- function(...) {
 #' }
 #' @export
 theme_phip <- function(base_size = 14,
-                       base_family = "Montserrat") {
+                       base_family = "sans") {
   # Start from a minimal, unobtrusive foundation
   ggplot2::theme_minimal(
     base_size = base_size,
     base_family = base_family
   ) %+replace%
     ggplot2::theme(
+      # default discrete palettes ----------------------------------------------
+      palette.colour.discrete = phip_palette,
+      palette.fill.discrete   = phip_palette,
       # titles & text ----------------------------------------------------------
       plot.title = ggplot2::element_text(
         family = base_family, face = "bold",
@@ -195,6 +197,28 @@ theme_phip <- function(base_size = 14,
     return(stats::setNames(character(0), character(0)))
   }
   stats::setNames(rep_len(palette, length(levels_vec)), levels_vec)
+}
+
+# -------------------------------------------------------------------
+# internal: axis / label formatters
+# -------------------------------------------------------------------
+# proportion -> "12.3%"; `accuracy` is the rounding step (1, 0.1, ...)
+.ph_percent <- function(x, accuracy = 1) {
+  digits <- max(0L, -floor(log10(accuracy)))
+  # "+ 0" turns -0 into 0 so tiny negatives print as "0%", not "-0%"
+  out <- paste0(formatC(round(x * 100 / accuracy) * accuracy + 0,
+                        format = "f", digits = digits), "%")
+  out[is.na(x)] <- NA_character_
+  out
+}
+
+.ph_percent_format <- function(accuracy = 1) {
+  function(x) .ph_percent(x, accuracy = accuracy)
+}
+
+# 1000 -> expression(10^3), for log10 axes
+.ph_log10_labels <- function(x) {
+  parse(text = paste0("10^", log10(x)))
 }
 
 # ------------------------------- palette utils ------------------------------

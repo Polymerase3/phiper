@@ -27,7 +27,7 @@ plot_alpha_interactive(
   point_size = 6,
   point_alpha = 0.85,
   text_size = 12,
-  font_family = "Montserrat",
+  font_family = "sans",
   show_grids = TRUE,
   ...
 )
