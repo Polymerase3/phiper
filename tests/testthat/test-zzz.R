@@ -1,19 +1,5 @@
 # tests/testthat/test-zzz.R
-# Coverage for R/zzz.R: .onLoad(), re-exports (load_example_data, get_example_path)
-
-# ---------------------------------------------------------------------------
-# .onLoad runs without error
-# ---------------------------------------------------------------------------
-testthat::test_that(".onLoad() runs without error", {
-  testthat::expect_no_error(phiper:::.onLoad("", "phiper"))
-})
-
-testthat::test_that(".onLoad() is idempotent (safe to call twice)", {
-  testthat::expect_no_error({
-    phiper:::.onLoad("", "phiper")
-    phiper:::.onLoad("", "phiper")
-  })
-})
+# Coverage for R/zzz.R: re-exports (load_example_data, get_example_path)
 
 # ---------------------------------------------------------------------------
 # Re-exported functions are present and callable

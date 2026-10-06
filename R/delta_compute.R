@@ -369,7 +369,7 @@ compute_delta <- function(
 
   if (inherits(x, "phip_data")) {
     df_long <- x$data_long |>
-      dplyr::select(tidyselect::any_of(need_cols))
+      dplyr::select(dplyr::any_of(need_cols))
   } else {
     chk::chk_data(x)
     miss <- setdiff(need_cols, colnames(x))
@@ -379,14 +379,14 @@ compute_delta <- function(
       )
     }
     df_long <- tibble::as_tibble(x) |>
-      dplyr::select(tidyselect::any_of(need_cols))
+      dplyr::select(dplyr::any_of(need_cols))
   }
 
   # --- STRICT HITS GUARD: at most one positive per (pair_unit, peptide_id,
   # group value) ---
   dup_pos <- df_long |>
     dplyr::filter(!!rlang::sym(exist_col) > 0L) |>
-    tidyr::pivot_longer(tidyselect::all_of(group_cols),
+    tidyr::pivot_longer(dplyr::all_of(group_cols),
       names_to = "group_col", values_to = "group_value"
     ) |>
     dplyr::count(!!rlang::sym(pair_unit), peptide_id, group_col, group_value,
@@ -394,7 +394,7 @@ compute_delta <- function(
     ) |>
     dplyr::filter(n_pos > 1L) |>
     dplyr::collect() |>
-    dplyr::rename(pair_id = tidyselect::all_of(pair_unit))
+    dplyr::rename(pair_id = dplyr::all_of(pair_unit))
 
   if (nrow(dup_pos) > 0L) {
     eg <- dup_pos |>
@@ -429,7 +429,7 @@ compute_delta <- function(
     dplyr::group_by(subject_id) |>
     dplyr::summarise(
       dplyr::across(
-        tidyselect::all_of(group_cols),
+        dplyr::all_of(group_cols),
         dplyr::first
       ),
       .groups = "drop"
@@ -535,7 +535,7 @@ compute_delta <- function(
     }
 
     lib_small <- lib_src |>
-      dplyr::select(tidyselect::any_of(lib_needed)) |>
+      dplyr::select(dplyr::any_of(lib_needed)) |>
       dplyr::distinct()
 
     if (inherits(lib_small, "tbl_sql") || inherits(lib_small, "tbl_lazy")) {
@@ -549,7 +549,7 @@ compute_delta <- function(
 
     rank_map_long <- lib_small |>
       tidyr::pivot_longer(
-        cols      = tidyselect::all_of(ranks_need),
+        cols      = dplyr::all_of(ranks_need),
         names_to  = "rank",
         values_to = "feature"
       ) |>
@@ -603,7 +603,7 @@ compute_delta <- function(
   # Using subjects_meta can drop within-subject levels (e.g., timepoints),
   # which yields zero contrasts and an empty result.
   lvl <- df_long |>
-    tidyr::pivot_longer(tidyselect::all_of(group_cols),
+    tidyr::pivot_longer(dplyr::all_of(group_cols),
       names_to = "group_col", values_to = "group_value"
     ) |>
     dplyr::distinct(group_col, group_value) |>
@@ -628,7 +628,7 @@ compute_delta <- function(
 
     subj_groups <- df_long |>
       tidyr::pivot_longer(
-        tidyselect::all_of(group_cols),
+        dplyr::all_of(group_cols),
         names_to  = "group_col",
         values_to = "group_value"
       ) |>
@@ -721,7 +721,7 @@ compute_delta <- function(
   # earlier)
   subj_groups_idx <- df_long |>
     tidyr::pivot_longer(
-      cols = tidyselect::all_of(group_cols),
+      cols = dplyr::all_of(group_cols),
       names_to = "group_col", values_to = "group_value"
     ) |>
     dplyr::distinct(subject_id, group_col, group_value) |>

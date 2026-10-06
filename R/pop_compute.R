@@ -94,14 +94,14 @@ compute_pop <- function(x,
         {
           if (inherits(x, "phip_data")) {
             x$data_long |>
-              dplyr::select(tidyselect::any_of(c(
+              dplyr::select(dplyr::any_of(c(
                 "sample_id", "subject_id", "peptide_id",
                 exist_col, group_cols, paired_col
               )))
           } else {
             chk::chk_data(x)
             tibble::as_tibble(x) |>
-              dplyr::select(tidyselect::any_of(
+              dplyr::select(dplyr::any_of(
                 c("sample_id", "peptide_id", exist_col, group_cols, paired_col)
               ))
           }
@@ -188,7 +188,7 @@ compute_pop <- function(x,
       df_ranked <- df_long
       if (length(ranks_needing_lib)) {
         lib_min <- lib_tbl_for_join |>
-          dplyr::select(tidyselect::all_of(c("peptide_id", ranks_needing_lib))) |>
+          dplyr::select(dplyr::all_of(c("peptide_id", ranks_needing_lib))) |>
           dplyr::distinct()
         df_ranked <- df_ranked |> dplyr::left_join(lib_min, by = "peptide_id", copy = TRUE)
       }
@@ -201,7 +201,7 @@ compute_pop <- function(x,
 
       df_ranked_long <- df_ranked |>
         tidyr::pivot_longer(
-          cols      = tidyselect::all_of(available_ranks),
+          cols      = dplyr::all_of(available_ranks),
           names_to  = "rank",
           values_to = "feature"
         ) |>
@@ -232,7 +232,7 @@ compute_pop <- function(x,
       # --- grouping universes (per-column only) -----------------------------
       gs_view <- df_ranked_long |>
         tidyr::pivot_longer(
-          cols      = tidyselect::all_of(group_cols),
+          cols      = dplyr::all_of(group_cols),
           names_to  = "group_col",
           values_to = "group_value"
         ) |>
@@ -424,7 +424,7 @@ compute_pop <- function(x,
         out_df <- dplyr::tbl(con, tbl_name) |>
           dplyr::arrange(rank, feature, group_col, group1, group2) |>
           dplyr::select(
-            tidyselect::any_of("view"), rank, feature, group_col,
+            dplyr::any_of("view"), rank, feature, group_col,
             group1, n1, N1 = n1_tot, prop1, percent1,
             group2, n2, N2 = n2_tot, prop2, percent2,
             ratio, delta_ratio, p_raw
@@ -561,7 +561,7 @@ compute_pop <- function(x,
         ) |>
         dplyr::arrange(rank, feature, group_col, group1, group2) |>
         dplyr::select(
-          tidyselect::any_of("view"), rank, feature, group_col,
+          dplyr::any_of("view"), rank, feature, group_col,
           group1, n1, N1, prop1, percent1,
           group2, n2, N2, prop2, percent2,
           p_raw

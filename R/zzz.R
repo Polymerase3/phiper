@@ -2,32 +2,6 @@
 #' @keywords internal
 "_PACKAGE"
 
-.onLoad <- function(libname, pkgname) {
-  # Register bundled Montserrat and activate showtext rendering
-  ttf <- system.file("fonts", "Montserrat-Regular.ttf", package = pkgname)
-  if (nzchar(ttf) && file.exists(ttf)) {
-    bold   <- system.file("fonts", "Montserrat-Bold.ttf",   package = pkgname)
-    italic <- system.file("fonts", "Montserrat-Italic.ttf", package = pkgname)
-    tryCatch(
-      sysfonts::font_add(
-        family  = "Montserrat",
-        regular = ttf,
-        bold    = if (nzchar(bold)   && file.exists(bold))   bold   else NULL,
-        italic  = if (nzchar(italic) && file.exists(italic)) italic else NULL
-      ),
-      error = function(e) NULL
-    )
-  }
-  tryCatch(showtext::showtext_auto(enable = TRUE), error = function(e) NULL)
-
-  # Set package-wide ggplot2 defaults
-  ggplot2::theme_set(theme_phip())
-  options(
-    ggplot2.discrete.colour = phip_palette,
-    ggplot2.discrete.fill   = phip_palette
-  )
-}
-
 ## usethis namespace: start
 #' @useDynLib phiper, .registration = TRUE
 #' @importFrom Rcpp evalCpp
@@ -35,8 +9,6 @@
 #' @importFrom dplyr %>% select
 #' @importFrom rlang .data
 #' @importFrom utils head
-#' @importFrom showtext showtext_auto
-#' @importFrom sysfonts font_add
 #' @import phiperio
 ## usethis namespace: end
 NULL

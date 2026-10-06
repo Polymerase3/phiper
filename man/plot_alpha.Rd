@@ -22,7 +22,7 @@ plot_alpha(
   point_size = 1.8,
   point_alpha = 0.7,
   text_size = 12,
-  font_family = "Montserrat",
+  font_family = "sans",
   show_grids = TRUE,
   x_order = NULL,
   x_labels = NULL,

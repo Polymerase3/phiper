@@ -1,6 +1,6 @@
 Package: phiper
 Title: Automated PhIP-seq Analysis and Reporting
-Version: 0.4.12
+Version: 0.4.13
 Authors@R: c(
   person(
     "Mateusz", "Kolek", 
@@ -55,9 +55,11 @@ Suggests:
     mockery,
     openxlsx,
     parallelDist,
+    plotly,
     readr,
     rmarkdown,
     rprojroot,
+    Rtsne,
     testthat (>= 3.0.0),
     vdiffr,
     withr,
@@ -69,22 +71,15 @@ Remotes:
 Imports:
     phiperio (>= 0.6.1),
     chk,
-    cli,
     DBI,
     dbplyr,
     dplyr,
     duckdb,
-    ggplot2,
+    ggplot2 (>= 4.0.0),
     rlang,
-    scales,
     tibble,
     tidyr,
-    tidyselect,
     vegan,
     Rcpp,
     RcppParallel,
-    utils,
-    Rtsne,
-    plotly,
-    showtext,
-    sysfonts
+    utils

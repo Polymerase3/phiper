@@ -320,6 +320,7 @@ testthat::test_that("plot_alpha: show_significance=FALSE skips brackets", {
 })
 
 testthat::test_that("plot_alpha: significance=NULL skips brackets silently", {
+  testthat::skip_if_not_installed("plotly")
   df <- .make_plot_df()
   p  <- plot_alpha(df, metric = "richness", group_col = "group",
                               significance = NULL, show_significance = TRUE)
@@ -331,18 +332,21 @@ testthat::test_that("plot_alpha: significance=NULL skips brackets silently", {
 # ===========================================================================
 
 testthat::test_that("plot_alpha_interactive: returns plotly object", {
+  testthat::skip_if_not_installed("plotly")
   df <- .make_plot_df()
   p  <- plot_alpha_interactive(df, metric = "richness", group_col = "group")
   testthat::expect_true(inherits(p, "plotly") || inherits(p, "htmlwidget"))
 })
 
 testthat::test_that("plot_alpha_interactive: group_col=NULL returns plotly", {
+  testthat::skip_if_not_installed("plotly")
   df <- .make_plot_df()
   p  <- plot_alpha_interactive(df, metric = "richness", group_col = NULL)
   testthat::expect_true(inherits(p, "plotly") || inherits(p, "htmlwidget"))
 })
 
 testthat::test_that("plot_alpha_interactive: all metrics accepted", {
+  testthat::skip_if_not_installed("plotly")
   df <- .make_plot_df()
   for (m in c("richness", "shannon_diversity", "simpson_diversity",
                "pielou_evenness", "berger_parker_dominance")) {
@@ -353,6 +357,7 @@ testthat::test_that("plot_alpha_interactive: all metrics accepted", {
 })
 
 testthat::test_that("plot_alpha_interactive: filter_groups", {
+  testthat::skip_if_not_installed("plotly")
   df <- .make_plot_df()
   p  <- plot_alpha_interactive(df, metric = "richness", group_col = "group",
                                          filter_groups = "A")
@@ -360,6 +365,7 @@ testthat::test_that("plot_alpha_interactive: filter_groups", {
 })
 
 testthat::test_that("plot_alpha_interactive: custom_colors", {
+  testthat::skip_if_not_installed("plotly")
   df <- .make_plot_df()
   p  <- plot_alpha_interactive(df, metric = "richness", group_col = "group",
                                          custom_colors = c(A = "#E41A1C", B = "#377EB8"))
@@ -367,6 +373,7 @@ testthat::test_that("plot_alpha_interactive: custom_colors", {
 })
 
 testthat::test_that("plot_alpha_interactive: facet_by_rank with multiple ranks", {
+  testthat::skip_if_not_installed("plotly")
   df <- .make_plot_df_multirank()
   p  <- plot_alpha_interactive(df, metric = "richness", group_col = "group",
                                          facet_by_rank = TRUE)
@@ -374,6 +381,7 @@ testthat::test_that("plot_alpha_interactive: facet_by_rank with multiple ranks",
 })
 
 testthat::test_that("plot_alpha_interactive: interaction_only=TRUE", {
+  testthat::skip_if_not_installed("plotly")
   df_inter <- .make_plot_df()
   lst <- list(`A * B` = df_inter)
   class(lst) <- c("phip_alpha_diversity", "list")
@@ -386,6 +394,7 @@ testthat::test_that("plot_alpha_interactive: interaction_only=TRUE", {
 })
 
 testthat::test_that("plot_alpha_interactive: errors when metric column missing", {
+  testthat::skip_if_not_installed("plotly")
   df <- dplyr::select(.make_plot_df(), -richness)
   testthat::expect_error(
     plot_alpha_interactive(df, metric = "richness", group_col = "group"),
@@ -394,6 +403,7 @@ testthat::test_that("plot_alpha_interactive: errors when metric column missing",
 })
 
 testthat::test_that("plot_alpha_interactive: warns and continues when rank_col missing", {
+  testthat::skip_if_not_installed("plotly")
   df <- dplyr::rename(.make_plot_df(), rank2 = rank)
   testthat::expect_warning(
     plot_alpha_interactive(df, metric = "richness", group_col = "group",
@@ -408,6 +418,7 @@ testthat::test_that("plot_alpha_interactive: warns and continues when rank_col m
 })
 
 testthat::test_that("plot_alpha_interactive: y_range applied", {
+  testthat::skip_if_not_installed("plotly")
   df <- .make_plot_df()
   p  <- plot_alpha_interactive(df, metric = "richness", group_col = "group",
                                           y_range = c(0, 100))
@@ -415,6 +426,7 @@ testthat::test_that("plot_alpha_interactive: y_range applied", {
 })
 
 testthat::test_that("plot_alpha_interactive: x_order applied", {
+  testthat::skip_if_not_installed("plotly")
   df <- .make_plot_df()
   p  <- plot_alpha_interactive(df, metric = "richness", group_col = "group",
                                           x_order = c("B", "A"))
@@ -422,6 +434,7 @@ testthat::test_that("plot_alpha_interactive: x_order applied", {
 })
 
 testthat::test_that("plot_alpha_interactive: ... param ignored silently", {
+  testthat::skip_if_not_installed("plotly")
   df <- .make_plot_df()
   testthat::expect_no_error(
     plot_alpha_interactive(df, metric = "richness", group_col = "group",

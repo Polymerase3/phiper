@@ -444,7 +444,7 @@ structure. It is useful for spotting clusters that linear methods miss.
 **Axes are not interpretable** and embeddings vary with the random seed and
 the `perplexity` parameter — always set a `seed`.
 
-```{r compute-tsne}
+```{r compute-tsne, eval = requireNamespace("Rtsne", quietly = TRUE)}
 tsne_res <- compute_tsne(
   ps         = pd,
   dist_obj   = d,
@@ -460,11 +460,11 @@ attr(tsne_res, "tsne_params")
 
 ### 2D plot
 
-```{r plot-tsne-2d-group}
+```{r plot-tsne-2d-group, eval = requireNamespace("Rtsne", quietly = TRUE)}
 plot_tsne(tsne_res, view = "2d", colour = "group")
 ```
 
-```{r plot-tsne-2d-time}
+```{r plot-tsne-2d-time, eval = requireNamespace("Rtsne", quietly = TRUE)}
 plot_tsne(tsne_res, view = "2d", colour = "timepoint")
 ```
 

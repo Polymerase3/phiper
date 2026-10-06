@@ -289,9 +289,9 @@ deltaplot <- function(
       label = paste0("More in ", g1_lab),
       colour = arrow_color, fontface = "bold", vjust = 1
     ) +
-    ggplot2::scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
+    ggplot2::scale_x_continuous(labels = .ph_percent_format(accuracy = 1)) +
     ggplot2::scale_y_continuous(
-      labels = scales::percent_format(accuracy = 0.1)
+      labels = .ph_percent_format(accuracy = 0.1)
     ) +
     ggplot2::labs(
       title = plot_title %||%
@@ -303,7 +303,7 @@ deltaplot <- function(
       x = x_label %||%
         paste0("Pooled prevalence (", g1_lab, " & ", g2_lab, ")"),
       y = y_label %||%
-        paste0("\u0394 prevalence (", g2_lab, " - ", g1_lab, ")")
+        bquote(Delta ~ "prevalence (" * .(g2_lab) ~ "-" ~ .(g1_lab) * ")")
     ) +
     ggplot2::coord_cartesian(clip = "off") +
     ggplot2::theme_classic() +
@@ -402,6 +402,7 @@ deltaplot_interactive <- function(
   point_jitter_width = 0.005,
   point_jitter_height = 0.005
 ) {
+  rlang::check_installed("plotly")
   # ---- Input validation ------------------------------------------------------
   if (requireNamespace("chk", quietly = TRUE)) {
     if (exists("chk_data", asNamespace("chk"), inherits = FALSE)) {
@@ -636,8 +637,8 @@ deltaplot_interactive <- function(
     g2_lab, ifelse(is.na(w$n2), "NA", w$n2),
     ifelse(is.na(w$N2), "NA", w$N2), fmt_pct(w$pct2),
     fmt_p(w$p_adj_wbh),
-    scales::percent(w$pooled_clip, accuracy = 0.1),
-    scales::percent(w$delta, accuracy = 0.1)
+    .ph_percent(w$pooled_clip, accuracy = 0.1),
+    .ph_percent(w$delta, accuracy = 0.1)
   )
 
   # ---- Build plotly figure ---------------------------------------------------
@@ -983,7 +984,7 @@ forestplot <- function(
   arrow_head_length_mm = 3.0,
   use_diverging_colors = FALSE,
   base_text_pt = 12,
-  font_family = "Montserrat",
+  font_family = "sans",
   seg_width = 1.2,
   point_size = 3.6,
   show_grid = FALSE
@@ -1318,10 +1319,11 @@ forestplot_interactive <- function(
   use_diverging_colors = FALSE,
   show_grid = FALSE,
   base_text_pt = 12,
-  font_family = "Montserrat",
+  font_family = "sans",
   seg_width = 1.6,
   point_size = 11
 ) {
+  rlang::check_installed("plotly")
   # ---- Input validation ------------------------------------------------------
   if (!is.data.frame(results_tbl)) {
     .ph_abort("`results_tbl` must be a data.frame/tibble.")
@@ -1777,21 +1779,19 @@ ecdf_plot <- function(
       direction = "hv"
     ) +
     ggplot2::scale_x_continuous(
-      labels = scales::percent_format(accuracy = 1),
+      labels = .ph_percent_format(accuracy = 1),
       limits = c(0, 1)
     ) +
     ggplot2::scale_y_continuous(
-      labels = scales::percent_format(accuracy = 1),
+      labels = .ph_percent_format(accuracy = 1),
       limits = c(0, 1)
     ) +
     ggplot2::labs(
       title = plot_title %||%
         sprintf("ECDF of per-peptide prevalence (%s vs %s)", g2_lab, g1_lab),
       subtitle = plot_subtitle %||% if (!is.null(ks_txt)) {
-        sprintf(
-          "%s | \u0394 median = %s", ks_txt,
-          scales::percent(dmed, accuracy = 0.1)
-        )
+        bquote(.(ks_txt) ~ "|" ~ Delta ~ "median =" ~
+                 .(.ph_percent(dmed, accuracy = 0.1)))
       } else {
         NULL
       },
@@ -1889,6 +1889,7 @@ ecdf_plot_interactive <- function(
   plot_title = NULL,
   plot_subtitle = NULL
 ) {
+  rlang::check_installed("plotly")
   # ---- input validation ------------------------------------------------------
   if (requireNamespace("chk", quietly = TRUE)) {
     if (exists("chk_data", asNamespace("chk"), inherits = FALSE)) {
@@ -2015,7 +2016,7 @@ ecdf_plot_interactive <- function(
   }
 
   # ---- hover formatting ------------------------------------------------------
-  fmt_pct <- function(x) scales::percent(x, accuracy = 0.1)
+  fmt_pct <- function(x) .ph_percent(x, accuracy = 0.1)
   hover1 <- sprintf(
     "<b>%s</b><br>x: %s<br>F(x): %s", g1_lab,
     fmt_pct(df1$x), fmt_pct(df1$y)
