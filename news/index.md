@@ -1,5 +1,15 @@
 # Changelog
 
+## phiper 0.4.12 (2026-10-06)
+
+### Documentation
+
+- The “Typical workflow” vignette has clearer code comments, notes that
+  `ggsignif` is needed for significance brackets in alpha diversity
+  plots, and shows how to save a `phip_data` object with
+  [`export_parquet()`](https://polymerase3.github.io/phiperio/reference/export_parquet.html).
+  Written by Nikolas Basler.
+
 ## phiper 0.4.11 (2026-10-05)
 
 ### Documentation
