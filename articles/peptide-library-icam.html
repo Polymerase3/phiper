@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.13</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.14</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -116,22 +116,22 @@ protein fragments. The library can be retrieved via
 <span></span>
 <span><span class="va">peplib</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://polymerase3.github.io/phiperio/reference/get_peptide_library.html">get_peptide_library</a></span><span class="op">(</span><span class="st">"icam"</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:11:06] INFO  Retrieving peptide metadata into DuckDB cache</span></span>
+<span><span class="co">#&gt; [17:15:58] INFO  Retrieving peptide metadata into DuckDB cache</span></span>
 <span><span class="co">#&gt;                  -&gt; get_peptide_library(library = icam, force_refresh = FALSE)</span></span>
-<span><span class="co">#&gt; [15:11:06] INFO  Opened DuckDB connection</span></span>
+<span><span class="co">#&gt; [17:15:58] INFO  Opened DuckDB connection</span></span>
 <span><span class="co">#&gt;                    - cache dir:</span></span>
 <span><span class="co">#&gt;                      /home/runner/.cache/R/phiperio/peptide_meta/phip_cache.duckdb</span></span>
 <span><span class="co">#&gt;                    - tables: peptide_meta_icam</span></span>
-<span><span class="co">#&gt; [15:11:06] INFO  Starting download</span></span>
+<span><span class="co">#&gt; [17:15:58] INFO  Starting download</span></span>
 <span><span class="co">#&gt;                    - dest:</span></span>
 <span><span class="co">#&gt;                      /home/runner/.cache/R/phiperio/peptide_meta/icam_library_01.10.26.rds</span></span>
-<span><span class="co">#&gt; [15:11:07] OK    Download succeeded (method = &lt;getOption()&gt;)</span></span>
-<span><span class="co">#&gt; [15:11:07] OK    Checksum verified (SHA-256 match)</span></span>
-<span><span class="co">#&gt; [15:11:12] OK    Download complete and loaded into R</span></span>
-<span><span class="co">#&gt; [15:11:17] INFO  Importing sanitized metadata into DuckDB cache...</span></span>
-<span><span class="co">#&gt; [15:11:19] OK    peptide_meta_icam table created in DuckDB cache</span></span>
-<span><span class="co">#&gt; [15:11:19] OK    Retrieving peptide metadata into DuckDB cache - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 12.606s</span></span></code></pre></div>
+<span><span class="co">#&gt; [17:15:59] OK    Download succeeded (method = &lt;getOption()&gt;)</span></span>
+<span><span class="co">#&gt; [17:15:59] OK    Checksum verified (SHA-256 match)</span></span>
+<span><span class="co">#&gt; [17:16:04] OK    Download complete and loaded into R</span></span>
+<span><span class="co">#&gt; [17:16:08] INFO  Importing sanitized metadata into DuckDB cache...</span></span>
+<span><span class="co">#&gt; [17:16:11] OK    peptide_meta_icam table created in DuckDB cache</span></span>
+<span><span class="co">#&gt; [17:16:11] OK    Retrieving peptide metadata into DuckDB cache - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 13.038s</span></span></code></pre></div>
 <p>All columns beginning with <code>is_</code> are binary dummy
 variables: <code>1</code> indicates that the corresponding annotation
 applies to the peptide/protein, <code>0</code> indicates that it does

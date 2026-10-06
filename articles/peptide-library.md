@@ -17,16 +17,16 @@ library(dplyr)
 
 peplib <- get_peptide_library() %>%
   collect()
-#> [15:11:22] INFO  Retrieving peptide metadata into DuckDB cache
+#> [17:16:14] INFO  Retrieving peptide metadata into DuckDB cache
 #>                  -> get_peptide_library(library = combined, force_refresh =
 #>                     FALSE)
-#> [15:11:22] INFO  Opened DuckDB connection
+#> [17:16:14] INFO  Opened DuckDB connection
 #>                    - cache dir:
 #>                      /home/runner/.cache/R/phiperio/peptide_meta/phip_cache.duckdb
 #>                    - tables: peptide_meta_combined
-#> [15:11:22] OK    Using cached peptide_meta_combined (fast path)
-#> [15:11:22] OK    Retrieving peptide metadata into DuckDB cache - done
-#>                  -> elapsed: 0.284s
+#> [17:16:14] OK    Using cached peptide_meta_combined (fast path)
+#> [17:16:15] OK    Retrieving peptide metadata into DuckDB cache - done
+#>                  -> elapsed: 0.258s
 ```
 
 ## General library information

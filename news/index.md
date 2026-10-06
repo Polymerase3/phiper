@@ -1,5 +1,28 @@
 # Changelog
 
+## phiper 0.4.14 (2026-10-06)
+
+### Reproducibility
+
+- Plot functions no longer reset the global random seed
+  ([\#65](https://github.com/Polymerase3/phiper/issues/65)).
+  [`scatter_static()`](https://polymerase3.github.io/phiper/reference/scatter_static.md),
+  [`scatter_interactive()`](https://polymerase3.github.io/phiper/reference/scatter_interactive.md)
+  and
+  [`plot_alpha_interactive()`](https://polymerase3.github.io/phiper/reference/plot_alpha_interactive.md)
+  used to call `set.seed(1)` internally, which overwrote any seed the
+  user had set. Jitter now follows the user’s
+  [`set.seed()`](https://rdrr.io/r/base/Random.html) and leaves the
+  global random state unchanged, the same as
+  [`deltaplot()`](https://polymerase3.github.io/phiper/reference/deltaplot.md)
+  and
+  [`deltaplot_interactive()`](https://polymerase3.github.io/phiper/reference/deltaplot_interactive.md).
+  Without a seed, jitter differs between sessions.
+- The background subsample in
+  [`scatter_interactive()`](https://polymerase3.github.io/phiper/reference/scatter_interactive.md)
+  still uses `background_seed`, but no longer changes the global random
+  state.
+
 ## phiper 0.4.13 (2026-10-06)
 
 ### Dependencies

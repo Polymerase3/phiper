@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.13</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.14</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -148,43 +148,43 @@ timepoint.</p>
 (<code>T1</code>, <code>T2</code>) across 1 000 simulated peptides.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pd</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/load_example_data.html">load_example_data</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:04:00] INFO  Constructing &lt;phip_data&gt; object</span></span>
+<span><span class="co">#&gt; [17:09:09] INFO  Constructing &lt;phip_data&gt; object</span></span>
 <span><span class="co">#&gt;                  -&gt; create_data()</span></span>
-<span><span class="co">#&gt; [15:04:00] INFO  Fetching peptide metadata library via get_peptide_library()</span></span>
+<span><span class="co">#&gt; [17:09:09] INFO  Fetching peptide metadata library via get_peptide_library()</span></span>
 <span><span class="co">#&gt;                    - libraries: combined</span></span>
-<span><span class="co">#&gt; [15:04:00] INFO  Retrieving peptide metadata into DuckDB cache</span></span>
+<span><span class="co">#&gt; [17:09:09] INFO  Retrieving peptide metadata into DuckDB cache</span></span>
 <span><span class="co">#&gt;                  -&gt; get_peptide_library(library = combined, force_refresh =</span></span>
 <span><span class="co">#&gt;                     FALSE)</span></span>
-<span><span class="co">#&gt; [15:04:00] INFO  Opened DuckDB connection</span></span>
+<span><span class="co">#&gt; [17:09:09] INFO  Opened DuckDB connection</span></span>
 <span><span class="co">#&gt;                    - cache dir:</span></span>
 <span><span class="co">#&gt;                      /home/runner/.cache/R/phiperio/peptide_meta/phip_cache.duckdb</span></span>
 <span><span class="co">#&gt;                    - tables: peptide_meta_combined</span></span>
-<span><span class="co">#&gt; [15:04:00] OK    Using cached peptide_meta_combined (fast path)</span></span>
-<span><span class="co">#&gt; [15:04:00] OK    Retrieving peptide metadata into DuckDB cache - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.046s</span></span>
-<span><span class="co">#&gt; [15:04:00] OK    Peptide metadata acquired</span></span>
-<span><span class="co">#&gt; [15:04:00] INFO  Validating &lt;phip_data&gt;</span></span>
+<span><span class="co">#&gt; [17:09:09] OK    Using cached peptide_meta_combined (fast path)</span></span>
+<span><span class="co">#&gt; [17:09:09] OK    Retrieving peptide metadata into DuckDB cache - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.045s</span></span>
+<span><span class="co">#&gt; [17:09:09] OK    Peptide metadata acquired</span></span>
+<span><span class="co">#&gt; [17:09:09] INFO  Validating &lt;phip_data&gt;</span></span>
 <span><span class="co">#&gt;                  -&gt; validate_phip_data()</span></span>
-<span><span class="co">#&gt; [15:04:00] INFO  Checking structural requirements (shape &amp; mandatory columns)</span></span>
-<span><span class="co">#&gt; [15:04:00] INFO  Checking outcome family availability (exist / fold_change /</span></span>
+<span><span class="co">#&gt; [17:09:09] INFO  Checking structural requirements (shape &amp; mandatory columns)</span></span>
+<span><span class="co">#&gt; [17:09:09] INFO  Checking outcome family availability (exist / fold_change /</span></span>
 <span><span class="co">#&gt;                  raw_counts)</span></span>
-<span><span class="co">#&gt; [15:04:00] INFO  Checking collisions with reserved names</span></span>
+<span><span class="co">#&gt; [17:09:09] INFO  Checking collisions with reserved names</span></span>
 <span><span class="co">#&gt;                    - subject_id, sample_id, timepoint, peptide_id, exist,</span></span>
 <span><span class="co">#&gt;                      fold_change, counts_input, counts_hit</span></span>
-<span><span class="co">#&gt; [15:04:00] INFO  Ensuring all columns are atomic (no list-cols)</span></span>
-<span><span class="co">#&gt; [15:04:00] INFO  Checking key uniqueness</span></span>
-<span><span class="co">#&gt; [15:04:00] INFO  Validating value ranges &amp; types for outcomes</span></span>
-<span><span class="co">#&gt; [15:04:00] INFO  Assessing sparsity (NA/zero prevalence vs threshold)</span></span>
+<span><span class="co">#&gt; [17:09:09] INFO  Ensuring all columns are atomic (no list-cols)</span></span>
+<span><span class="co">#&gt; [17:09:09] INFO  Checking key uniqueness</span></span>
+<span><span class="co">#&gt; [17:09:09] INFO  Validating value ranges &amp; types for outcomes</span></span>
+<span><span class="co">#&gt; [17:09:09] INFO  Assessing sparsity (NA/zero prevalence vs threshold)</span></span>
 <span><span class="co">#&gt;                    - warn threshold: 50%</span></span>
-<span><span class="co">#&gt; [15:04:00] INFO  Checking peptide_id coverage against peptide_library</span></span>
-<span><span class="co">#&gt; [15:04:00] INFO  Checking full grid completeness (peptide * sample)</span></span>
-<span><span class="co">#&gt; [15:04:00] INFO  Counts table is not a full peptide * sample grid</span></span>
+<span><span class="co">#&gt; [17:09:09] INFO  Checking peptide_id coverage against peptide_library</span></span>
+<span><span class="co">#&gt; [17:09:09] INFO  Checking full grid completeness (peptide * sample)</span></span>
+<span><span class="co">#&gt; [17:09:09] INFO  Counts table is not a full peptide * sample grid</span></span>
 <span><span class="co">#&gt;                    - observed rows: 78200</span></span>
 <span><span class="co">#&gt;                    - expected rows: 156000</span></span>
-<span><span class="co">#&gt; [15:04:00] OK    Validating &lt;phip_data&gt; - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.428s</span></span>
-<span><span class="co">#&gt; [15:04:00] OK    Constructing &lt;phip_data&gt; object - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.519s</span></span>
+<span><span class="co">#&gt; [17:09:09] OK    Validating &lt;phip_data&gt; - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.453s</span></span>
+<span><span class="co">#&gt; [17:09:09] OK    Constructing &lt;phip_data&gt; object - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.544s</span></span>
 <span><span class="va">pd</span></span>
 <span><span class="co">#&gt; ── &lt;phip_data&gt; ───────────────────────────────────────────────────────────────── </span></span>
 <span><span class="co">#&gt; </span></span>
@@ -307,16 +307,16 @@ dissimilarity throughout this vignette.</p>
 <span>  method_normalization <span class="op">=</span> <span class="st">"hellinger"</span>,</span>
 <span>  distance             <span class="op">=</span> <span class="st">"bray"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:04:01] INFO  building abundance matrix from `ps` using `fold_change`.</span></span>
-<span><span class="co">#&gt; [15:04:01] INFO  building pivot spec (sample_id x peptide_id).</span></span>
-<span><span class="co">#&gt; [15:04:01] INFO  Collecting long table (sample_id, peptide_id, value).</span></span>
+<span><span class="co">#&gt; [17:09:09] INFO  building abundance matrix from `ps` using `fold_change`.</span></span>
+<span><span class="co">#&gt; [17:09:09] INFO  building pivot spec (sample_id x peptide_id).</span></span>
+<span><span class="co">#&gt; [17:09:10] INFO  Collecting long table (sample_id, peptide_id, value).</span></span>
 <span><span class="co">#&gt;                  -&gt; compute_distance</span></span>
-<span><span class="co">#&gt; [15:04:01] INFO  Pivoting to wide abundance matrix in R.</span></span>
+<span><span class="co">#&gt; [17:09:10] INFO  Pivoting to wide abundance matrix in R.</span></span>
 <span><span class="co">#&gt;                  -&gt; compute_distance</span></span>
-<span><span class="co">#&gt; [15:04:01] INFO  abundance matrix has 80 samples and 1950 features after</span></span>
+<span><span class="co">#&gt; [17:09:10] INFO  abundance matrix has 80 samples and 1950 features after</span></span>
 <span><span class="co">#&gt;                  preprocessing.</span></span>
-<span><span class="co">#&gt; [15:04:01] INFO  computing distance: bray</span></span>
-<span><span class="co">#&gt; [15:04:01] INFO  distance matrix computation complete.</span></span>
+<span><span class="co">#&gt; [17:09:10] INFO  computing distance: bray</span></span>
+<span><span class="co">#&gt; [17:09:10] INFO  distance matrix computation complete.</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">class</a></span><span class="op">(</span><span class="va">d</span><span class="op">)</span>                       <span class="co"># a standard dist object</span></span>
 <span><span class="co">#&gt; [1] "dist"</span></span>
@@ -349,10 +349,10 @@ coordinates, eigenvalues, variance explained, and eigenvalue
 diagnostics.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pcoa_res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compute_pcoa.html">compute_pcoa</a></span><span class="op">(</span><span class="va">d</span>, neg_correction <span class="op">=</span> <span class="st">"none"</span>, n_axes <span class="op">=</span> <span class="fl">5L</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:04:01] INFO  performing principal coordinates analysis</span></span>
-<span><span class="co">#&gt; [15:04:01] INFO  extracting sample coordinates.</span></span>
-<span><span class="co">#&gt; [15:04:01] INFO  summarizing eigenvalues and variance explained.</span></span>
-<span><span class="co">#&gt; [15:04:01] INFO  pcoa analysis complete.</span></span>
+<span><span class="co">#&gt; [17:09:10] INFO  performing principal coordinates analysis</span></span>
+<span><span class="co">#&gt; [17:09:10] INFO  extracting sample coordinates.</span></span>
+<span><span class="co">#&gt; [17:09:10] INFO  summarizing eigenvalues and variance explained.</span></span>
+<span><span class="co">#&gt; [17:09:10] INFO  pcoa analysis complete.</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">pcoa_res</span><span class="op">)</span>           <span class="co"># components of the result</span></span>
 <span><span class="co">#&gt; [1] "sample_coords"     "eigenvalues"       "var_explained"    </span></span>
@@ -366,7 +366,7 @@ diagnostics.</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 6</span></span></span>
 <span><span class="co">#&gt;   sum_negative sum_positive ratio_negative_positive min_eigenvalue n_negative</span></span>
 <span><span class="co">#&gt;          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>                   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>            0         22.4                       0       1.56<span style="color: #949494;">e</span><span style="color: #BB0000;">-16</span>          0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>     1.68<span style="color: #949494;">e</span><span style="color: #BB0000;">-16</span>         22.4                7.50<span style="color: #949494;">e</span><span style="color: #BB0000;">-18</span>      -<span style="color: #BB0000;">1.68</span><span style="color: #949494;">e</span><span style="color: #BB0000;">-16</span>          1</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more variable: frac_negative &lt;dbl&gt;</span></span></span></code></pre></div>
 <p>The <code>eigen_diagnostics</code> tibble reports how many
 eigenvalues are negative and how large they are relative to the positive
@@ -469,7 +469,7 @@ metadata table before plotting:</p>
 <span>  <span class="va">pcoa_res</span>,</span>
 <span>  group_col <span class="op">=</span> <span class="st">"group"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:04:02] INFO  Plotting PCoA: n=80 | group_col=group | time_col=&lt;none&gt; |</span></span>
+<span><span class="co">#&gt; [17:09:11] INFO  Plotting PCoA: n=80 | group_col=group | time_col=&lt;none&gt; |</span></span>
 <span><span class="co">#&gt;                  centroid_by=group</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_pcoa</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-pcoa-group-1.png" class="r-plt" alt="" width="672"></p>
@@ -486,7 +486,7 @@ group.</p>
 <span>  group_col <span class="op">=</span> <span class="st">"group"</span>,</span>
 <span>  time_col  <span class="op">=</span> <span class="st">"timepoint"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:04:03] INFO  Plotting PCoA: n=80 | group_col=group | time_col=timepoint |</span></span>
+<span><span class="co">#&gt; [17:09:11] INFO  Plotting PCoA: n=80 | group_col=group | time_col=timepoint |</span></span>
 <span><span class="co">#&gt;                  centroid_by=group_time</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_pcoa</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-pcoa-group-time-1.png" class="r-plt" alt="" width="672"></p>
@@ -507,7 +507,7 @@ longitudinal change.</p>
 <span>  centroid_by       <span class="op">=</span> <span class="st">"group_time"</span>,</span>
 <span>  connect_centroids <span class="op">=</span> <span class="st">"group"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:04:03] INFO  Plotting PCoA: n=80 | group_col=group | time_col=timepoint |</span></span>
+<span><span class="co">#&gt; [17:09:12] INFO  Plotting PCoA: n=80 | group_col=group | time_col=timepoint |</span></span>
 <span><span class="co">#&gt;                  centroid_by=group_time</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_pcoa</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-pcoa-centroids-1.png" class="r-plt" alt="" width="672"></p>
@@ -527,7 +527,7 @@ ellipse types can be overlaid simultaneously. Possible values are
 <span>  show_centroids <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  ellipse_by     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"group"</span>, <span class="st">"group_time"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:04:04] INFO  Plotting PCoA: n=80 | group_col=group | time_col=timepoint |</span></span>
+<span><span class="co">#&gt; [17:09:12] INFO  Plotting PCoA: n=80 | group_col=group | time_col=timepoint |</span></span>
 <span><span class="co">#&gt;                  centroid_by=group_time</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_pcoa</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-pcoa-ellipses-1.png" class="r-plt" alt="" width="672"></p>
@@ -541,7 +541,7 @@ ellipse types can be overlaid simultaneously. Possible values are
 <span>  axes      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span>,</span>
 <span>  group_col <span class="op">=</span> <span class="st">"group"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:04:04] INFO  Plotting PCoA: n=80 | group_col=group | time_col=&lt;none&gt; |</span></span>
+<span><span class="co">#&gt; [17:09:13] INFO  Plotting PCoA: n=80 | group_col=group | time_col=&lt;none&gt; |</span></span>
 <span><span class="co">#&gt;                  centroid_by=group</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_pcoa</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-pcoa-axes23-1.png" class="r-plt" alt="" width="672"></p>
@@ -564,13 +564,13 @@ structure is explained by known metadata variables?</strong>
 <span>  formula      <span class="op">=</span> <span class="op">~</span> <span class="va">group</span> <span class="op">+</span> <span class="va">timepoint</span>,</span>
 <span>  permutations <span class="op">=</span> <span class="fl">99L</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:04:05] INFO  building metadata from `ps$data_long`.</span></span>
-<span><span class="co">#&gt; [15:04:05] INFO  fitting constrained ordination (cap/db-rda)</span></span>
+<span><span class="co">#&gt; [17:09:13] INFO  building metadata from `ps$data_long`.</span></span>
+<span><span class="co">#&gt; [17:09:13] INFO  fitting constrained ordination (cap/db-rda)</span></span>
 <span><span class="co">#&gt;                    - formula: ~group + timepoint</span></span>
-<span><span class="co">#&gt; [15:04:06] INFO  extracting constrained sample scores.</span></span>
-<span><span class="co">#&gt; [15:04:06] INFO  computing variance partitioning and permutation tests.</span></span>
-<span><span class="co">#&gt; [15:04:06] INFO  computing feature associations: weighted_average.</span></span>
-<span><span class="co">#&gt; [15:04:06] INFO  cap analysis complete.</span></span>
+<span><span class="co">#&gt; [17:09:14] INFO  extracting constrained sample scores.</span></span>
+<span><span class="co">#&gt; [17:09:14] INFO  computing variance partitioning and permutation tests.</span></span>
+<span><span class="co">#&gt; [17:09:14] INFO  computing feature associations: weighted_average.</span></span>
+<span><span class="co">#&gt; [17:09:14] INFO  cap analysis complete.</span></span>
 <span></span>
 <span><span class="va">cap_res</span><span class="op">$</span><span class="va">variance_partition</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 3</span></span></span>
@@ -617,7 +617,7 @@ before plotting:</p>
 <span>  connect_centroids <span class="op">=</span> <span class="st">"group"</span>,</span>
 <span>  ellipse_by        <span class="op">=</span> <span class="st">"group"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:04:06] INFO  CAP plot: n=80 samples | groups=2 | times=0</span></span>
+<span><span class="co">#&gt; [17:09:14] INFO  CAP plot: n=80 samples | groups=2 | times=0</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_cap</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-cap-1.png" class="r-plt" alt="" width="672"></p>
 <p><code><a href="../reference/plot_cap.html">plot_cap()</a></code> accepts the same <code>axes</code>,
@@ -644,15 +644,15 @@ scope.</p>
 <span>  permutations <span class="op">=</span> <span class="fl">99L</span>,</span>
 <span>  p_adjust     <span class="op">=</span> <span class="st">"BH"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:04:06] INFO  preparing distance labels and metadata.</span></span>
-<span><span class="co">#&gt; [15:04:06] INFO  building metadata from `ps`.</span></span>
-<span><span class="co">#&gt; [15:04:06] INFO  filtering samples with missing grouping variables.</span></span>
-<span><span class="co">#&gt; [15:04:06] INFO  subsetting distance matrix to complete cases.</span></span>
-<span><span class="co">#&gt; [15:04:06] INFO  preparing global permanova model.</span></span>
-<span><span class="co">#&gt; [15:04:06] INFO  running global permanova</span></span>
+<span><span class="co">#&gt; [17:09:14] INFO  preparing distance labels and metadata.</span></span>
+<span><span class="co">#&gt; [17:09:14] INFO  building metadata from `ps`.</span></span>
+<span><span class="co">#&gt; [17:09:14] INFO  filtering samples with missing grouping variables.</span></span>
+<span><span class="co">#&gt; [17:09:14] INFO  subsetting distance matrix to complete cases.</span></span>
+<span><span class="co">#&gt; [17:09:14] INFO  preparing global permanova model.</span></span>
+<span><span class="co">#&gt; [17:09:14] INFO  running global permanova</span></span>
 <span><span class="co">#&gt;                    - model: d_resp ~ group + timepoint + group * timepoint</span></span>
 <span><span class="co">#&gt;                    - permutations stratified by subject</span></span>
-<span><span class="co">#&gt; [15:04:06] INFO  running pairwise permanova contrasts.</span></span>
+<span><span class="co">#&gt; [17:09:14] INFO  running pairwise permanova contrasts.</span></span>
 <span></span>
 <span><span class="va">perm_res</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 8</span></span></span>
@@ -715,11 +715,11 @@ location, a significant PERMANOVA result can be misleading.
 <span>  permutations <span class="op">=</span> <span class="fl">99L</span>,</span>
 <span>  p_adjust     <span class="op">=</span> <span class="st">"BH"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:04:06] INFO  preparing distance labels and metadata.</span></span>
-<span><span class="co">#&gt; [15:04:06] INFO  building metadata from `ps`.</span></span>
-<span><span class="co">#&gt; [15:04:07] INFO  filtering samples with missing grouping variables.</span></span>
-<span><span class="co">#&gt; [15:04:07] INFO  computing global dispersion tests.</span></span>
-<span><span class="co">#&gt; [15:04:07] INFO  running pairwise dispersion contrasts.</span></span>
+<span><span class="co">#&gt; [17:09:15] INFO  preparing distance labels and metadata.</span></span>
+<span><span class="co">#&gt; [17:09:15] INFO  building metadata from `ps`.</span></span>
+<span><span class="co">#&gt; [17:09:15] INFO  filtering samples with missing grouping variables.</span></span>
+<span><span class="co">#&gt; [17:09:15] INFO  computing global dispersion tests.</span></span>
+<span><span class="co">#&gt; [17:09:15] INFO  running pairwise dispersion contrasts.</span></span>
 <span></span>
 <span><span class="va">disp_res</span><span class="op">$</span><span class="va">tests</span>        <span class="co"># permutation test results per scope</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 6</span></span></span>
@@ -771,7 +771,7 @@ that appear in <code>disp_res$distances</code>.</p>
 <span>  scope    <span class="op">=</span> <span class="st">"group"</span>,</span>
 <span>  contrast <span class="op">=</span> <span class="st">"&lt;global&gt;"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:04:07] INFO  Plotting dispersion for scope = 'group', contrast = '&lt;global&gt;'</span></span>
+<span><span class="co">#&gt; [17:09:15] INFO  Plotting dispersion for scope = 'group', contrast = '&lt;global&gt;'</span></span>
 <span><span class="co">#&gt;                  (n = 80).</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_dispersion</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-dispersion-group-1.png" class="r-plt" alt="" width="672"></p>
@@ -785,7 +785,7 @@ that appear in <code>disp_res$distances</code>.</p>
 <span>  scope    <span class="op">=</span> <span class="st">"time"</span>,</span>
 <span>  contrast <span class="op">=</span> <span class="st">"&lt;global&gt;"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:04:07] INFO  Plotting dispersion for scope = 'time', contrast = '&lt;global&gt;'</span></span>
+<span><span class="co">#&gt; [17:09:15] INFO  Plotting dispersion for scope = 'time', contrast = '&lt;global&gt;'</span></span>
 <span><span class="co">#&gt;                  (n = 80).</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_dispersion</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-dispersion-time-1.png" class="r-plt" alt="" width="672"></p>
@@ -799,7 +799,7 @@ that appear in <code>disp_res$distances</code>.</p>
 <span>  show_box    <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  show_points <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:04:08] INFO  Plotting dispersion for scope = 'group', contrast = '&lt;global&gt;'</span></span>
+<span><span class="co">#&gt; [17:09:16] INFO  Plotting dispersion for scope = 'group', contrast = '&lt;global&gt;'</span></span>
 <span><span class="co">#&gt;                  (n = 80).</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_dispersion</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-dispersion-style-1.png" class="r-plt" alt="" width="672"></p>
@@ -824,10 +824,10 @@ always set a <code>seed</code>.</p>
 <span>  meta_cols  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"group"</span>, <span class="st">"timepoint"</span><span class="op">)</span>,</span>
 <span>  seed       <span class="op">=</span> <span class="fl">42L</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:04:08] INFO  Running t-SNE with dims = 3, perplexity = 15 on 80 samples</span></span>
+<span><span class="co">#&gt; [17:09:16] INFO  Running t-SNE with dims = 3, perplexity = 15 on 80 samples</span></span>
 <span><span class="co">#&gt;                  (distance input).</span></span>
-<span><span class="co">#&gt; [15:04:09] INFO  Attaching metadata columns to t-SNE result: group, timepoint</span></span>
-<span><span class="co">#&gt; [15:04:09] INFO  t-SNE embedding computation finished.</span></span>
+<span><span class="co">#&gt; [17:09:16] INFO  Attaching metadata columns to t-SNE result: group, timepoint</span></span>
+<span><span class="co">#&gt; [17:09:16] INFO  t-SNE embedding computation finished.</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">tsne_res</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 6</span></span></span>
@@ -866,12 +866,12 @@ always set a <code>seed</code>.</p>
 </h3>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_tsne.html">plot_tsne</a></span><span class="op">(</span><span class="va">tsne_res</span>, view <span class="op">=</span> <span class="st">"2d"</span>, colour <span class="op">=</span> <span class="st">"group"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:04:09] INFO  Creating 2D t-SNE plot (ggplot2).</span></span>
+<span><span class="co">#&gt; [17:09:16] INFO  Creating 2D t-SNE plot (ggplot2).</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_tsne</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-tsne-2d-group-1.png" class="r-plt" alt="" width="672"></p>
 <div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_tsne.html">plot_tsne</a></span><span class="op">(</span><span class="va">tsne_res</span>, view <span class="op">=</span> <span class="st">"2d"</span>, colour <span class="op">=</span> <span class="st">"timepoint"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [15:04:09] INFO  Creating 2D t-SNE plot (ggplot2).</span></span>
+<span><span class="co">#&gt; [17:09:17] INFO  Creating 2D t-SNE plot (ggplot2).</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_tsne</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-tsne-2d-time-1.png" class="r-plt" alt="" width="672"></p>
 <p>Axis labels (<code>t-SNE 1</code>, <code>t-SNE 2</code>) carry no
@@ -962,7 +962,7 @@ best explored interactively in an HTML report or the RStudio viewer.</p>
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt; [1] dplyr_1.2.1   phiper_0.4.13</span></span>
+<span><span class="co">#&gt; [1] dplyr_1.2.1   phiper_0.4.14</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
 <span><span class="co">#&gt;  [1] sass_0.4.10        utf8_1.2.6         generics_0.1.4     tidyr_1.3.2       </span></span>

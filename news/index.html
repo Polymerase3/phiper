@@ -13,7 +13,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.13</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.14</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,6 +67,14 @@
       <small>Source: <a href="https://github.com/Polymerase3/phiper/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.4.14" id="phiper-0414-2026-10-06">phiper 0.4.14 (2026-10-06)<a class="anchor" aria-label="anchor" href="#phiper-0414-2026-10-06"></a></h2>
+<div class="section level3">
+<h3 id="reproducibility-0-4-14">Reproducibility<a class="anchor" aria-label="anchor" href="#reproducibility-0-4-14"></a></h3>
+<ul><li>Plot functions no longer reset the global random seed (<a href="https://github.com/Polymerase3/phiper/issues/65" class="external-link">#65</a>). <code><a href="../reference/scatter_static.html">scatter_static()</a></code>, <code><a href="../reference/scatter_interactive.html">scatter_interactive()</a></code> and <code><a href="../reference/plot_alpha_interactive.html">plot_alpha_interactive()</a></code> used to call <code>set.seed(1)</code> internally, which overwrote any seed the user had set. Jitter now follows the user’s <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> and leaves the global random state unchanged, the same as <code><a href="../reference/deltaplot.html">deltaplot()</a></code> and <code><a href="../reference/deltaplot_interactive.html">deltaplot_interactive()</a></code>. Without a seed, jitter differs between sessions.</li>
+<li>The background subsample in <code><a href="../reference/scatter_interactive.html">scatter_interactive()</a></code> still uses <code>background_seed</code>, but no longer changes the global random state.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.4.13" id="phiper-0413-2026-10-06">phiper 0.4.13 (2026-10-06)<a class="anchor" aria-label="anchor" href="#phiper-0413-2026-10-06"></a></h2>
 <div class="section level3">
