@@ -345,6 +345,31 @@ testthat::test_that("plot_alpha_interactive: group_col=NULL returns plotly", {
   testthat::expect_true(inherits(p, "plotly") || inherits(p, "htmlwidget"))
 })
 
+testthat::test_that("plot_alpha_interactive: jitter is reproducible with a seed and leaves global RNG untouched", {
+  testthat::skip_if_not_installed("plotly")
+  df <- .make_plot_df()
+  # x/y of every trace; plotly_build() itself consumes RNG, so call it only
+  # after the global seed has been checked
+  trace_xy <- function(p) {
+    lapply(plotly::plotly_build(p)$x$data, function(tr) tr[c("x", "y")])
+  }
+
+  # group_col = NULL and grouped panels jitter in separate branches
+  for (gc in list(NULL, "group")) {
+    set.seed(123)
+    seed_before <- .Random.seed
+    p1 <- plot_alpha_interactive(df, metric = "richness", group_col = gc)
+    testthat::expect_identical(.Random.seed, seed_before)
+    p2 <- plot_alpha_interactive(df, metric = "richness", group_col = gc)
+
+    set.seed(124)
+    p3 <- plot_alpha_interactive(df, metric = "richness", group_col = gc)
+
+    testthat::expect_identical(trace_xy(p1), trace_xy(p2))
+    testthat::expect_false(identical(trace_xy(p1), trace_xy(p3)))
+  }
+})
+
 testthat::test_that("plot_alpha_interactive: all metrics accepted", {
   testthat::skip_if_not_installed("plotly")
   df <- .make_plot_df()

@@ -692,8 +692,9 @@ plot_alpha_interactive <- function(
 
         if (is.null(group_col)) {
           base_x <- rep(1, nrow(df_panel))
-          set.seed(1L)
-          xjit   <- base_x + stats::runif(nrow(df_panel), -jitter_width, jitter_width)
+          xjit   <- withr::with_preserve_seed(
+            base_x + stats::runif(nrow(df_panel), -jitter_width, jitter_width)
+          )
 
           p <- plotly::plot_ly()
           p <- plotly::add_boxplot(
@@ -765,8 +766,9 @@ plot_alpha_interactive <- function(
           col_per_point <- cols_hex[map_idx]
         }
 
-        set.seed(1L)
-        xjit <- base_x + stats::runif(length(base_x), -jitter_width, jitter_width)
+        xjit <- withr::with_preserve_seed(
+          base_x + stats::runif(length(base_x), -jitter_width, jitter_width)
+        )
 
         p <- plotly::plot_ly()
         for (i in seq_along(group_levels)) {

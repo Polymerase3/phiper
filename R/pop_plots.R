@@ -225,10 +225,11 @@ scatter_static <- function(df,
   if (!"percent2" %in% names(pdat) && "prop2" %in% names(pdat))
     pdat$percent2 <- pdat$prop2 * 100
   if (jw > 0 || jh > 0) {
-    set.seed(1L)
-    n             <- nrow(pdat)
-    pdat$percent1 <- pmin(100, pmax(0, pdat$percent1 + stats::rnorm(n, 0, jw)))
-    pdat$percent2 <- pmin(100, pmax(0, pdat$percent2 + stats::rnorm(n, 0, jh)))
+    n <- nrow(pdat)
+    withr::with_preserve_seed({
+      pdat$percent1 <- pmin(100, pmax(0, pdat$percent1 + stats::rnorm(n, 0, jw)))
+      pdat$percent2 <- pmin(100, pmax(0, pdat$percent2 + stats::rnorm(n, 0, jh)))
+    })
   }
 
   # build plot ---------------------------------------------------------------
@@ -455,10 +456,11 @@ scatter_interactive <- function(df,
   if (!"percent2" %in% names(pdat) && "prop2" %in% names(pdat))
     pdat$percent2 <- pdat$prop2 * 100
   if (jw > 0 || jh > 0) {
-    set.seed(1L)
-    n             <- nrow(pdat)
-    pdat$percent1 <- pmin(100, pmax(0, pdat$percent1 + stats::rnorm(n, 0, jw)))
-    pdat$percent2 <- pmin(100, pmax(0, pdat$percent2 + stats::rnorm(n, 0, jh)))
+    n <- nrow(pdat)
+    withr::with_preserve_seed({
+      pdat$percent1 <- pmin(100, pmax(0, pdat$percent1 + stats::rnorm(n, 0, jw)))
+      pdat$percent2 <- pmin(100, pmax(0, pdat$percent2 + stats::rnorm(n, 0, jh)))
+    })
   }
 
   # join peplib for hover metadata (species, common, Fullname, Description) ---
@@ -552,8 +554,8 @@ scatter_interactive <- function(df,
     bg$percent2 <- as.numeric(bg$percent2)
     bg <- bg[stats::complete.cases(bg), , drop = FALSE]
     if (is.finite(background_max_n) && nrow(bg) > background_max_n) {
-      set.seed(as.integer(background_seed))
-      bg <- bg[sample.int(nrow(bg), size = background_max_n), , drop = FALSE]
+      bg <- withr::with_seed(as.integer(background_seed),
+        bg[sample.int(nrow(bg), size = background_max_n), , drop = FALSE])
     }
   }
 
