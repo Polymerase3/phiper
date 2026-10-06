@@ -306,9 +306,9 @@ We assume you already know how to save tables and ggplot objects to disk. The in
 
 `phip_data` objects can be stored as `.parquet` files using `phiperio`'s `export_parquet()`.
 
-```{r save_output, echo=TRUE}
+```{r save_output, eval = FALSE}
 export_parquet(
   pd_with_metadata,
-  "path/to/output_dir"
+  "path/to/output.parquet"
 )
 ```
