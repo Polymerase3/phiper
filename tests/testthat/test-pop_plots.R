@@ -103,6 +103,23 @@ testthat::test_that("scatter_static: graphical ... args accepted without error",
   )
 })
 
+testthat::test_that("scatter_static: jitter is reproducible with a seed and leaves global RNG untouched", {
+  df <- .make_prev_df()
+
+  set.seed(123)
+  seed_before <- .Random.seed
+  p1 <- scatter_static(df, jitter_width_pp = 2, jitter_height_pp = 2)
+  testthat::expect_identical(.Random.seed, seed_before)
+
+  p2 <- scatter_static(df, jitter_width_pp = 2, jitter_height_pp = 2)
+  testthat::expect_identical(p1$data[c("percent1", "percent2")],
+                             p2$data[c("percent1", "percent2")])
+
+  set.seed(124)
+  p3 <- scatter_static(df, jitter_width_pp = 2, jitter_height_pp = 2)
+  testthat::expect_false(identical(p1$data$percent1, p3$data$percent1))
+})
+
 # ===========================================================================
 # scatter_static — BH category coloring
 # ===========================================================================
@@ -193,6 +210,29 @@ testthat::test_that("scatter_interactive: graphical ... args accepted without er
   )
 })
 
+# x/y of every trace; plotly_build() itself consumes RNG, so call it only
+# after the global seed has been checked
+.trace_xy <- function(p) {
+  lapply(plotly::plotly_build(p)$x$data, function(tr) tr[c("x", "y")])
+}
+
+testthat::test_that("scatter_interactive: jitter is reproducible with a seed and leaves global RNG untouched", {
+  testthat::skip_if_not_installed("plotly")
+  df <- .make_prev_df()
+
+  set.seed(123)
+  seed_before <- .Random.seed
+  p1 <- scatter_interactive(df, jitter_width_pp = 2, jitter_height_pp = 2)
+  testthat::expect_identical(.Random.seed, seed_before)
+  p2 <- scatter_interactive(df, jitter_width_pp = 2, jitter_height_pp = 2)
+
+  set.seed(124)
+  p3 <- scatter_interactive(df, jitter_width_pp = 2, jitter_height_pp = 2)
+
+  testthat::expect_identical(.trace_xy(p1), .trace_xy(p2))
+  testthat::expect_false(identical(.trace_xy(p1), .trace_xy(p3)))
+})
+
 # ===========================================================================
 # scatter_interactive — color_by named vector
 # ===========================================================================
@@ -272,6 +312,30 @@ testthat::test_that("scatter_interactive: background_df overlay accepted", {
     show_background = TRUE
   )
   testthat::expect_s3_class(p, "plotly")
+})
+
+testthat::test_that("scatter_interactive: background subsample follows background_seed and leaves global RNG untouched", {
+  testthat::skip_if_not_installed("plotly")
+  df <- .make_prev_df(n = 15L, seed = 12L)
+  bg <- .make_prev_df(n = 50L, seed = 99L)
+
+  set.seed(123)
+  seed_before <- .Random.seed
+  p1 <- scatter_interactive(df, background_df = bg, show_background = TRUE,
+                            background_max_n = 10, background_seed = 1L)
+  testthat::expect_identical(.Random.seed, seed_before)
+
+  set.seed(456)
+  p2 <- scatter_interactive(df, background_df = bg, show_background = TRUE,
+                            background_max_n = 10, background_seed = 1L)
+  p3 <- scatter_interactive(df, background_df = bg, show_background = TRUE,
+                            background_max_n = 10, background_seed = 2L)
+
+  # background is the first trace
+  bg1 <- .trace_xy(p1)[[1]]
+  testthat::expect_length(bg1$x, 10L)
+  testthat::expect_identical(bg1, .trace_xy(p2)[[1]])
+  testthat::expect_false(identical(bg1, .trace_xy(p3)[[1]]))
 })
 
 # ===========================================================================

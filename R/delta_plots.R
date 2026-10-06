@@ -569,10 +569,14 @@ deltaplot_interactive <- function(
 
   # ---- Optional display jitter ----------------------------------------------
   if (point_jitter_width > 0 || point_jitter_height > 0) {
-    jx <- stats::runif(nrow(w), -point_jitter_width, point_jitter_width)
-    jy <- stats::runif(nrow(w), -point_jitter_height, point_jitter_height)
-    x_jit <- pmin(pmax(w$pooled_clip + jx, 1e-6), 1 - 1e-6)
-    y_jit <- w$delta + jy
+    jitter_vals <- withr::with_preserve_seed({
+      list(
+        jx = stats::runif(nrow(w), -point_jitter_width, point_jitter_width),
+        jy = stats::runif(nrow(w), -point_jitter_height, point_jitter_height)
+      )
+    })
+    x_jit <- pmin(pmax(w$pooled_clip + jitter_vals$jx, 1e-6), 1 - 1e-6)
+    y_jit <- w$delta + jitter_vals$jy
   } else {
     x_jit <- w$pooled_clip
     y_jit <- w$delta

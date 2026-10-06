@@ -713,6 +713,34 @@ testthat::test_that("compute_capscale: full coverage (success, warnings,
   }
 })
 
+# helper: same global seed -> identical result, and the call consumes the global RNG
+.expect_reproducible_with_global_seed <- function(run) {
+  set.seed(1234)
+  seed_before <- .Random.seed
+  res1 <- run()
+  testthat::expect_false(identical(seed_before, .Random.seed))
+
+  set.seed(1234)
+  res2 <- run()
+  testthat::expect_identical(res1, res2)
+}
+
+testthat::test_that("compute_capscale: permutation tests are reproducible with a seed", {
+  ps_small <- load_example_data("small_mixture")
+  d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
+  fml <- stats::as.formula(paste0("~ ", .pick_constraint_var_cap(ps_small)))
+
+  .expect_reproducible_with_global_seed(function() {
+    suppressWarnings(compute_capscale(
+      dist_obj = d,
+      ps = ps_small,
+      formula = fml,
+      neg_correction = "none",
+      top_features = 30L
+    ))$perm_terms
+  })
+})
+
 # helper: pick a constraint variable that exists and has >=2 distinct values for permanova/dispersion
 .pick_constraint_var_perm <- function(ps_small) {
   dat <- if ("phip_data" %in% class(ps_small)) ps_small$data_long else ps_small
@@ -876,6 +904,25 @@ testthat::test_that("compute_permanova: ps as data.frame vs phip_data", {
   testthat::expect_s3_class(res2, "tbl_df")
 })
 
+testthat::test_that("compute_permanova: reproducible with a seed", {
+  ps_small <- load_example_data("small_mixture")
+  d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
+
+  testthat::skip_if_not_installed("vegan")
+
+  group_var <- .pick_constraint_var_perm(ps_small)
+  testthat::skip_if(is.null(group_var), "no suitable grouping variable found")
+
+  .expect_reproducible_with_global_seed(function() {
+    suppressWarnings(compute_permanova(
+      dist_obj = d,
+      ps = ps_small,
+      group_col = group_var,
+      permutations = 99
+    ))
+  })
+})
+
 testthat::test_that("compute_dispersion: basic functionality and input validation", {
   ps_small <- load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
@@ -1004,6 +1051,25 @@ testthat::test_that("compute_dispersion: ps as data.frame vs phip_data", {
   testthat::expect_s3_class(res2, "beta_dispersion")
 })
 
+testthat::test_that("compute_dispersion: reproducible with a seed", {
+  ps_small <- load_example_data("small_mixture")
+  d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")
+
+  testthat::skip_if_not_installed("vegan")
+
+  group_var <- .pick_constraint_var_perm(ps_small)
+  testthat::skip_if(is.null(group_var), "no suitable grouping variable found")
+
+  .expect_reproducible_with_global_seed(function() {
+    suppressWarnings(compute_dispersion(
+      dist_obj = d,
+      ps = ps_small,
+      group_col = group_var,
+      permutations = 99
+    ))
+  })
+})
+
 # tests for compute_tsne function
 
 testthat::test_that("compute_tsne: basic functionality and structure", {
@@ -1127,6 +1193,8 @@ testthat::test_that("compute_tsne: reproducibility with seed", {
 
   testthat::skip_if_not_installed("Rtsne")
 
+  set.seed(42)
+  seed_before <- .Random.seed
   res1 <- suppressWarnings(compute_tsne(
     ps = ps_small,
     dist_obj = d,
@@ -1134,6 +1202,8 @@ testthat::test_that("compute_tsne: reproducibility with seed", {
     perplexity = 5,
     seed = 123
   ))
+  # the seed argument must not touch the global RNG
+  testthat::expect_identical(.Random.seed, seed_before)
 
   res2 <- suppressWarnings(compute_tsne(
     ps = ps_small,
@@ -1145,6 +1215,15 @@ testthat::test_that("compute_tsne: reproducibility with seed", {
 
   testthat::expect_equal(res1$tSNE1, res2$tSNE1, tolerance = 1e-10)
   testthat::expect_equal(res1$tSNE2, res2$tSNE2, tolerance = 1e-10)
+
+  res3 <- suppressWarnings(compute_tsne(
+    ps = ps_small,
+    dist_obj = d,
+    dims = 2L,
+    perplexity = 5,
+    seed = 124
+  ))
+  testthat::expect_false(isTRUE(all.equal(res1$tSNE1, res3$tSNE1)))
 })
 
 testthat::test_that("compute_tsne: input validation errors", {

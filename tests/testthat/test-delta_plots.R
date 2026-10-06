@@ -10,12 +10,14 @@ testthat::test_that("deltaplot returns ggplot and is reproducible with a seed", 
   )
 
   set.seed(123)
+  seed_before <- .Random.seed
   p1 <- deltaplot(
     prev_tbl,
     group_pair_values = c("A", "B"),
     group_labels = c("A", "B"),
     add_smooth = FALSE
   )
+  testthat::expect_identical(.Random.seed, seed_before)
   testthat::expect_s3_class(p1, "ggplot")
 
   set.seed(123)
@@ -58,12 +60,14 @@ testthat::test_that("deltaplot_interactive is reproducible with a seed", {
   )
 
   set.seed(123)
+  seed_before <- .Random.seed
   p1 <- deltaplot_interactive(
     prev_tbl,
     group_pair_values = c("A", "B"),
     group_labels = c("A", "B"),
     add_smooth = FALSE
   )
+  testthat::expect_identical(.Random.seed, seed_before)
   set.seed(123)
   p2 <- deltaplot_interactive(
     prev_tbl,
