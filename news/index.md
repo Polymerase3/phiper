@@ -1,5 +1,12 @@
 # Changelog
 
+## phiper 0.4.15 (2026-10-08)
+
+### Continuous integration
+
+- The phipflow compatibility check now calls the workflow in its new
+  home, `Vogl-Lab-Research/phipflow`.
+
 ## phiper 0.4.14 (2026-10-06)
 
 ### Reproducibility
