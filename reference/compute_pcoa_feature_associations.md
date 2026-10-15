@@ -78,24 +78,24 @@ d <- compute_distance(
   distance = "jaccard",
   n_threads = 2L
 )
-#> [08:45:40] INFO  building abundance matrix from `ps` using `fold_change`.
-#> [08:45:40] INFO  building pivot spec (sample_id x peptide_id).
-#> [08:45:40] INFO  Collecting long table (sample_id, peptide_id, value).
+#> [09:37:47] INFO  building abundance matrix from `ps` using `fold_change`.
+#> [09:37:47] INFO  building pivot spec (sample_id x peptide_id).
+#> [09:37:47] INFO  Collecting long table (sample_id, peptide_id, value).
 #>                  -> compute_distance
-#> [08:45:40] INFO  Pivoting to wide abundance matrix in R.
+#> [09:37:47] INFO  Pivoting to wide abundance matrix in R.
 #>                  -> compute_distance
-#> [08:45:40] INFO  abundance matrix has 43 samples and 5 features after
+#> [09:37:47] INFO  abundance matrix has 43 samples and 5 features after
 #>                  preprocessing.
-#> [08:45:40] INFO  auto normalization selected -> using relative
-#> [08:45:40] INFO  computing distance: jaccard
-#> [08:45:40] INFO  distance matrix computation complete.
+#> [09:37:47] INFO  auto normalization selected -> using relative
+#> [09:37:47] INFO  computing distance: jaccard
+#> [09:37:47] INFO  distance matrix computation complete.
 
 # Compute PCoA vectors on these distances
 pcoa_res <- compute_pcoa(d, neg_correction = "none", n_axes = 3L)
-#> [08:45:40] INFO  performing principal coordinates analysis
-#> [08:45:40] INFO  extracting sample coordinates.
-#> [08:45:40] INFO  summarizing eigenvalues and variance explained.
-#> [08:45:40] INFO  pcoa analysis complete.
+#> [09:37:47] INFO  performing principal coordinates analysis
+#> [09:37:47] INFO  extracting sample coordinates.
+#> [09:37:47] INFO  summarizing eigenvalues and variance explained.
+#> [09:37:47] INFO  pcoa analysis complete.
 
 feature_associations <- compute_pcoa_feature_associations(d, pcoa_res)
 feature_associations

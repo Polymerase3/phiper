@@ -1,5 +1,16 @@
 # Changelog
 
+## phiper 0.4.16 (2026-10-15)
+
+### Peptide libraries
+
+- `library-metadata/` now hosts the updated combined, human proteome and
+  ICAM peptide libraries served by phiperio 0.6.2. All three carry the
+  protein-level columns `protein_seq_id` and
+  `taxon_with_protein_unique_annotation`, and the combined library is
+  now the one of the phipflow pipeline, with its revised taxonomy. The
+  previous files stay for phiperio 0.6.1 and earlier.
+
 ## phiper 0.4.15 (2026-10-08)
 
 ### Continuous integration
