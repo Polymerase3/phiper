@@ -93,17 +93,17 @@ dist_bc <- compute_distance(
   distance = "jaccard",
   n_threads = 2L
 )
-#> [09:37:46] INFO  building abundance matrix from `ps` using `fold_change`.
-#> [09:37:46] INFO  building pivot spec (sample_id x peptide_id).
-#> [09:37:46] INFO  Collecting long table (sample_id, peptide_id, value).
+#> [18:21:08] INFO  building abundance matrix from `ps` using `fold_change`.
+#> [18:21:08] INFO  building pivot spec (sample_id x peptide_id).
+#> [18:21:08] INFO  Collecting long table (sample_id, peptide_id, value).
 #>                  -> compute_distance
-#> [09:37:46] INFO  Pivoting to wide abundance matrix in R.
+#> [18:21:08] INFO  Pivoting to wide abundance matrix in R.
 #>                  -> compute_distance
-#> [09:37:46] INFO  abundance matrix has 43 samples and 5 features after
+#> [18:21:08] INFO  abundance matrix has 43 samples and 5 features after
 #>                  preprocessing.
-#> [09:37:46] INFO  auto normalization selected -> using relative
-#> [09:37:46] INFO  computing distance: jaccard
-#> [09:37:46] INFO  distance matrix computation complete.
+#> [18:21:08] INFO  auto normalization selected -> using relative
+#> [18:21:08] INFO  computing distance: jaccard
+#> [18:21:08] INFO  distance matrix computation complete.
 
 dispersion_res <- compute_dispersion(
   dist_bc,
@@ -112,11 +112,11 @@ dispersion_res <- compute_dispersion(
   time_col  = "timepoint",
   p_adjust  = "BH"
 )
-#> [09:37:46] INFO  preparing distance labels and metadata.
-#> [09:37:46] INFO  building metadata from `ps`.
-#> [09:37:46] INFO  filtering samples with missing grouping variables.
-#> [09:37:46] INFO  computing global dispersion tests.
-#> [09:37:46] INFO  running pairwise dispersion contrasts.
+#> [18:21:08] INFO  preparing distance labels and metadata.
+#> [18:21:08] INFO  building metadata from `ps`.
+#> [18:21:08] INFO  filtering samples with missing grouping variables.
+#> [18:21:08] INFO  computing global dispersion tests.
+#> [18:21:08] INFO  running pairwise dispersion contrasts.
 dispersion_res$tests
 #> # A tibble: 1 × 6
 #>   scope contrast term       p_value p_adjust n_perm
