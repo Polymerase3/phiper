@@ -1,3 +1,13 @@
+# phiper 0.4.17 (2026-10-17)
+
+## Bug fixes
+
+- `compute_delta()` no longer fails when `rank_cols` mixes column types, such
+  as a character rank like `genus` and a logical flag like `is_auto` from the
+  combined library ("Can't combine `genus` <character> and `is_auto`
+  <logical>"). The rank columns are now converted to character before they are
+  stacked, so a logical flag yields the features `"TRUE"` and `"FALSE"`.
+
 # phiper 0.4.16 (2026-10-15)
 
 ## Peptide libraries
