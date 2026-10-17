@@ -551,9 +551,9 @@ compute_delta <- function(
       tidyr::pivot_longer(
         cols      = dplyr::all_of(ranks_need),
         names_to  = "rank",
-        values_to = "feature"
+        values_to = "feature",
+        values_transform = list(feature = as.character)
       ) |>
-      dplyr::mutate(feature = as.character(.data$feature)) |>
       dplyr::filter(!is.na(.data$feature)) |>
       dplyr::select(peptide_id, rank, feature) |>
       dplyr::distinct()
