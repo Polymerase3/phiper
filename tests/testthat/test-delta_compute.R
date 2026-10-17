@@ -361,6 +361,39 @@ test_that("compute_delta aborts when peptide_library misses required
   )
 })
 
+test_that("compute_delta combines character and logical rank columns", {
+  toy_df <- tibble::tibble(
+    sample_id  = c("s1", "s1", "s2", "s2"),
+    subject_id = c("id1", "id1", "id2", "id2"),
+    peptide_id = c("pep1", "pep2", "pep1", "pep2"),
+    group      = c("A", "A", "B", "B"),
+    exist      = c(1L, 1L, 0L, 1L)
+  )
+
+  toy_lib <- tibble::tibble(
+    peptide_id = c("pep1", "pep2"),
+    genus      = c("G1", "G2"),
+    is_auto    = c(TRUE, FALSE)
+  )
+
+  res <- compute_delta(
+    x                  = toy_df,
+    exist_col          = "exist",
+    rank_cols          = c("genus", "is_auto"),
+    group_cols         = "group",
+    peptide_library    = toy_lib,
+    B_permutations     = 200L,
+    weight_mode        = "equal",
+    stat_mode          = "diff",
+    strat_bins         = 0,
+    winsor_z           = 4,
+    rank_feature_keep  = NULL,
+    log                = FALSE,
+  )
+
+  expect_setequal(res$feature[res$rank == "is_auto"], c("TRUE", "FALSE"))
+})
+
 test_that("compute_delta fetches the libraries the peptides belong to", {
   toy_df <- tibble::tibble(
     sample_id  = c("s1", "s2"),
