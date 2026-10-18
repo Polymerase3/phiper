@@ -2096,3 +2096,298 @@ ecdf_plot_interactive <- function(
 
   plt
 }
+
+#' @title Prevalence Profile Along a Protein
+#'
+#' @description Plot every library peptide of the selected proteins at its
+#' position in the protein (x-axis) and at its prevalence in each group
+#' (y-axis), one panel per protein. The plot shows where along a protein the
+#' reactivity sits and how it differs between groups. It draws the data as
+#' given and selects or tests nothing; DELTA statistics from
+#' \code{compute_delta()} can be added to the panel titles.
+#'
+#' @details
+#' Each peptide is a horizontal segment from its first to its last amino acid
+#' (\code{pos + 1} to \code{pos + nchar(aa_seq)}, clipped at the protein length
+#' \code{len_seq}), drawn at its prevalence in each group. All library peptides
+#' of a protein are drawn: peptides missing from \code{prev_tbl} are drawn at
+#' 0\%, because \code{compute_pop()} leaves out peptides present in no sample.
+#' Peptides without a position in the library are left out.
+#'
+#' Group prevalences are read from both sides of the group pairs in
+#' \code{prev_tbl}, so a table with several pairs, e.g. from
+#' \code{compute_pop(group_cols = c("control_vs_sjogren", "control_vs_sle"))},
+#' gives one line per group. A group that appears in several pairs must have
+#' the same prevalences in all of them.
+#'
+#' With \code{delta_tbl}, each panel title lists every group pair tested for
+#' the protein, with the DELTA statistic \code{T_obs} and the permutation
+#' p-value \code{p_perm}; proteins without a row are marked "not tested".
+#'
+#' @param prev_tbl Data frame from \code{compute_pop()} (or equivalent) with
+#'   columns \code{feature}, \code{group1}, \code{group2}, \code{prop1} and
+#'   \code{prop2}. If it has a \code{rank} column, only the
+#'   \code{"peptide_id"} rows are used.
+#' @param proteins Character vector of \code{protein_seq_id} values, one panel
+#'   each, in this order. Names, if given, are used as panel titles; otherwise
+#'   the title is the protein's annotation and ID.
+#' @param groups Optional character vector of the groups to draw, in legend
+#'   order. Names, if given, are used as legend labels. Defaults to all groups
+#'   in \code{prev_tbl}, pair by pair in the order of its rows.
+#' @param peplib Optional peptide library with columns \code{peptide_id},
+#'   \code{protein_seq_id}, \code{pos}, \code{aa_seq}, \code{len_seq} and
+#'   \code{taxon_with_protein_unique_annotation}. If \code{NULL}, the phiperio
+#'   peptide libraries the peptide IDs belong to are detected from their
+#'   prefixes and fetched with \code{get_peptide_library()}.
+#' @param delta_tbl Optional data frame from \code{compute_delta()} run with
+#'   \code{rank_cols = "protein_seq_id"}, with columns \code{feature},
+#'   \code{group1}, \code{group2}, \code{T_obs} and \code{p_perm}.
+#' @param custom_colors Optional vector of group colors, named by group or
+#'   recycled in \code{groups} order. Defaults to \code{phip_palette}.
+#' @param ncol Number of panel columns, passed to \code{ggplot2::facet_wrap()}.
+#' @param line_width_pt Line width of the peptide segments. Default 0.9.
+#' @param plot_title,plot_subtitle Optional plot labels.
+#' @param x_label,y_label Optional axis labels.
+#'
+#' @return A `ggplot` object.
+#'
+#' @examples
+#' peplib <- data.frame(
+#'   peptide_id     = paste0("pep", 1:6),
+#'   protein_seq_id = rep(c("protA", "protB"), each = 3),
+#'   pos            = c(0, 20, 40, 0, 25, 50),
+#'   aa_seq         = strrep("A", 30),
+#'   len_seq        = rep(c(70, 75), each = 3),
+#'   taxon_with_protein_unique_annotation =
+#'     rep(c("Species a: protein A", "Species b: protein B"), each = 3)
+#' )
+#' prev_tbl <- data.frame(
+#'   rank    = "peptide_id",
+#'   feature = rep(c("pep1", "pep2", "pep4", "pep5"), 2),
+#'   group1  = "control",
+#'   group2  = rep(c("sjogren", "sle"), each = 4),
+#'   prop1   = rep(c(0.10, 0.20, 0.05, 0.00), 2),
+#'   prop2   = c(0.40, 0.50, 0.10, 0.20, 0.30, 0.60, 0.00, 0.10)
+#' )
+#'
+#' profile_plot(prev_tbl, proteins = c("protA", "protB"), peplib = peplib)
+#'
+#' # two groups with display labels, DELTA statistics in the panel titles
+#' delta_tbl <- data.frame(
+#'   rank    = "protein_seq_id",
+#'   feature = "protA",
+#'   group1  = "control",
+#'   group2  = c("sjogren", "sle"),
+#'   T_obs   = c(3.1, 1.2),
+#'   p_perm  = c(0.002, 0.21)
+#' )
+#' profile_plot(
+#'   prev_tbl,
+#'   proteins  = c("Protein A" = "protA", "Protein B" = "protB"),
+#'   groups    = c(Controls = "control", "Sjogren" = "sjogren"),
+#'   peplib    = peplib,
+#'   delta_tbl = delta_tbl
+#' )
+#' @export
+profile_plot <- function(
+  prev_tbl,
+  proteins,
+  groups = NULL,
+  peplib = NULL,
+  delta_tbl = NULL,
+  custom_colors = NULL,
+  ncol = NULL,
+  line_width_pt = 0.9,
+  plot_title = NULL,
+  plot_subtitle = NULL,
+  x_label = NULL,
+  y_label = NULL
+) {
+  # ---- input validation ------------------------------------------------------
+  chk::chk_data(prev_tbl)
+  chk::chk_character(proteins)
+  chk::chk_not_empty(proteins)
+  chk::chk_unique(proteins)
+  if (!is.null(groups)) chk::chk_character(groups)
+  if (!is.null(delta_tbl)) chk::chk_data(delta_tbl)
+  chk::chk_number(line_width_pt)
+  .ph_check_cond(
+    condition = line_width_pt <= 0,
+    error_message = "line_width_pt must be a positive number."
+  )
+
+  miss <- setdiff(c("feature", "group1", "group2", "prop1", "prop2"),
+                  names(prev_tbl))
+  .ph_check_cond(
+    condition = length(miss) > 0L,
+    error_message = "prev_tbl is missing required columns.",
+    bullets = miss
+  )
+
+  d <- as.data.frame(prev_tbl)
+  if ("rank" %in% names(d)) d <- d[d$rank == "peptide_id", , drop = FALSE]
+  .ph_check_cond(
+    condition = !nrow(d),
+    error_message = "prev_tbl has no peptide_id rows."
+  )
+
+  # ---- groups ----------------------------------------------------------------
+  # each group's prevalence, read from both sides of its pairs
+  prev_long <- unique(rbind(
+    data.frame(peptide_id = as.character(d$feature),
+               group = as.character(d$group1), prop = d$prop1),
+    data.frame(peptide_id = as.character(d$feature),
+               group = as.character(d$group2), prop = d$prop2)
+  ))
+
+  if (is.null(groups)) {
+    groups <- unique(as.vector(rbind(as.character(d$group1),
+                                     as.character(d$group2))))
+  }
+  group_labels <- if (is.null(names(groups))) {
+    groups
+  } else {
+    ifelse(nzchar(names(groups)), names(groups), groups)
+  }
+  groups <- unname(groups)
+  miss <- setdiff(groups, prev_long$group)
+  .ph_check_cond(
+    condition = length(miss) > 0L,
+    error_message = "groups not found in prev_tbl.",
+    bullets = miss
+  )
+
+  # ---- peptide library -------------------------------------------------------
+  lib <- peplib %||% .ph_library_for_peptides(prev_long$peptide_id)
+  .ph_check_cond(
+    condition = is.null(lib),
+    error_message = "No peptide library found for the peptide IDs; pass peplib."
+  )
+  lib_cols <- c("peptide_id", "protein_seq_id", "pos", "aa_seq", "len_seq",
+                "taxon_with_protein_unique_annotation")
+  miss <- setdiff(lib_cols, colnames(lib))
+  .ph_check_cond(
+    condition = length(miss) > 0L,
+    error_message = paste("peplib is missing required columns",
+                          "(the phiperio >= 0.6.2 libraries have them)."),
+    bullets = miss
+  )
+
+  prot_ids <- unname(proteins)
+  lib <- lib |>
+    dplyr::filter(.data$protein_seq_id %in% !!prot_ids, !is.na(.data$pos)) |>
+    dplyr::select(dplyr::all_of(lib_cols)) |>
+    dplyr::collect() |>
+    as.data.frame()
+
+  miss <- setdiff(prot_ids, lib$protein_seq_id)
+  .ph_check_cond(
+    condition = length(miss) > 0L,
+    error_message = "proteins not found in the peptide library.",
+    bullets = miss
+  )
+
+  # protein_seq_id is unique only within one library: the combined and ICAM
+  # libraries reuse the same IDs for different proteins
+  n_libs <- vapply(prot_ids, function(id) {
+    length(detect_peptide_libraries(lib$peptide_id[lib$protein_seq_id == id]))
+  }, integer(1))
+  .ph_check_cond(
+    condition = any(n_libs > 1L),
+    error_message = paste("protein_seq_id matches proteins of several peptide",
+                          "libraries; pass peplib with one library."),
+    bullets = prot_ids[n_libs > 1L]
+  )
+
+  # ---- panel titles ----------------------------------------------------------
+  lib_ann <- lib[!is.na(lib$taxon_with_protein_unique_annotation), ]
+  ann <- lib_ann$taxon_with_protein_unique_annotation[
+    match(prot_ids, lib_ann$protein_seq_id)
+  ]
+  titles <- ifelse(is.na(ann), prot_ids, paste0(ann, " (", prot_ids, ")"))
+  titles <- vapply(titles, function(t) {
+    paste(strwrap(t, width = 30), collapse = "\n")
+  }, character(1), USE.NAMES = FALSE)
+  if (!is.null(names(proteins))) {
+    titles <- ifelse(nzchar(names(proteins)), names(proteins), titles)
+  }
+
+  if (!is.null(delta_tbl)) {
+    miss <- setdiff(c("feature", "group1", "group2", "T_obs", "p_perm"),
+                    names(delta_tbl))
+    .ph_check_cond(
+      condition = length(miss) > 0L,
+      error_message = "delta_tbl is missing required columns.",
+      bullets = miss
+    )
+    dt <- as.data.frame(delta_tbl)
+    if ("rank" %in% names(dt)) dt <- dt[dt$rank == "protein_seq_id", , drop = FALSE]
+    label_of <- function(g) {
+      g <- as.character(g)
+      ifelse(g %in% groups, group_labels[match(g, groups)], g)
+    }
+    delta_txt <- vapply(prot_ids, function(id) {
+      r <- dt[dt$feature == id, , drop = FALSE]
+      if (!nrow(r)) return("DELTA: not tested")
+      paste(sprintf(
+        "%s vs %s\nDELTA T = %.2f, p = %s",
+        label_of(r$group1), label_of(r$group2), r$T_obs,
+        formatC(r$p_perm, format = "g", digits = 2)
+      ), collapse = "\n")
+    }, character(1), USE.NAMES = FALSE)
+    titles <- paste(titles, delta_txt, sep = "\n")
+  }
+
+  # ---- plot data -------------------------------------------------------------
+  # segment from the first to the last residue, clipped at the protein end
+  lib$start <- lib$pos + 1
+  lib$end <- lib$pos +
+    pmin(nchar(lib$aa_seq), lib$len_seq - lib$pos, na.rm = TRUE)
+
+  prev_long <- prev_long[prev_long$group %in% groups &
+                           prev_long$peptide_id %in% lib$peptide_id, ]
+  dup <- duplicated(prev_long[, c("peptide_id", "group")])
+  .ph_check_cond(
+    condition = any(dup),
+    error_message = paste("Groups have different prevalences in different",
+                          "pairs of prev_tbl; keep one pair per group."),
+    bullets = unique(prev_long$group[dup])
+  )
+
+  plot_df <- merge(lib[, c("peptide_id", "protein_seq_id", "start", "end")],
+                   data.frame(group = groups), by = NULL)
+  plot_df <- dplyr::left_join(plot_df, prev_long,
+                              by = c("peptide_id", "group"))
+  plot_df$prop <- dplyr::coalesce(plot_df$prop, 0)
+  plot_df$group <- factor(plot_df$group, levels = groups)
+  plot_df$panel <- factor(titles[match(plot_df$protein_seq_id, prot_ids)],
+                          levels = unique(titles))
+
+  pal <- if (is.null(custom_colors)) {
+    .phip_palette_map(groups)
+  } else if (is.null(names(custom_colors))) {
+    stats::setNames(rep_len(custom_colors, length(groups)), groups)
+  } else {
+    stats::setNames(unname(custom_colors[groups]), groups)
+  }
+
+  # ---- build plot ------------------------------------------------------------
+  ggplot2::ggplot(plot_df, ggplot2::aes(
+    x = .data$start, xend = .data$end,
+    y = .data$prop, yend = .data$prop,
+    colour = .data$group
+  )) +
+    ggplot2::geom_segment(linewidth = line_width_pt, lineend = "round") +
+    ggplot2::scale_colour_manual(
+      values = pal, breaks = groups, labels = group_labels, name = NULL
+    ) +
+    ggplot2::scale_y_continuous(labels = .ph_percent_format(accuracy = 1)) +
+    ggplot2::facet_wrap(~panel, ncol = ncol, scales = "free_x") +
+    ggplot2::labs(
+      title = plot_title,
+      subtitle = plot_subtitle,
+      x = x_label %||% "Amino-acid position in the protein",
+      y = y_label %||% "Prevalence"
+    ) +
+    theme_phip()
+}
