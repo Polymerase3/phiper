@@ -42,6 +42,7 @@ This vignette walks through the complete Delta workflow in **phiper**:
    `deltaplot_interactive()`
 2. Running the permutation test with `compute_delta()`
 3. Displaying results with `forestplot()` and `forestplot_interactive()`
+4. Plotting prevalence along proteins with `profile_plot()`
 
 ---
 
@@ -388,6 +389,66 @@ forestplot_interactive(
   right_label          = "More in B",
   use_diverging_colors = TRUE
 )$plot
+```
+
+---
+
+## Profiles along a protein: `profile_plot()`
+
+`forestplot()` shows which features shift; `profile_plot()` shows where inside
+a protein the reactivity sits. Each library peptide of a protein is drawn as a
+segment over the amino acids it covers, at its prevalence in each group, with
+one panel per protein. The positions come from the phiperio peptide library
+the peptide IDs belong to. Peptides of the protein that are missing from the
+`compute_pop()` table, because they are present in no sample, are drawn at 0%.
+
+```{r profile-plot, fig.height = 4}
+pop_t1 <- compute_pop(pd_t1, rank_cols = "peptide_id", group_cols = "group")
+
+proteins <- c("protseq_9788", "protseq_25936")
+profile_plot(pop_t1, proteins = proteins, ncol = 2)
+```
+
+With `show_overlap = TRUE` (the default), a shaded band marks the longest run
+of overlapping hit peptides per protein, group pair and direction, in the
+colour of the group in which they are more common. Hit peptides have a
+BH-adjusted `p_raw` of at most `alpha` (default 0.05), corrected over all
+peptides of the pair. The simulated example data has no overlapping hit
+peptides, so no band appears here; the examples in `?profile_plot` show one.
+
+A table with several group pairs gives one line per group. Here the
+prevalence by patient group and by timepoint, over both timepoints:
+
+```{r profile-plot-groups, fig.height = 4}
+pop_two <- compute_pop(
+  pd,
+  rank_cols  = "peptide_id",
+  group_cols = c("group", "timepoint")
+)
+profile_plot(pop_two, proteins = proteins, ncol = 2)
+```
+
+Names of `proteins` and `groups` are used as panel titles and legend labels.
+`delta_tbl` adds the statistic and permutation p-value of `compute_delta()`,
+run at the protein level, to the panel titles:
+
+```{r profile-plot-delta, fig.height = 4.5}
+set.seed(42)
+delta_protein <- compute_delta(
+  pd_t1,
+  rank_cols         = "protein_seq_id",
+  group_cols        = "group",
+  rank_feature_keep = list(protein_seq_id = proteins),
+  B_permutations    = 2000L
+)
+
+profile_plot(
+  pop_t1,
+  proteins  = c("IgA1 protease" = "protseq_9788", "Desmoglein-3" = "protseq_25936"),
+  groups    = c("Group A" = "A", "Group B" = "B"),
+  delta_tbl = delta_protein,
+  ncol      = 2
+)
 ```
 
 ---

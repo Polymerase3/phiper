@@ -1,6 +1,6 @@
 Package: phiper
 Title: Automated PhIP-seq Analysis and Reporting
-Version: 0.4.17
+Version: 0.4.18
 Authors@R: c(
   person(
     "Mateusz", "Kolek", 
@@ -69,7 +69,7 @@ Config/testthat/edition: 3
 Remotes:
     Polymerase3/phiperio
 Imports:
-    phiperio (>= 0.6.1),
+    phiperio (>= 0.6.2),
     chk,
     DBI,
     dbplyr,
