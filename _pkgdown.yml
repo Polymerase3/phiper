@@ -66,6 +66,7 @@ reference:
       - forestplot_interactive
       - ecdf_plot
       - ecdf_plot_interactive
+      - profile_plot
   - title: "Plot styling"
     contents:
       - theme_phip

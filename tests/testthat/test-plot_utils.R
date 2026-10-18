@@ -332,3 +332,32 @@ testthat::test_that(".first_subview_name() returns the first name", {
 testthat::test_that(".first_subview_name() aborts on unnamed list", {
   testthat::expect_error(.first_subview_name(list(1, 2)))
 })
+
+# ---------------------------------------------------------------------------
+# .ph_overlap_run()
+# ---------------------------------------------------------------------------
+testthat::test_that(".ph_overlap_run() chains segments overlapping the region so far", {
+  # 21-50 overlaps 1-30, 41-70 overlaps 21-50; input order does not matter
+  testthat::expect_identical(
+    .ph_overlap_run(c(41, 1, 21), c(70, 30, 50)),
+    c(n = 3, start = 1, end = 70)
+  )
+  # 25-30 lies inside 1-60, so 50-80 still joins through the covered region
+  testthat::expect_identical(
+    .ph_overlap_run(c(1, 25, 50), c(60, 30, 80)),
+    c(n = 3, start = 1, end = 80)
+  )
+})
+
+testthat::test_that(".ph_overlap_run() keeps the longest run, the first on ties", {
+  # 1-30 and 31-60 share no residue
+  testthat::expect_identical(
+    .ph_overlap_run(c(1, 31, 50, 70), c(30, 60, 80, 100)),
+    c(n = 3, start = 31, end = 100)
+  )
+  testthat::expect_identical(
+    .ph_overlap_run(c(1, 20, 100, 120), c(30, 50, 130, 150)),
+    c(n = 2, start = 1, end = 50)
+  )
+  testthat::expect_identical(.ph_overlap_run(5, 40), c(n = 1, start = 5, end = 40))
+})
