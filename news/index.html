@@ -13,7 +13,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.17</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.18</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,6 +67,18 @@
       <small>Source: <a href="https://github.com/Polymerase3/phiper/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.4.18" id="phiper-0418-2026-10-18">phiper 0.4.18 (2026-10-18)<a class="anchor" aria-label="anchor" href="#phiper-0418-2026-10-18"></a></h2>
+<div class="section level3">
+<h3 id="new-features-0-4-18">New features<a class="anchor" aria-label="anchor" href="#new-features-0-4-18"></a></h3>
+<ul><li>
+<code><a href="../reference/profile_plot.html">profile_plot()</a></code> plots the peptides of selected proteins at their position along the protein and at their prevalence per group, one panel per protein, from <code><a href="../reference/compute_pop.html">compute_pop()</a></code> output. It draws any number of groups. A shaded band marks the longest run of overlapping peptides with BH q &lt;= <code>alpha</code>, per group pair and direction, and <code>delta_tbl</code> adds the <code><a href="../reference/compute_delta.html">compute_delta()</a></code> statistics (<code>T_obs</code>, <code>p_perm</code>) to the panel titles. A section in the Delta vignette shows it on the example data.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="dependencies-0-4-18">Dependencies<a class="anchor" aria-label="anchor" href="#dependencies-0-4-18"></a></h3>
+<ul><li>phiper now requires phiperio &gt;= 0.6.2, whose peptide libraries carry the <code>protein_seq_id</code> column that <code><a href="../reference/profile_plot.html">profile_plot()</a></code> uses.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.4.17" id="phiper-0417-2026-10-17">phiper 0.4.17 (2026-10-17)<a class="anchor" aria-label="anchor" href="#phiper-0417-2026-10-17"></a></h2>
 <div class="section level3">

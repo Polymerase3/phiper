@@ -17,22 +17,22 @@ library(dplyr)
 
 peplib <- get_peptide_library("icam") %>%
   collect()
-#> [18:28:28] INFO  Retrieving peptide metadata into DuckDB cache
+#> [12:17:45] INFO  Retrieving peptide metadata into DuckDB cache
 #>                  -> get_peptide_library(library = icam, force_refresh = FALSE)
-#> [18:28:28] INFO  Opened DuckDB connection
+#> [12:17:45] INFO  Opened DuckDB connection
 #>                    - cache dir:
 #>                      /home/runner/.cache/R/phiperio/peptide_meta/phip_cache.duckdb
 #>                    - tables: peptide_meta_icam
-#> [18:28:28] INFO  Starting download
+#> [12:17:45] INFO  Starting download
 #>                    - dest:
 #>                      /home/runner/.cache/R/phiperio/peptide_meta/icam_library_09.10.26.rds
-#> [18:28:28] OK    Download succeeded (method = <getOption()>)
-#> [18:28:28] OK    Checksum verified (SHA-256 match)
-#> [18:28:33] OK    Download complete and loaded into R
-#> [18:28:38] INFO  Importing sanitized metadata into DuckDB cache...
-#> [18:28:40] OK    peptide_meta_icam table created in DuckDB cache
-#> [18:28:41] OK    Retrieving peptide metadata into DuckDB cache - done
-#>                  -> elapsed: 12.895s
+#> [12:17:45] OK    Download succeeded (method = <getOption()>)
+#> [12:17:46] OK    Checksum verified (SHA-256 match)
+#> [12:17:51] OK    Download complete and loaded into R
+#> [12:17:56] INFO  Importing sanitized metadata into DuckDB cache...
+#> [12:17:58] OK    peptide_meta_icam table created in DuckDB cache
+#> [12:17:58] OK    Retrieving peptide metadata into DuckDB cache - done
+#>                  -> elapsed: 13.244s
 ```
 
 All columns beginning with `is_` are binary dummy variables: `1`

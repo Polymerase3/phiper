@@ -33,6 +33,8 @@ This vignette walks through the complete Delta workflow in **phiper**:
     [`forestplot()`](https://polymerase3.github.io/phiper/reference/forestplot.md)
     and
     [`forestplot_interactive()`](https://polymerase3.github.io/phiper/reference/forestplot_interactive.md)
+4.  Plotting prevalence along proteins with
+    [`profile_plot()`](https://polymerase3.github.io/phiper/reference/profile_plot.md)
 
 ------------------------------------------------------------------------
 
@@ -50,43 +52,43 @@ peptides.
 ``` r
 
 pd <- load_example_data()
-#> [18:21:55] INFO  Constructing <phip_data> object
+#> [12:10:50] INFO  Constructing <phip_data> object
 #>                  -> create_data()
-#> [18:21:55] INFO  Fetching peptide metadata library via get_peptide_library()
+#> [12:10:50] INFO  Fetching peptide metadata library via get_peptide_library()
 #>                    - libraries: combined
-#> [18:21:55] INFO  Retrieving peptide metadata into DuckDB cache
+#> [12:10:50] INFO  Retrieving peptide metadata into DuckDB cache
 #>                  -> get_peptide_library(library = combined, force_refresh =
 #>                     FALSE)
-#> [18:21:55] INFO  Opened DuckDB connection
+#> [12:10:51] INFO  Opened DuckDB connection
 #>                    - cache dir:
 #>                      /home/runner/.cache/R/phiperio/peptide_meta/phip_cache.duckdb
 #>                    - tables: peptide_meta_combined
-#> [18:21:55] OK    Using cached peptide_meta_combined (fast path)
-#> [18:21:55] OK    Retrieving peptide metadata into DuckDB cache - done
-#>                  -> elapsed: 0.044s
-#> [18:21:55] OK    Peptide metadata acquired
-#> [18:21:55] INFO  Validating <phip_data>
+#> [12:10:51] OK    Using cached peptide_meta_combined (fast path)
+#> [12:10:51] OK    Retrieving peptide metadata into DuckDB cache - done
+#>                  -> elapsed: 0.043s
+#> [12:10:51] OK    Peptide metadata acquired
+#> [12:10:51] INFO  Validating <phip_data>
 #>                  -> validate_phip_data()
-#> [18:21:55] INFO  Checking structural requirements (shape & mandatory columns)
-#> [18:21:55] INFO  Checking outcome family availability (exist / fold_change /
+#> [12:10:51] INFO  Checking structural requirements (shape & mandatory columns)
+#> [12:10:51] INFO  Checking outcome family availability (exist / fold_change /
 #>                  raw_counts)
-#> [18:21:55] INFO  Checking collisions with reserved names
+#> [12:10:51] INFO  Checking collisions with reserved names
 #>                    - subject_id, sample_id, timepoint, peptide_id, exist,
 #>                      fold_change, counts_input, counts_hit
-#> [18:21:55] INFO  Ensuring all columns are atomic (no list-cols)
-#> [18:21:55] INFO  Checking key uniqueness
-#> [18:21:55] INFO  Validating value ranges & types for outcomes
-#> [18:21:55] INFO  Assessing sparsity (NA/zero prevalence vs threshold)
+#> [12:10:51] INFO  Ensuring all columns are atomic (no list-cols)
+#> [12:10:51] INFO  Checking key uniqueness
+#> [12:10:51] INFO  Validating value ranges & types for outcomes
+#> [12:10:51] INFO  Assessing sparsity (NA/zero prevalence vs threshold)
 #>                    - warn threshold: 50%
-#> [18:21:56] INFO  Checking peptide_id coverage against peptide_library
-#> [18:21:56] INFO  Checking full grid completeness (peptide * sample)
-#> [18:21:56] INFO  Counts table is not a full peptide * sample grid
+#> [12:10:51] INFO  Checking peptide_id coverage against peptide_library
+#> [12:10:51] INFO  Checking full grid completeness (peptide * sample)
+#> [12:10:51] INFO  Counts table is not a full peptide * sample grid
 #>                    - observed rows: 78200
 #>                    - expected rows: 156000
-#> [18:21:56] OK    Validating <phip_data> - done
-#>                  -> elapsed: 0.378s
-#> [18:21:56] OK    Constructing <phip_data> object - done
-#>                  -> elapsed: 0.463s
+#> [12:10:51] OK    Validating <phip_data> - done
+#>                  -> elapsed: 0.412s
+#> [12:10:51] OK    Constructing <phip_data> object - done
+#>                  -> elapsed: 0.502s
 pd
 #> ── <phip_data> ───────────────────────────────────────────────────────────────── 
 #> 
@@ -145,27 +147,27 @@ pop_group <- compute_pop(
   rank_cols  = "peptide_id",
   group_cols = "group"
 )
-#> [18:21:56] INFO  compute_pop
-#> [18:21:56] INFO  compute_pop
+#> [12:10:51] INFO  compute_pop
+#> [12:10:51] INFO  compute_pop
 #>                    - ranks : peptide_id
 #>                    - group_cols: group
 #>                    - exist_col : exist
 #>                    - pop_k_min : 1
 #>                    - paired : FALSE
-#> [18:21:56] INFO  ranks resolved
+#> [12:10:51] INFO  ranks resolved
 #>                    - available: peptide_id
-#> [18:21:56] INFO  computing cohort sizes and validating binary group_cols
-#> [18:21:56] INFO  computing presence per sample via k-of-n rule
-#> [18:21:56] INFO  counting present samples per feature (pop, unpaired)
-#> [18:21:56] INFO  building pairwise comparisons
-#> [18:21:58] OK    materialized; computing Fisher p-values
-#>                    - table: ph_pop_20261017_182156
-#> [18:21:58] OK    done (compute_pop, unpaired)
+#> [12:10:51] INFO  computing cohort sizes and validating binary group_cols
+#> [12:10:51] INFO  computing presence per sample via k-of-n rule
+#> [12:10:51] INFO  counting present samples per feature (pop, unpaired)
+#> [12:10:51] INFO  building pairwise comparisons
+#> [12:10:53] OK    materialized; computing Fisher p-values
+#>                    - table: ph_pop_20261018_121052
+#> [12:10:54] OK    done (compute_pop, unpaired)
 #>                    - rows : 1950
 #>                    - ranks : peptide_id
 #>                    - k_min : 1
-#> [18:21:58] OK    compute_pop - done
-#>                  -> elapsed: 2.569s
+#> [12:10:54] OK    compute_pop - done
+#>                  -> elapsed: 2.6s
 head(pop_group)
 #>         rank        feature group_col group1 n1 N1 prop1 percent1 group2 n2 N2
 #> 1 peptide_id agilent_100642     group      A  0 38     0        0      B  8 42
@@ -221,7 +223,7 @@ deltaplot(
   group_pair_values = c("A", "B"),
   group_labels      = c("Group A", "Group B")
 )
-#> [18:21:59] INFO  Preparing delta prevalence plot.
+#> [12:10:54] INFO  Preparing delta prevalence plot.
 ```
 
 ![](delta-analysis_files/figure-html/deltaplot-basic-1.png)
@@ -245,7 +247,7 @@ deltaplot(
   point_alpha        = 0.15,
   point_size         = 0.4
 )
-#> [18:22:00] INFO  Preparing delta prevalence plot.
+#> [12:10:55] INFO  Preparing delta prevalence plot.
 ```
 
 ![](delta-analysis_files/figure-html/deltaplot-smooth-1.png)
@@ -263,7 +265,7 @@ deltaplot(
   point_alpha         = 0.20,
   arrow_color         = "steelblue"
 )
-#> [18:22:01] INFO  Preparing delta prevalence plot.
+#> [12:10:56] INFO  Preparing delta prevalence plot.
 ```
 
 ![](delta-analysis_files/figure-html/deltaplot-custom-1.png)
@@ -575,6 +577,164 @@ forestplot_interactive(
 
 ------------------------------------------------------------------------
 
+## Profiles along a protein: `profile_plot()`
+
+[`forestplot()`](https://polymerase3.github.io/phiper/reference/forestplot.md)
+shows which features shift;
+[`profile_plot()`](https://polymerase3.github.io/phiper/reference/profile_plot.md)
+shows where inside a protein the reactivity sits. Each library peptide
+of a protein is drawn as a segment over the amino acids it covers, at
+its prevalence in each group, with one panel per protein. The positions
+come from the phiperio peptide library the peptide IDs belong to.
+Peptides of the protein that are missing from the
+[`compute_pop()`](https://polymerase3.github.io/phiper/reference/compute_pop.md)
+table, because they are present in no sample, are drawn at 0%.
+
+``` r
+
+pop_t1 <- compute_pop(pd_t1, rank_cols = "peptide_id", group_cols = "group")
+#> [12:17:12] INFO  compute_pop
+#> [12:17:12] INFO  compute_pop
+#>                    - ranks : peptide_id
+#>                    - group_cols: group
+#>                    - exist_col : exist
+#>                    - pop_k_min : 1
+#>                    - paired : FALSE
+#> [12:17:12] INFO  ranks resolved
+#>                    - available: peptide_id
+#> [12:17:12] INFO  computing cohort sizes and validating binary group_cols
+#> [12:17:12] INFO  computing presence per sample via k-of-n rule
+#> [12:17:12] INFO  counting present samples per feature (pop, unpaired)
+#> [12:17:12] INFO  building pairwise comparisons
+#> [12:17:13] OK    materialized; computing Fisher p-values
+#>                    - table: ph_pop_20261018_121712
+#> [12:17:14] OK    done (compute_pop, unpaired)
+#>                    - rows : 1950
+#>                    - ranks : peptide_id
+#>                    - k_min : 1
+#> [12:17:14] OK    compute_pop - done
+#>                  -> elapsed: 2.387s
+
+proteins <- c("protseq_9788", "protseq_25936")
+profile_plot(pop_t1, proteins = proteins, ncol = 2)
+#> [12:17:14] INFO  Retrieving peptide metadata into DuckDB cache
+#>                  -> get_peptide_library(library = combined, force_refresh =
+#>                     FALSE)
+#> [12:17:14] INFO  Opened DuckDB connection
+#>                    - cache dir:
+#>                      /home/runner/.cache/R/phiperio/peptide_meta/phip_cache.duckdb
+#>                    - tables: peptide_meta_combined
+#> [12:17:14] OK    Using cached peptide_meta_combined (fast path)
+#> [12:17:14] OK    Retrieving peptide metadata into DuckDB cache - done
+#>                  -> elapsed: 0.026s
+```
+
+![](delta-analysis_files/figure-html/profile-plot-1.png)
+
+With `show_overlap = TRUE` (the default), a shaded band marks the
+longest run of overlapping hit peptides per protein, group pair and
+direction, in the colour of the group in which they are more common. Hit
+peptides have a BH-adjusted `p_raw` of at most `alpha` (default 0.05),
+corrected over all peptides of the pair. The simulated example data has
+no overlapping hit peptides, so no band appears here; the examples in
+[`?profile_plot`](https://polymerase3.github.io/phiper/reference/profile_plot.md)
+show one.
+
+A table with several group pairs gives one line per group. Here the
+prevalence by patient group and by timepoint, over both timepoints:
+
+``` r
+
+pop_two <- compute_pop(
+  pd,
+  rank_cols  = "peptide_id",
+  group_cols = c("group", "timepoint")
+)
+#> [12:17:15] INFO  compute_pop
+#> [12:17:15] INFO  compute_pop
+#>                    - ranks : peptide_id
+#>                    - group_cols: group, timepoint
+#>                    - exist_col : exist
+#>                    - pop_k_min : 1
+#>                    - paired : FALSE
+#> [12:17:15] INFO  ranks resolved
+#>                    - available: peptide_id
+#> [12:17:15] INFO  computing cohort sizes and validating binary group_cols
+#> [12:17:15] INFO  computing presence per sample via k-of-n rule
+#> [12:17:15] INFO  counting present samples per feature (pop, unpaired)
+#> [12:17:15] INFO  building pairwise comparisons
+#> [12:17:17] OK    materialized; computing Fisher p-values
+#>                    - table: ph_pop_20261018_121715
+#> [12:17:19] OK    done (compute_pop, unpaired)
+#>                    - rows : 3900
+#>                    - ranks : peptide_id
+#>                    - k_min : 1
+#> [12:17:19] OK    compute_pop - done
+#>                  -> elapsed: 4.421s
+profile_plot(pop_two, proteins = proteins, ncol = 2)
+#> [12:17:19] INFO  Retrieving peptide metadata into DuckDB cache
+#>                  -> get_peptide_library(library = combined, force_refresh =
+#>                     FALSE)
+#> [12:17:19] INFO  Opened DuckDB connection
+#>                    - cache dir:
+#>                      /home/runner/.cache/R/phiperio/peptide_meta/phip_cache.duckdb
+#>                    - tables: peptide_meta_combined
+#> [12:17:19] OK    Using cached peptide_meta_combined (fast path)
+#> [12:17:19] OK    Retrieving peptide metadata into DuckDB cache - done
+#>                  -> elapsed: 0.027s
+```
+
+![](delta-analysis_files/figure-html/profile-plot-groups-1.png)
+
+Names of `proteins` and `groups` are used as panel titles and legend
+labels. `delta_tbl` adds the statistic and permutation p-value of
+[`compute_delta()`](https://polymerase3.github.io/phiper/reference/compute_delta.md),
+run at the protein level, to the panel titles:
+
+``` r
+
+set.seed(42)
+delta_protein <- compute_delta(
+  pd_t1,
+  rank_cols         = "protein_seq_id",
+  group_cols        = "group",
+  rank_feature_keep = list(protein_seq_id = proteins),
+  B_permutations    = 2000L
+)
+#> [12:17:20] INFO  Retrieving peptide metadata into DuckDB cache
+#>                  -> get_peptide_library(library = combined, force_refresh =
+#>                     FALSE)
+#> [12:17:20] INFO  Opened DuckDB connection
+#>                    - cache dir:
+#>                      /home/runner/.cache/R/phiperio/peptide_meta/phip_cache.duckdb
+#>                    - tables: peptide_meta_combined
+#> [12:17:20] OK    Using cached peptide_meta_combined (fast path)
+#> [12:17:20] OK    Retrieving peptide metadata into DuckDB cache - done
+#>                  -> elapsed: 0.027s
+
+profile_plot(
+  pop_t1,
+  proteins  = c("IgA1 protease" = "protseq_9788", "Desmoglein-3" = "protseq_25936"),
+  groups    = c("Group A" = "A", "Group B" = "B"),
+  delta_tbl = delta_protein,
+  ncol      = 2
+)
+#> [12:17:20] INFO  Retrieving peptide metadata into DuckDB cache
+#>                  -> get_peptide_library(library = combined, force_refresh =
+#>                     FALSE)
+#> [12:17:20] INFO  Opened DuckDB connection
+#>                    - cache dir:
+#>                      /home/runner/.cache/R/phiperio/peptide_meta/phip_cache.duckdb
+#>                    - tables: peptide_meta_combined
+#> [12:17:20] OK    Using cached peptide_meta_combined (fast path)
+#> [12:17:20] OK    Retrieving peptide metadata into DuckDB cache - done
+#>                  -> elapsed: 0.028s
+```
+
+![](delta-analysis_files/figure-html/profile-plot-delta-1.png)
+
+------------------------------------------------------------------------
+
 ## Putting it all together
 
 A typical Delta analysis runs in four steps:
@@ -649,7 +809,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] phiper_0.4.17
+#> [1] phiper_0.4.18
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] sass_0.4.10         utf8_1.2.6          future_1.80.0      

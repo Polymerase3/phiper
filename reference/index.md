@@ -80,6 +80,8 @@
   : ECDF of Per-peptide Prevalences for Two Groups
 - [`ecdf_plot_interactive()`](https://polymerase3.github.io/phiper/reference/ecdf_plot_interactive.md)
   : ECDF of Per-peptide Prevalence for Two Groups
+- [`profile_plot()`](https://polymerase3.github.io/phiper/reference/profile_plot.md)
+  : Prevalence Profile Along a Protein
 
 ## Plot styling
 
