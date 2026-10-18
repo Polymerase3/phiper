@@ -1,5 +1,20 @@
 # Changelog
 
+## phiper 0.4.19 (2026-10-18)
+
+### Bug fixes
+
+- [`scatter_interactive()`](https://polymerase3.github.io/phiper/reference/scatter_interactive.md),
+  [`volcano_interactive()`](https://polymerase3.github.io/phiper/reference/volcano_interactive.md)
+  and
+  [`plot_alpha_interactive()`](https://polymerase3.github.io/phiper/reference/plot_alpha_interactive.md)
+  showed the literal `%{text}` instead of the hover text for a point
+  that was alone in its trace, e.g. the only BH-significant peptide of a
+  contrast or the only peptide matching a `color_by` value. plotly
+  writes the text of a one-point trace as a single string, which the
+  `%{text}` hover template cannot resolve. The hover now uses
+  `hoverinfo = "text"`, as the Delta plots already do.
+
 ## phiper 0.4.18 (2026-10-18)
 
 ### New features

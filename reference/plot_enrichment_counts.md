@@ -100,45 +100,45 @@ plot_enrichment_counts(
 # per-group plots
 pd <- load_example_data()
 p <- plot_enrichment_counts(pd, group_cols = c("group","timepoint"))
-#> [12:10:09] INFO  Plotting enrichment counts (<phip_data>)
+#> [12:24:16] INFO  Plotting enrichment counts (<phip_data>)
 #>                  -> group_cols: 'group', 'timepoint'
-#> [12:10:09] INFO  building enrichment count plot
+#> [12:24:16] INFO  building enrichment count plot
 #>                  -> grouping variable: 'group'
-#> [12:10:09] OK    plot built
-#> [12:10:09] OK    building enrichment count plot - done
-#>                  -> elapsed: 0.177s
-#> [12:10:09] INFO  building enrichment count plot
+#> [12:24:16] OK    plot built
+#> [12:24:16] OK    building enrichment count plot - done
+#>                  -> elapsed: 0.183s
+#> [12:24:16] INFO  building enrichment count plot
 #>                  -> grouping variable: 'timepoint'
-#> [12:10:09] OK    plot built
-#> [12:10:09] OK    building enrichment count plot - done
-#>                  -> elapsed: 0.177s
-#> [12:10:09] OK    Plotting enrichment counts (<phip_data>) - done
-#>                  -> elapsed: 0.356s
+#> [12:24:16] OK    plot built
+#> [12:24:16] OK    building enrichment count plot - done
+#>                  -> elapsed: 0.178s
+#> [12:24:16] OK    Plotting enrichment counts (<phip_data>) - done
+#>                  -> elapsed: 0.363s
 
 # add interaction plot
 p2 <- plot_enrichment_counts(pd,
   group_cols = c("group","timepoint"),
   group_interaction = TRUE
 )
-#> [12:10:09] INFO  Plotting enrichment counts (<phip_data>)
+#> [12:24:16] INFO  Plotting enrichment counts (<phip_data>)
 #>                  -> group_cols: 'group', 'timepoint'
-#> [12:10:09] INFO  building enrichment count plot
+#> [12:24:16] INFO  building enrichment count plot
 #>                  -> grouping variable: 'group'
-#> [12:10:09] OK    plot built
-#> [12:10:09] OK    building enrichment count plot - done
+#> [12:24:17] OK    plot built
+#> [12:24:17] OK    building enrichment count plot - done
 #>                  -> elapsed: 0.176s
-#> [12:10:09] INFO  building enrichment count plot
+#> [12:24:17] INFO  building enrichment count plot
 #>                  -> grouping variable: 'timepoint'
-#> [12:10:09] OK    plot built
-#> [12:10:09] OK    building enrichment count plot - done
-#>                  -> elapsed: 0.189s
-#> [12:10:09] INFO  building enrichment count plot
+#> [12:24:17] OK    plot built
+#> [12:24:17] OK    building enrichment count plot - done
+#>                  -> elapsed: 0.194s
+#> [12:24:17] INFO  building enrichment count plot
 #>                  -> grouping variable: '..phip_interaction..'
-#> [12:10:09] OK    plot built
-#> [12:10:09] OK    building enrichment count plot - done
-#>                  -> elapsed: 0.191s
-#> [12:10:09] OK    Plotting enrichment counts (<phip_data>) - done
-#>                  -> elapsed: 0.565s
+#> [12:24:17] OK    plot built
+#> [12:24:17] OK    building enrichment count plot - done
+#>                  -> elapsed: 0.189s
+#> [12:24:17] OK    Plotting enrichment counts (<phip_data>) - done
+#>                  -> elapsed: 0.567s
 
 # interaction only
 p3 <- plot_enrichment_counts(pd,
@@ -146,13 +146,13 @@ p3 <- plot_enrichment_counts(pd,
   group_interaction = TRUE,
   interaction_only = TRUE
 )
-#> [12:10:09] INFO  Plotting enrichment counts (<phip_data>)
+#> [12:24:17] INFO  Plotting enrichment counts (<phip_data>)
 #>                  -> group_cols: 'group', 'timepoint'
-#> [12:10:09] INFO  building enrichment count plot
+#> [12:24:17] INFO  building enrichment count plot
 #>                  -> grouping variable: '..phip_interaction..'
-#> [12:10:10] OK    plot built
-#> [12:10:10] OK    building enrichment count plot - done
+#> [12:24:17] OK    plot built
+#> [12:24:17] OK    building enrichment count plot - done
+#>                  -> elapsed: 0.45s
+#> [12:24:17] OK    Plotting enrichment counts (<phip_data>) - done
 #>                  -> elapsed: 0.458s
-#> [12:10:10] OK    Plotting enrichment counts (<phip_data>) - done
-#>                  -> elapsed: 0.466s
 ```

@@ -13,7 +13,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.18</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.19</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,6 +67,14 @@
       <small>Source: <a href="https://github.com/Polymerase3/phiper/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.4.19" id="phiper-0419-2026-10-18">phiper 0.4.19 (2026-10-18)<a class="anchor" aria-label="anchor" href="#phiper-0419-2026-10-18"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-0-4-19">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-4-19"></a></h3>
+<ul><li>
+<code><a href="../reference/scatter_interactive.html">scatter_interactive()</a></code>, <code><a href="../reference/volcano_interactive.html">volcano_interactive()</a></code> and <code><a href="../reference/plot_alpha_interactive.html">plot_alpha_interactive()</a></code> showed the literal <code>%{text}</code> instead of the hover text for a point that was alone in its trace, e.g. the only BH-significant peptide of a contrast or the only peptide matching a <code>color_by</code> value. plotly writes the text of a one-point trace as a single string, which the <code>%{text}</code> hover template cannot resolve. The hover now uses <code>hoverinfo = "text"</code>, as the Delta plots already do.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.4.18" id="phiper-0418-2026-10-18">phiper 0.4.18 (2026-10-18)<a class="anchor" aria-label="anchor" href="#phiper-0418-2026-10-18"></a></h2>
 <div class="section level3">
