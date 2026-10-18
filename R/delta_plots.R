@@ -2102,8 +2102,9 @@ ecdf_plot_interactive <- function(
 #' @description Plot every library peptide of the selected proteins at its
 #' position in the protein (x-axis) and at its prevalence in each group
 #' (y-axis), one panel per protein. The plot shows where along a protein the
-#' reactivity sits and how it differs between groups. It draws the data as
-#' given and selects or tests nothing; DELTA statistics from
+#' reactivity sits and how it differs between groups. The proteins are the
+#' ones passed in \code{proteins}; a shaded band marks the longest run of
+#' overlapping significant peptides, and DELTA statistics from
 #' \code{compute_delta()} can be added to the panel titles.
 #'
 #' @details
@@ -2120,14 +2121,24 @@ ecdf_plot_interactive <- function(
 #' gives one line per group. A group that appears in several pairs must have
 #' the same prevalences in all of them.
 #'
+#' With \code{show_overlap = TRUE}, hit peptides are those with a BH-adjusted
+#' \code{p_raw} of at most \code{alpha}, the correction running over all
+#' peptides of a group pair in \code{prev_tbl}. For each protein, group pair
+#' and direction (the group with the higher prevalence), the hit peptides form
+#' runs: a run grows with every next hit peptide that overlaps the region it
+#' covers so far. The longest run is shaded in the colour of the group with the
+#' higher prevalence when it has at least two peptides. Bands are drawn only
+#' for pairs whose two groups are both drawn.
+#'
 #' With \code{delta_tbl}, each panel title lists every group pair tested for
 #' the protein, with the DELTA statistic \code{T_obs} and the permutation
 #' p-value \code{p_perm}; proteins without a row are marked "not tested".
 #'
 #' @param prev_tbl Data frame from \code{compute_pop()} (or equivalent) with
-#'   columns \code{feature}, \code{group1}, \code{group2}, \code{prop1} and
-#'   \code{prop2}. If it has a \code{rank} column, only the
-#'   \code{"peptide_id"} rows are used.
+#'   columns \code{feature}, \code{group1}, \code{group2}, \code{prop1},
+#'   \code{prop2} and, for \code{show_overlap}, \code{p_raw}. If it has a
+#'   \code{rank} column, only the \code{"peptide_id"} rows are used; a
+#'   \code{group_col} column, if present, separates group pairs.
 #' @param proteins Character vector of \code{protein_seq_id} values, one panel
 #'   each, in this order. Names, if given, are used as panel titles; otherwise
 #'   the title is the protein's annotation and ID.
@@ -2139,6 +2150,11 @@ ecdf_plot_interactive <- function(
 #'   \code{taxon_with_protein_unique_annotation}. If \code{NULL}, the phiperio
 #'   peptide libraries the peptide IDs belong to are detected from their
 #'   prefixes and fetched with \code{get_peptide_library()}.
+#' @param show_overlap Logical; shade the longest run of overlapping hit
+#'   peptides per protein, group pair and direction (see Details). Default
+#'   \code{TRUE}.
+#' @param alpha Numeric in (0, 1]; BH-adjusted p-value threshold for hit
+#'   peptides. Default 0.05.
 #' @param delta_tbl Optional data frame from \code{compute_delta()} run with
 #'   \code{rank_cols = "protein_seq_id"}, with columns \code{feature},
 #'   \code{group1}, \code{group2}, \code{T_obs} and \code{p_perm}.
@@ -2167,9 +2183,11 @@ ecdf_plot_interactive <- function(
 #'   group1  = "control",
 #'   group2  = rep(c("sjogren", "sle"), each = 4),
 #'   prop1   = rep(c(0.10, 0.20, 0.05, 0.00), 2),
-#'   prop2   = c(0.40, 0.50, 0.10, 0.20, 0.30, 0.60, 0.00, 0.10)
+#'   prop2   = c(0.40, 0.50, 0.10, 0.20, 0.30, 0.60, 0.00, 0.10),
+#'   p_raw   = c(0.001, 0.002, 0.5, 0.5, 0.5, 0.001, 0.5, 0.5)
 #' )
 #'
+#' # pep1 and pep2 overlap and are both more common in sjogren: one band
 #' profile_plot(prev_tbl, proteins = c("protA", "protB"), peplib = peplib)
 #'
 #' # two groups with display labels, DELTA statistics in the panel titles
@@ -2194,6 +2212,8 @@ profile_plot <- function(
   proteins,
   groups = NULL,
   peplib = NULL,
+  show_overlap = TRUE,
+  alpha = 0.05,
   delta_tbl = NULL,
   custom_colors = NULL,
   ncol = NULL,
@@ -2209,15 +2229,22 @@ profile_plot <- function(
   chk::chk_not_empty(proteins)
   chk::chk_unique(proteins)
   if (!is.null(groups)) chk::chk_character(groups)
+  chk::chk_flag(show_overlap)
+  chk::chk_number(alpha)
   if (!is.null(delta_tbl)) chk::chk_data(delta_tbl)
   chk::chk_number(line_width_pt)
+  .ph_check_cond(
+    condition = alpha <= 0 || alpha > 1,
+    error_message = "alpha must be in (0, 1]."
+  )
   .ph_check_cond(
     condition = line_width_pt <= 0,
     error_message = "line_width_pt must be a positive number."
   )
 
-  miss <- setdiff(c("feature", "group1", "group2", "prop1", "prop2"),
-                  names(prev_tbl))
+  need <- c("feature", "group1", "group2", "prop1", "prop2")
+  if (show_overlap) need <- c(need, "p_raw")
+  miss <- setdiff(need, names(prev_tbl))
   .ph_check_cond(
     condition = length(miss) > 0L,
     error_message = "prev_tbl is missing required columns.",
@@ -2230,20 +2257,18 @@ profile_plot <- function(
     condition = !nrow(d),
     error_message = "prev_tbl has no peptide_id rows."
   )
+  d$feature <- as.character(d$feature)
+  d$group1 <- as.character(d$group1)
+  d$group2 <- as.character(d$group2)
 
   # ---- groups ----------------------------------------------------------------
   # each group's prevalence, read from both sides of its pairs
   prev_long <- unique(rbind(
-    data.frame(peptide_id = as.character(d$feature),
-               group = as.character(d$group1), prop = d$prop1),
-    data.frame(peptide_id = as.character(d$feature),
-               group = as.character(d$group2), prop = d$prop2)
+    data.frame(peptide_id = d$feature, group = d$group1, prop = d$prop1),
+    data.frame(peptide_id = d$feature, group = d$group2, prop = d$prop2)
   ))
 
-  if (is.null(groups)) {
-    groups <- unique(as.vector(rbind(as.character(d$group1),
-                                     as.character(d$group2))))
-  }
+  if (is.null(groups)) groups <- unique(as.vector(rbind(d$group1, d$group2)))
   group_labels <- if (is.null(names(groups))) {
     groups
   } else {
@@ -2363,6 +2388,39 @@ profile_plot <- function(
   plot_df$panel <- factor(titles[match(plot_df$protein_seq_id, prot_ids)],
                           levels = unique(titles))
 
+  # ---- overlap runs ----------------------------------------------------------
+  # hits: BH over all peptides of a pair; then per protein, pair and direction
+  # the longest run of overlapping hit peptides
+  bands <- NULL
+  if (show_overlap) {
+    pair_cols <- intersect(c("group_col", "group1", "group2"), names(d))
+    pair_key <- do.call(paste, c(d[pair_cols], sep = "\r"))
+    q <- stats::ave(d$p_raw, pair_key,
+                    FUN = function(p) stats::p.adjust(p, method = "BH"))
+    hits <- d[which(q <= alpha & d$prop1 != d$prop2 &
+                      d$group1 %in% groups & d$group2 %in% groups), ]
+    hits$direction <- ifelse(hits$prop2 > hits$prop1, hits$group2, hits$group1)
+    hits <- merge(hits[, c(pair_cols, "feature", "direction")],
+                  lib[, c("peptide_id", "protein_seq_id", "start", "end")],
+                  by.x = "feature", by.y = "peptide_id")
+    run_key <- do.call(paste, c(hits[c(pair_cols, "direction",
+                                         "protein_seq_id")], sep = "\r"))
+    runs <- split(hits, run_key)
+    bands <- do.call(rbind, lapply(runs, function(h) {
+      r <- .ph_overlap_run(h$start, h$end)
+      data.frame(protein_seq_id = h$protein_seq_id[1], group = h$direction[1],
+                 n = r[["n"]], xmin = r[["start"]], xmax = r[["end"]])
+    }))
+    if (!is.null(bands)) {
+      bands <- unique(bands[bands$n >= 2, c("protein_seq_id", "group",
+                                            "xmin", "xmax")])
+      bands$group <- factor(bands$group, levels = groups)
+      bands$panel <- factor(titles[match(bands$protein_seq_id, prot_ids)],
+                            levels = levels(plot_df$panel))
+    }
+  }
+  has_bands <- !is.null(bands) && nrow(bands) > 0L
+
   pal <- if (is.null(custom_colors)) {
     .phip_palette_map(groups)
   } else if (is.null(names(custom_colors))) {
@@ -2372,11 +2430,23 @@ profile_plot <- function(
   }
 
   # ---- build plot ------------------------------------------------------------
-  ggplot2::ggplot(plot_df, ggplot2::aes(
+  p <- ggplot2::ggplot(plot_df, ggplot2::aes(
     x = .data$start, xend = .data$end,
     y = .data$prop, yend = .data$prop,
     colour = .data$group
-  )) +
+  ))
+  if (has_bands) {
+    p <- p +
+      ggplot2::geom_rect(
+        data = bands,
+        ggplot2::aes(xmin = .data$xmin, xmax = .data$xmax,
+                     ymin = -Inf, ymax = Inf, fill = .data$group),
+        alpha = 0.15, inherit.aes = FALSE
+      ) +
+      ggplot2::scale_fill_manual(values = pal, guide = "none")
+  }
+
+  p +
     ggplot2::geom_segment(linewidth = line_width_pt, lineend = "round") +
     ggplot2::scale_colour_manual(
       values = pal, breaks = groups, labels = group_labels, name = NULL
@@ -2385,7 +2455,9 @@ profile_plot <- function(
     ggplot2::facet_wrap(~panel, ncol = ncol, scales = "free_x") +
     ggplot2::labs(
       title = plot_title,
-      subtitle = plot_subtitle,
+      subtitle = plot_subtitle %||% if (has_bands) {
+        sprintf("Shaded: runs of overlapping peptides with BH q <= %s", alpha)
+      },
       x = x_label %||% "Amino-acid position in the protein",
       y = y_label %||% "Prevalence"
     ) +

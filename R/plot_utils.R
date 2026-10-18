@@ -420,3 +420,26 @@ theme_phip <- function(base_size = 14,
   }
   list(fill = fill_vals, outline = outline_vals)
 }
+
+# Longest chain of overlapping segments [start, end] (inclusive positions),
+# where each segment overlaps the region covered by the chain so far. Ties go
+# to the first chain along the protein. Returns c(n, start, end) of the chain.
+.ph_overlap_run <- function(start, end) {
+  o <- order(start)
+  start <- start[o]
+  end <- end[o]
+  best <- c(1L, 1L)
+  first <- 1L
+  reach <- end[1]
+  for (i in seq_along(start)[-1]) {
+    if (start[i] <= reach) {
+      reach <- max(reach, end[i])
+    } else {
+      first <- i
+      reach <- end[i]
+    }
+    if (i - first > best[2] - best[1]) best <- c(first, i)
+  }
+  run <- best[1]:best[2]
+  c(n = length(run), start = start[best[1]], end = max(end[run]))
+}

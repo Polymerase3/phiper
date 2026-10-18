@@ -9,6 +9,8 @@ profile_plot(
   proteins,
   groups = NULL,
   peplib = NULL,
+  show_overlap = TRUE,
+  alpha = 0.05,
   delta_tbl = NULL,
   custom_colors = NULL,
   ncol = NULL,
@@ -21,9 +23,10 @@ profile_plot(
 }
 \arguments{
 \item{prev_tbl}{Data frame from \code{compute_pop()} (or equivalent) with
-columns \code{feature}, \code{group1}, \code{group2}, \code{prop1} and
-\code{prop2}. If it has a \code{rank} column, only the
-\code{"peptide_id"} rows are used.}
+columns \code{feature}, \code{group1}, \code{group2}, \code{prop1},
+\code{prop2} and, for \code{show_overlap}, \code{p_raw}. If it has a
+\code{rank} column, only the \code{"peptide_id"} rows are used; a
+\code{group_col} column, if present, separates group pairs.}
 
 \item{proteins}{Character vector of \code{protein_seq_id} values, one panel
 each, in this order. Names, if given, are used as panel titles; otherwise
@@ -38,6 +41,13 @@ in \code{prev_tbl}, pair by pair in the order of its rows.}
 \code{taxon_with_protein_unique_annotation}. If \code{NULL}, the phiperio
 peptide libraries the peptide IDs belong to are detected from their
 prefixes and fetched with \code{get_peptide_library()}.}
+
+\item{show_overlap}{Logical; shade the longest run of overlapping hit
+peptides per protein, group pair and direction (see Details). Default
+\code{TRUE}.}
+
+\item{alpha}{Numeric in (0, 1]; BH-adjusted p-value threshold for hit
+peptides. Default 0.05.}
 
 \item{delta_tbl}{Optional data frame from \code{compute_delta()} run with
 \code{rank_cols = "protein_seq_id"}, with columns \code{feature},
@@ -61,8 +71,9 @@ A \code{ggplot} object.
 Plot every library peptide of the selected proteins at its
 position in the protein (x-axis) and at its prevalence in each group
 (y-axis), one panel per protein. The plot shows where along a protein the
-reactivity sits and how it differs between groups. It draws the data as
-given and selects or tests nothing; DELTA statistics from
+reactivity sits and how it differs between groups. The proteins are the
+ones passed in \code{proteins}; a shaded band marks the longest run of
+overlapping significant peptides, and DELTA statistics from
 \code{compute_delta()} can be added to the panel titles.
 }
 \details{
@@ -78,6 +89,15 @@ Group prevalences are read from both sides of the group pairs in
 \code{compute_pop(group_cols = c("control_vs_sjogren", "control_vs_sle"))},
 gives one line per group. A group that appears in several pairs must have
 the same prevalences in all of them.
+
+With \code{show_overlap = TRUE}, hit peptides are those with a BH-adjusted
+\code{p_raw} of at most \code{alpha}, the correction running over all
+peptides of a group pair in \code{prev_tbl}. For each protein, group pair
+and direction (the group with the higher prevalence), the hit peptides form
+runs: a run grows with every next hit peptide that overlaps the region it
+covers so far. The longest run is shaded in the colour of the group with the
+higher prevalence when it has at least two peptides. Bands are drawn only
+for pairs whose two groups are both drawn.
 
 With \code{delta_tbl}, each panel title lists every group pair tested for
 the protein, with the DELTA statistic \code{T_obs} and the permutation
@@ -99,9 +119,11 @@ prev_tbl <- data.frame(
   group1  = "control",
   group2  = rep(c("sjogren", "sle"), each = 4),
   prop1   = rep(c(0.10, 0.20, 0.05, 0.00), 2),
-  prop2   = c(0.40, 0.50, 0.10, 0.20, 0.30, 0.60, 0.00, 0.10)
+  prop2   = c(0.40, 0.50, 0.10, 0.20, 0.30, 0.60, 0.00, 0.10),
+  p_raw   = c(0.001, 0.002, 0.5, 0.5, 0.5, 0.001, 0.5, 0.5)
 )
 
+# pep1 and pep2 overlap and are both more common in sjogren: one band
 profile_plot(prev_tbl, proteins = c("protA", "protB"), peplib = peplib)
 
 # two groups with display labels, DELTA statistics in the panel titles

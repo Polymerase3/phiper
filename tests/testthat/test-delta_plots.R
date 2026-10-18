@@ -465,7 +465,8 @@ testthat::test_that(".empty_placeholder_plot returns a ggplot", {
     group1  = "control",
     group2  = rep(c("sjogren", "sle"), each = 4),
     prop1   = rep(c(0.10, 0.20, 0.05, 0.00), 2),
-    prop2   = c(0.40, 0.50, 0.10, 0.20, 0.30, 0.60, 0.00, 0.10)
+    prop2   = c(0.40, 0.50, 0.10, 0.20, 0.30, 0.60, 0.00, 0.10),
+    p_raw   = c(0.001, 0.002, 0.5, 0.5, 0.5, 0.001, 0.5, 0.5)
   )
 }
 
@@ -509,7 +510,8 @@ testthat::test_that("profile_plot orders default groups pair by pair", {
     prop1   = c(0.1, 0.2),
     prop2   = c(0.3, 0.4)
   )
-  p <- profile_plot(prev, "protA", peplib = .make_profile_peplib())
+  p <- profile_plot(prev, "protA", peplib = .make_profile_peplib(),
+                    show_overlap = FALSE)
   testthat::expect_identical(levels(p$data$group), c("A", "B", "T1", "T2"))
 })
 
@@ -571,6 +573,65 @@ testthat::test_that("profile_plot fetches the peptides' libraries without peplib
   testthat::expect_setequal(unique(p$data$peptide_id), c("pep1", "pep2", "pep3"))
 })
 
+testthat::test_that("profile_plot shades the longest run of overlapping hits", {
+  p <- profile_plot(
+    .make_profile_prev(),
+    proteins = c("protA", "protB"),
+    peplib   = .make_profile_peplib()
+  )
+  # sjogren pair: pep1 and pep2 are hits (BH q 0.004), overlap, more common in
+  # sjogren; sle pair: only pep2 is a hit, a single peptide is no run
+  bands <- p$layers[[1]]$data
+  testthat::expect_s3_class(p$layers[[1]]$geom, "GeomRect")
+  testthat::expect_equal(nrow(bands), 1L)
+  testthat::expect_identical(bands$protein_seq_id, "protA")
+  testthat::expect_identical(as.character(bands$group), "sjogren")
+  testthat::expect_equal(c(bands$xmin, bands$xmax), c(1, 50))
+  testthat::expect_identical(
+    p$labels$subtitle,
+    "Shaded: runs of overlapping peptides with BH q <= 0.05"
+  )
+
+  # BH within each pair: with alpha = 0.003 the sjogren q of 0.004 fails
+  p <- profile_plot(.make_profile_prev(), "protA",
+                    peplib = .make_profile_peplib(), alpha = 0.003)
+  testthat::expect_false(any(vapply(p$layers, function(l) {
+    inherits(l$geom, "GeomRect")
+  }, logical(1))))
+})
+
+testthat::test_that("profile_plot colours a run by the group with higher prevalence", {
+  prev <- .make_profile_prev()
+  # make pep1 and pep2 more common in control than in sjogren (control's
+  # prevalence is set in both pairs, which must agree)
+  prev$prop1[c(1, 2, 5, 6)] <- c(0.60, 0.70, 0.60, 0.70)
+  p <- profile_plot(prev, "protA", peplib = .make_profile_peplib())
+  testthat::expect_identical(as.character(p$layers[[1]]$data$group), "control")
+})
+
+testthat::test_that("profile_plot draws bands only for pairs with both groups drawn", {
+  p <- profile_plot(.make_profile_prev(), "protA",
+                    groups = c("control", "sle"),
+                    peplib = .make_profile_peplib())
+  testthat::expect_false(any(vapply(p$layers, function(l) {
+    inherits(l$geom, "GeomRect")
+  }, logical(1))))
+  testthat::expect_null(p$labels$subtitle)
+})
+
+testthat::test_that("profile_plot without show_overlap needs no p_raw", {
+  prev <- .make_profile_prev()
+  prev$p_raw <- NULL
+  testthat::expect_error(
+    profile_plot(prev, "protA", peplib = .make_profile_peplib()),
+    "prev_tbl is missing required columns"
+  )
+  p <- profile_plot(prev, "protA", peplib = .make_profile_peplib(),
+                    show_overlap = FALSE)
+  testthat::expect_length(p$layers, 1L)
+  testthat::expect_s3_class(p$layers[[1]]$geom, "GeomSegment")
+})
+
 testthat::test_that("profile_plot validates its inputs", {
   prev <- .make_profile_prev()
   lib <- .make_profile_peplib()
@@ -595,6 +656,10 @@ testthat::test_that("profile_plot validates its inputs", {
     profile_plot(prev, "protA", peplib = lib,
                  delta_tbl = data.frame(feature = "protA")),
     "delta_tbl is missing required columns"
+  )
+  testthat::expect_error(
+    profile_plot(prev, "protA", peplib = lib, alpha = 0),
+    "alpha must be in"
   )
 
   # control gets two different prevalences for pep1

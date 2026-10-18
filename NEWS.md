@@ -4,9 +4,11 @@
 
 - `profile_plot()` plots the peptides of selected proteins at their position
   along the protein and at their prevalence per group, one panel per protein,
-  from `compute_pop()` output. It draws any number of groups, and `delta_tbl`
-  adds the `compute_delta()` statistics (`T_obs`, `p_perm`) to the panel
-  titles. A section in the Delta vignette shows it on the example data.
+  from `compute_pop()` output. It draws any number of groups. A shaded band
+  marks the longest run of overlapping peptides with BH q <= `alpha`, per
+  group pair and direction, and `delta_tbl` adds the `compute_delta()`
+  statistics (`T_obs`, `p_perm`) to the panel titles. A section in the Delta
+  vignette shows it on the example data.
 
 ## Dependencies
 

@@ -409,6 +409,13 @@ proteins <- c("protseq_9788", "protseq_25936")
 profile_plot(pop_t1, proteins = proteins, ncol = 2)
 ```
 
+With `show_overlap = TRUE` (the default), a shaded band marks the longest run
+of overlapping hit peptides per protein, group pair and direction, in the
+colour of the group in which they are more common. Hit peptides have a
+BH-adjusted `p_raw` of at most `alpha` (default 0.05), corrected over all
+peptides of the pair. The simulated example data has no overlapping hit
+peptides, so no band appears here; the examples in `?profile_plot` show one.
+
 A table with several group pairs gives one line per group. Here the
 prevalence by patient group and by timepoint, over both timepoints:
 
