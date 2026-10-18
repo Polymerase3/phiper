@@ -1,3 +1,18 @@
+# phiper 0.4.18 (2026-10-18)
+
+## New features
+
+- `profile_plot()` plots the peptides of selected proteins at their position
+  along the protein and at their prevalence per group, one panel per protein,
+  from `compute_pop()` output. It draws any number of groups, and `delta_tbl`
+  adds the `compute_delta()` statistics (`T_obs`, `p_perm`) to the panel
+  titles. A section in the Delta vignette shows it on the example data.
+
+## Dependencies
+
+- phiper now requires phiperio >= 0.6.2, whose peptide libraries carry the
+  `protein_seq_id` column that `profile_plot()` uses.
+
 # phiper 0.4.17 (2026-10-17)
 
 ## Bug fixes
