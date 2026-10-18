@@ -712,7 +712,7 @@ plot_alpha_interactive <- function(
             p,
             x = xjit, y = df_panel[[need_metric]],
             marker = list(size = point_size, opacity = point_alpha),
-            text = hovertext_vec, hovertemplate = "%{text}<extra></extra>",
+            text = hovertext_vec, hoverinfo = "text",
             showlegend = FALSE
           )
           return(plotly::layout(
@@ -795,7 +795,7 @@ plot_alpha_interactive <- function(
           x = xjit,
           y = df_panel[[need_metric]],
           marker = list(size = point_size, opacity = point_alpha, color = col_per_point %||% NULL),
-          text = hovertext_vec, hovertemplate = "%{text}<extra></extra>",
+          text = hovertext_vec, hoverinfo = "text",
           showlegend = FALSE
         )
 
