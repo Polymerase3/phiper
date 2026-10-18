@@ -588,3 +588,54 @@ testthat::test_that("volcano: BH and raw produce different nlog10p when p differ
     identical(prep_raw$data$nlog10p, prep_bh$data$nlog10p)
   )
 })
+
+# ===========================================================================
+# Hover text of one-point traces
+# ===========================================================================
+# plotly writes the text of a one-point trace as a single string, which a
+# "%{text}" hovertemplate cannot resolve (the hover shows "%{text}"), so the
+# hover comes from hoverinfo = "text"
+
+.marker_traces <- function(p) {
+  Filter(function(tr) identical(tr$mode, "markers"),
+         plotly::plotly_build(p)$x$data)
+}
+
+testthat::test_that("scatter_interactive: a one-point category keeps its hover text", {
+  testthat::skip_if_not_installed("plotly")
+  df       <- .make_prev_df(n = 20L, seed = 5L)
+  df$p_raw <- c(1e-10, rep(0.5, 19L))   # only pep1 is significant (BH)
+  traces   <- .marker_traces(scatter_interactive(df))
+
+  sig <- Filter(function(tr) identical(tr$name, "significant (BH)"), traces)[[1]]
+  testthat::expect_length(sig$x, 1L)
+  testthat::expect_match(sig$text, "^<b>pep1</b>")
+  for (tr in traces) {
+    testthat::expect_true(all(tr$hoverinfo == "text"))
+    testthat::expect_null(tr$hovertemplate)
+  }
+})
+
+testthat::test_that("scatter_interactive: a one-point color_by level keeps its hover text", {
+  testthat::skip_if_not_installed("plotly")
+  df     <- .make_prev_df(n = 10L, seed = 6L)
+  peplib <- .make_peplib(df$feature, vals = c(TRUE, rep(FALSE, 9L)))
+  traces <- .marker_traces(
+    scatter_interactive(df, color_by = c(is_flag = TRUE), peplib = peplib)
+  )
+
+  flag <- Filter(function(tr) identical(tr$name, "is_flag: TRUE"), traces)[[1]]
+  testthat::expect_length(flag$x, 1L)
+  testthat::expect_match(flag$text, "^<b>pep1</b>")
+  testthat::expect_true(all(flag$hoverinfo == "text"))
+  testthat::expect_null(flag$hovertemplate)
+})
+
+testthat::test_that("volcano_interactive: a one-row table keeps its hover text", {
+  testthat::skip_if_not_installed("plotly")
+  tr <- .marker_traces(volcano_interactive(.make_prev_df(n = 1L, seed = 7L)))[[1]]
+  testthat::expect_length(tr$x, 1L)
+  testthat::expect_match(tr$text, "^<b>pep1</b>")
+  testthat::expect_true(all(tr$hoverinfo == "text"))
+  testthat::expect_null(tr$hovertemplate)
+})

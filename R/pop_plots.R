@@ -619,7 +619,7 @@ scatter_interactive <- function(df,
         showlegend       = TRUE,
         inherit          = FALSE,
         text             = ~text,
-        hovertemplate    = "%{text}<extra></extra>",
+        hoverinfo        = "text",
         marker           = list(
           size    = point_size,
           opacity = point_alpha,
@@ -629,9 +629,9 @@ scatter_interactive <- function(df,
       )
     }
   } else {
-    # Per-level loop (same pattern as category case) to ensure ~text resolves
-    # correctly inside each trace — using color = ~formula causes plotly to
-    # split traces internally and the %{text} reference becomes unreliable.
+    # Per-level loop (same pattern as category case): one trace per level with
+    # its own colour. Hover uses hoverinfo = "text", not a "%{text}" template:
+    # a one-point trace gets a scalar text, which the template cannot resolve.
     levs_cb  <- levels(pdat[[color_var]])
     n_groups <- sum(levs_cb != "other")
     cb_pal   <- if (n_groups > 0L)
@@ -653,7 +653,7 @@ scatter_interactive <- function(df,
         showlegend    = TRUE,
         inherit       = FALSE,
         text          = ~text,
-        hovertemplate = "%{text}<extra></extra>",
+        hoverinfo     = "text",
         marker        = list(
           size    = point_size,
           opacity = point_alpha,
@@ -965,7 +965,7 @@ volcano_interactive <- function(df,
     x = ~log2ratio, y = ~nlog10p,
     type          = "scatter", mode = "markers",
     text          = hov,
-    hovertemplate = "%{text}<extra></extra>",
+    hoverinfo     = "text",
     marker        = list(size = 7, opacity = 0.85, color = col_vec)
   )
 

@@ -338,6 +338,23 @@ testthat::test_that("plot_alpha_interactive: returns plotly object", {
   testthat::expect_true(inherits(p, "plotly") || inherits(p, "htmlwidget"))
 })
 
+testthat::test_that("plot_alpha_interactive: a single sample keeps its hover text", {
+  testthat::skip_if_not_installed("plotly")
+  # plotly writes the text of a one-point trace as a single string, which a
+  # "%{text}" hovertemplate cannot resolve, so the hover uses hoverinfo = "text"
+  df <- .make_plot_df(n_per_group = 1L)[1, ]
+  for (gc in list(NULL, "group")) {
+    p      <- plot_alpha_interactive(df, metric = "richness", group_col = gc)
+    traces <- Filter(function(tr) identical(tr$mode, "markers"),
+                     plotly::plotly_build(p)$x$data)
+    testthat::expect_length(traces, 1L)
+    testthat::expect_length(traces[[1]]$x, 1L)
+    testthat::expect_match(traces[[1]]$text, "sample_id</b>: s1", fixed = TRUE)
+    testthat::expect_true(all(traces[[1]]$hoverinfo == "text"))
+    testthat::expect_null(traces[[1]]$hovertemplate)
+  }
+})
+
 testthat::test_that("plot_alpha_interactive: group_col=NULL returns plotly", {
   testthat::skip_if_not_installed("plotly")
   df <- .make_plot_df()
