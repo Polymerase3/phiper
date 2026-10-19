@@ -888,6 +888,12 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
       tot[k] = x1[keep_idx[k]] + x2[keep_idx[k]];
     }
 
+    // a single peptide's Tb depends only on xA (xB = tot - xA), so it is
+    // computed once per distinct xA in 0..nA and reused
+    std::vector<double> T_cache;
+    std::vector<char> T_seen;
+    if (mu == 1) { T_cache.assign(nA + 1, 0.0); T_seen.assign(nA + 1, 0); }
+
     for (int b = 0; b < B; ++b) {
       const uint64_t* pm = perm + (size_t)b * n_words;
       std::copy(pm, pm + n_words, mask_A.begin());
@@ -900,7 +906,14 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
       }
 
       double Tb = 0.0;
-      if (!p1b.empty()) {
+      if (mu == 1) {
+        const int xa = (int)x1b[0];
+        if (!T_seen[xa]) {
+          T_cache[xa] = combine_T_internal(p1b, p2b, x1b, x2b, n1b, n2b, std::vector<double>(), std::vector<double>(), winsor_z, wmode, smode, amode, brks, ws);
+          T_seen[xa] = 1;
+        }
+        Tb = T_cache[xa];
+      } else if (!p1b.empty()) {
         Tb = combine_T_internal(p1b, p2b, x1b, x2b, n1b, n2b, std::vector<double>(), std::vector<double>(), winsor_z, wmode, smode, amode, brks, ws);
       }
 

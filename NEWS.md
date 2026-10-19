@@ -36,6 +36,11 @@
   table instead of two pivots over every row. With an in-memory table of
   10,000 subjects and 200 peptides (2 million rows) at the default 2000
   permutations, a run takes 0.46 s instead of 2.3 s. Results are unchanged.
+- In unpaired strata with a single peptide (every `peptide_id` stratum),
+  the statistic of a permutation depends only on the first group's hit
+  count, so it is computed once per distinct count and reused. The
+  vignette data at 2000 permutations, where 2,225 of the 2,604 strata hold
+  one peptide, takes 0.85 s instead of 1.2 s. Results are unchanged.
 
 ## Changes
 
