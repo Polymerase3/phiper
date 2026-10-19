@@ -202,7 +202,14 @@
 #'   `(rank, feature, group_col)` stratum.
 #' @param exist_col Name of the 0/1 presence column. Default `"exist"`.
 #' @param paired_by Optional single column name identifying paired samples
-#'   (e.g. subject ID). When provided, paired tests are used where applicable.
+#'   (e.g. subject ID). When provided, paired tests are used where applicable:
+#'   a contrast is treated as paired as soon as at least one `paired_by` unit
+#'   is observed in both groups. The paired test then uses only the units
+#'   present in both groups; units observed in just one of the two groups are
+#'   dropped from that contrast, and `n_subjects_paired` reports how many
+#'   units were used. Without `paired_by`, every contrast is unpaired, and a
+#'   `subject_id` that appears in both groups of a contrast (e.g. a
+#'   `group_cols` such as timepoint that varies within subject) is an error.
 #' @param interaction Logical; reserved for future use (currently ignored). If
 #'   `TRUE`, an interaction of the first two `group_cols` may be used as an
 #'   additional `group_col` in future versions.
@@ -768,9 +775,36 @@ compute_delta <- function(
   perm_masks_by_contrast <- stats::setNames(
     lapply(seq_len(nrow(unpaired_contrasts)), function(j) {
       uc <- unpaired_contrasts[j, ]
+      g1_rows <- get_group_rows(uc$group_col, uc$group1)
+      g2_rows <- get_group_rows(uc$group_col, uc$group2)
+
+      # a subject in both groups has one pooled bitset row, so an unpaired
+      # test would count it twice and the permutation could put it on both
+      # sides
+      shared <- intersect(g1_rows, g2_rows)
+      if (length(shared)) {
+        shared_ids <- subjects_order[shared]
+        .ph_abort(
+          sprintf(
+            "Unpaired contrast %s: %s vs %s has %d subject(s) in both
+            groups. `%s` varies within subject; supply
+            `paired_by = \"subject_id\"` (or another pairing column) for a
+            paired test.",
+            uc$group_col, uc$group1, uc$group2, length(shared),
+            uc$group_col
+          ),
+          bullets = c(
+            paste0("subject_id=", utils::head(shared_ids, 10)),
+            if (length(shared_ids) > 10) {
+              sprintf("... and %d more.", length(shared_ids) - 10)
+            }
+          )
+        )
+      }
+
       cpp_perm_masks(
-        g1_rows = get_group_rows(uc$group_col, uc$group1),
-        g2_rows = get_group_rows(uc$group_col, uc$group2),
+        g1_rows = g1_rows,
+        g2_rows = g2_rows,
         n_words = bitset_words,
         B       = as.integer(B_permutations),
         seed    = as.integer(sample.int(.Machine$integer.max, 1L))

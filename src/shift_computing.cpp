@@ -43,16 +43,18 @@ static inline int count_hits_col(const uint8_t* bitset_raw, int n_words, int col
   return (int)s;
 }
 
-// Group A/B counts of every used peptide column for one unpaired permutation
+// Group A/B counts of every used peptide column for one unpaired permutation.
+// A and B split the contrast's subjects, so xB = tot - xA, where tot holds
+// each peptide's hits over both groups.
 static inline void count_hits_ab(const uint8_t* bitset_raw, int n_words,
                                  const std::vector<int>& cols0,
                                  const std::vector<uint64_t>& mask_A,
-                                 const std::vector<uint64_t>& mask_B,
+                                 const std::vector<double>& tot,
                                  std::vector<double>& xA,
                                  std::vector<double>& xB) {
   for (size_t k = 0; k < cols0.size(); ++k) {
     xA[k] = (double)count_hits_col(bitset_raw, n_words, cols0[k], mask_A);
-    xB[k] = (double)count_hits_col(bitset_raw, n_words, cols0[k], mask_B);
+    xB[k] = tot[k] - xA[k];
   }
 }
 
@@ -104,10 +106,10 @@ __attribute__((target("popcnt"), flatten))
 static void count_hits_ab_popcnt(const uint8_t* bitset_raw, int n_words,
                                  const std::vector<int>& cols0,
                                  const std::vector<uint64_t>& mask_A,
-                                 const std::vector<uint64_t>& mask_B,
+                                 const std::vector<double>& tot,
                                  std::vector<double>& xA,
                                  std::vector<double>& xB) {
-  count_hits_ab(bitset_raw, n_words, cols0, mask_A, mask_B, xA, xB);
+  count_hits_ab(bitset_raw, n_words, cols0, mask_A, tot, xA, xB);
 }
 
 __attribute__((target("popcnt"), flatten))
@@ -535,8 +537,8 @@ static double combine_T_internal(const std::vector<double>& p1,
  * @param n_words int: number of 64-bit words per bitset column.
  * @param B, seed int.
  *
- * @return RawVector of 2 * B * n_words uint64: permutation b holds the group A
- *         mask, then the group B mask.
+ * @return RawVector of B * n_words uint64: permutation b holds the group A
+ *         mask; group B is the rest of the contrast's subjects.
  */
 // [[Rcpp::export]]
 Rcpp::RawVector cpp_perm_masks(const Rcpp::IntegerVector& g1_rows,
@@ -550,14 +552,12 @@ Rcpp::RawVector cpp_perm_masks(const Rcpp::IntegerVector& g1_rows,
   const int N  = nA + nB;
   std::vector<int> idx_all(N);
   std::vector<int> choose_idx(nA);
-  std::vector<char> isA(N);
 
-  Rcpp::RawVector out((R_xlen_t)2 * B * n_words * (R_xlen_t)sizeof(uint64_t));
+  Rcpp::RawVector out((R_xlen_t)B * n_words * (R_xlen_t)sizeof(uint64_t));
   uint64_t* masks = reinterpret_cast<uint64_t*>(RAW(out));
 
   for (int b = 0; b < B; ++b) {
-    uint64_t* mask_A = masks + (size_t)2 * b * n_words;
-    uint64_t* mask_B = mask_A + n_words;
+    uint64_t* mask_A = masks + (size_t)b * n_words;
 
     // random split: sample nA indices for group A
     for (int i = 0; i < N; ++i) idx_all[i] = i;
@@ -567,19 +567,11 @@ Rcpp::RawVector cpp_perm_masks(const Rcpp::IntegerVector& g1_rows,
       std::swap(idx_all[i], idx_all[j]);
       choose_idx[i] = idx_all[i];
     }
-    // build masks from the chosen subject IDs
-    std::fill(isA.begin(), isA.end(), 0);
+    // build the group A mask from the chosen subject IDs
     for (int i = 0; i < nA; ++i) {
-      isA[ choose_idx[i] ] = 1;
       int subj_row = (choose_idx[i] < nA) ? g1_rows[ choose_idx[i] ] : g2_rows[ choose_idx[i]-nA ];
       if (subj_row > 0) {
         int z = subj_row - 1; mask_A[(z >> 6)] |= (1ULL << (z & 63));
-      }
-    }
-    for (int t = 0; t < N; ++t) if (!isA[t]) {
-      int subj_row = (t < nA) ? g1_rows[t] : g2_rows[t - nA];
-      if (subj_row > 0) {
-        int z = subj_row - 1; mask_B[(z >> 6)] |= (1ULL << (z & 63));
       }
     }
   }
@@ -882,7 +874,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
 
     int b_hits = 0;    // |Tb| > |T_obs| (strict)
     int b_equal = 0;   // |Tb| == |T_obs|
-    std::vector<uint64_t> mask_A(n_words), mask_B(n_words);
+    std::vector<uint64_t> mask_A(n_words);
     WelfordAccum acc;
 
     // per-permutation buffers, reused
@@ -890,15 +882,18 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     const std::vector<double> n1b(mu, (double)nA), n2b(mu, (double)nB);
     const CountAB count_ab = pick_count_ab();
     std::vector<int> cols0(mu); // 0-based bitset columns of the used peptides
-    for (int k = 0; k < mu; ++k) cols0[k] = pep_cols[keep_idx[k]] - 1;
+    std::vector<double> tot(mu); // hits over g1 and g2 (disjoint, see R guard)
+    for (int k = 0; k < mu; ++k) {
+      cols0[k] = pep_cols[keep_idx[k]] - 1;
+      tot[k] = x1[keep_idx[k]] + x2[keep_idx[k]];
+    }
 
     for (int b = 0; b < B; ++b) {
-      const uint64_t* pm = perm + (size_t)2 * b * n_words;
+      const uint64_t* pm = perm + (size_t)b * n_words;
       std::copy(pm, pm + n_words, mask_A.begin());
-      std::copy(pm + n_words, pm + 2 * n_words, mask_B.begin());
 
       // counts --> p --> T_b
-      count_ab(raw, n_words, cols0, mask_A, mask_B, x1b, x2b);
+      count_ab(raw, n_words, cols0, mask_A, tot, x1b, x2b);
       for (int k = 0; k < mu; ++k) {
         p1b[k] = x1b[k] / n1b[0];
         p2b[k] = x2b[k] / n2b[0];

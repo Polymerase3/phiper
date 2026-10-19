@@ -21,6 +21,13 @@
   permutations, a cohort of 1,000 subjects now takes 0.29 s instead of
   3.1 s, and 10,000 subjects 2.2 s instead of 30 s. The vignette data at
   2000 permutations takes 1.2 s instead of 3.3 s.
+- Each unpaired permutation now counts a peptide's hits in the first group
+  only and takes the second group's count as the peptide's total minus
+  that, which halves the counting work; the stored permutation splits take
+  half the memory. One stratum of 200 peptides at 2000 permutations takes
+  42 ms instead of 64 ms with 10,000 subjects, and 23 ms instead of 25 ms
+  with 1,000, where computing the statistic dominates. Results are
+  unchanged.
 
 ## Changes
 
@@ -32,6 +39,10 @@
   snapshot is updated for the unpaired cases.
 - New test in `test-delta_compute.R`: a species holding a single peptide
   gets the same null as that peptide's `peptide_id` stratum.
+- The `paired_by` documentation of `compute_delta()` now states that a
+  contrast is paired as soon as one `paired_by` unit is observed in both
+  groups, and that the paired test then uses only the units present in
+  both groups.
 
 ## Bug fixes
 
@@ -46,6 +57,15 @@
   subject and peptide order.
 - New test in `test-delta_compute.R`: shuffling the rows of `x` and
   `peptide_library` leaves the output identical.
+- `compute_delta()` now errors when the same `subject_id` is in both
+  groups of an unpaired contrast, e.g. `group_cols = "timepoint"` without
+  `paired_by`. A subject's hits are pooled into one row, so the subject
+  was counted in both groups and a permutation could place it on both
+  sides. The error lists up to 10 such subjects and points to `paired_by`.
+- New tests in `test-delta_compute.R`: a within-subject timepoint contrast
+  errors without `paired_by` and runs as paired with
+  `paired_by = "subject_id"`. The zero-variance toy test, which reused its
+  subjects in both groups, now has one subject per sample.
 
 # phiper 0.4.20 (2026-10-19)
 

@@ -240,7 +240,7 @@ test_that("compute_delta returns NA T_obs_stand when permutation
   # toy data: one peptide, two groups, identical prevalence pattern
   toy <- tibble::tibble(
     sample_id  = paste0("s", 1:40),
-    subject_id = paste0("id", rep(1:20, times = 2)),
+    subject_id = paste0("id", 1:40),
     peptide_id = rep("pep1", 40),
     group      = rep(c("A", "B"), each = 20),
     exist      = 1L
@@ -1106,4 +1106,50 @@ test_that("compute_delta aborts on bitset/peptide dimension mismatch", {
     ),
     regexp = "Bitset/peptide dimension mismatch"
   )
+})
+
+# --- subject in both groups of an unpaired contrast -------------------------
+
+# Fixture: every subject is sampled at T1 and T2, so timepoint varies within
+# subject and each subject_id sits in both groups of the T1 vs T2 contrast.
+.delta_within_subject_fixture <- function() {
+  peps <- paste0("pep", 1:6)
+  samples <- tibble::tibble(
+    sample_id  = paste0("x", 1:12),
+    subject_id = rep(paste0("s", 1:6), 2),
+    timepoint  = rep(c("T1", "T2"), each = 6)
+  )
+  tidyr::expand_grid(samples, peptide_id = peps) |>
+    dplyr::mutate(
+      exist = as.integer(
+        (timepoint == "T1" & peptide_id %in% peps[1:4]) |
+          (timepoint == "T2" & peptide_id %in% peps[1:2])
+      )
+    )
+}
+
+.delta_within_subject_run <- function(x, paired_by = NULL) {
+  set.seed(11)
+  compute_delta(
+    x              = x,
+    exist_col      = "exist",
+    rank_cols      = "peptide_id",
+    group_cols     = "timepoint",
+    paired_by      = paired_by,
+    B_permutations = 200L,
+    log            = FALSE
+  )
+}
+
+test_that("compute_delta rejects a subject in both groups of an unpaired contrast", {
+  dat <- .delta_within_subject_fixture()
+  expect_error(.delta_within_subject_run(dat), "paired_by")
+})
+
+test_that("compute_delta runs the within-subject contrast with paired_by", {
+  dat <- .delta_within_subject_fixture()
+  res <- .delta_within_subject_run(dat, paired_by = "subject_id")
+  expect_s3_class(res, "tbl_df")
+  expect_identical(unique(res$design), "paired")
+  expect_true(all(res$n_subjects_paired == 6L))
 })
