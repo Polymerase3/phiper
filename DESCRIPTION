@@ -53,6 +53,7 @@ Suggests:
     kableExtra,
     mgcv,
     mockery,
+    nnet,
     openxlsx,
     parallelDist,
     plotly,

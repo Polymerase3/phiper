@@ -22,6 +22,58 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// cpp_delta2_resample_group
+Rcpp::List cpp_delta2_resample_group(const Rcpp::IntegerVector& labels, const Rcpp::NumericMatrix& prob, int K, int B, int seed, int n_swap_steps, int max_tries);
+RcppExport SEXP _phiper_cpp_delta2_resample_group(SEXP labelsSEXP, SEXP probSEXP, SEXP KSEXP, SEXP BSEXP, SEXP seedSEXP, SEXP n_swap_stepsSEXP, SEXP max_triesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type labels(labelsSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type prob(probSEXP);
+    Rcpp::traits::input_parameter< int >::type K(KSEXP);
+    Rcpp::traits::input_parameter< int >::type B(BSEXP);
+    Rcpp::traits::input_parameter< int >::type seed(seedSEXP);
+    Rcpp::traits::input_parameter< int >::type n_swap_steps(n_swap_stepsSEXP);
+    Rcpp::traits::input_parameter< int >::type max_tries(max_triesSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_delta2_resample_group(labels, prob, K, B, seed, n_swap_steps, max_tries));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cpp_delta2_resample_time
+Rcpp::List cpp_delta2_resample_time(const Rcpp::IntegerVector& sample_rows, const Rcpp::IntegerVector& sample_subject, const Rcpp::IntegerVector& time_code, const Rcpp::NumericVector& keep_prob, int n_time_levels, int n_words, int B, int seed, bool masks);
+RcppExport SEXP _phiper_cpp_delta2_resample_time(SEXP sample_rowsSEXP, SEXP sample_subjectSEXP, SEXP time_codeSEXP, SEXP keep_probSEXP, SEXP n_time_levelsSEXP, SEXP n_wordsSEXP, SEXP BSEXP, SEXP seedSEXP, SEXP masksSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type sample_rows(sample_rowsSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type sample_subject(sample_subjectSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type time_code(time_codeSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type keep_prob(keep_probSEXP);
+    Rcpp::traits::input_parameter< int >::type n_time_levels(n_time_levelsSEXP);
+    Rcpp::traits::input_parameter< int >::type n_words(n_wordsSEXP);
+    Rcpp::traits::input_parameter< int >::type B(BSEXP);
+    Rcpp::traits::input_parameter< int >::type seed(seedSEXP);
+    Rcpp::traits::input_parameter< bool >::type masks(masksSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_delta2_resample_time(sample_rows, sample_subject, time_code, keep_prob, n_time_levels, n_words, B, seed, masks));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cpp_delta2_time_counts
+Rcpp::NumericMatrix cpp_delta2_time_counts(const Rcpp::RawVector& bitset_raw, int n_words, const Rcpp::IntegerVector& pep_cols, const Rcpp::RawVector& masks, int n_time_levels, int b);
+RcppExport SEXP _phiper_cpp_delta2_time_counts(SEXP bitset_rawSEXP, SEXP n_wordsSEXP, SEXP pep_colsSEXP, SEXP masksSEXP, SEXP n_time_levelsSEXP, SEXP bSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::RawVector& >::type bitset_raw(bitset_rawSEXP);
+    Rcpp::traits::input_parameter< int >::type n_words(n_wordsSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type pep_cols(pep_colsSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::RawVector& >::type masks(masksSEXP);
+    Rcpp::traits::input_parameter< int >::type n_time_levels(n_time_levelsSEXP);
+    Rcpp::traits::input_parameter< int >::type b(bSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_delta2_time_counts(bitset_raw, n_words, pep_cols, masks, n_time_levels, b));
+    return rcpp_result_gen;
+END_RCPP
+}
 // cpp_delta2_score
 Rcpp::List cpp_delta2_score(const Rcpp::RawVector& bitset_raw, int n_words, const Rcpp::IntegerVector& pep_cols, const Rcpp::IntegerVector& sample_rows, const Rcpp::IntegerVector& sample_subject, const Rcpp::IntegerVector& group_code, const Rcpp::IntegerVector& time_code, const Rcpp::NumericVector& group_scores, const Rcpp::NumericVector& time_scores, const Rcpp::CharacterVector& terms, int n_group_levels, int n_time_levels, double rho);
 RcppExport SEXP _phiper_cpp_delta2_score(SEXP bitset_rawSEXP, SEXP n_wordsSEXP, SEXP pep_colsSEXP, SEXP sample_rowsSEXP, SEXP sample_subjectSEXP, SEXP group_codeSEXP, SEXP time_codeSEXP, SEXP group_scoresSEXP, SEXP time_scoresSEXP, SEXP termsSEXP, SEXP n_group_levelsSEXP, SEXP n_time_levelsSEXP, SEXP rhoSEXP) {
@@ -107,6 +159,9 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_phiper_build_bitset_unpaired", (DL_FUNC) &_phiper_build_bitset_unpaired, 2},
+    {"_phiper_cpp_delta2_resample_group", (DL_FUNC) &_phiper_cpp_delta2_resample_group, 7},
+    {"_phiper_cpp_delta2_resample_time", (DL_FUNC) &_phiper_cpp_delta2_resample_time, 9},
+    {"_phiper_cpp_delta2_time_counts", (DL_FUNC) &_phiper_cpp_delta2_time_counts, 6},
     {"_phiper_cpp_delta2_score", (DL_FUNC) &_phiper_cpp_delta2_score, 13},
     {"_phiper_cpp_delta2_rho", (DL_FUNC) &_phiper_cpp_delta2_rho, 5},
     {"_phiper_cpp_perm_masks", (DL_FUNC) &_phiper_cpp_perm_masks, 5},
