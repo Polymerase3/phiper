@@ -272,7 +272,9 @@ to avoid oversubscription when using multiple workers.
 
 Reproducibility of permutations is controlled via the global RNG:
 call \code{set.seed()} before \code{compute_delta()} to obtain reproducible
-results; each contrast draws its own seed from the global RNG state.
+results. Each unpaired group contrast draws one seed from the global RNG
+state, and all of its rank/feature strata share the same
+\code{B_permutations} group splits; each paired stratum draws its own seed.
 }
 
 \examples{

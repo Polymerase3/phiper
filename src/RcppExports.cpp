@@ -22,9 +22,24 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// cpp_perm_masks
+Rcpp::RawVector cpp_perm_masks(const Rcpp::IntegerVector& g1_rows, const Rcpp::IntegerVector& g2_rows, const int n_words, const int B, const int seed);
+RcppExport SEXP _phiper_cpp_perm_masks(SEXP g1_rowsSEXP, SEXP g2_rowsSEXP, SEXP n_wordsSEXP, SEXP BSEXP, SEXP seedSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type g1_rows(g1_rowsSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type g2_rows(g2_rowsSEXP);
+    Rcpp::traits::input_parameter< const int >::type n_words(n_wordsSEXP);
+    Rcpp::traits::input_parameter< const int >::type B(BSEXP);
+    Rcpp::traits::input_parameter< const int >::type seed(seedSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_perm_masks(g1_rows, g2_rows, n_words, B, seed));
+    return rcpp_result_gen;
+END_RCPP
+}
 // cpp_shift_contrast
-Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw, const int n_words, const Rcpp::IntegerVector& pep_cols, const Rcpp::IntegerVector& g1_rows, const Rcpp::IntegerVector& g2_rows, const Rcpp::List& hits_g1_paired, const Rcpp::List& hits_g2_paired, const int P, const int B, const int seed, const std::string& weight_mode, const std::string& stat_mode, const std::string& aggregate_stat, const std::string& perm_method, const Rcpp::NumericVector& strat_bins, const double winsor_z, const std::string& design, const double min_m_eff);
-RcppExport SEXP _phiper_cpp_shift_contrast(SEXP bitset_rawSEXP, SEXP n_wordsSEXP, SEXP pep_colsSEXP, SEXP g1_rowsSEXP, SEXP g2_rowsSEXP, SEXP hits_g1_pairedSEXP, SEXP hits_g2_pairedSEXP, SEXP PSEXP, SEXP BSEXP, SEXP seedSEXP, SEXP weight_modeSEXP, SEXP stat_modeSEXP, SEXP aggregate_statSEXP, SEXP perm_methodSEXP, SEXP strat_binsSEXP, SEXP winsor_zSEXP, SEXP designSEXP, SEXP min_m_effSEXP) {
+Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw, const int n_words, const Rcpp::IntegerVector& pep_cols, const Rcpp::IntegerVector& g1_rows, const Rcpp::IntegerVector& g2_rows, const Rcpp::RawVector& perm_masks, const Rcpp::List& hits_g1_paired, const Rcpp::List& hits_g2_paired, const int P, const int B, const int seed, const std::string& weight_mode, const std::string& stat_mode, const std::string& aggregate_stat, const std::string& perm_method, const Rcpp::NumericVector& strat_bins, const double winsor_z, const std::string& design, const double min_m_eff);
+RcppExport SEXP _phiper_cpp_shift_contrast(SEXP bitset_rawSEXP, SEXP n_wordsSEXP, SEXP pep_colsSEXP, SEXP g1_rowsSEXP, SEXP g2_rowsSEXP, SEXP perm_masksSEXP, SEXP hits_g1_pairedSEXP, SEXP hits_g2_pairedSEXP, SEXP PSEXP, SEXP BSEXP, SEXP seedSEXP, SEXP weight_modeSEXP, SEXP stat_modeSEXP, SEXP aggregate_statSEXP, SEXP perm_methodSEXP, SEXP strat_binsSEXP, SEXP winsor_zSEXP, SEXP designSEXP, SEXP min_m_effSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -33,6 +48,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type pep_cols(pep_colsSEXP);
     Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type g1_rows(g1_rowsSEXP);
     Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type g2_rows(g2_rowsSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::RawVector& >::type perm_masks(perm_masksSEXP);
     Rcpp::traits::input_parameter< const Rcpp::List& >::type hits_g1_paired(hits_g1_pairedSEXP);
     Rcpp::traits::input_parameter< const Rcpp::List& >::type hits_g2_paired(hits_g2_pairedSEXP);
     Rcpp::traits::input_parameter< const int >::type P(PSEXP);
@@ -46,14 +62,15 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const double >::type winsor_z(winsor_zSEXP);
     Rcpp::traits::input_parameter< const std::string& >::type design(designSEXP);
     Rcpp::traits::input_parameter< const double >::type min_m_eff(min_m_effSEXP);
-    rcpp_result_gen = Rcpp::wrap(cpp_shift_contrast(bitset_raw, n_words, pep_cols, g1_rows, g2_rows, hits_g1_paired, hits_g2_paired, P, B, seed, weight_mode, stat_mode, aggregate_stat, perm_method, strat_bins, winsor_z, design, min_m_eff));
+    rcpp_result_gen = Rcpp::wrap(cpp_shift_contrast(bitset_raw, n_words, pep_cols, g1_rows, g2_rows, perm_masks, hits_g1_paired, hits_g2_paired, P, B, seed, weight_mode, stat_mode, aggregate_stat, perm_method, strat_bins, winsor_z, design, min_m_eff));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
     {"_phiper_build_bitset_unpaired", (DL_FUNC) &_phiper_build_bitset_unpaired, 2},
-    {"_phiper_cpp_shift_contrast", (DL_FUNC) &_phiper_cpp_shift_contrast, 18},
+    {"_phiper_cpp_perm_masks", (DL_FUNC) &_phiper_cpp_perm_masks, 5},
+    {"_phiper_cpp_shift_contrast", (DL_FUNC) &_phiper_cpp_shift_contrast, 19},
     {NULL, NULL, 0}
 };
 

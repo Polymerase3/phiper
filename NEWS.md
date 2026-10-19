@@ -7,8 +7,31 @@
   group level once, before the loop, instead of filtering a table for each
   stratum. Each stratum's result row is a plain list, and all rows are
   bound into one tibble at the end. On the typical-workflow vignette data
-  (2,604 strata) a run at `B_permutations = 100` drops from 9.0 s to 1.6 s,
-  and at the default 2000 from 26.8 s to 19.0 s. Results are unchanged.
+  (2,604 strata) a run at `B_permutations = 100` drops from 8.5 s to 0.75 s,
+  and at the default 2000 from 10.7 s to 3.3 s. Results are unchanged.
+- The `compute_delta()` permutation kernel parses its mode arguments once
+  instead of comparing strings for every peptide, builds the `strat_bins`
+  breaks once, and reuses its buffers across permutations instead of
+  allocating them for each one. On x86 CPUs that support it, hits are
+  counted with the POPCNT instruction, chosen at run time so generic builds
+  still run on any CPU. Results are unchanged.
+- Unpaired permutations are drawn once per group contrast and shared by all
+  of its rank/feature strata, instead of being drawn again for every
+  stratum. With 200 peptides in 20 species (220 strata) at the default 2000
+  permutations, a cohort of 1,000 subjects now takes 0.29 s instead of
+  3.1 s, and 10,000 subjects 2.2 s instead of 30 s. The vignette data at
+  2000 permutations takes 1.2 s instead of 3.3 s.
+
+## Changes
+
+- Under the same seed, unpaired `p_perm`, `T_null_mean`, `T_null_sd` and
+  `b` differ from 0.4.20, because all strata of a group contrast now share
+  one seed and the same permutations. Each stratum's p-value is still a
+  valid permutation p-value; `T_obs` and the other observed statistics are
+  unchanged, and so are runs with only paired contrasts. The regression
+  snapshot is updated for the unpaired cases.
+- New test in `test-delta_compute.R`: a species holding a single peptide
+  gets the same null as that peptide's `peptide_id` stratum.
 
 ## Bug fixes
 

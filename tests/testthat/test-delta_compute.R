@@ -793,6 +793,31 @@ test_that("compute_delta results do not depend on input row order", {
   expect_identical(run(x, fx$peptide_library), run(x_shuf, lib_shuf))
 })
 
+test_that("strata of an unpaired contrast share the permutation splits", {
+  fx <- readRDS(test_path("fixtures", "delta_regression.rds"))
+  x <- fx$data[fx$data$timepoint == "T1", ]
+  lib <- fx$peptide_library
+  lib$species[lib$peptide_id == "p01"] <- "solo"
+
+  set.seed(1)
+  res <- compute_delta(
+    x               = x,
+    rank_cols       = c("peptide_id", "species"),
+    group_cols      = "group",
+    peptide_library = lib,
+    B_permutations  = 100L,
+    log             = FALSE
+  )
+
+  # the "solo" species and peptide p01 hold the same single peptide, so with
+  # shared splits they get the same null
+  cols <- c("T_obs", "T_null_mean", "T_null_sd", "b", "p_perm")
+  expect_identical(
+    unlist(res[res$rank == "species" & res$feature == "solo", cols]),
+    unlist(res[res$rank == "peptide_id" & res$feature == "p01", cols])
+  )
+})
+
 # --- min_m_eff --------------------------------------------------------------
 
 # Fixture: two mock species sharing the example data's group-overlapping

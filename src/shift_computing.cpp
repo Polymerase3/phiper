@@ -528,6 +528,65 @@ static double combine_T_internal(const std::vector<double>& p1,
 // ---- main exported helper ----------------------------------------------------
 
 /**
+ * Draw the B random group splits of an unpaired contrast (group sizes kept)
+ * as subject masks, once per contrast; all of its strata share them.
+ *
+ * @param g1_rows, g2_rows IntegerVector (1-based): subject row indices per group.
+ * @param n_words int: number of 64-bit words per bitset column.
+ * @param B, seed int.
+ *
+ * @return RawVector of 2 * B * n_words uint64: permutation b holds the group A
+ *         mask, then the group B mask.
+ */
+// [[Rcpp::export]]
+Rcpp::RawVector cpp_perm_masks(const Rcpp::IntegerVector& g1_rows,
+                               const Rcpp::IntegerVector& g2_rows,
+                               const int n_words,
+                               const int B,
+                               const int seed) {
+  std::mt19937_64 rng((uint64_t)seed);
+  const int nA = (int)g1_rows.size();
+  const int nB = (int)g2_rows.size();
+  const int N  = nA + nB;
+  std::vector<int> idx_all(N);
+  std::vector<int> choose_idx(nA);
+  std::vector<char> isA(N);
+
+  Rcpp::RawVector out((R_xlen_t)2 * B * n_words * (R_xlen_t)sizeof(uint64_t));
+  uint64_t* masks = reinterpret_cast<uint64_t*>(RAW(out));
+
+  for (int b = 0; b < B; ++b) {
+    uint64_t* mask_A = masks + (size_t)2 * b * n_words;
+    uint64_t* mask_B = mask_A + n_words;
+
+    // random split: sample nA indices for group A
+    for (int i = 0; i < N; ++i) idx_all[i] = i;
+    for (int i = 0; i < nA; ++i) {
+      std::uniform_int_distribution<int> U(i, N-1);
+      int j = U(rng);
+      std::swap(idx_all[i], idx_all[j]);
+      choose_idx[i] = idx_all[i];
+    }
+    // build masks from the chosen subject IDs
+    std::fill(isA.begin(), isA.end(), 0);
+    for (int i = 0; i < nA; ++i) {
+      isA[ choose_idx[i] ] = 1;
+      int subj_row = (choose_idx[i] < nA) ? g1_rows[ choose_idx[i] ] : g2_rows[ choose_idx[i]-nA ];
+      if (subj_row > 0) {
+        int z = subj_row - 1; mask_A[(z >> 6)] |= (1ULL << (z & 63));
+      }
+    }
+    for (int t = 0; t < N; ++t) if (!isA[t]) {
+      int subj_row = (t < nA) ? g1_rows[t] : g2_rows[t - nA];
+      if (subj_row > 0) {
+        int z = subj_row - 1; mask_B[(z >> 6)] |= (1ULL << (z & 63));
+      }
+    }
+  }
+  return out;
+}
+
+/**
  * Compute contrast using:
  *  - UNPAIRED: subject×peptide bitset + group row sets (preserve group sizes).
  *  - PAIRED: per-group per-peptide hit lists aligned to subjects 1..P; flip labels 50/50.
@@ -536,9 +595,11 @@ static double combine_T_internal(const std::vector<double>& p1,
  * @param n_words int: number of 64-bit words per column (UNPAIRED).
  * @param pep_cols IntegerVector (1-based): peptide columns to use (UNPAIRED).
  * @param g1_rows, g2_rows IntegerVector (1-based): subject row indices per group (UNPAIRED).
+ * @param perm_masks RawVector: the contrast's B group splits from cpp_perm_masks() (UNPAIRED).
  * @param hits_g1_paired, hits_g2_paired List: per-peptide IntegerVector of 1..P subject indices (PAIRED).
  * @param P int: number of paired subjects (PAIRED).
- * @param B, seed, winsor_z numeric.
+ * @param B, winsor_z numeric.
+ * @param seed int: seed of the label flips (PAIRED).
  * @param weight_mode, stat_mode, aggregate_stat, design strings.
  * @param strat_bins Numeric vector of pooled prevalence cutpoints or 0 for no stratification.
  * @param min_m_eff double: minimum effective number of peptides (m_eff) required to run the
@@ -555,6 +616,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
                               const Rcpp::IntegerVector& pep_cols,
                               const Rcpp::IntegerVector& g1_rows,
                               const Rcpp::IntegerVector& g2_rows,
+                              const Rcpp::RawVector& perm_masks,
                               const Rcpp::List& hits_g1_paired,
                               const Rcpp::List& hits_g2_paired,
                               const int P,
@@ -812,22 +874,18 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
       return Rcpp::List::create(_["skipped"] = true);
     }
 
-    // Permutations (two-sided add-one)
-    std::mt19937_64 rng((uint64_t)seed);
-    std::vector<int> idx_all(g1_rows.size() + g2_rows.size());
-    for (size_t i = 0; i < idx_all.size(); ++i) idx_all[i] = (int)i;
+    // Permutations (two-sided add-one): the B group splits come from
+    // cpp_perm_masks(), drawn once per contrast
+    const uint64_t* perm = reinterpret_cast<const uint64_t*>(RAW(perm_masks));
     const int nA = (int)g1_rows.size();
     const int nB = (int)g2_rows.size();
-    const int N  = nA + nB;
 
     int b_hits = 0;    // |Tb| > |T_obs| (strict)
     int b_equal = 0;   // |Tb| == |T_obs|
-    std::vector<int> choose_idx(nA);
     std::vector<uint64_t> mask_A(n_words), mask_B(n_words);
     WelfordAccum acc;
 
     // per-permutation buffers, reused
-    std::vector<char> isA(N);
     std::vector<double> x1b(mu), x2b(mu), p1b(mu), p2b(mu);
     const std::vector<double> n1b(mu, (double)nA), n2b(mu, (double)nB);
     const CountAB count_ab = pick_count_ab();
@@ -835,31 +893,9 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     for (int k = 0; k < mu; ++k) cols0[k] = pep_cols[keep_idx[k]] - 1;
 
     for (int b = 0; b < B; ++b) {
-      // random split: sample nA indices for group A
-      for (int i = 0; i < N; ++i) idx_all[i] = i;
-      for (int i = 0; i < nA; ++i) {
-        std::uniform_int_distribution<int> U(i, N-1);
-        int j = U(rng);
-        std::swap(idx_all[i], idx_all[j]);
-        choose_idx[i] = idx_all[i];
-      }
-      // build masks from the chosen subject IDs
-      std::fill(mask_A.begin(), mask_A.end(), 0ULL);
-      std::fill(mask_B.begin(), mask_B.end(), 0ULL);
-      std::fill(isA.begin(), isA.end(), 0);
-      for (int i = 0; i < nA; ++i) {
-        isA[ choose_idx[i] ] = 1;
-        int subj_row = (choose_idx[i] < nA) ? g1_rows[ choose_idx[i] ] : g2_rows[ choose_idx[i]-nA ];
-        if (subj_row > 0) {
-          int z = subj_row - 1; mask_A[(z >> 6)] |= (1ULL << (z & 63));
-        }
-      }
-      for (int t = 0; t < N; ++t) if (!isA[t]) {
-        int subj_row = (t < nA) ? g1_rows[t] : g2_rows[t - nA];
-        if (subj_row > 0) {
-          int z = subj_row - 1; mask_B[(z >> 6)] |= (1ULL << (z & 63));
-        }
-      }
+      const uint64_t* pm = perm + (size_t)2 * b * n_words;
+      std::copy(pm, pm + n_words, mask_A.begin());
+      std::copy(pm + n_words, pm + 2 * n_words, mask_B.begin());
 
       // counts --> p --> T_b
       count_ab(raw, n_words, cols0, mask_A, mask_B, x1b, x2b);

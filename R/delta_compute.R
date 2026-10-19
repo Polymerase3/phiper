@@ -187,7 +187,9 @@
 #'
 #' Reproducibility of permutations is controlled via the global RNG:
 #' call `set.seed()` before `compute_delta()` to obtain reproducible
-#' results; each contrast draws its own seed from the global RNG state.
+#' results. Each unpaired group contrast draws one seed from the global RNG
+#' state, and all of its rank/feature strata share the same
+#' `B_permutations` group splits; each paired stratum draws its own seed.
 #'
 #' @param x A `phip_data` object (recommended to attach a `peptide_library`
 #'   when `rank_cols` includes non-`"peptide_id"` and not providing
@@ -754,6 +756,32 @@ compute_delta <- function(
     group_rows_by_gv[[gc]][[as.character(gval)]]
   }
 
+  # permutation splits: one seed and B group splits per unpaired group
+  # contrast, shared by all of its rank/feature strata
+  contrast_key <- function(gc, g1, g2) paste(gc, g1, g2, sep = "\r")
+  unpaired_contrasts <- unique(
+    master_plan[
+      master_plan$design == "unpaired",
+      c("group_col", "group1", "group2")
+    ]
+  )
+  perm_masks_by_contrast <- stats::setNames(
+    lapply(seq_len(nrow(unpaired_contrasts)), function(j) {
+      uc <- unpaired_contrasts[j, ]
+      cpp_perm_masks(
+        g1_rows = get_group_rows(uc$group_col, uc$group1),
+        g2_rows = get_group_rows(uc$group_col, uc$group2),
+        n_words = bitset_words,
+        B       = as.integer(B_permutations),
+        seed    = as.integer(sample.int(.Machine$integer.max, 1L))
+      )
+    }),
+    contrast_key(
+      unpaired_contrasts$group_col, unpaired_contrasts$group1,
+      unpaired_contrasts$group2
+    )
+  )
+
   get_paired_hits <- function(gc, g1, g2) {
     pair_sym <- rlang::sym(paired_by)
 
@@ -837,16 +865,18 @@ compute_delta <- function(
       return(NULL)
     }
 
-    # draw per-contrast seed from global RNG; reproducible via set.seed()
-    # outside
-    seed_i <- as.integer(sample.int(.Machine$integer.max, 1L))
-
     # Defaults for UNPAIRED call
     hits_g1 <- list()
     hits_g2 <- list()
     P <- 0L
+    seed_i <- 0L
+    perm_masks <- raw(0)
 
     if (identical(st$design, "paired")) {
+      # draw per-stratum seed from global RNG; reproducible via set.seed()
+      # outside
+      seed_i <- as.integer(sample.int(.Machine$integer.max, 1L))
+
       paired <- get_paired_hits(st$group_col, st$group1, st$group2)
       if (is.null(paired)) {
         return(NULL)
@@ -864,6 +894,10 @@ compute_delta <- function(
       hits_g1 <- paired$hits_g1[keep_mask]
       hits_g2 <- paired$hits_g2[keep_mask]
       P <- length(paired$pair_ids)
+    } else {
+      perm_masks <- perm_masks_by_contrast[[
+        contrast_key(st$group_col, st$group1, st$group2)
+      ]]
     }
 
     res <- cpp_shift_contrast(
@@ -872,6 +906,7 @@ compute_delta <- function(
       pep_cols         = pep_cols,
       g1_rows          = g1_rows,
       g2_rows          = g2_rows,
+      perm_masks       = perm_masks,
       hits_g1_paired   = hits_g1,
       hits_g2_paired   = hits_g2,
       P                = as.integer(P),
