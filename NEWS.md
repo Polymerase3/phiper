@@ -1,3 +1,57 @@
+# phiper 0.5.0 (2026-10-19)
+
+## New features
+
+- `compute_delta2()` tests, per `(rank, feature, group_col)` stratum, a
+  between-subject group term, a within-subject time term (`time_col`) and
+  their interaction, on sample-level data: a subject's samples are never
+  collapsed, so the number of samples per subject no longer acts as a hidden
+  covariate. Each term is a score statistic pooled over peptides like
+  `compute_delta()`, with a permutation null drawn once per `group_col` and
+  shared by all strata. Groups with more than two levels get an omnibus test
+  and pairwise tests with max-T adjustment (`$pairwise`); ordered levels can
+  be tested as a trend (`group_scores`, `time_scores`).
+- `propensity_formula` makes the group term and pairwise tests valid when
+  group membership depends on covariates: labels are drawn from their
+  conditional law given the covariates (rejection sampling for two groups,
+  a pairwise-swap chain for more), and the statistic is adjusted for the
+  same covariates. `time_propensity_formula` does the same for
+  within-subject time labels. Effect sizes are reported raw and
+  inverse-propensity weighted (`max_delta_adj_*`).
+- Subject means in the group term are weighted by the within-subject
+  correlation `rho`, estimated from all peptides by default.
+- The result is a `delta2_result` with a print method: `$terms` (one row per
+  stratum, term columns suffixed `_group`, `_time`, `_interaction`),
+  `$pairwise` and `$meta` (design, propensity, dropout and sampler
+  diagnostics, `rho_hat`).
+- `inst/validation/` holds the simulation studies used as the release gate
+  for `compute_delta2()` (calibration, power, unbalanced designs, `rho`) and
+  their latest results.
+- `standardize = "two_pass"` in `compute_delta2()` standardises each
+  peptide's statistic by its mean and SD over the draws before pooling: a
+  first pass records them over the observed labels and the `B_permutations`
+  draws, a second replays the same draws. Every peptide then has mean 0
+  and SD 1 under the null that was actually sampled (propensity draws, swap
+  chain, biased time coins), at twice the permutation cost.
+- The result gains `$peptides`, the per-level prevalence of every peptide
+  (subject-mean prevalence per group level, raw and inverse-propensity
+  weighted; share of positive samples per timepoint). `return_peptides =
+  FALSE` leaves it out.
+- `forestplot()`, `deltaplot()`, `ecdf_plot()` and their interactive
+  versions take a `delta2_result` directly, with `term` (and `group_col`,
+  `adjusted`, `group_pair_values`) choosing what to plot.
+- The documentation and a new vignette, `vignette("delta2-analysis")`,
+  explain how `weight_mode` chooses the effect scale (`equal`: arcsine,
+  `n_eff_sqrt`: log odds ratio, `se_invvar`: prevalence difference), how
+  prevalence strata temper it, and how to read the propensity diagnostics.
+
+## Changes
+
+- `compute_delta()`'s peptide-library resolution, `rank_feature_keep` filter
+  and parallel runner moved, unchanged, into helpers shared with
+  `compute_delta2()`. Results are unchanged.
+- `nnet` is suggested, for the propensity model with three or more groups.
+
 # phiper 0.4.23 (2026-10-19)
 
 ## Bug fixes

@@ -5,6 +5,34 @@ build_bitset_unpaired <- function(hits_by_peptide, N) {
     .Call(`_phiper_build_bitset_unpaired`, hits_by_peptide, N)
 }
 
+cpp_delta2_score <- function(bitset_raw, n_words, pep_cols, sample_rows, sample_subject, group_code, time_code, group_scores, time_scores, terms, n_group_levels, n_time_levels, rho, covariates = NULL) {
+    .Call(`_phiper_cpp_delta2_score`, bitset_raw, n_words, pep_cols, sample_rows, sample_subject, group_code, time_code, group_scores, time_scores, terms, n_group_levels, n_time_levels, rho, covariates)
+}
+
+cpp_delta2_contrast <- function(bitset_raw, n_words, pep_cols, sample_rows, sample_subject, group_code, time_code, group_scores, time_scores, terms, n_group_levels, n_time_levels, rho, group_draws, time_draws, pairs, adj_weight, weight_mode, aggregate_stat, perm_method, strat_bins, winsor_z, min_m_eff, covariates = NULL, residualize = TRUE, standardize = "none") {
+    .Call(`_phiper_cpp_delta2_contrast`, bitset_raw, n_words, pep_cols, sample_rows, sample_subject, group_code, time_code, group_scores, time_scores, terms, n_group_levels, n_time_levels, rho, group_draws, time_draws, pairs, adj_weight, weight_mode, aggregate_stat, perm_method, strat_bins, winsor_z, min_m_eff, covariates, residualize, standardize)
+}
+
+cpp_delta2_prevalence <- function(bitset_raw, n_words, pep_cols, sample_rows, sample_subject, group_code, time_code, n_group_levels, n_time_levels, adj_weight) {
+    .Call(`_phiper_cpp_delta2_prevalence`, bitset_raw, n_words, pep_cols, sample_rows, sample_subject, group_code, time_code, n_group_levels, n_time_levels, adj_weight)
+}
+
+cpp_delta2_resample_group <- function(labels, prob, K, B, seed, n_swap_steps, max_tries) {
+    .Call(`_phiper_cpp_delta2_resample_group`, labels, prob, K, B, seed, n_swap_steps, max_tries)
+}
+
+cpp_delta2_resample_time <- function(sample_rows, sample_subject, time_code, keep_prob, n_time_levels, n_words, B, seed, masks) {
+    .Call(`_phiper_cpp_delta2_resample_time`, sample_rows, sample_subject, time_code, keep_prob, n_time_levels, n_words, B, seed, masks)
+}
+
+cpp_delta2_time_counts <- function(bitset_raw, n_words, pep_cols, masks, n_time_levels, b) {
+    .Call(`_phiper_cpp_delta2_time_counts`, bitset_raw, n_words, pep_cols, masks, n_time_levels, b)
+}
+
+cpp_delta2_rho <- function(bitset_raw, n_words, pep_cols, sample_rows, sample_subject) {
+    .Call(`_phiper_cpp_delta2_rho`, bitset_raw, n_words, pep_cols, sample_rows, sample_subject)
+}
+
 cpp_perm_masks <- function(g1_rows, g2_rows, n_words, B, seed) {
     .Call(`_phiper_cpp_perm_masks`, g1_rows, g2_rows, n_words, B, seed)
 }

@@ -1,0 +1,521 @@
+---
+title: "Sample-level Delta Analysis with compute_delta2()"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+    number_sections: false
+vignette: >
+  %\VignetteIndexEntry{Sample-level Delta Analysis with compute_delta2()}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse   = TRUE,
+  comment    = "#>",
+  fig.width  = 7,
+  fig.height = 5,
+  warning    = FALSE,
+  message    = FALSE
+)
+```
+
+## Overview
+
+`compute_delta2()` tests whether peptide prevalence shifts, pooled over the
+peptides of a feature (a species, a protein, or a single peptide), along three
+axes of a longitudinal design:
+
+| term | question | resampled |
+|---|---|---|
+| **group** | do groups of subjects differ? | group labels across subjects |
+| **time** | does prevalence change over timepoints within subjects? | timepoints within each subject |
+| **interaction** | does the change over time differ between groups? | group labels, on within-subject changes |
+
+It differs from `compute_delta()` (see `vignette("delta-analysis")`) in one
+structural way: **every sample is its own row**. `compute_delta()` collapses
+a subject's samples into one row (a peptide is "present" if any sample is
+positive), so a subject with more samples gets more chances to look
+positive. `compute_delta2()` never collapses: subjects enter the group term
+through their mean positivity, weighted by how much independent information
+their samples carry, and repeat samples feed the time and interaction terms.
+
+This vignette covers:
+
+1. a first run and how to read the result,
+2. **choosing the effect scale** with `weight_mode`,
+3. **adjusting for confounders** with a propensity model, and reading its
+   diagnostics,
+4. the `standardize = "two_pass"` safety net,
+5. plotting a `delta2_result` with `forestplot()`, `deltaplot()` and
+   `ecdf_plot()`.
+
+```{r load}
+library(phiper)
+```
+
+---
+
+## Simulated data
+
+We simulate 160 subjects in two groups, each sampled at two timepoints, with
+about 15% missing the second visit. 400 peptides belong to 20 species. Three
+things are built in:
+
+- **age confounds the group**: older subjects are more often cases, and
+  older subjects are more often positive for every peptide;
+- **species `sp01`-`sp03`** are truly more prevalent in cases (a common log
+  odds ratio of 1);
+- **species `sp04`** rises from T1 to T2 in everyone, and **`sp05`** rises in
+  cases only (an interaction).
+
+Positivity is persistent within subject-peptide pairs (a random effect), as
+in real repeat samples.
+
+```{r simulate}
+set.seed(2024)
+n_sub <- 160
+n_pep <- 400
+
+subjects <- data.frame(
+  subject_id = sprintf("S%03d", seq_len(n_sub)),
+  age        = round(rnorm(n_sub, 50, 10))
+)
+subjects$group <- factor(
+  ifelse(runif(n_sub) < plogis(0.08 * (subjects$age - 50)), "case", "ctrl"),
+  levels = c("ctrl", "case")
+)
+
+samples <- merge(subjects, data.frame(timepoint = c("T1", "T2")))
+samples <- samples[!(samples$timepoint == "T2" & runif(nrow(samples)) < 0.15), ]
+samples$sample_id <- paste(samples$subject_id, samples$timepoint, sep = "_")
+
+library_tbl <- data.frame(
+  peptide_id = sprintf("pep%03d", seq_len(n_pep)),
+  species    = sprintf("sp%02d", rep(seq_len(20), each = n_pep / 20))
+)
+base_logit <- qlogis(rbeta(n_pep, 0.6, 6) + 0.005)
+
+x <- merge(samples, library_tbl)
+j <- match(x$peptide_id, library_tbl$peptide_id)
+i <- match(x$subject_id, subjects$subject_id)
+u <- matrix(rnorm(n_sub * n_pep, sd = 1.2), n_sub, n_pep) # subject x peptide
+sp <- library_tbl$species[j]
+case <- x$group == "case"
+t2 <- x$timepoint == "T2"
+eta <- base_logit[j] + u[cbind(i, j)] + 0.04 * (x$age - 50) +
+  1.0 * (sp %in% c("sp01", "sp02", "sp03") & case) +
+  0.8 * (sp == "sp04" & t2) +
+  1.2 * (sp == "sp05" & case & t2)
+x$exist <- rbinom(nrow(x), 1, plogis(eta))
+
+dim(x)
+table(subjects$group)
+```
+
+Making `group` a factor with `ctrl` first makes `case` the second level,
+so a positive statistic means "more in cases". The input is a long table
+with one row per sample and peptide (a `phip_data` object works too). `compute_delta2()` needs the subject, sample,
+peptide and presence columns, the group column(s), and optionally a time
+column.
+
+---
+
+## A first run
+
+```{r first-run}
+set.seed(1)
+res <- compute_delta2(
+  x,
+  rank_cols       = "species",
+  group_cols      = "group",
+  time_col        = "timepoint",
+  peptide_library = library_tbl,
+  B_permutations  = 1000L
+)
+res
+```
+
+The result is a list. `$terms` has one row per `(rank, feature, group_col)`
+and a block of columns per term, suffixed `_group`, `_time` and
+`_interaction`:
+
+```{r terms}
+tt <- res$terms
+tt[, c(
+  "feature", "design", "n_subjects", "n_samples_used",
+  "T_group", "p_group", "T_time", "p_time",
+  "T_interaction", "p_interaction"
+)] |>
+  head(8)
+```
+
+The three built-in effects are found: `sp01`-`sp03` in the group term,
+`sp04` in the time term and `sp05` in the interaction. But the group term
+also flags species with no group effect at all, because age raises
+positivity in cases. We fix that below.
+
+Per term the columns are:
+
+- `T`: the pooled statistic. For a term with one degree of freedom (two
+  levels, or a scored trend) it is a signed z-like value; for an omnibus term
+  it is a sum of squares.
+- `p`: the permutation p-value (mid-p by default), and `Z_from_p` its signed
+  normal quantile. `T_null_mean`, `T_null_sd`, `T_stand` describe the null.
+- `E`: the pooled profile, one component per level of an omnibus term.
+- `max_delta`: the largest per-peptide effect (group: difference in
+  subject-mean prevalence; time: within-subject change; interaction:
+  difference of changes), with `max_delta_adj` its propensity-adjusted
+  version and `frac_delta_pos` the share of peptides with a positive effect.
+
+`$pairwise` holds the pairwise group tests (with max-T p-values over pairs),
+`$peptides` the per-peptide prevalences the plots use, and `$meta` the
+diagnostics shown in the sections below.
+
+### rho: weighting repeat samples
+
+In the group term a subject contributes its mean positivity with weight
+$w_i = n_i / (1 + (n_i - 1)\rho)$, where $n_i$ is its number of samples and
+$\rho$ the within-subject correlation of positivity. With $\rho = 1$ a
+subject's repeat samples are copies (equal weight per subject); with
+$\rho = 0$ they are independent (equal weight per sample). The default
+`rho = "pooled"` estimates it from all peptides:
+
+```{r rho}
+res$meta$rho_hat
+```
+
+---
+
+## Choosing the effect scale: `weight_mode`
+
+A feature's statistic pools many peptides, and the peptide weights decide
+which kind of common effect it is most powerful for. Each peptide's z is
+roughly its prevalence difference divided by its null standard deviation:
+
+$$z_j \approx \frac{\delta_j \sqrt{n}}{\sqrt{p_j (1 - p_j)}}.$$
+
+The most powerful weighted Stouffer sum weights each peptide by its expected
+z. If the shift is the same for every peptide **on some scale**, that
+expected z, and so the right weight, follows from the scale:
+
+| `weight_mode` | weight | best when the common effect is | because |
+|---|---|---|---|
+| `"equal"` | $1$ | a shift in $\arcsin\sqrt{p}$ | $\delta_j \approx 2\Delta\sqrt{p_j(1-p_j)}$, so $z_j$ is the same for all peptides |
+| `"n_eff_sqrt"` (default) | $\sqrt{\text{positives}_j} \propto \sqrt{p_j}$ | a log odds ratio | $\delta_j \approx \beta\, p_j(1-p_j)$, so $z_j \propto \sqrt{p_j(1-p_j)} \approx \sqrt{p_j}$ for rare peptides |
+| `"se_invvar"` | $1/\sqrt{p_j(1-p_j)}$ | a prevalence difference | $\delta_j = \delta$, so $z_j \propto 1/\sqrt{p_j(1-p_j)}$ |
+
+**This is how you choose the effect scale.** Ask which statement you want
+to test: "the odds of reactivity are higher" (`n_eff_sqrt`), "a fixed share
+more of the subjects react to each peptide" (`se_invvar`), or the
+variance-stabilised middle ground (`equal`). The test stays valid with any
+choice; the weights only move power between kinds of alternatives.
+
+The three weights differ most at low prevalence, where most PhIP-seq
+peptides sit:
+
+```{r weight-curves, fig.height = 4}
+p <- seq(0.005, 0.6, length.out = 200)
+w <- data.frame(
+  prevalence = rep(p, 3),
+  weight_mode = rep(c("equal", "n_eff_sqrt", "se_invvar"), each = length(p)),
+  weight = c(rep(1, length(p)), sqrt(p), 1 / sqrt(p * (1 - p)))
+)
+# scale each curve to its value at p = 0.1, to compare shapes
+w$relative <- w$weight / ave(
+  ifelse(abs(w$prevalence - 0.1) < 0.002, w$weight, NA), w$weight_mode,
+  FUN = function(v) mean(v, na.rm = TRUE)
+)
+ggplot2::ggplot(w, ggplot2::aes(prevalence, relative, colour = weight_mode)) +
+  ggplot2::geom_line(linewidth = 1) +
+  ggplot2::scale_y_log10() +
+  ggplot2::labs(x = "pooled prevalence", y = "weight relative to p = 0.1") +
+  theme_phip()
+```
+
+`n_eff_sqrt` trusts common peptides most, `se_invvar` rare ones.
+
+### Seeing the scale at work
+
+Each of three features below has 200 peptides that share one effect, on a
+different scale: a log odds ratio of 0.35, a prevalence difference of 0.03,
+and an arcsine shift of 0.045. Subjects have one sample each and there is no
+confounding. `T_stand` puts the three weightings on a common footing (each
+standardised by its own null):
+
+```{r scales}
+set.seed(1)
+n <- 300
+m <- 200
+p <- rbeta(3 * m, 0.6, 6) + 0.003
+effect_scale <- rep(c("log_odds", "difference", "arcsine"), each = m)
+p_case <- ifelse(
+  effect_scale == "log_odds", plogis(qlogis(p) + 0.35),
+  ifelse(effect_scale == "difference", pmin(p + 0.03, 1),
+    sin(pmin(asin(sqrt(p)) + 0.045, pi / 2))^2
+  )
+)
+case <- rep(c(FALSE, TRUE), n / 2)
+y <- sapply(seq_along(p), function(j) {
+  rbinom(n, 1, ifelse(case, p_case[j], p[j]))
+})
+x_scale <- data.frame(
+  subject_id = rep(sprintf("s%03d", 1:n), 3 * m),
+  peptide_id = rep(sprintf("q%04d", seq_along(p)), each = n),
+  group      = factor(rep(ifelse(case, "case", "ctrl"), 3 * m),
+    levels = c("ctrl", "case")
+  ),
+  exist      = as.vector(y)
+)
+x_scale$sample_id <- x_scale$subject_id
+lib_scale <- data.frame(
+  peptide_id = sprintf("q%04d", seq_along(p)), effect_scale = effect_scale
+)
+
+fit_scale <- function(wm, strat_bins) {
+  set.seed(1)
+  r <- compute_delta2(x_scale,
+    rank_cols = "effect_scale", group_cols = "group",
+    peptide_library = lib_scale, weight_mode = wm, strat_bins = strat_bins,
+    pairwise = FALSE, B_permutations = 500L, return_peptides = FALSE
+  )$terms
+  stats::setNames(r$T_stand_group, r$feature)[
+    c("arcsine", "log_odds", "difference")
+  ]
+}
+modes <- c("equal", "n_eff_sqrt", "se_invvar")
+round(sapply(modes, fit_scale, strat_bins = 0), 2)
+```
+
+Each feature's statistic is largest under the weight that matches its effect
+scale (the diagonal). The test is valid under every weighting; the weights
+only decide where its power goes. The differences are modest, and with fewer
+peptides per feature noise can hide them.
+
+### Weights and prevalence strata
+
+The run above set `strat_bins = 0`. By default, peptides are first split
+into strata of pooled prevalence (`strat_bins`), a Stouffer sum is formed
+within each stratum, and the strata are averaged with **equal** weight.
+Within a stratum prevalences are similar, so the three weightings barely
+differ there:
+
+```{r scales-strata}
+round(sapply(modes, fit_scale,
+  strat_bins = c(0.002, 0.005, 0.01, 0.02, 0.05, 0.10, 0.20, 0.50)
+), 2)
+```
+
+With the default strata the effect scale is set mostly by the equal
+weighting of strata, and `weight_mode` is a within-stratum refinement. To
+choose the effect scale with `weight_mode`, set `strat_bins = 0`; keep the
+strata when you would rather give each prevalence band an equal say.
+
+---
+
+## Confounding: propensity models
+
+In the first run the group term flagged species without a group effect,
+because cases are older and age raises positivity. A permutation test that
+shuffles group labels uniformly assumes nothing links the labels to the
+outcome except the group itself. `propensity_formula` replaces that by the
+conditional law of the labels given covariates: labellings are drawn with
+the observed group sizes, each subject keeping its own propensity of being a
+case (rejection sampling for two groups, a pairwise swap chain for more).
+The group term (and the pairwise tests) is also adjusted for the same
+covariates: the subject means are residualised on them by weighted least
+squares before the groups are compared, the score test for group in a model
+with the covariates. The draws make the p-value valid; the adjustment keeps
+the statistic from being dominated by the covariates. Covariates in the
+formula are subject-level and may use splines, e.g.
+`~ splines::ns(age, 3) + sex`.
+
+```{r propensity}
+set.seed(1)
+adj <- compute_delta2(
+  x,
+  rank_cols          = "species",
+  group_cols         = "group",
+  time_col           = "timepoint",
+  peptide_library    = library_tbl,
+  propensity_formula = ~age,
+  B_permutations     = 1000L
+)
+data.frame(
+  feature = tt$feature,
+  p_uniform = signif(tt$p_group, 2),
+  p_propensity = signif(adj$terms$p_group, 2),
+  max_delta = round(tt$max_delta_group, 3),
+  max_delta_adj = round(adj$terms$max_delta_adj_group, 3)
+) |>
+  head(8)
+```
+
+With the propensity draws the null species lose their small p-values, while
+`sp01`-`sp03` keep theirs. `max_delta_adj` is the inverse-propensity weighted
+(Hajek) version of the effect size, adjusted for age.
+
+The time and interaction terms are within-subject, so a subject-level
+confounder cancels out of them; their within-subject draws have their own
+optional model, `time_propensity_formula`, on sample-level covariates (e.g.
+storage time or batch), which biases the coin that swaps a subject's two
+timepoints.
+
+### Propensity diagnostics
+
+Every run records the fitted model's behaviour in `$meta$group_cols`:
+
+```{r diagnostics}
+m <- adj$meta$group_cols$group
+m$propensity
+m$sampler
+```
+
+- `n_overlap` counts subjects with a propensity in (0.05, 0.95), and `min_p`
+  / `max_p` give its range. A subject with a propensity near 0 or 1 is almost
+  never relabelled, so it contributes almost nothing to the test. A warning
+  is raised when fewer than 80% of subjects overlap.
+- `pseudo_r2` is McFadden's R-squared of the propensity model and `n_params`
+  its number of slopes. A model that predicts the group very well (or has
+  many parameters per subject of the smallest group) pins propensities near
+  0 or 1 and costs power; `compute_delta2()` warns about it.
+- `sampler$method` is `"uniform"` without a model, `"rejection"` for two
+  groups, or `"swap"` for more groups (or when rejection sampling fails, which
+  signals poor overlap); `accept_rate` is the swap chain's acceptance rate.
+- `n_trimmed` counts subjects dropped by `trim_propensity`, which is off by
+  default.
+
+Two options help when overlap is poor:
+
+- `n_ps_strata = 5` replaces each fitted propensity by the observed group
+  share in its quantile stratum, which is coarser but more robust to model
+  misspecification (two groups only).
+- `trim_propensity = c(0.05, 0.95)` drops subjects outside the range. This
+  changes the population the test is about, so report it.
+
+The dropout diagnostics check the time and interaction terms' assumption that
+missed visits are unrelated to the outcome:
+
+```{r dropout}
+m$dropout
+```
+
+`cor_group` is the association of samples per subject with group, and
+`cor_breadth` with each subject's overall positivity. Either above 0.3 in
+absolute value raises a warning.
+
+---
+
+## The safety net: `standardize = "two_pass"`
+
+Each peptide's z is standardised by its exact permutation moments under
+uniform relabelling, where it has mean 0 and SD 1. Under propensity draws,
+the swap chain or biased time coins this no longer holds exactly: a peptide
+whose positivity tracks a covariate can be off-centre, and narrower or wider
+than 1, in every draw, even after the covariate adjustment above. The test
+stays valid (the observed labelling is compared with draws from the same
+law), but peptides on different scales are pooled unevenly, which costs
+power.
+
+`standardize = "two_pass"` removes that. A first pass over the draws records
+each peptide's mean and SD of every component, over the observed labelling
+and the `B_permutations` draws. A second pass replays the same draws and
+pools the standardised values. Every peptide then has mean 0 and SD 1 under
+the actual null, for any sampler and any term. It costs twice the
+permutation time and memory proportional to the number of peptides.
+
+With one peptide per feature, each feature's null is that peptide's own:
+
+```{r two-pass}
+fit_std <- function(std) {
+  set.seed(1)
+  compute_delta2(
+    x,
+    rank_cols          = "peptide_id",
+    group_cols         = "group",
+    propensity_formula = ~age,
+    rank_feature_keep  = list(peptide_id = library_tbl$peptide_id[1:60]),
+    B_permutations     = 1000L,
+    standardize        = std,
+    return_peptides    = FALSE
+  )$terms
+}
+one_pass <- fit_std("none")
+two_pass <- fit_std("two_pass")
+# |null mean| and null SD of each single-peptide statistic
+summary(abs(one_pass$T_null_mean_group))
+summary(one_pass$T_null_sd_group)
+summary(abs(two_pass$T_null_mean_group))
+summary(two_pass$T_null_sd_group)
+```
+
+Without `two_pass` the peptides' nulls are somewhat off-centre and narrower
+than 1. With it every null is centred and has unit SD, so all peptides enter
+the pooled statistic on the same footing. It matters most for features with
+many peptides, under a propensity model or time coins, and when the
+peptides track the covariates.
+
+---
+
+## Plotting a `delta2_result`
+
+The delta plotters accept a `delta2_result` directly. `term` picks what to
+plot, and `group_col` picks the group column when there are several.
+
+### Forest plot of a term
+
+`forestplot()` shows the most extreme features of a rank, ranked by the
+term's signed statistic. The arrow labels default to the term's levels:
+
+```{r forest, fig.height = 6}
+forestplot(adj,
+  rank_of_interest = "species", term = "group",
+  n_neg_each = 5, n_pos_each = 5, use_diverging_colors = TRUE
+)$plot
+```
+
+Terms with one degree of freedom have a sign and can be plotted
+(`"group"`, `"time"`, `"interaction"`). An omnibus term (three or more
+levels) is a sum of squares; plot its pairs with `term = "pairwise"` and
+`group_pair_values = c(g1, g2)`, or test a scored trend
+(`group_scores`) instead.
+
+```{r forest-time, fig.height = 6}
+forestplot(adj,
+  rank_of_interest = "species", term = "interaction",
+  n_neg_each = 5, n_pos_each = 5
+)$plot
+```
+
+### Per-peptide prevalence
+
+`deltaplot()` and `ecdf_plot()` read the `$peptides` table. Group levels use
+each subject's share of positive samples, averaged over subjects, so
+subjects with more samples do not count more. `adjusted = TRUE` uses the
+inverse-propensity weighted prevalences:
+
+```{r deltaplot}
+deltaplot(adj, adjusted = TRUE, point_size = 1)
+```
+
+```{r deltaplot-time}
+deltaplot(adj, term = "time", point_size = 1)
+```
+
+```{r ecdf}
+ecdf_plot(adj, adjusted = TRUE)
+```
+
+The interactive versions (`forestplot_interactive()`,
+`deltaplot_interactive()`, `ecdf_plot_interactive()`) take the same
+arguments.
+
+---
+
+## Session info
+
+```{r session-info}
+sessionInfo()
+```

@@ -22,6 +22,7 @@
 #' @param prev_tbl Data frame with columns \code{group1}, \code{group2},
 #'   \code{prop1}, \code{prop2}. Optional \code{feature} is used for row
 #'   identity only.
+#'   Or a [compute_delta2()] result (see `term`).
 #' @param group_pair_values Optional length-2 character vector
 #'   \code{c(group1, group2)}. Use this when \code{prev_tbl} contains multiple
 #'   group pairs.
@@ -42,6 +43,11 @@
 #' @param plot_title,plot_subtitle Optional plot labels for the title/subtitle.
 #' @param x_label,y_label Optional axis labels. Defaults are generated from the
 #'   group labels.
+#' @param term,group_col,adjusted Used when `prev_tbl` is a
+#'   [compute_delta2()] result: `term` `"group"` plots the levels of the group
+#'   column, `"time"` the timepoints; `group_col` picks the group column when
+#'   the result has several; `adjusted = TRUE` plots the inverse-propensity
+#'   weighted group prevalences.
 #'
 #' @return A `ggplot` object.
 #'
@@ -79,8 +85,16 @@ deltaplot <- function(
   plot_title = NULL,
   plot_subtitle = NULL,
   x_label = NULL,
-  y_label = NULL
+  y_label = NULL,
+  term = c("group", "time"),
+  group_col = NULL,
+  adjusted = FALSE
 ) {
+  if (inherits(prev_tbl, "delta2_result")) {
+    prev_tbl <- .ph_delta2_prev_tbl(
+      prev_tbl, match.arg(term), group_col, adjusted
+    )
+  }
   # ---- Basic checks -----------------------------------------------------------
   d <- prev_tbl
   .ph_log_info("Preparing delta prevalence plot.")
@@ -336,6 +350,7 @@ deltaplot <- function(
 #'
 #' @param prev_tbl Data frame with columns \code{group1}, \code{group2},
 #'   \code{prop1}, \code{prop2}. Optional \code{feature} is used for labels.
+#'   Or a [compute_delta2()] result (see `term`).
 #' @param group_pair_values Optional length-2 character vector
 #'   \code{c(group1, group2)}. Use this when \code{prev_tbl} contains multiple
 #'   group pairs.
@@ -356,6 +371,11 @@ deltaplot <- function(
 #' @param label_y_gap_frac Vertical label offset as a fraction of the y-range.
 #' @param plot_title,plot_subtitle Optional plot labels for the title/subtitle.
 #' @param point_jitter_width,point_jitter_height Jitter amounts. Defaults 0.005.
+#' @param term,group_col,adjusted Used when `prev_tbl` is a
+#'   [compute_delta2()] result: `term` `"group"` plots the levels of the group
+#'   column, `"time"` the timepoints; `group_col` picks the group column when
+#'   the result has several; `adjusted = TRUE` plots the inverse-propensity
+#'   weighted group prevalences.
 #'
 #' @return A plotly object.
 #'
@@ -396,8 +416,16 @@ deltaplot_interactive <- function(
   plot_title = NULL,
   plot_subtitle = NULL,
   point_jitter_width = 0.005,
-  point_jitter_height = 0.005
+  point_jitter_height = 0.005,
+  term = c("group", "time"),
+  group_col = NULL,
+  adjusted = FALSE
 ) {
+  if (inherits(prev_tbl, "delta2_result")) {
+    prev_tbl <- .ph_delta2_prev_tbl(
+      prev_tbl, match.arg(term), group_col, adjusted
+    )
+  }
   rlang::check_installed("plotly")
   # ---- Input validation ------------------------------------------------------
   chk::chk_data(prev_tbl)
@@ -868,6 +896,7 @@ deltaplot_interactive <- function(
 #'
 #' @param results_tbl Data frame/tibble with at least: \code{rank, feature,
 #'   group1, group2, design, T_obs, p_perm}.
+#'   Or a [compute_delta2()] result (see `term`).
 #' @param rank_of_interest Character scalar specifying the rank to plot (e.g.,
 #'   \code{"species"}).
 #' @param statistic_to_plot Which statistic to rank/plot: \code{"T"} (raw
@@ -903,6 +932,12 @@ deltaplot_interactive <- function(
 #' @param seg_width Segment line width for the horizontal bars.
 #' @param point_size Point size for feature markers.
 #' @param show_grid Logical; show major/minor grid lines.
+#' @param term,group_col,group_pair_values Used when `results_tbl` is a
+#'   [compute_delta2()] result: the term to plot (`"group"`, `"time"`,
+#'   `"interaction"` with one degree of freedom, or `"pairwise"`), the group
+#'   column when the result has several, and for `"pairwise"` the pair
+#'   `c(group1, group2)` when there are several. The arrow labels then
+#'   default to the term's levels.
 #'
 #' @return A list with:
 #' \itemize{
@@ -983,8 +1018,18 @@ forestplot <- function(
   font_family = "sans",
   seg_width = 1.2,
   point_size = 3.6,
-  show_grid = FALSE
+  show_grid = FALSE,
+  term = c("group", "time", "interaction", "pairwise"),
+  group_col = NULL,
+  group_pair_values = NULL
 ) {
+  if (inherits(results_tbl, "delta2_result")) {
+    results_tbl <- .ph_delta2_forest_tbl(
+      results_tbl, match.arg(term), group_col, group_pair_values
+    )
+    if (missing(left_label)) left_label <- attr(results_tbl, "labels")[1]
+    if (missing(right_label)) right_label <- attr(results_tbl, "labels")[2]
+  }
   # ---- input validation ------------------------------------------------------
   if (!is.data.frame(results_tbl)) {
     .ph_abort("`results_tbl` must be a data.frame/tibble.")
@@ -1230,6 +1275,7 @@ forestplot <- function(
 #'
 #' @param results_tbl Data frame/tibble with at least: \code{rank, feature,
 #'   group1, group2, design, T_obs, p_perm}.
+#'   Or a [compute_delta2()] result (see `term`).
 #' @param rank_of_interest Character scalar specifying the rank to plot (e.g.,
 #'   \code{"species"}).
 #' @param statistic_to_plot Which statistic to rank/plot: \code{"T"} (raw
@@ -1261,6 +1307,12 @@ forestplot <- function(
 #' @param font_family Font family name.
 #' @param seg_width Segment line width.
 #' @param point_size Point size.
+#' @param term,group_col,group_pair_values Used when `results_tbl` is a
+#'   [compute_delta2()] result: the term to plot (`"group"`, `"time"`,
+#'   `"interaction"` with one degree of freedom, or `"pairwise"`), the group
+#'   column when the result has several, and for `"pairwise"` the pair
+#'   `c(group1, group2)` when there are several. The arrow labels then
+#'   default to the term's levels.
 #'
 #' @return A list with \code{data} and \code{plot} (plotly object).
 #'
@@ -1317,8 +1369,18 @@ forestplot_interactive <- function(
   base_text_pt = 12,
   font_family = "sans",
   seg_width = 1.6,
-  point_size = 11
+  point_size = 11,
+  term = c("group", "time", "interaction", "pairwise"),
+  group_col = NULL,
+  group_pair_values = NULL
 ) {
+  if (inherits(results_tbl, "delta2_result")) {
+    results_tbl <- .ph_delta2_forest_tbl(
+      results_tbl, match.arg(term), group_col, group_pair_values
+    )
+    if (missing(left_label)) left_label <- attr(results_tbl, "labels")[1]
+    if (missing(right_label)) right_label <- attr(results_tbl, "labels")[2]
+  }
   rlang::check_installed("plotly")
   # ---- Input validation ------------------------------------------------------
   if (!is.data.frame(results_tbl)) {
@@ -1592,6 +1654,7 @@ forestplot_interactive <- function(
 #'
 #' @param prev_tbl Data frame with columns \code{group1}, \code{group2},
 #'   \code{prop1}, \code{prop2}. Optional \code{feature} columns are ignored.
+#'   Or a [compute_delta2()] result (see `term`).
 #' @param group_pair_values Optional length-2 character vector \code{c(group1,
 #'   group2)}. Use this when \code{prev_tbl} contains multiple group pairs.
 #' @param group_labels Optional length-2 character vector of display labels
@@ -1605,6 +1668,11 @@ forestplot_interactive <- function(
 #'   \code{TRUE}.
 #' @param plot_title,plot_subtitle Optional plot labels.
 #' @param x_label,y_label Optional axis labels.
+#' @param term,group_col,adjusted Used when `prev_tbl` is a
+#'   [compute_delta2()] result: `term` `"group"` plots the levels of the group
+#'   column, `"time"` the timepoints; `group_col` picks the group column when
+#'   the result has several; `adjusted = TRUE` plots the inverse-propensity
+#'   weighted group prevalences.
 #'
 #' @return A `ggplot` object.
 #'
@@ -1640,8 +1708,16 @@ ecdf_plot <- function(
   plot_title = NULL,
   plot_subtitle = NULL,
   x_label = NULL,
-  y_label = NULL
+  y_label = NULL,
+  term = c("group", "time"),
+  group_col = NULL,
+  adjusted = FALSE
 ) {
+  if (inherits(prev_tbl, "delta2_result")) {
+    prev_tbl <- .ph_delta2_prev_tbl(
+      prev_tbl, match.arg(term), group_col, adjusted
+    )
+  }
   # ---- input validation ------------------------------------------------------
   chk::chk_data(prev_tbl)
   if (!is.null(group_pair_values)) {
@@ -1831,6 +1907,7 @@ ecdf_plot <- function(
 #'
 #' @param prev_tbl Data frame with columns \code{group1}, \code{group2},
 #'   \code{prop1}, \code{prop2}.
+#'   Or a [compute_delta2()] result (see `term`).
 #' @param group_pair_values Optional length-2 character vector \code{c(group1,
 #'   group2)}. Use this when \code{prev_tbl} contains multiple group pairs.
 #' @param group_labels Optional length-2 character vector of display labels
@@ -1843,6 +1920,11 @@ ecdf_plot <- function(
 #' @param show_ks_test Logical; add KS test summary to subtitle. Default
 #'   \code{TRUE}.
 #' @param plot_title,plot_subtitle Optional plot labels.
+#' @param term,group_col,adjusted Used when `prev_tbl` is a
+#'   [compute_delta2()] result: `term` `"group"` plots the levels of the group
+#'   column, `"time"` the timepoints; `group_col` picks the group column when
+#'   the result has several; `adjusted = TRUE` plots the inverse-propensity
+#'   weighted group prevalences.
 #'
 #' @return A plotly object.
 #'
@@ -1879,8 +1961,16 @@ ecdf_plot_interactive <- function(
   show_median_lines = TRUE,
   show_ks_test = TRUE,
   plot_title = NULL,
-  plot_subtitle = NULL
+  plot_subtitle = NULL,
+  term = c("group", "time"),
+  group_col = NULL,
+  adjusted = FALSE
 ) {
+  if (inherits(prev_tbl, "delta2_result")) {
+    prev_tbl <- .ph_delta2_prev_tbl(
+      prev_tbl, match.arg(term), group_col, adjusted
+    )
+  }
   rlang::check_installed("plotly")
   # ---- input validation ------------------------------------------------------
   chk::chk_data(prev_tbl)

@@ -1,6 +1,6 @@
 Package: phiper
 Title: Automated PhIP-seq Analysis and Reporting
-Version: 0.4.23
+Version: 0.5.0
 Authors@R: c(
   person(
     "Mateusz", "Kolek", 
@@ -51,6 +51,7 @@ Suggests:
     knitr,
     mgcv,
     mockery,
+    nnet,
     parallelDist,
     plotly,
     rmarkdown,
