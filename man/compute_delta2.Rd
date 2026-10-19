@@ -162,10 +162,13 @@ two complete timepoints this is the McNemar z; with \code{T} it is Cochran's Q.
 Subjects with one sample contribute nothing.
 \item \emph{interaction}: the within-subject deviations, residualised against the
 pooled time main effect, compared across group labels and standardised
-by a Welch-type variance built from each group's own covariance of the
-deviations, recomputed for every draw. The interaction's null is about
+by a Welch-type variance (one residual variance per group, shaped by
+each subject's visits, and accounting for the estimated time effect),
+recomputed for every draw. The interaction's null is about
 mean changes, so this keeps it calibrated when groups differ in
-turnover or visit patterns.
+turnover or visit patterns. A timepoint with no samples in some group
+leaves the interaction there not estimable; the test stays valid but is
+conservative, and a warning names the gap.
 }
 
 A term with one degree of freedom (two levels, or \code{group_scores} /

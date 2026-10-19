@@ -25,8 +25,9 @@ using namespace delta2;
 //                permutation variance
 //   interaction  within-subject deviations residualised against the pooled
 //                time main effect, compared across groups and standardised
-//                by a heteroscedasticity-robust (Welch-type) variance with
-//                each group's own covariance, recomputed for every labelling
+//                by a Welch-type variance: one residual variance per group,
+//                design-shaped, with the estimated time effect's pull on the
+//                score, recomputed for every labelling
 // A df = 1 term gives a signed z; an omnibus term the vector Cov^{+1/2} U.
 //
 // cpp_delta2_score() returns these per peptide for the observed labels.
@@ -276,8 +277,12 @@ struct LabShared {
   Vec WZ;                 // R x K x p:    sum_{i in k} w_i Z_i
   Vec W2ZZ;               // R x K x p x p: sum_{i in k} w_i^2 Z_i Z_i'
   Vec Mab;                // R x P x p x p: pinv of the pair's sum w Z Z'
-  Vec nI, cred, SAr, Q4r; // interaction: size, centred reduced group design,
-                          // sum of reduced spreads, sum of their squares
+  Vec nI, cred, SAr;      // interaction: size, centred reduced group design,
+                          // sum of reduced design spreads
+  Vec Q;                  // (Lg2 Lr) x Lr: (sum_k c_k (x) SA_k) SA^+, the
+                          // pull of the estimated time effect on S
+  Vec SArp, dfk;          // per level: SA_k^+ and the residual degrees of
+                          // freedom sum_i rank(A_i) - rank(SA_k)
   bool inter_ok = false;
 };
 
@@ -294,12 +299,13 @@ struct Stratum {
   std::vector<int> rho_of;
   Vec wr, Mz, W2ZZ_tot;
   Vec gbar_b, Wg_b;
-  Vec A, Ar, SumA_pinv, SumAr_pinv, SumA_full;
+  Vec A, Ar, Arp, SumA_pinv, SumAr_pinv, SumA_full;
+  std::vector<int> Ar_rank;
   std::vector<char> spread;
 
   // per-peptide CSR over positive subjects, and fixed quantities
   std::vector<int> off, csr_sub;
-  Vec csr_v, csr_w, csr_D, csr_Dr;
+  Vec csr_v, csr_w, csr_D, csr_Dr, csr_dAd;
   std::vector<char> csr_spread;
   Vec tot, p0, alpha, SS, Wt, cst, beta, beta_r;
   std::vector<char> g_ok;
@@ -309,7 +315,7 @@ struct Stratum {
   Vec d_group, d_group_adj, d_time, d_inter, d_inter_adj, d_pair, d_pair_adj;
 
   // scratch
-  Vec A1, A2, A1Z, A3Z, U, SDr, DD, DAb, RS, RR, Sred, Vred, rred, Ab, tmp, al;
+  Vec A1, A2, A1Z, A3Z, U, SDr, DAD, RS, Sred, Vred, rred, tmp, al, Mk, MS;
 
   void setup(const IntegerVector& sample_rows, const IntegerVector& sample_subject,
              const IntegerVector& group_code, const IntegerVector& time_code,
@@ -427,6 +433,8 @@ struct Stratum {
     // within-subject design spread A_i = X_i' C X_i, and its reduced form
     A.assign((size_t)N * LL, 0.0);
     Ar.assign((size_t)N * LR, 0.0);
+    Arp.assign((size_t)N * LR, 0.0);
+    Ar_rank.assign(N, 0);
     spread.assign(N, 0);
     SumA_full.assign(LL, 0.0);
     Vec SumAr(LR, 0.0);
@@ -456,6 +464,23 @@ struct Stratum {
               s += Ct[(size_t)u * Lr + a] * Ai[u * Lt + v] * Ct[(size_t)v * Lr + b];
           Ari[a * Lr + b] = s;
         }
+      // Ar_i^+ and its rank: subject i's information per time direction
+      {
+        const Vec Ari_v(Ari, Ari + LR);
+        const Vec pinv = psd_pinv_pow(Ari_v, Lr, -1.0);
+        std::copy(pinv.begin(), pinv.end(), Arp.begin() + (size_t)i * LR);
+        Vec vals, vecs;
+        if (Lr == 1) {
+          Ar_rank[i] = Ari[0] > 1e-12 ? 1 : 0;
+        } else {
+          sym_eigen(Ari_v, Lr, vals, vecs);
+          double vmax = 0.0;
+          for (double v : vals) vmax = std::max(vmax, v);
+          int rk = 0;
+          for (double v : vals) rk += (vmax > 0.0 && v > 1e-10 * vmax);
+          Ar_rank[i] = rk;
+        }
+      }
       if (!spread[i]) continue;
       ++N_I;
       for (int e = 0; e < LL; ++e) SumA_full[e] += Ai[e];
@@ -470,16 +495,15 @@ struct Stratum {
     A3Z.assign((size_t)K * p, 0.0);
     U.assign(std::max(Lg, Lt), 0.0);
     SDr.assign((size_t)K * Lr, 0.0);
-    DD.assign((size_t)K * LR, 0.0);
-    DAb.assign((size_t)K * LR, 0.0);
+    DAD.assign(K, 0.0);
     RS.assign(Lr, 0.0);
-    RR.assign(LR, 0.0);
     Sred.assign((size_t)Lg2 * Lr, 0.0);
     Vred.assign((size_t)Lg2 * Lr * Lg2 * Lr, 0.0);
     rred.assign((size_t)Lg2 * Lr, 0.0);
-    Ab.assign(Lr, 0.0);
     tmp.assign(std::max(p, Lr), 0.0);
     al.assign(p, 0.0);
+    Mk.assign((size_t)Lg2 * Lr * Lr, 0.0);
+    MS.assign((size_t)Lg2 * Lr * Lr, 0.0);
   }
 
   // per-peptide fixed quantities from the observed data, and effect sizes
@@ -585,6 +609,7 @@ struct Stratum {
         matvec_t(Ct.data(), Lt, Lr, D.data(), Dr.data());
         csr_D.insert(csr_D.end(), D.begin(), D.end());
         csr_Dr.insert(csr_Dr.end(), Dr.begin(), Dr.end());
+        csr_dAd.push_back(spread[i] ? quad(&Arp[(size_t)i * LR], Lr, Dr.data()) : 0.0);
         if (!spread[i]) continue;
         const double f = c * (ni - c) / ni / (ni - 1.0);
         for (int e = 0; e < LL; ++e) Vt[e] += f * A[(size_t)i * LL + e];
@@ -702,7 +727,6 @@ struct Stratum {
       sh.nI.assign(K, 0.0);
       sh.cred.assign((size_t)K * Lg2, 0.0);
       sh.SAr.assign((size_t)K * LR, 0.0);
-      sh.Q4r.assign((size_t)K * LR * LR, 0.0);
       Vec gbar(Lg, 0.0);
       for (int i = 0; i < N; ++i) {
         if (!spread[i]) continue;
@@ -710,20 +734,58 @@ struct Stratum {
         for (int l = 0; l < Lg; ++l) gbar[l] += Gd[(size_t)lab[i] * Lg + l];
         const double* Ari = &Ar[(size_t)i * LR];
         double* sa = &sh.SAr[(size_t)lab[i] * LR];
-        double* q4 = &sh.Q4r[(size_t)lab[i] * LR * LR];
-        for (int e = 0; e < LR; ++e) {
-          sa[e] += Ari[e];
-          for (int f = 0; f < LR; ++f) q4[(size_t)e * LR + f] += Ari[e] * Ari[f];
-        }
+        for (int e = 0; e < LR; ++e) sa[e] += Ari[e];
       }
       int levels = 0;
       for (int k = 0; k < K; ++k) levels += sh.nI[k] > 0;
       if (N_I < 2 || levels < 2) return;
+      // per level: SA_k^+ and sum_i rank(A_i) - rank(SA_k)
+      sh.SArp.assign((size_t)K * LR, 0.0);
+      sh.dfk.assign(K, 0.0);
+      for (int i = 0; i < N; ++i) if (spread[i]) sh.dfk[lab[i]] += Ar_rank[i];
+      for (int k = 0; k < K; ++k) {
+        if (sh.nI[k] <= 0) continue;
+        const Vec SAk(sh.SAr.begin() + (size_t)k * LR, sh.SAr.begin() + (size_t)(k + 1) * LR);
+        const Vec pinv = psd_pinv_pow(SAk, Lr, -1.0);
+        std::copy(pinv.begin(), pinv.end(), sh.SArp.begin() + (size_t)k * LR);
+        int rk = 0;
+        if (Lr == 1) {
+          rk = SAk[0] > 1e-12 ? 1 : 0;
+        } else {
+          Vec vals, vecs;
+          sym_eigen(SAk, Lr, vals, vecs);
+          double vmax = 0.0;
+          for (double v : vals) vmax = std::max(vmax, v);
+          for (double v : vals) rk += (vmax > 0.0 && v > 1e-10 * vmax);
+        }
+        sh.dfk[k] -= rk;
+      }
       for (int l = 0; l < Lg; ++l) gbar[l] /= N_I;
       Vec c(Lg);
       for (int k = 0; k < K; ++k) {
         for (int l = 0; l < Lg; ++l) c[l] = Gd[(size_t)k * Lg + l] - gbar[l];
         matvec_t(Cg.data(), Lg, Lg2, c.data(), &sh.cred[(size_t)k * Lg2]);
+      }
+      // S = sum_i (c_i (x) I - Q) D_i with Q = GA SA^+, GA = sum_k c_k (x) SA_k:
+      // zero when every group has the same visit pattern
+      const int dI = Lg2 * Lr;
+      sh.Q.assign((size_t)dI * Lr, 0.0);
+      if (residualize) {
+        Vec GA((size_t)dI * Lr, 0.0);
+        for (int k = 0; k < K; ++k)
+          for (int l = 0; l < Lg2; ++l) {
+            const double ck = sh.cred[(size_t)k * Lg2 + l];
+            if (ck == 0.0) continue;
+            for (int a = 0; a < Lr; ++a)
+              for (int b = 0; b < Lr; ++b)
+                GA[(size_t)(l * Lr + a) * Lr + b] += ck * sh.SAr[(size_t)k * LR + a * Lr + b];
+          }
+        for (int e = 0; e < dI; ++e)
+          for (int b = 0; b < Lr; ++b) {
+            double s = 0.0;
+            for (int a = 0; a < Lr; ++a) s += GA[(size_t)e * Lr + a] * SumAr_pinv[a * Lr + b];
+            sh.Q[(size_t)e * Lr + b] = s;
+          }
       }
       sh.inter_ok = true;
     }
@@ -808,10 +870,14 @@ struct Stratum {
     }
   }
 
-  // Welch-type interaction of peptide j: residuals R_i = D_i - A_i beta in
-  // reduced time coordinates; per group k the sum RS_k and the covariance
-  // Sigma_k of its R_i; S = sum_k c_k (x) RS_k, V = sum_k n_k c_k c_k' (x)
-  // Sigma_k, r = (Cg (x) Ct) V^{+1/2} S
+  // Robust interaction of peptide j: residuals R_i = D_i - A_i beta in
+  // reduced time coordinates. S = sum_k c_k (x) RS_k = sum_i M_k(i) D_i with
+  // M_k = c_k (x) I - Q, so V = sum_k M_k Cov(sum_{i in k} D_i) M_k'. Within a
+  // group, Cov(D_i) = s2_k A_i (the subject's own design spread), with s2_k
+  // the group's residual variance per unit of within-subject information
+  // around its own time effect: a Welch-type variance (one scale per group)
+  // whose shape comes from the design, so it stays stable when subjects see
+  // different visits. r = (Cg (x) Ct) V^{+1/2} S.
   void interaction(int j, const int* lab, const LabShared& sh, Vec& r_inter, int dI) {
     const int Lfull = Lg * Lt;
     if (!sh.inter_ok) {
@@ -820,65 +886,58 @@ struct Stratum {
     }
     const double* br = &beta_r[(size_t)j * Lr];
     std::fill(SDr.begin(), SDr.end(), 0.0);
-    std::fill(DD.begin(), DD.end(), 0.0);
-    std::fill(DAb.begin(), DAb.end(), 0.0);
+    std::fill(DAD.begin(), DAD.end(), 0.0);
     for (int e = off[j]; e < off[j + 1]; ++e) {
       if (!csr_spread[e]) continue;
-      const int i = csr_sub[e], k = lab[i];
+      const int k = lab[csr_sub[e]];
       const double* De = &csr_Dr[(size_t)e * Lr];
-      matvec(&Ar[(size_t)i * LR], Lr, Lr, br, Ab.data());
-      for (int a = 0; a < Lr; ++a) {
-        SDr[(size_t)k * Lr + a] += De[a];
-        for (int b = 0; b < Lr; ++b) {
-          DD[(size_t)k * LR + a * Lr + b] += De[a] * De[b];
-          DAb[(size_t)k * LR + a * Lr + b] += De[a] * Ab[b];
-        }
-      }
+      for (int a = 0; a < Lr; ++a) SDr[(size_t)k * Lr + a] += De[a];
+      DAD[k] += csr_dAd[e];
     }
     std::fill(Sred.begin(), Sred.end(), 0.0);
     std::fill(Vred.begin(), Vred.end(), 0.0);
     double scale = 0.0;
     for (int k = 0; k < K; ++k) {
-      const double nk = sh.nI[k];
-      if (nk <= 0) continue;
-      // RS_k = sum_{i in k} R_i
+      if (sh.nI[k] <= 0) continue;
       const double* sa = &sh.SAr[(size_t)k * LR];
+      const double* sd = &SDr[(size_t)k * Lr];
+      // RS_k = sum_{i in k} R_i = SD_k - SA_k beta
       for (int a = 0; a < Lr; ++a) {
         double s = 0.0;
         for (int b = 0; b < Lr; ++b) s += sa[a * Lr + b] * br[b];
-        RS[a] = SDr[(size_t)k * Lr + a] - s;
+        RS[a] = sd[a] - s;
       }
       const double* ck = &sh.cred[(size_t)k * Lg2];
       for (int l = 0; l < Lg2; ++l)
         for (int a = 0; a < Lr; ++a) Sred[(size_t)l * Lr + a] += ck[l] * RS[a];
-      if (nk < 2) continue;
-      // RR_k = sum R R' = DD - (D (A b)' + (A b) D') + sum A b b' A
-      const double* q4 = &sh.Q4r[(size_t)k * LR * LR];
-      double pos = 0.0;
-      for (int a = 0; a < Lr; ++a)
+      // s2_k = (sum_i D_i' A_i^+ D_i - SD_k' SA_k^+ SD_k) / df_k
+      const double df = sh.dfk[k];
+      if (df <= 0.0) continue;
+      const double s2 = std::max(DAD[k] - quad(&sh.SArp[(size_t)k * LR], Lr, sd), 0.0) / df;
+      if (s2 <= 0.0) continue;
+      // V += s2 M_k SA_k M_k'
+      double m2 = 0.0, tr = 0.0;
+      for (int a = 0; a < Lr; ++a) tr += sa[a * Lr + a];
+      for (int l = 0; l < Lg2; ++l)
+        for (int a = 0; a < Lr; ++a)
+          for (int b = 0; b < Lr; ++b) {
+            const size_t e = (size_t)(l * Lr + a);
+            const double mv = (a == b ? ck[l] : 0.0) - sh.Q[e * Lr + b];
+            Mk[e * Lr + b] = mv;
+            m2 += mv * mv;
+          }
+      scale += s2 * m2 * tr;
+      for (int e = 0; e < dI; ++e)
         for (int b = 0; b < Lr; ++b) {
           double s = 0.0;
-          for (int u = 0; u < Lr; ++u)
-            for (int v = 0; v < Lr; ++v)
-              s += br[u] * br[v] * q4[(size_t)(a * Lr + u) * LR + (v * Lr + b)];
-          const double dd = DD[(size_t)k * LR + a * Lr + b];
-          RR[a * Lr + b] = dd - DAb[(size_t)k * LR + a * Lr + b] -
-            DAb[(size_t)k * LR + b * Lr + a] + s;
-          if (a == b) pos += dd + s;
+          for (int a = 0; a < Lr; ++a) s += Mk[(size_t)e * Lr + a] * sa[a * Lr + b];
+          MS[(size_t)e * Lr + b] = s;
         }
-      // Sigma_k = (RR_k - RS_k RS_k' / n_k) / (n_k - 1)
-      double c2 = 0.0;
-      for (int l = 0; l < Lg2; ++l) c2 += ck[l] * ck[l];
-      scale += nk * c2 * pos / (nk - 1.0);
-      for (int l = 0; l < Lg2; ++l)
-        for (int l2 = 0; l2 < Lg2; ++l2) {
-          const double cc = nk * ck[l] * ck[l2] / (nk - 1.0);
-          if (cc == 0.0) continue;
-          for (int a = 0; a < Lr; ++a)
-            for (int b = 0; b < Lr; ++b) {
-              const double sig = RR[a * Lr + b] - RS[a] * RS[b] / nk;
-              Vred[(size_t)(l * Lr + a) * dI + (l2 * Lr + b)] += cc * sig;
-            }
+      for (int e = 0; e < dI; ++e)
+        for (int f = 0; f < dI; ++f) {
+          double s = 0.0;
+          for (int b = 0; b < Lr; ++b) s += MS[(size_t)e * Lr + b] * Mk[(size_t)f * Lr + b];
+          Vred[(size_t)e * dI + f] += s2 * s;
         }
     }
     const Vec W = psd_pinv_pow(Vred, dI, -0.5, scale);

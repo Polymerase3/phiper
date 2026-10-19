@@ -348,6 +348,25 @@ test_that("inverse-propensity effect sizes and propensity diagnostics", {
   expect_false(isTRUE(all.equal(tt$T_group, raw$terms$T_group)))
 })
 
+test_that("a timepoint missing from a group triggers a warning", {
+  df <- .d2_panel(seed = 6, n = 30, m = 6)
+  df <- df[!(df$group == "a" & df$timepoint == "T3"), ]
+  expect_warning(
+    compute_delta2(df, "peptide_id", "group",
+      time_col = "timepoint", B_permutations = 100L, pairwise = FALSE,
+      rank_feature_keep = list(peptide_id = "p01")
+    ),
+    "not estimable"
+  )
+  full <- .d2_panel(seed = 6, n = 30, m = 6)
+  expect_no_warning(
+    compute_delta2(full, "peptide_id", "group",
+      time_col = "timepoint", B_permutations = 100L, pairwise = FALSE,
+      rank_feature_keep = list(peptide_id = "p01")
+    )
+  )
+})
+
 test_that("rho options, custom ID columns, and input checks", {
   df <- .d2_panel(seed = 5, n = 30, m = 8)
   names(df)[names(df) == "subject_id"] <- "patient"

@@ -67,21 +67,47 @@
 }
 
 # U' V^+ U for a covariance V
-# Welch-type interaction, by hand: subject residuals R (rows) and group
-# codes; S = sum_k c_k (x) RS_k and V = sum_k n_k c_k c_k' (x) Sigma_k, with
-# c_k the centred group design row (G: levels x columns)
-.welch_SV <- function(R, code, G) {
-  R <- as.matrix(R)
+.rank <- function(M) {
+  e <- eigen(as.matrix(M), symmetric = TRUE, only.values = TRUE)$values
+  sum(e > 1e-10 * max(e, 0))
+}
+
+# The interaction by hand: within-subject deviations D (rows), group codes,
+# group design G (levels x columns), the subjects' design spreads A (a list
+# of matrices) and the time effect beta. R_i = D_i - A_i beta and
+# S = sum_k c_k (x) RS_k. Within group k, Cov(D_i) = s2_k A_i with
+# s2_k = (sum_i D_i' A_i^+ D_i - SD_k' SA_k^+ SD_k) / (sum_i rank A_i -
+# rank SA_k), so V = sum_k s2_k M_k SA_k M_k', M_k = c_k (x) I - Q,
+# Q = (sum_k c_k (x) SA_k) (sum_i A_i)^+ (zero for equal visit patterns)
+.welch_SV <- function(D, code, G, A, beta) {
+  D <- as.matrix(D)
+  L <- ncol(D)
+  A <- lapply(A, as.matrix)
+  R <- do.call(rbind, lapply(seq_along(A), function(i) {
+    D[i, ] - drop(A[[i]] %*% beta)
+  }))
+  lv <- sort(unique(code))
   gbar <- colMeans(G[code, , drop = FALSE])
+  SA <- lapply(lv, function(k) Reduce(`+`, A[code == k]))
+  GA <- Reduce(`+`, lapply(seq_along(lv), function(q) {
+    kronecker(G[lv[q], ] - gbar, SA[[q]])
+  }))
+  Q <- GA %*% MASS_ginv(Reduce(`+`, SA))
   S <- 0
   V <- 0
-  for (k in sort(unique(code))) {
-    Rk <- R[code == k, , drop = FALSE]
-    ck <- G[k, ] - gbar
-    S <- S + kronecker(ck, colSums(Rk))
-    if (nrow(Rk) >= 2) {
-      V <- V + nrow(Rk) * kronecker(tcrossprod(ck), stats::cov(Rk))
-    }
+  for (q in seq_along(lv)) {
+    in_k <- which(code == lv[q])
+    ck <- G[lv[q], ] - gbar
+    S <- S + kronecker(ck, colSums(R[in_k, , drop = FALSE]))
+    SD <- colSums(D[in_k, , drop = FALSE])
+    dad <- sum(vapply(in_k, function(i) {
+      drop(D[i, ] %*% MASS_ginv(A[[i]]) %*% D[i, ])
+    }, 0))
+    df <- sum(vapply(A[in_k], .rank, 0)) - .rank(SA[[q]])
+    if (df <= 0) next
+    s2 <- (dad - drop(SD %*% MASS_ginv(SA[[q]]) %*% SD)) / df
+    M <- kronecker(ck, diag(L)) - Q
+    V <- V + s2 * M %*% SA[[q]] %*% t(M)
   }
   list(S = S, V = V)
 }
@@ -490,7 +516,9 @@ test_that("interaction is residualised against the time main effect", {
   D <- sapply(rows, function(r) sum((x[r] - mean(x[r])) * (y[r] - mean(y[r]))))
   Sx <- sapply(rows, function(r) sum((x[r] - mean(x[r]))^2))
   R <- D - Sx * sum(D) / sum(Sx)
-  sv <- .welch_SV(R, run$des$group_code, matrix(c(0, 1)))
+  sv <- .welch_SV(D, run$des$group_code, matrix(c(0, 1)), as.list(Sx),
+    sum(D) / sum(Sx)
+  )
   expect_equal(run$res$interaction[2, 1], as.numeric(sv$S) / sqrt(sv$V[1, 1]),
     tolerance = 1e-10
   )
@@ -526,9 +554,10 @@ test_that("omnibus interaction is the Welch quadratic form", {
     spread <- vapply(A, function(a) sum(diag(a)) > 1e-12, TRUE)
     sumA <- Reduce(`+`, A[spread])
     beta <- MASS_ginv(sumA) %*% colSums(D[spread, , drop = FALSE])
-    R <- t(sapply(seq_along(rows), function(i) D[i, ] - A[[i]] %*% beta))
-    R <- R[spread, ]
-    sv <- .welch_SV(R, run$des$group_code[spread], diag(3))
+    sv <- .welch_SV(
+      D[spread, , drop = FALSE], run$des$group_code[spread], diag(3),
+      A[spread], beta
+    )
     expect_equal(sum(run$res$interaction[j, ]^2), .quad(sv$S, sv$V),
       tolerance = 1e-8
     )

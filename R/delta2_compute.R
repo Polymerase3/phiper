@@ -39,10 +39,13 @@
 #'   Subjects with one sample contribute nothing.
 #' - *interaction*: the within-subject deviations, residualised against the
 #'   pooled time main effect, compared across group labels and standardised
-#'   by a Welch-type variance built from each group's own covariance of the
-#'   deviations, recomputed for every draw. The interaction's null is about
+#'   by a Welch-type variance (one residual variance per group, shaped by
+#'   each subject's visits, and accounting for the estimated time effect),
+#'   recomputed for every draw. The interaction's null is about
 #'   mean changes, so this keeps it calibrated when groups differ in
-#'   turnover or visit patterns.
+#'   turnover or visit patterns. A timepoint with no samples in some group
+#'   leaves the interaction there not estimable; the test stays valid but is
+#'   conservative, and a warning names the gap.
 #'
 #' A term with one degree of freedom (two levels, or `group_scores` /
 #' `time_scores` for a linear trend) gives a signed z per peptide; an omnibus
@@ -436,6 +439,10 @@ compute_delta2 <- function(
     n_i <- tabulate(sub_k, nbins = length(subj_k))
     dropout <- .ph_delta2_dropout(n_i, des$group_code, est$subject_hits[subj_k])
 
+    if ("interaction" %in% terms) {
+      .ph_delta2_check_estimable(des, sub_k, gc, time_col)
+    }
+
     # draws: seeds from R's RNG, so set.seed() reproduces the run
     prob_k <- if (!is.null(ps) && !is.null(ps$prob)) {
       ps$prob[subj_k, des0$group_levels %in% des$group_levels, drop = FALSE]
@@ -720,6 +727,37 @@ compute_delta2 <- function(
     )
   }
   list(terms = tibble::as_tibble(row), pairwise = pairwise)
+}
+
+# Warn when a timepoint has no samples in some group: the interaction there
+# is not estimable, so its test is valid but conservative
+.ph_delta2_check_estimable <- function(des, sample_subject, group_col,
+                                       time_col) {
+  code <- des$group_code[sample_subject]
+  seen <- table(
+    factor(code, seq_len(des$n_group_levels)),
+    factor(des$time_code, seq_len(des$n_time_levels))
+  ) > 0
+  gaps <- which(!seen & matrix(colSums(seen) > 0, nrow(seen), ncol(seen),
+    byrow = TRUE
+  ), arr.ind = TRUE)
+  if (!nrow(gaps)) {
+    return(invisible(FALSE))
+  }
+  .ph_warn(
+    sprintf(
+      "Interaction for %s: some %s levels have no samples in some groups;
+      the interaction there is not estimable and its test is conservative.
+      Restrict %s to the timepoints observed in every group.",
+      group_col, time_col, time_col
+    ),
+    bullets = sprintf(
+      "- %s = %s has no %s = %s samples",
+      group_col, des$group_levels[gaps[, 1]], time_col,
+      des$time_levels[gaps[, 2]]
+    )
+  )
+  invisible(TRUE)
 }
 
 # Pooled-prevalence stratum of each peptide (0-based), with the breaks and
