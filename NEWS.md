@@ -10,6 +10,20 @@
   (2,604 strata) a run at `B_permutations = 100` drops from 9.0 s to 1.6 s,
   and at the default 2000 from 26.8 s to 19.0 s. Results are unchanged.
 
+## Bug fixes
+
+- `compute_delta()` results are now reproducible with `set.seed()` for
+  `phip_data` input. DuckDB returned subjects and library peptides in a
+  different order on each run, and since the permutations draw subjects by
+  position, the same seed gave a different null distribution (`p_perm`,
+  `T_null_mean`, `T_null_sd`, `b`). Subject rows and peptide columns are
+  now sorted before the permutation test, so results also no longer depend
+  on the row order of `x` or `peptide_library`. Under the same seed,
+  results can differ from 0.4.20 for input that was not already in
+  subject and peptide order.
+- New test in `test-delta_compute.R`: shuffling the rows of `x` and
+  `peptide_library` leaves the output identical.
+
 # phiper 0.4.20 (2026-10-19)
 
 ## Bug fixes

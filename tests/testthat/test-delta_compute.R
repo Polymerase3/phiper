@@ -770,6 +770,29 @@ test_that("compute_delta uses global RNG reproducibly and advances .Random.seed 
   expect_equal(res1, res2)
 })
 
+test_that("compute_delta results do not depend on input row order", {
+  fx <- readRDS(test_path("fixtures", "delta_regression.rds"))
+  x <- fx$data[fx$data$timepoint == "T1", ]
+
+  run <- function(x, peplib) {
+    set.seed(1)
+    compute_delta(
+      x               = x,
+      rank_cols       = "species",
+      group_cols      = "group",
+      peptide_library = peplib,
+      B_permutations  = 100L,
+      log             = FALSE
+    )
+  }
+
+  set.seed(99)
+  x_shuf <- x[sample(nrow(x)), ]
+  lib_shuf <- fx$peptide_library[sample(nrow(fx$peptide_library)), ]
+
+  expect_identical(run(x, fx$peptide_library), run(x_shuf, lib_shuf))
+})
+
 # --- min_m_eff --------------------------------------------------------------
 
 # Fixture: two mock species sharing the example data's group-overlapping

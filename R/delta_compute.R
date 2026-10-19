@@ -733,14 +733,17 @@ compute_delta <- function(
   pep_col_map <- stats::setNames(seq_along(peptides_order), peptides_order)
 
   # lookups built once: rank -> feature -> peptide cols,
-  # group_col -> group_value -> subject rows
+  # group_col -> group_value -> subject rows. Sorted, so the permutation
+  # null does not depend on the order rows arrive in (DuckDB, input order).
   pep_cols_by_rf <- lapply(
     split(rank_map_long, rank_map_long$rank),
-    function(d) split(as.integer(pep_col_map[d$peptide_id]), d$feature)
+    function(d) {
+      lapply(split(as.integer(pep_col_map[d$peptide_id]), d$feature), sort)
+    }
   )
   group_rows_by_gv <- lapply(
     split(subj_groups_idx, subj_groups_idx$group_col),
-    function(d) split(as.integer(d$row), d$group_value)
+    function(d) lapply(split(as.integer(d$row), d$group_value), sort)
   )
 
   get_pep_cols <- function(rk, ft) {
