@@ -78,11 +78,60 @@ struct WelfordAccum {
   }
 };
 
-// Compute z, weights, T_obs exactly as in R helper
-struct CombineOut {
-  double T_obs;
-  std::vector<double> w_norm;
-  std::vector<double> delta;
+// Mode strings parsed once per call; unknown values fall back as before
+enum class StatMode { diff, asin, score, srlr, mcnemar, srlr_paired };
+enum class WeightMode { equal, se_invvar, n_eff_sqrt };
+enum class AggStat { stouffer, maxmean, af };
+
+static StatMode parse_stat_mode(const std::string& s) {
+  if (s == "mcnemar") return StatMode::mcnemar;
+  if (s == "srlr_paired") return StatMode::srlr_paired;
+  if (s == "asin") return StatMode::asin;
+  if (s == "score") return StatMode::score;
+  if (s == "srlr") return StatMode::srlr;
+  return StatMode::diff;
+}
+
+static WeightMode parse_weight_mode(const std::string& s) {
+  if (s == "se_invvar") return WeightMode::se_invvar;
+  if (s == "n_eff_sqrt") return WeightMode::n_eff_sqrt;
+  return WeightMode::equal;
+}
+
+static AggStat parse_aggregate_stat(const std::string& s) {
+  if (s == "maxmean") return AggStat::maxmean;
+  if (s == "af") return AggStat::af;
+  return AggStat::stouffer;
+}
+
+// Bin breaks for the pooled-prevalence strata: fixed cutpoints (0 < v < 1),
+// with 0/1 boundaries added. Empty when there is no stratification.
+static std::vector<double> strat_breaks(const std::vector<double>& strat_bins) {
+  std::vector<double> brks;
+  if (strat_bins.empty()) return brks;
+  if (strat_bins.size() == 1 && strat_bins[0] == 0.0) return brks;
+
+  std::vector<double> cuts;
+  cuts.reserve(strat_bins.size());
+  for (double v : strat_bins) {
+    if (std::isfinite(v) && v > 0.0 && v < 1.0) cuts.push_back(v);
+  }
+  if (cuts.empty()) return brks;
+  std::sort(cuts.begin(), cuts.end());
+  cuts.erase(std::unique(cuts.begin(), cuts.end()), cuts.end());
+
+  brks.reserve(cuts.size() + 2);
+  brks.push_back(0.0);
+  brks.insert(brks.end(), cuts.begin(), cuts.end());
+  brks.push_back(1.0);
+  return brks;
+}
+
+// Scratch buffers for combine_T_internal(), reused across permutations;
+// delta and w_norm hold the values of the last call
+struct CombineWork {
+  std::vector<double> z, w, delta, w_norm, pp, ppos, pneg;
+  std::vector<int> idx;
 };
 
 static inline Rcpp::List make_perm_result(
@@ -151,31 +200,37 @@ static inline double score_denom_from_counts(double x1, double n1,
   return (v > 0.0) ? std::sqrt(v) : 0.0;
 }
 
-static CombineOut combine_T_internal(const std::vector<double>& p1,
-                                     const std::vector<double>& p2,
-                                     const std::vector<double>& x1,
-                                     const std::vector<double>& x2,
-                                     const std::vector<double>& n1,
-                                     const std::vector<double>& n2,
-                                     const std::vector<double>& b,
-                                     const std::vector<double>& c,
-                                     double winsor_z,
-                                     const std::string& weight_mode,
-                                     const std::string& stat_mode,
-                                     const std::string& aggregate_stat,
-                                     const std::vector<double>& strat_bins) {
+// Compute z, weights, T_obs exactly as in R helper; returns T_obs and leaves
+// delta and w_norm in ws
+static double combine_T_internal(const std::vector<double>& p1,
+                                 const std::vector<double>& p2,
+                                 const std::vector<double>& x1,
+                                 const std::vector<double>& x2,
+                                 const std::vector<double>& n1,
+                                 const std::vector<double>& n2,
+                                 const std::vector<double>& b,
+                                 const std::vector<double>& c,
+                                 double winsor_z,
+                                 WeightMode weight_mode,
+                                 StatMode stat_mode,
+                                 AggStat aggregate_stat,
+                                 const std::vector<double>& brks,
+                                 CombineWork& ws) {
   const int m = (int)p1.size();
-  std::vector<double> z(m), w(m), delta(m);
+  std::vector<double>& z = ws.z;
+  std::vector<double>& w = ws.w;
+  std::vector<double>& delta = ws.delta;
+  z.resize(m); w.resize(m); delta.resize(m);
 
   // z & delta
   for (int i = 0; i < m; ++i) {
     const double d = p2[i] - p1[i];
     delta[i] = d;
-    if (stat_mode == "mcnemar") {
+    if (stat_mode == StatMode::mcnemar) {
       if ((int)b.size() != m || (int)c.size() != m) stop("mcnemar: b/c length mismatch.");
       const double m_dc = b[i] + c[i];
       z[i] = (m_dc > 0.0) ? ((b[i] - c[i]) / std::sqrt(m_dc)) : 0.0;
-    } else if (stat_mode == "srlr_paired") {
+    } else if (stat_mode == StatMode::srlr_paired) {
       if ((int)b.size() != m || (int)c.size() != m) stop("srlr_paired: b/c length mismatch.");
       const double m_dc = b[i] + c[i];
       if (m_dc <= 0.0) {
@@ -187,16 +242,16 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
         const double sign = (b[i] > c[i]) ? 1.0 : (b[i] < c[i]) ? -1.0 : 0.0;
         z[i] = (LR > 0.0) ? (sign * std::sqrt(LR)) : 0.0;
       }
-    } else if (stat_mode == "asin") {
+    } else if (stat_mode == StatMode::asin) {
       const double den = std::sqrt( 1.0/(4.0*std::max(n1[i],1.0)) + 1.0/(4.0*std::max(n2[i],1.0)) );
       z[i] = (std::asin(std::sqrt(p2[i])) - std::asin(std::sqrt(p1[i]))) / den;
-    } else if (stat_mode == "score" || stat_mode == "srlr") {
+    } else if (stat_mode == StatMode::score || stat_mode == StatMode::srlr) {
       const double n1i = n1[i];
       const double n2i = n2[i];
       const double x1i = x1[i];
       const double x2i = x2[i];
 
-      if (stat_mode == "score" && score_boundary(x1i, n1i, x2i, n2i)) {
+      if (stat_mode == StatMode::score && score_boundary(x1i, n1i, x2i, n2i)) {
         z[i] = 0.0;
       } else {
         const double p1m = (n1i > 0.0) ? (x1i / n1i) : 0.0;
@@ -205,7 +260,7 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
         const long double rhs = (long double)x1i * (long double)n2i;
         const double sign = (lhs > rhs) ? 1.0 : (lhs < rhs) ? -1.0 : 0.0;
 
-        if (stat_mode == "score") {
+        if (stat_mode == StatMode::score) {
           const double den = score_denom_from_counts(x1i, n1i, x2i, n2i);
           z[i] = (den > 0.0) ? ((p2m - p1m) / den) : 0.0;
         } else { // "srlr"
@@ -226,9 +281,9 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
   }
 
   // weights
-  if (weight_mode == "se_invvar" && stat_mode == "srlr") {
+  if (weight_mode == WeightMode::se_invvar && stat_mode == StatMode::srlr) {
     std::fill(w.begin(), w.end(), 1.0);
-  } else if (weight_mode == "se_invvar" && stat_mode == "score") {
+  } else if (weight_mode == WeightMode::se_invvar && stat_mode == StatMode::score) {
     for (int i = 0; i < m; ++i) {
       if (score_boundary(x1[i], n1[i], x2[i], n2[i])) {
         w[i] = 0.0;
@@ -237,16 +292,16 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
         w[i] = 1.0 / std::max(den, 1e-6);
       }
     }
-  } else if (weight_mode == "se_invvar" && stat_mode == "asin") {
+  } else if (weight_mode == WeightMode::se_invvar && stat_mode == StatMode::asin) {
     for (int i = 0; i < m; ++i) {
       w[i] = 1.0 / std::sqrt( 1.0/(4.0*std::max(n1[i],1.0)) + 1.0/(4.0*std::max(n2[i],1.0)) );
     }
-  } else if (weight_mode == "se_invvar") {
+  } else if (weight_mode == WeightMode::se_invvar) {
     for (int i = 0; i < m; ++i) {
       const double se = std::sqrt(p1[i]*(1.0-p1[i])/std::max(n1[i],1.0) + p2[i]*(1.0-p2[i])/std::max(n2[i],1.0));
       w[i] = 1.0 / std::max(se, 1e-6);
     }
-  } else if (weight_mode == "n_eff_sqrt") {
+  } else if (weight_mode == WeightMode::n_eff_sqrt) {
     for (int i = 0; i < m; ++i) {
       w[i] = std::sqrt(std::max(n1[i]*p1[i] + n2[i]*p2[i], 1e-12));
     }
@@ -281,7 +336,9 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
     constexpr double P_MIN = 1e-300;
     const int k = (int)idx.size();
 
-    std::vector<double> ppos(k), pneg(k);
+    std::vector<double>& ppos = ws.ppos;
+    std::vector<double>& pneg = ws.pneg;
+    ppos.resize(k); pneg.resize(k);
     for (int j = 0; j < k; ++j) {
       const double zi = z[idx[j]];
       ppos[j] = std::max(0.5 * std::erfc( zi * M_SQRT1_2), P_MIN);
@@ -307,74 +364,51 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
 
   // Aggregate combine
   double T_obs = 0.0;
-  bool use_strat = true;
-  if (strat_bins.empty()) use_strat = false;
-  if (strat_bins.size() == 1 && strat_bins[0] == 0.0) use_strat = false;
+  std::vector<int>& idx = ws.idx;
 
-  if (use_strat) {
+  if (!brks.empty()) {
     // pooled prevalence
-    std::vector<double> pp(m);
+    std::vector<double>& pp = ws.pp;
+    pp.resize(m);
     for (int i = 0; i < m; ++i) pp[i] = (n1[i]*p1[i] + n2[i]*p2[i]) / std::max(n1[i] + n2[i], 1.0);
 
-    // fixed cutpoints (0 < v < 1), with 0/1 boundaries added
-    std::vector<double> cuts;
-    cuts.reserve(strat_bins.size());
-    for (double v : strat_bins) {
-      if (std::isfinite(v) && v > 0.0 && v < 1.0) cuts.push_back(v);
-    }
-    if (cuts.empty()) {
-      use_strat = false;
-    } else {
-      std::sort(cuts.begin(), cuts.end());
-      cuts.erase(std::unique(cuts.begin(), cuts.end()), cuts.end());
-    }
-
-    if (use_strat) {
-      std::vector<double> brks;
-      brks.reserve(cuts.size() + 2);
-      brks.push_back(0.0);
-      brks.insert(brks.end(), cuts.begin(), cuts.end());
-      brks.push_back(1.0);
-
-      // bin & per-bin Stouffer — only non-empty bins contribute to the mean
-      int nb = (int)brks.size() - 1;
-      double s = 0.0; int n_nonempty = 0;
-      for (int b = 0; b < nb; ++b) {
-        const double L = brks[b], R = brks[b+1];
-        double num = 0.0, den2 = 0.0; bool any=false;
-        std::vector<int> idx;
-        for (int i = 0; i < m; ++i) {
-          const double v = pp[i];
-          const bool in = ((b == 0 ? (v >= L) : (v > L)) && (v <= R));
-          if (in) {
-            if (aggregate_stat == "maxmean" || aggregate_stat == "af") {
-              idx.push_back(i);
-            } else {
-              num += w[i]*z[i];
-              den2 += w[i]*w[i];
-              any=true;
-            }
+    // bin & per-bin Stouffer — only non-empty bins contribute to the mean
+    int nb = (int)brks.size() - 1;
+    double s = 0.0; int n_nonempty = 0;
+    for (int b = 0; b < nb; ++b) {
+      const double L = brks[b], R = brks[b+1];
+      double num = 0.0, den2 = 0.0; bool any=false;
+      idx.clear();
+      for (int i = 0; i < m; ++i) {
+        const double v = pp[i];
+        const bool in = ((b == 0 ? (v >= L) : (v > L)) && (v <= R));
+        if (in) {
+          if (aggregate_stat == AggStat::maxmean || aggregate_stat == AggStat::af) {
+            idx.push_back(i);
+          } else {
+            num += w[i]*z[i];
+            den2 += w[i]*w[i];
+            any=true;
           }
         }
-        if (aggregate_stat == "maxmean") {
-          if (!idx.empty()) { s += maxmean_stat(idx); ++n_nonempty; }
-        } else if (aggregate_stat == "af") {
-          if (!idx.empty()) { s += af_stat(idx); ++n_nonempty; }
-        } else {
-          if (any) { s += num / std::sqrt(std::max(den2, 1e-300)); ++n_nonempty; }
-        }
       }
-      // mean over non-empty bins only
-      T_obs = (n_nonempty > 0) ? s / n_nonempty : 0.0;
+      if (aggregate_stat == AggStat::maxmean) {
+        if (!idx.empty()) { s += maxmean_stat(idx); ++n_nonempty; }
+      } else if (aggregate_stat == AggStat::af) {
+        if (!idx.empty()) { s += af_stat(idx); ++n_nonempty; }
+      } else {
+        if (any) { s += num / std::sqrt(std::max(den2, 1e-300)); ++n_nonempty; }
+      }
     }
-  }
-  if (!use_strat) {
-    std::vector<int> all_idx(m);
-    for (int i = 0; i < m; ++i) all_idx[i] = i;
-    if (aggregate_stat == "maxmean") {
-      T_obs = maxmean_stat(all_idx);
-    } else if (aggregate_stat == "af") {
-      T_obs = af_stat(all_idx);
+    // mean over non-empty bins only
+    T_obs = (n_nonempty > 0) ? s / n_nonempty : 0.0;
+  } else {
+    idx.resize(m);
+    for (int i = 0; i < m; ++i) idx[i] = i;
+    if (aggregate_stat == AggStat::maxmean) {
+      T_obs = maxmean_stat(idx);
+    } else if (aggregate_stat == AggStat::af) {
+      T_obs = af_stat(idx);
     } else {
       double num = 0.0, den2 = 0.0;
       for (int i = 0; i < m; ++i) { num += w[i]*z[i]; den2 += w[i]*w[i]; }
@@ -384,11 +418,12 @@ static CombineOut combine_T_internal(const std::vector<double>& p1,
 
   // normalized weights
   double sw = 0.0; for (double wi: w) sw += wi;
-  std::vector<double> w_norm(m);
+  std::vector<double>& w_norm = ws.w_norm;
+  w_norm.resize(m);
   const double denom = std::max(sw, 1e-12);
   for (int i = 0; i < m; ++i) w_norm[i] = w[i] / denom;
 
-  return {T_obs, std::move(w_norm), std::move(delta)};
+  return T_obs;
 }
 
 // ---- main exported helper ----------------------------------------------------
@@ -434,7 +469,11 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
                               const double winsor_z,
                               const std::string& design,
                               const double min_m_eff) {
-  std::vector<double> strat_bins_vec = Rcpp::as<std::vector<double> >(strat_bins);
+  const std::vector<double> brks = strat_breaks(Rcpp::as<std::vector<double> >(strat_bins));
+  const WeightMode wmode = parse_weight_mode(weight_mode);
+  const StatMode smode = parse_stat_mode(stat_mode);
+  const AggStat amode = parse_aggregate_stat(aggregate_stat);
+  CombineWork ws;
   const bool paired_only_stat = (stat_mode == "mcnemar" || stat_mode == "srlr_paired");
 
   if (paired_only_stat && design != "paired") {
@@ -511,24 +550,24 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     n2.assign(mu, (double)P);
 
     // Observed T
-    CombineOut obs = combine_T_internal(p1, p2, x1, x2, n1, n2, b_vec, c_vec, winsor_z, weight_mode, stat_mode, aggregate_stat, strat_bins_vec);
+    const double T_obs = combine_T_internal(p1, p2, x1, x2, n1, n2, b_vec, c_vec, winsor_z, wmode, smode, amode, brks, ws);
 
     // Moments
     double max_delta = 0.0;  // max absolute delta
     double frac_pos = 0.0, frac_pos_w = 0.0;
     for (int i = 0; i < mu; ++i) {
-      const double d = obs.delta[i];
+      const double d = ws.delta[i];
       const double ad = std::fabs(d);
 
       if (ad > max_delta) max_delta = ad;
       if (d > 0) frac_pos += 1.0;
-      frac_pos_w += obs.w_norm[i] * (d > 0 ? 1.0 : 0.0);
+      frac_pos_w += ws.w_norm[i] * (d > 0 ? 1.0 : 0.0);
     }
     frac_pos /= (double)mu;
 
     // m_eff = 1 / sum(w_norm^2)
     double sum_w2 = 0.0;
-    for (double wn : obs.w_norm) sum_w2 += wn * wn;
+    for (double wn : ws.w_norm) sum_w2 += wn * wn;
     const double m_eff = 1.0 / std::max(sum_w2, 1e-12);
 
     if (min_m_eff > 0.0 && m_eff < min_m_eff) {
@@ -544,6 +583,12 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     std::vector<uint64_t> Fmask(n_words_p, 0ULL); // flip mask
     WelfordAccum acc;
 
+    // per-permutation buffers, reused
+    std::vector<double> x1b(mu), x2b(mu), p1b(mu), p2b(mu);
+    std::vector<double> bb, cc;
+    if (paired_only_stat) { bb.resize(mu); cc.resize(mu); }
+    const std::vector<double> n1b(mu, (double)P), n2b(mu, (double)P);
+
     for (int b = 0; b < B; ++b) {
       // Build flip mask F over P subjects
       std::fill(Fmask.begin(), Fmask.end(), 0ULL);
@@ -557,13 +602,6 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
       // For each peptide, counts after flip:
       // x1' = pop(S1 & ~F) + pop(S2 & F)
       // x2' = pop(S2 & ~F) + pop(S1 & F)
-      std::vector<double> x1b; x1b.reserve(mu);
-      std::vector<double> x2b; x2b.reserve(mu);
-      std::vector<double> p1b; p1b.reserve(mu);
-      std::vector<double> p2b; p2b.reserve(mu);
-      std::vector<double> bb; if (paired_only_stat) bb.reserve(mu);
-      std::vector<double> cc; if (paired_only_stat) cc.reserve(mu);
-
       for (int k = 0; k < mu; ++k) {
         const int i = keep_idx[k];
         uint32_t a = 0, b2 = 0, c = 0, d = 0; // temp counts
@@ -585,29 +623,28 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         const double x2p = (double)c + (double)d;
         const double pA  = x1p / (double)P;
         const double pB  = x2p / (double)P;
-        x1b.push_back(x1p); x2b.push_back(x2p);
-        p1b.push_back(pA); p2b.push_back(pB);
+        x1b[k] = x1p; x2b[k] = x2p;
+        p1b[k] = pA; p2b[k] = pB;
         if (paired_only_stat) {
-          bb.push_back((double)b_disc);
-          cc.push_back((double)c_disc);
+          bb[k] = (double)b_disc;
+          cc[k] = (double)c_disc;
         }
       }
 
       double Tb = 0.0;
       if (!p1b.empty()) {
-        std::vector<double> n1b(p1b.size(), (double)P), n2b(p2b.size(), (double)P);
-        Tb = combine_T_internal(p1b, p2b, x1b, x2b, n1b, n2b, bb, cc, winsor_z, weight_mode, stat_mode, aggregate_stat, strat_bins_vec).T_obs;
+        Tb = combine_T_internal(p1b, p2b, x1b, x2b, n1b, n2b, bb, cc, winsor_z, wmode, smode, amode, brks, ws);
       }
 
       acc.digest(Tb);
 
       const double abs_Tb  = std::fabs(Tb);
-      const double abs_obs = std::fabs(obs.T_obs);
+      const double abs_obs = std::fabs(T_obs);
       if (abs_Tb > abs_obs) ++b_hits;
       else if (abs_Tb == abs_obs) ++b_equal;
     }
 
-    return make_perm_result(mu, m_eff, obs.T_obs, acc, b_hits, b_equal, B,
+    return make_perm_result(mu, m_eff, T_obs, acc, b_hits, b_equal, B,
                             max_delta, frac_pos, frac_pos_w, perm_method);
   }
 
@@ -675,24 +712,24 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     }
 
     // Observed T
-    CombineOut obs = combine_T_internal(p1, p2, x1, x2, n1, n2, std::vector<double>(), std::vector<double>(), winsor_z, weight_mode, stat_mode, aggregate_stat, strat_bins_vec);
+    const double T_obs = combine_T_internal(p1, p2, x1, x2, n1, n2, std::vector<double>(), std::vector<double>(), winsor_z, wmode, smode, amode, brks, ws);
 
     // Moments
     double max_delta = 0.0;  // max absolute delta
     double frac_pos = 0.0, frac_pos_w = 0.0;
     for (int i = 0; i < mu; ++i) {
-      const double d = obs.delta[i];
+      const double d = ws.delta[i];
       const double ad = std::fabs(d);
 
       if (ad > max_delta) max_delta = ad;
       if (d > 0) frac_pos += 1.0;
-      frac_pos_w += obs.w_norm[i] * (d > 0 ? 1.0 : 0.0);
+      frac_pos_w += ws.w_norm[i] * (d > 0 ? 1.0 : 0.0);
     }
     frac_pos /= (double)mu;
 
     // m_eff = 1 / sum(w_norm^2)
     double sum_w2 = 0.0;
-    for (double wn : obs.w_norm) sum_w2 += wn * wn;
+    for (double wn : ws.w_norm) sum_w2 += wn * wn;
     const double m_eff = 1.0 / std::max(sum_w2, 1e-12);
 
     if (min_m_eff > 0.0 && m_eff < min_m_eff) {
@@ -713,6 +750,11 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     std::vector<uint64_t> mask_A(n_words), mask_B(n_words);
     WelfordAccum acc;
 
+    // per-permutation buffers, reused
+    std::vector<char> isA(N);
+    std::vector<double> x1b(mu), x2b(mu), p1b(mu), p2b(mu);
+    const std::vector<double> n1b(mu, (double)nA), n2b(mu, (double)nB);
+
     for (int b = 0; b < B; ++b) {
       // random split: sample nA indices for group A
       for (int i = 0; i < N; ++i) idx_all[i] = i;
@@ -725,7 +767,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
       // build masks from the chosen subject IDs
       std::fill(mask_A.begin(), mask_A.end(), 0ULL);
       std::fill(mask_B.begin(), mask_B.end(), 0ULL);
-      std::vector<char> isA(N, 0);
+      std::fill(isA.begin(), isA.end(), 0);
       for (int i = 0; i < nA; ++i) {
         isA[ choose_idx[i] ] = 1;
         int subj_row = (choose_idx[i] < nA) ? g1_rows[ choose_idx[i] ] : g2_rows[ choose_idx[i]-nA ];
@@ -741,12 +783,6 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
       }
 
       // counts --> p --> T_b
-      std::vector<double> x1b; x1b.reserve(mu);
-      std::vector<double> x2b; x2b.reserve(mu);
-      std::vector<double> p1b; p1b.reserve(mu);
-      std::vector<double> p2b; p2b.reserve(mu);
-      std::vector<double> n1b(mu, (double)nA), n2b(mu, (double)nB);
-
       for (int k = 0; k < mu; ++k) {
         const int i_keep = keep_idx[k]; // index in original pep list
         const int col0 = pep_cols[i_keep] - 1;
@@ -754,26 +790,24 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         const double xB = (double)count_hits_col(reinterpret_cast<const uint8_t*>(RAW(bitset_raw)), n_words, col0, mask_B);
         const double pA = xA / n1b[0];
         const double pB = xB / n2b[0];
-        x1b.push_back(xA); x2b.push_back(xB);
-        p1b.push_back(pA); p2b.push_back(pB);
+        x1b[k] = xA; x2b[k] = xB;
+        p1b[k] = pA; p2b[k] = pB;
       }
 
       double Tb = 0.0;
       if (!p1b.empty()) {
-        n1b.assign(p1b.size(), (double)nA);
-        n2b.assign(p2b.size(), (double)nB);
-        Tb = combine_T_internal(p1b, p2b, x1b, x2b, n1b, n2b, std::vector<double>(), std::vector<double>(), winsor_z, weight_mode, stat_mode, aggregate_stat, strat_bins_vec).T_obs;
+        Tb = combine_T_internal(p1b, p2b, x1b, x2b, n1b, n2b, std::vector<double>(), std::vector<double>(), winsor_z, wmode, smode, amode, brks, ws);
       }
 
       acc.digest(Tb);
 
       const double abs_Tb  = std::fabs(Tb);
-      const double abs_obs = std::fabs(obs.T_obs);
+      const double abs_obs = std::fabs(T_obs);
       if (abs_Tb > abs_obs) ++b_hits;
       else if (abs_Tb == abs_obs) ++b_equal;
     }
 
-    return make_perm_result(mu, m_eff, obs.T_obs, acc, b_hits, b_equal, B,
+    return make_perm_result(mu, m_eff, T_obs, acc, b_hits, b_equal, B,
                             max_delta, frac_pos, frac_pos_w, perm_method);
   }
 }
