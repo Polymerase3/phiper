@@ -1,3 +1,25 @@
+# phiper (development version)
+
+## compute_delta2()
+
+- `standardize = "two_pass"` standardises each peptide's statistic by its
+  mean and SD over the draws before pooling: a first pass records them over
+  the observed labels and the `B_permutations` draws, a second replays the
+  same draws. Every peptide then has mean 0 and SD 1 under the null that was
+  actually sampled (propensity draws, swap chain, biased time coins), at
+  twice the permutation cost.
+- The result gains `$peptides`, the per-level prevalence of every peptide
+  (subject-mean prevalence per group level, raw and inverse-propensity
+  weighted; share of positive samples per timepoint). `return_peptides =
+  FALSE` leaves it out.
+- `forestplot()`, `deltaplot()`, `ecdf_plot()` and their interactive
+  versions take a `delta2_result` directly, with `term` (and `group_col`,
+  `adjusted`, `group_pair_values`) choosing what to plot.
+- The documentation and a new vignette, `vignette("delta2-analysis")`,
+  explain how `weight_mode` chooses the effect scale (`equal`: arcsine,
+  `n_eff_sqrt`: log odds ratio, `se_invvar`: prevalence difference), how
+  prevalence strata temper it, and how to read the propensity diagnostics.
+
 # phiper 0.4.22 (2026-10-19)
 
 ## Performance
