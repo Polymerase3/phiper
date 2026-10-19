@@ -17,12 +17,16 @@ ecdf_plot(
   plot_title = NULL,
   plot_subtitle = NULL,
   x_label = NULL,
-  y_label = NULL
+  y_label = NULL,
+  term = c("group", "time"),
+  group_col = NULL,
+  adjusted = FALSE
 )
 }
 \arguments{
 \item{prev_tbl}{Data frame with columns \code{group1}, \code{group2},
-\code{prop1}, \code{prop2}. Optional \code{feature} columns are ignored.}
+\code{prop1}, \code{prop2}. Optional \code{feature} columns are ignored.
+Or a \code{\link[=compute_delta2]{compute_delta2()}} result (see \code{term}).}
 
 \item{group_pair_values}{Optional length-2 character vector \code{c(group1,
 group2)}. Use this when \code{prev_tbl} contains multiple group pairs.}
@@ -45,6 +49,12 @@ group2)}. Use this when \code{prev_tbl} contains multiple group pairs.}
 \item{plot_title, plot_subtitle}{Optional plot labels.}
 
 \item{x_label, y_label}{Optional axis labels.}
+
+\item{term, group_col, adjusted}{Used when \code{prev_tbl} is a
+\code{\link[=compute_delta2]{compute_delta2()}} result: \code{term} \code{"group"} plots the levels of the group
+column, \code{"time"} the timepoints; \code{group_col} picks the group column when
+the result has several; \code{adjusted = TRUE} plots the inverse-propensity
+weighted group prevalences.}
 }
 \value{
 A \code{ggplot} object.

@@ -91,6 +91,7 @@ articles:
       - beta-diversity
       - pop-analysis
       - delta-analysis
+      - delta2-analysis
   - title: "Peptide library"
     navbar: "Peptide library"
     contents:

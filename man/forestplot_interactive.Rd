@@ -25,12 +25,16 @@ forestplot_interactive(
   base_text_pt = 12,
   font_family = "sans",
   seg_width = 1.6,
-  point_size = 11
+  point_size = 11,
+  term = c("group", "time", "interaction", "pairwise"),
+  group_col = NULL,
+  group_pair_values = NULL
 )
 }
 \arguments{
 \item{results_tbl}{Data frame/tibble with at least: \code{rank, feature,
-group1, group2, design, T_obs, p_perm}.}
+  group1, group2, design, T_obs, p_perm}.
+Or a \code{\link[=compute_delta2]{compute_delta2()}} result (see \code{term}).}
 
 \item{rank_of_interest}{Character scalar specifying the rank to plot (e.g.,
 \code{"species"}).}
@@ -82,6 +86,13 @@ monochrome.}
 \item{seg_width}{Segment line width.}
 
 \item{point_size}{Point size.}
+
+\item{term, group_col, group_pair_values}{Used when \code{results_tbl} is a
+\code{\link[=compute_delta2]{compute_delta2()}} result: the term to plot (\code{"group"}, \code{"time"},
+\code{"interaction"} with one degree of freedom, or \code{"pairwise"}), the group
+column when the result has several, and for \code{"pairwise"} the pair
+\code{c(group1, group2)} when there are several. The arrow labels then
+default to the term's levels.}
 }
 \value{
 A list with \code{data} and \code{plot} (plotly object).

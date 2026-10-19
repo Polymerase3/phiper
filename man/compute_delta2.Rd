@@ -29,6 +29,7 @@ compute_delta2(
   min_samples_per_subject = 1L,
   B_permutations = 2000L,
   weight_mode = c("n_eff_sqrt", "equal", "se_invvar"),
+  standardize = c("none", "two_pass"),
   aggregate_stat = c("stouffer", "maxmean", "af"),
   perm_method = c("mid_p", "standard"),
   strat_bins = c(0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5),
@@ -36,6 +37,7 @@ compute_delta2(
   min_m_eff = 0,
   rank_feature_keep = NULL,
   peptide_library = NULL,
+  return_peptides = TRUE,
   log = FALSE,
   log_file = "compute_delta2.log"
 )
@@ -98,7 +100,10 @@ established.}
 
 \item{B_permutations}{Number of permutation draws (at least 100).}
 
-\item{weight_mode}{One of \code{c("n_eff_sqrt", "equal", "se_invvar")}.}
+\item{weight_mode}{One of \code{c("n_eff_sqrt", "equal", "se_invvar")}:
+the log-odds, arcsine and prevalence-difference scales (see Details).}
+
+\item{standardize}{\code{"none"} or \code{"two_pass"} (see Details).}
 
 \item{aggregate_stat}{One of \code{c("stouffer", "maxmean", "af")}.}
 
@@ -115,6 +120,9 @@ tested.}
 \item{rank_feature_keep}{Optional named list restricting features per rank.}
 
 \item{peptide_library}{Optional peptide library with the rank columns.}
+
+\item{return_peptides}{Logical; add the per-peptide prevalence table
+(\verb{$peptides}) that \code{\link[=deltaplot]{deltaplot()}} and \code{\link[=ecdf_plot]{ecdf_plot()}} draw from.}
 
 \item{log}{Logical; log progress.}
 
@@ -134,7 +142,15 @@ Columns of a term that is never tested are omitted.
 \item \code{pairwise}: one row per \verb{(rank, feature, group_col, group1, group2)} with
 \code{T_obs}, \code{p_perm}, \code{p_maxT}, \code{max_delta}, \code{max_delta_adj},
 \code{frac_delta_pos}, \code{frac_delta_pos_w} (empty without pairwise tests).
-\item \code{meta}: the call, \code{B_permutations}, and per \code{group_col} the design, the
+\item \code{peptides} (with \code{return_peptides = TRUE}): one row per
+\verb{(group_col, peptide_id, factor, level)}, with \code{factor} \code{"group"} or
+\code{"time"}, the \code{prevalence} at that level (group: mean over subjects of
+their share of positive samples; time: share of positive samples),
+\code{prevalence_adj} (group levels inverse-propensity weighted as for
+\code{max_delta_adj}; time levels as \code{prevalence}) and \code{n} (subjects or
+samples at the level). Peptides are those of the strata tested.
+\item \code{meta}: the call, \code{B_permutations}, \code{standardize}, and per \code{group_col}
+the design, the
 propensity and time-propensity diagnostics, the dropout diagnostics, the
 sampler used and \code{rho_hat} (per stratum with \code{rho_by_stratum = TRUE}).
 }
@@ -190,6 +206,31 @@ term statistic is \code{T = E} for one degree of freedom (signed, like
 \verb{|T|} with its permutation null. \code{n_eff_sqrt} weights by the square root
 of a peptide's positive samples in the contrast; \code{se_invvar} by
 \eqn{1/\sqrt{p_0(1 - p_0)}} of its pooled prevalence.
+
+\strong{Weights choose the effect scale.} A peptide's z is roughly its
+prevalence difference divided by \eqn{\sqrt{p(1 - p)}}, so the weights
+decide which common effect the pooled statistic is most powerful for:
+\code{equal} for a common shift on the arcsine-square-root scale, \code{n_eff_sqrt}
+(the default) for a common log odds ratio (\eqn{\sqrt{n p} \approx
+\sqrt{n p (1 - p)}} for rare peptides), and \code{se_invvar} for a common
+prevalence difference. Within a \code{strat_bins} stratum prevalences are
+alike, so the weights matter mostly across strata; with the default strata
+every non-empty stratum counts equally, and \code{strat_bins = 0} lets the
+weights act across the whole prevalence range. See
+\code{vignette("delta2-analysis")}.
+
+\strong{Standardisation.} The per-peptide z of the group term has mean 0 and
+SD 1 under uniform relabelling, but not exactly under propensity draws,
+the swap chain or the within-subject coins, and a peptide whose null is
+off-centre moves the pooled statistic in every draw. With
+\code{standardize = "two_pass"} a first pass over the draws records each
+peptide's mean and SD of every component (over the observed labels and
+the \code{B_permutations} draws, so the observed labelling stays exchangeable
+with the draws), and a second pass replays the same draws and pools the
+standardised values (winsorised after standardising). This holds for any
+sampler, at twice the cost and \eqn{O(m)} extra memory. Under uniform
+relabelling it changes the group term little; the gain is with a
+propensity model.
 
 \strong{Resampling.} The group term, the interaction and the pairwise tests
 share one set of \code{B_permutations} subject relabellings per \code{group_col}:
@@ -256,5 +297,6 @@ res$terms
 
 }
 \seealso{
-\code{\link[=compute_delta]{compute_delta()}}
+\code{\link[=compute_delta]{compute_delta()}}; \code{\link[=forestplot]{forestplot()}}, \code{\link[=deltaplot]{deltaplot()}} and
+\code{\link[=ecdf_plot]{ecdf_plot()}} take a \code{delta2_result} directly.
 }
