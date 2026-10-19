@@ -1,14 +1,7 @@
-# phiper 0.4.21 (2026-10-19)
+# phiper 0.4.22 (2026-10-19)
 
 ## Performance
 
-- `compute_delta()` spends far less time in R per stratum. It now builds
-  the peptide columns of every rank/feature and the subject rows of every
-  group level once, before the loop, instead of filtering a table for each
-  stratum. Each stratum's result row is a plain list, and all rows are
-  bound into one tibble at the end. On the typical-workflow vignette data
-  (2,604 strata) a run at `B_permutations = 100` drops from 8.5 s to 0.75 s,
-  and at the default 2000 from 10.7 s to 3.3 s. Results are unchanged.
 - The `compute_delta()` permutation kernel parses its mode arguments once
   instead of comparing strings for every peptide, builds the `strat_bins`
   breaks once, and reuses its buffers across permutations instead of
@@ -79,6 +72,18 @@
   errors without `paired_by` and runs as paired with
   `paired_by = "subject_id"`. The zero-variance toy test, which reused its
   subjects in both groups, now has one subject per sample.
+
+# phiper 0.4.21 (2026-10-19)
+
+## Performance
+
+- `compute_delta()` spends far less time in R per stratum. It now builds
+  the peptide columns of every rank/feature and the subject rows of every
+  group level once, before the loop, instead of filtering a table for each
+  stratum. Each stratum's result row is a plain list, and all rows are
+  bound into one tibble at the end. On the typical-workflow vignette data
+  (2,604 strata) a run at `B_permutations = 100` drops from 8.5 s to 0.75 s,
+  and at the default 2000 from 10.7 s to 3.3 s. Results are unchanged.
 
 # phiper 0.4.20 (2026-10-19)
 
