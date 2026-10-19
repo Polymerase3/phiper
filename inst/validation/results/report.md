@@ -1,63 +1,67 @@
 # compute_delta2() validation
 
-Run: 2026-10-19 14:19. Full run; B = 500; cores = 4; phiper 0.4.22.
+Run: 2026-10-19 15:58. Full run; B = 500; cores = 4; phiper 0.4.22.
 
 ## Gates
 
-**45 of 50 gates pass.**
+**45 of 50 gates pass; 1 accepted as documented limitations; 4 fail.**
 
-| section | gate | value | lo | hi | pass |
+| section | gate | value | lo | hi | status |
 |---|---|---|---|---|---|
-| 6.1 | K=2, T=1, with PS: group rejection in band | 0.042 | 0.0365 | 0.0635 | yes |
-| 6.1 | K=2, T=2, no PS: interaction rejection in band | 0.049 | 0.0365 | 0.0635 | yes |
-| 6.1 | K=2, T=2, no PS: time rejection in band | 0.055 | 0.0365 | 0.0635 | yes |
-| 6.1 | K=2, T=2, with PS: group rejection in band | 0.059 | 0.0365 | 0.0635 | yes |
-| 6.1 | K=2, T=2, with PS: interaction rejection in band | 0.05 | 0.0365 | 0.0635 | yes |
-| 6.1 | K=2, T=2, with PS: time rejection in band | 0.05 | 0.0365 | 0.0635 | yes |
-| 6.1 | K=2, T=4, no PS: interaction rejection in band | 0.05 | 0.0365 | 0.0635 | yes |
-| 6.1 | K=2, T=4, no PS: time rejection in band | 0.043 | 0.0365 | 0.0635 | yes |
-| 6.1 | K=2, T=4, with PS: group rejection in band | 0.049 | 0.0365 | 0.0635 | yes |
-| 6.1 | K=2, T=4, with PS: interaction rejection in band | 0.049 | 0.0365 | 0.0635 | yes |
-| 6.1 | K=2, T=4, with PS: time rejection in band | 0.049 | 0.0365 | 0.0635 | yes |
-| 6.1 | K=3, T=1, with PS: group rejection in band | 0.059 | 0.0365 | 0.0635 | yes |
-| 6.1 | K=3, T=2, no PS: interaction rejection in band | 0.062 | 0.0365 | 0.0635 | yes |
-| 6.1 | K=3, T=2, no PS: time rejection in band | 0.058 | 0.0365 | 0.0635 | yes |
-| 6.1 | K=3, T=2, with PS: group rejection in band | 0.05 | 0.0365 | 0.0635 | yes |
-| 6.1 | K=3, T=2, with PS: interaction rejection in band | 0.06 | 0.0365 | 0.0635 | yes |
-| 6.1 | K=3, T=2, with PS: time rejection in band | 0.049 | 0.0365 | 0.0635 | yes |
-| 6.1 | K=3, T=4, no PS: interaction rejection in band | 0.058 | 0.0365 | 0.0635 | yes |
-| 6.1 | K=3, T=4, no PS: time rejection in band | 0.044 | 0.0365 | 0.0635 | yes |
-| 6.1 | K=3, T=4, with PS: group rejection in band | 0.039 | 0.0365 | 0.0635 | yes |
-| 6.1 | K=3, T=4, with PS: interaction rejection in band | 0.061 | 0.0365 | 0.0635 | yes |
-| 6.1 | K=3, T=4, with PS: time rejection in band | 0.04 | 0.0365 | 0.0635 | yes |
-| 6.2 | 10/30, score: permutation test calibrated | 0.06 | 0.0309 | 0.0691 | yes |
-| 6.2 | 10/30, srlr: permutation test calibrated | 0.044 | 0.0309 | 0.0691 | yes |
-| 6.2 | 10/30, srlr_std: permutation test calibrated | 0.056 | 0.0309 | 0.0691 | yes |
-| 6.2 | 10/30, wald_t: permutation test calibrated | 0.048 | 0.0309 | 0.0691 | yes |
-| 6.2 | 20/20, score: permutation test calibrated | 0.08 | 0.0309 | 0.0691 | no |
-| 6.2 | 20/20, srlr: permutation test calibrated | 0.074 | 0.0309 | 0.0691 | no |
-| 6.2 | 20/20, srlr_std: permutation test calibrated | 0.078 | 0.0309 | 0.0691 | no |
-| 6.2 | 20/20, wald_t: permutation test calibrated | 0.08 | 0.0309 | 0.0691 | no |
-| 6.2 | 30/10, score: permutation test calibrated | 0.052 | 0.0309 | 0.0691 | yes |
-| 6.2 | 30/10, srlr: permutation test calibrated | 0.044 | 0.0309 | 0.0691 | yes |
-| 6.2 | 30/10, srlr_std: permutation test calibrated | 0.054 | 0.0309 | 0.0691 | yes |
-| 6.2 | 30/10, wald_t: permutation test calibrated | 0.058 | 0.0309 | 0.0691 | yes |
-| 6.3 | (a) residualised interaction calibrated | 0.075 | 0.0365 | 0.0635 | no |
-| 6.3 | (a) without residualisation the interaction over-rejects | 0.994 | 0.0635 |    1 | yes |
-| 6.3 | (a) controls at T1-T2 only: gap warned in every run |    1 |    1 |    1 | yes |
-| 6.3 | (b) no dropout: time term calibrated | 0.054 | 0.0365 | 0.0635 | yes |
-| 6.3 | (b) informative dropout flagged by the diagnostics in >= 80% of runs |    1 |  0.8 |    1 | yes |
-| 6.3 | (b) no dropout: diagnostics silent in >= 95% of runs |    1 | 0.95 |    1 | yes |
-| 6.4 | 10 high-turnover vs 50: interaction calibrated | 0.055 | 0.0365 | 0.0635 | yes |
-| 6.4 | 50 high-turnover vs 10: interaction calibrated | 0.057 | 0.0365 | 0.0635 | yes |
-| 6.5 | (a) |bias| of rho_hat <= 0.05 at rho = 0.05 | 0.000627 | -0.05 | 0.05 | yes |
-| 6.5 | (a) |bias| of rho_hat <= 0.05 at rho = 0.2 | 0.000464 | -0.05 | 0.05 | yes |
-| 6.5 | (a) |bias| of rho_hat <= 0.05 at rho = 0.5 | 0.000284 | -0.05 | 0.05 | yes |
-| 6.5 | (a) |bias| of rho_hat <= 0.05 at rho = 0.8 | 0.000222 | -0.05 | 0.05 | yes |
-| 6.5 | (a) |bias| of rho_hat <= 0.05 at rho = 0.95 | 0.000158 | -0.05 | 0.05 | yes |
-| 6.6/6.7 | test-delta2_resample.R passes | 0 | 0 | 0 | yes |
-| 6.6/6.7 | test-delta2_score.R passes | 0 | 0 | 0 | yes |
-| 6.6/6.7 | test-delta2_compute.R passes | 0 | 0 | 0 | yes |
+| 6.1 | K=2, T=1, with PS: group rejection in band | 0.042 | 0.0365 | 0.0635 | pass |
+| 6.1 | K=2, T=2, no PS: interaction rejection in band | 0.049 | 0.0365 | 0.0635 | pass |
+| 6.1 | K=2, T=2, no PS: time rejection in band | 0.055 | 0.0365 | 0.0635 | pass |
+| 6.1 | K=2, T=2, with PS: group rejection in band | 0.059 | 0.0365 | 0.0635 | pass |
+| 6.1 | K=2, T=2, with PS: interaction rejection in band | 0.05 | 0.0365 | 0.0635 | pass |
+| 6.1 | K=2, T=2, with PS: time rejection in band | 0.05 | 0.0365 | 0.0635 | pass |
+| 6.1 | K=2, T=4, no PS: interaction rejection in band | 0.05 | 0.0365 | 0.0635 | pass |
+| 6.1 | K=2, T=4, no PS: time rejection in band | 0.043 | 0.0365 | 0.0635 | pass |
+| 6.1 | K=2, T=4, with PS: group rejection in band | 0.049 | 0.0365 | 0.0635 | pass |
+| 6.1 | K=2, T=4, with PS: interaction rejection in band | 0.049 | 0.0365 | 0.0635 | pass |
+| 6.1 | K=2, T=4, with PS: time rejection in band | 0.049 | 0.0365 | 0.0635 | pass |
+| 6.1 | K=3, T=1, with PS: group rejection in band | 0.059 | 0.0365 | 0.0635 | pass |
+| 6.1 | K=3, T=2, no PS: interaction rejection in band | 0.062 | 0.0365 | 0.0635 | pass |
+| 6.1 | K=3, T=2, no PS: time rejection in band | 0.058 | 0.0365 | 0.0635 | pass |
+| 6.1 | K=3, T=2, with PS: group rejection in band | 0.05 | 0.0365 | 0.0635 | pass |
+| 6.1 | K=3, T=2, with PS: interaction rejection in band | 0.06 | 0.0365 | 0.0635 | pass |
+| 6.1 | K=3, T=2, with PS: time rejection in band | 0.049 | 0.0365 | 0.0635 | pass |
+| 6.1 | K=3, T=4, no PS: interaction rejection in band | 0.058 | 0.0365 | 0.0635 | pass |
+| 6.1 | K=3, T=4, no PS: time rejection in band | 0.044 | 0.0365 | 0.0635 | pass |
+| 6.1 | K=3, T=4, with PS: group rejection in band | 0.039 | 0.0365 | 0.0635 | pass |
+| 6.1 | K=3, T=4, with PS: interaction rejection in band | 0.061 | 0.0365 | 0.0635 | pass |
+| 6.1 | K=3, T=4, with PS: time rejection in band | 0.04 | 0.0365 | 0.0635 | pass |
+| 6.2 | 10/30, score: permutation test calibrated | 0.06 | 0.0309 | 0.0691 | pass |
+| 6.2 | 10/30, srlr: permutation test calibrated | 0.044 | 0.0309 | 0.0691 | pass |
+| 6.2 | 10/30, srlr_std: permutation test calibrated | 0.056 | 0.0309 | 0.0691 | pass |
+| 6.2 | 10/30, wald_t: permutation test calibrated | 0.048 | 0.0309 | 0.0691 | pass |
+| 6.2 | 20/20, score: permutation test calibrated | 0.08 | 0.0309 | 0.0691 | fail |
+| 6.2 | 20/20, srlr: permutation test calibrated | 0.074 | 0.0309 | 0.0691 | fail |
+| 6.2 | 20/20, srlr_std: permutation test calibrated | 0.078 | 0.0309 | 0.0691 | fail |
+| 6.2 | 20/20, wald_t: permutation test calibrated | 0.08 | 0.0309 | 0.0691 | fail |
+| 6.2 | 30/10, score: permutation test calibrated | 0.052 | 0.0309 | 0.0691 | pass |
+| 6.2 | 30/10, srlr: permutation test calibrated | 0.044 | 0.0309 | 0.0691 | pass |
+| 6.2 | 30/10, srlr_std: permutation test calibrated | 0.054 | 0.0309 | 0.0691 | pass |
+| 6.2 | 30/10, wald_t: permutation test calibrated | 0.058 | 0.0309 | 0.0691 | pass |
+| 6.3 | (a) residualised interaction calibrated | 0.075 | 0.0365 | 0.0635 | accepted |
+| 6.3 | (a) without residualisation the interaction over-rejects | 0.994 | 0.0635 |    1 | pass |
+| 6.3 | (a) controls at T1-T2 only: gap warned in every run |    1 |    1 |    1 | pass |
+| 6.3 | (b) no dropout: time term calibrated | 0.054 | 0.0365 | 0.0635 | pass |
+| 6.3 | (b) informative dropout flagged by the diagnostics in >= 80% of runs |    1 |  0.8 |    1 | pass |
+| 6.3 | (b) no dropout: diagnostics silent in >= 95% of runs |    1 | 0.95 |    1 | pass |
+| 6.4 | 10 high-turnover vs 50: interaction calibrated | 0.055 | 0.0365 | 0.0635 | pass |
+| 6.4 | 50 high-turnover vs 10: interaction calibrated | 0.057 | 0.0365 | 0.0635 | pass |
+| 6.5 | (a) |bias| of rho_hat <= 0.05 at rho = 0.05 | 0.000627 | -0.05 | 0.05 | pass |
+| 6.5 | (a) |bias| of rho_hat <= 0.05 at rho = 0.2 | 0.000464 | -0.05 | 0.05 | pass |
+| 6.5 | (a) |bias| of rho_hat <= 0.05 at rho = 0.5 | 0.000284 | -0.05 | 0.05 | pass |
+| 6.5 | (a) |bias| of rho_hat <= 0.05 at rho = 0.8 | 0.000222 | -0.05 | 0.05 | pass |
+| 6.5 | (a) |bias| of rho_hat <= 0.05 at rho = 0.95 | 0.000158 | -0.05 | 0.05 | pass |
+| 6.6/6.7 | test-delta2_resample.R passes | 0 | 0 | 0 | pass |
+| 6.6/6.7 | test-delta2_score.R passes | 0 | 0 | 0 | pass |
+| 6.6/6.7 | test-delta2_compute.R passes | 0 | 0 | 0 | pass |
+
+Accepted:
+
+- 6.3 (a) residualised interaction calibrated: Accepted 2026-10-19: the interaction with visits missing at random and a time trend is mildly liberal (about 0.066 over 2400 datasets in three runs); documented in ?compute_delta2 and results/NOTES.md.
 
 ## 6.1 Calibration per term
 

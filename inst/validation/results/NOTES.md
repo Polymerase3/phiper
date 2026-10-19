@@ -2,25 +2,34 @@
 
 `report.md` is generated; this file is the reading of it. Full run, B = 500,
 1000 datasets per calibration cell, 4 cores, about 62 minutes. **45 of 50
-gates pass.** This is the third full run; the fixes it confirms are listed
-at the end.
+gates pass, 1 is accepted as a documented limitation, 4 fail by chance (see
+below).** This is the third full run; the fixes it confirms are listed at
+the end.
+
+Decisions (2026-10-19): the 6.3a miss is accepted and documented in
+`?compute_delta2`; `rho_by_stratum` stays `FALSE` by default.
 
 ## The misses
 
 **6.3a, controls missing 2 of 4 visits at random: residualised interaction
-0.075 (band 0.0365-0.0635).** Mildly liberal. Two further independent runs
+0.075 (band 0.0365-0.0635). Accepted.** Mildly liberal. Two further independent runs
 of the same scenario gave 0.070 (600 datasets) and 0.051 (800 datasets),
 about 0.066 pooled over 2400 datasets. Before the fixes below this scenario
 was conservative (0.024). The likely remaining cause is that the
 interaction's variance uses one residual variance per group, while
 positivity here changes over visits and the groups see different visits;
 a per-timepoint variance would address it, but a run without a time trend
-(0.049) and one with it (0.051) did not separate the two cleanly. Open.
+(0.049) and one with it (0.051) did not separate the two cleanly. Accepted
+as a known limitation rather than pursued further.
 
 **6.2 null at 20/20 (0.074-0.080, four gates).** Chance: the four
 statistics share each dataset and miss together, and a re-run with fresh
 seeds gave 0.048 (0.008 at alpha = 0.01, 0.102 at 0.10). The same seeds
-give the same miss in every run.
+give the same miss in every run. These permutation tests are exact by
+construction; the seeds are left as they are rather than re-drawn until the
+gate passes. With 50 gates at 95% bands, two or three chance misses per run
+are expected; a family-wise band (e.g. 99.9%, about +/- 3.3 SE) would make a
+full run pass or fail as a whole, but that policy is not adopted yet.
 
 ## Reported, not gated
 
@@ -55,7 +64,8 @@ the band; about 0.06 on average, so slightly above nominal).
 - rho = "pooled" is best at true rho = 0.2 (0.64 vs 0.56 "one", 0.62 "zero")
   and matches "one" at rho = 0.8 (0.32 vs 0.33). Per-stratum rho on the
   example data ranges 0.27-0.76 around a pooled 0.49, rising with
-  prevalence; whether `rho_by_stratum = TRUE` gains power is not yet tested.
+  prevalence; whether `rho_by_stratum = TRUE` gains power is not yet tested,
+  so the default stays `FALSE`.
 
 ## Fixes found by this validation
 

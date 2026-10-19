@@ -116,5 +116,9 @@ settings <- sprintf(
 )
 val_write_report(results, out_dir, settings)
 gates <- dplyr::bind_rows(lapply(results, `[[`, "gates"))
-message(sprintf("gates: %d of %d pass; report: %s", sum(gates$pass), nrow(gates),
-  file.path(out_dir, "report.md")))
+status <- val_gate_status(gates)
+message(sprintf(
+  "gates: %d of %d pass, %d accepted, %d fail; report: %s",
+  sum(status == "pass"), nrow(gates), sum(status == "accepted"),
+  sum(status == "fail"), file.path(out_dir, "report.md")
+))

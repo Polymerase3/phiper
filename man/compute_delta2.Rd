@@ -89,7 +89,10 @@ term: \code{"pooled"} (estimated once per \code{group_col} from all peptides),
 or a number in \verb{[0, 1]}.}
 
 \item{rho_by_stratum}{Logical; with \code{rho = "pooled"}, estimate it within
-each \code{strat_bins} prevalence stratum instead of globally.}
+each \code{strat_bins} prevalence stratum instead of globally. Off by
+default: on the example data the per-stratum estimates differ (they
+rise with prevalence), but whether that gains power is not yet
+established.}
 
 \item{min_samples_per_subject}{Subjects with fewer samples are dropped.}
 
@@ -168,7 +171,10 @@ recomputed for every draw. The interaction's null is about
 mean changes, so this keeps it calibrated when groups differ in
 turnover or visit patterns. A timepoint with no samples in some group
 leaves the interaction there not estimable; the test stays valid but is
-conservative, and a warning names the gap.
+conservative, and a warning names the gap. Known limitation: when
+groups miss visits at random and positivity also changes over time, the
+interaction can run mildly liberal (about 0.066 at a nominal 0.05 in
+the package validation, \code{inst/validation}).
 }
 
 A term with one degree of freedom (two levels, or \code{group_scores} /

@@ -1,3 +1,41 @@
+# phiper 0.5.0 (2026-10-19)
+
+## New features
+
+- `compute_delta2()` tests, per `(rank, feature, group_col)` stratum, a
+  between-subject group term, a within-subject time term (`time_col`) and
+  their interaction, on sample-level data: a subject's samples are never
+  collapsed, so the number of samples per subject no longer acts as a hidden
+  covariate. Each term is a score statistic pooled over peptides like
+  `compute_delta()`, with a permutation null drawn once per `group_col` and
+  shared by all strata. Groups with more than two levels get an omnibus test
+  and pairwise tests with max-T adjustment (`$pairwise`); ordered levels can
+  be tested as a trend (`group_scores`, `time_scores`).
+- `propensity_formula` makes the group term and pairwise tests valid when
+  group membership depends on covariates: labels are drawn from their
+  conditional law given the covariates (rejection sampling for two groups,
+  a pairwise-swap chain for more), and the statistic is adjusted for the
+  same covariates. `time_propensity_formula` does the same for
+  within-subject time labels. Effect sizes are reported raw and
+  inverse-propensity weighted (`max_delta_adj_*`).
+- Subject means in the group term are weighted by the within-subject
+  correlation `rho`, estimated from all peptides by default.
+- The result is a `delta2_result` with a print method: `$terms` (one row per
+  stratum, term columns suffixed `_group`, `_time`, `_interaction`),
+  `$pairwise` and `$meta` (design, propensity, dropout and sampler
+  diagnostics, `rho_hat`). The delta plotters still take `compute_delta()`
+  output.
+- `inst/validation/` holds the simulation studies used as the release gate
+  for `compute_delta2()` (calibration, power, unbalanced designs, `rho`) and
+  their latest results.
+
+## Changes
+
+- `compute_delta()`'s peptide-library resolution, `rank_feature_keep` filter
+  and parallel runner moved, unchanged, into helpers shared with
+  `compute_delta2()`. Results are unchanged.
+- `nnet` is suggested, for the propensity model with three or more groups.
+
 # phiper 0.4.22 (2026-10-19)
 
 ## Performance

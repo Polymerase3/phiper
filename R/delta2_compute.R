@@ -45,7 +45,10 @@
 #'   mean changes, so this keeps it calibrated when groups differ in
 #'   turnover or visit patterns. A timepoint with no samples in some group
 #'   leaves the interaction there not estimable; the test stays valid but is
-#'   conservative, and a warning names the gap.
+#'   conservative, and a warning names the gap. Known limitation: when
+#'   groups miss visits at random and positivity also changes over time, the
+#'   interaction can run mildly liberal (about 0.066 at a nominal 0.05 in
+#'   the package validation, `inst/validation`).
 #'
 #' A term with one degree of freedom (two levels, or `group_scores` /
 #' `time_scores` for a linear trend) gives a signed z per peptide; an omnibus
@@ -135,7 +138,10 @@
 #'   `"one"` (equal weight per subject), `"zero"` (equal weight per sample)
 #'   or a number in `[0, 1]`.
 #' @param rho_by_stratum Logical; with `rho = "pooled"`, estimate it within
-#'   each `strat_bins` prevalence stratum instead of globally.
+#'   each `strat_bins` prevalence stratum instead of globally. Off by
+#'   default: on the example data the per-stratum estimates differ (they
+#'   rise with prevalence), but whether that gains power is not yet
+#'   established.
 #' @param min_samples_per_subject Subjects with fewer samples are dropped.
 #' @param B_permutations Number of permutation draws (at least 100).
 #' @param weight_mode One of `c("n_eff_sqrt", "equal", "se_invvar")`.

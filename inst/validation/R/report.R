@@ -131,8 +131,28 @@ val_md_table <- function(df, digits = 3) {
   )
 }
 
+# Misses that were reviewed and accepted as documented limitations, keyed by
+# "section gate". The gate is still evaluated against its band; the status
+# only says the miss is known and decided.
+val_accepted <- c(
+  "6.3 (a) residualised interaction calibrated" = paste(
+    "Accepted 2026-10-19: the interaction with visits missing at random and",
+    "a time trend is mildly liberal (about 0.066 over 2400 datasets in three",
+    "runs); documented in ?compute_delta2 and results/NOTES.md."
+  )
+)
+
+val_gate_status <- function(gates) {
+  key <- paste(gates$section, gates$gate)
+  ifelse(gates$pass, "pass", ifelse(key %in% names(val_accepted), "accepted", "fail"))
+}
+
 val_write_report <- function(results, out_dir, settings) {
   gates <- dplyr::bind_rows(lapply(results, `[[`, "gates"))
+  gates$status <- val_gate_status(gates)
+  accepted <- val_accepted[names(val_accepted) %in% paste(gates$section, gates$gate)[
+    gates$status == "accepted"
+  ]]
   lines <- c(
     "# compute_delta2() validation",
     "",
@@ -140,12 +160,17 @@ val_write_report <- function(results, out_dir, settings) {
     "",
     "## Gates",
     "",
-    sprintf("**%d of %d gates pass.**", sum(gates$pass), nrow(gates)),
+    sprintf(
+      "**%d of %d gates pass; %d accepted as documented limitations; %d fail.**",
+      sum(gates$status == "pass"), nrow(gates), sum(gates$status == "accepted"),
+      sum(gates$status == "fail")
+    ),
     "",
     val_md_table(dplyr::transmute(gates,
       section = .data$section, gate = .data$gate, value = .data$value,
-      lo = .data$lo, hi = .data$hi, pass = .data$pass
-    ))
+      lo = .data$lo, hi = .data$hi, status = .data$status
+    )),
+    if (length(accepted)) c("", "Accepted:", "", paste0("- ", names(accepted), ": ", accepted))
   )
   if (!is.null(results$s1)) {
     lines <- c(lines, "", "## 6.1 Calibration per term", "",
