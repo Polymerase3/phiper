@@ -1052,7 +1052,10 @@ Rcpp::List cpp_delta2_score(const Rcpp::RawVector& bitset_raw,
 // (empty = unweighted). rho is one value or one per peptide. covariates
 // (one row per subject, or NULL) adjust the group term and pairs.
 // residualize = false drops the interaction's time main-effect correction
-// (validation only: it shows what the correction is for).
+// (validation only: it shows what the correction is for). With
+// standardize = "two_pass" each peptide's value is standardised by its mean
+// and SD over the observed labels and the draws (a first pass over the same
+// draws) before pooling.
 //
 // [[Rcpp::export]]
 Rcpp::List cpp_delta2_contrast(const Rcpp::RawVector& bitset_raw,
@@ -1078,7 +1081,12 @@ Rcpp::List cpp_delta2_contrast(const Rcpp::RawVector& bitset_raw,
                                double winsor_z,
                                double min_m_eff,
                                Rcpp::Nullable<Rcpp::NumericMatrix> covariates = R_NilValue,
-                               bool residualize = true) {
+                               bool residualize = true,
+                               const std::string& standardize = "none") {
+  if (standardize != "none" && standardize != "two_pass") {
+    stop("standardize must be \"none\" or \"two_pass\".");
+  }
+  const bool two_pass = (standardize == "two_pass");
   NumericMatrix cov_m;
   if (covariates.isNotNull()) cov_m = NumericMatrix(covariates.get());
   Stratum st;
@@ -1158,38 +1166,114 @@ Rcpp::List cpp_delta2_contrast(const Rcpp::RawVector& bitset_raw,
     return (L == 1) ? e0 : t2;
   };
 
-  NullAcc acc_group, acc_time, acc_inter;
-  std::vector<NullAcc> acc_pair(P);
-  Vec E_group, E_time, E_inter;
+  // raw per-peptide values of one draw (b = -1: the observed labels) into
+  // r_group / r_inter / z_pair and r_time
   LabShared sh;
-
-  // observed
-  if (need_group_draws) {
-    st.shared(st.obs_lab.data(), sh);
-    st.between(st.obs_lab.data(), sh, r_group, r_inter, z_pair);
-    if (st.do_group) acc_group.T_obs = pooled(r_group, Lg, &E_group);
-    if (st.do_inter) acc_inter.T_obs = pooled(r_inter, Lg * Lt, &E_inter);
-    for (int q = 0; q < P; ++q) acc_pair[q].T_obs = pool(&z_pair[(size_t)q * m]);
-  }
-  if (st.do_time) {
-    for (int j = 0; j < m; ++j) st.time_r(j, st.St_obs[j], r_time);
-    acc_time.T_obs = pooled(r_time, Lt, &E_time);
-  }
-
-  // draws
-  Vec max_pair(B, 0.0);
   std::vector<int> lab(N);
   std::vector<uint64_t> G((size_t)T * n_words);
   const uint8_t* bits = reinterpret_cast<const uint8_t*>(RAW(bitset_raw));
-  for (int b = 0; b < B; ++b) {
+  auto fill = [&](int b) {
     if (need_group_draws) {
-      for (int i = 0; i < N; ++i) {
-        const int l = group_draws(st.cx.sub_orig[i] - 1, b);
-        if (l == NA_INTEGER || l < 1 || l > K) stop("group_draws out of range.");
-        lab[i] = l - 1;
+      if (b < 0) {
+        lab = st.obs_lab;
+      } else {
+        for (int i = 0; i < N; ++i) {
+          const int l = group_draws(st.cx.sub_orig[i] - 1, b);
+          if (l == NA_INTEGER || l < 1 || l > K) stop("group_draws out of range.");
+          lab[i] = l - 1;
+        }
       }
       st.shared(lab.data(), sh);
       st.between(lab.data(), sh, r_group, r_inter, z_pair);
+    }
+    if (!st.do_time) return;
+    if (b < 0) {
+      for (int j = 0; j < m; ++j) st.time_r(j, st.St_obs[j], r_time);
+      return;
+    }
+    // shared object: the mask of samples relabelled to each timepoint
+    std::fill(G.begin(), G.end(), 0ULL);
+    for (size_t q = 0; q < kept_pos.size(); ++q) {
+      const int u = time_draws(kept_pos[q], b);
+      if (u == NA_INTEGER || u < 1 || u > T) stop("time_draws out of range.");
+      const int z = kept_row[q];
+      G[(size_t)(u - 1) * n_words + (z >> 6)] |= (1ULL << (z & 63));
+    }
+    for (int j = 0; j < m; ++j) {
+      const uint8_t* col = bits + (size_t)(pep_cols[j] - 1) * n_words * 8;
+      for (int u = 0; u < T; ++u) {
+        double c = 0.0;
+        for (int w = 0; w < n_words; ++w) {
+          c += __builtin_popcountll(load_word(col + (size_t)w * 8) & G[(size_t)u * n_words + w]);
+        }
+        cnt_u[u] = c;
+      }
+      st.time_r(j, cnt_u, r_time);
+    }
+  };
+
+  // two_pass: each entry's mean and SD over the observed labels and the B
+  // draws (first pass), then every draw is replayed standardised; an entry
+  // constant over the draws carries no information and is set to 0
+  std::vector<Vec*> bufs;
+  if (st.do_group) bufs.push_back(&r_group);
+  if (st.do_inter) bufs.push_back(&r_inter);
+  if (P > 0) bufs.push_back(&z_pair);
+  if (st.do_time) bufs.push_back(&r_time);
+  std::vector<Vec> mom_mean(bufs.size()), mom_sd(bufs.size());
+  if (two_pass) {
+    for (size_t q = 0; q < bufs.size(); ++q) {
+      mom_mean[q].assign(bufs[q]->size(), 0.0);
+      mom_sd[q].assign(bufs[q]->size(), 0.0);
+    }
+    for (int b = -1; b < B; ++b) {
+      fill(b);
+      const double n = (double)(b + 2);
+      for (size_t q = 0; q < bufs.size(); ++q) {
+        const Vec& r = *bufs[q];
+        Vec& mu = mom_mean[q];
+        Vec& M2 = mom_sd[q];
+        for (size_t e = 0; e < r.size(); ++e) {
+          const double d = r[e] - mu[e];
+          mu[e] += d / n;
+          M2[e] += d * (r[e] - mu[e]);
+        }
+      }
+    }
+    for (size_t q = 0; q < bufs.size(); ++q) {
+      for (double& v : mom_sd[q]) v = std::sqrt(std::max(v, 0.0) / (double)B);
+    }
+  }
+  auto standardise = [&]() {
+    if (!two_pass) return;
+    for (size_t q = 0; q < bufs.size(); ++q) {
+      Vec& r = *bufs[q];
+      const Vec& mu = mom_mean[q];
+      const Vec& sd = mom_sd[q];
+      for (size_t e = 0; e < r.size(); ++e) {
+        r[e] = (sd[e] > 1e-12 * std::max(1.0, std::fabs(mu[e]))) ? (r[e] - mu[e]) / sd[e] : 0.0;
+      }
+    }
+  };
+
+  NullAcc acc_group, acc_time, acc_inter;
+  std::vector<NullAcc> acc_pair(P);
+  Vec E_group, E_time, E_inter;
+
+  // observed
+  fill(-1);
+  standardise();
+  if (st.do_group) acc_group.T_obs = pooled(r_group, Lg, &E_group);
+  if (st.do_inter) acc_inter.T_obs = pooled(r_inter, Lg * Lt, &E_inter);
+  for (int q = 0; q < P; ++q) acc_pair[q].T_obs = pool(&z_pair[(size_t)q * m]);
+  if (st.do_time) acc_time.T_obs = pooled(r_time, Lt, &E_time);
+
+  // draws (with two_pass, a replay of the draws of the first pass)
+  Vec max_pair(B, 0.0);
+  for (int b = 0; b < B; ++b) {
+    fill(b);
+    standardise();
+    if (need_group_draws) {
       if (st.do_group) acc_group.digest(pooled(r_group, Lg, nullptr));
       if (st.do_inter) acc_inter.digest(pooled(r_inter, Lg * Lt, nullptr));
       double mx = 0.0;
@@ -1200,28 +1284,7 @@ Rcpp::List cpp_delta2_contrast(const Rcpp::RawVector& bitset_raw,
       }
       max_pair[b] = mx;
     }
-    if (st.do_time) {
-      // shared object: the mask of samples relabelled to each timepoint
-      std::fill(G.begin(), G.end(), 0ULL);
-      for (size_t q = 0; q < kept_pos.size(); ++q) {
-        const int u = time_draws(kept_pos[q], b);
-        if (u == NA_INTEGER || u < 1 || u > T) stop("time_draws out of range.");
-        const int z = kept_row[q];
-        G[(size_t)(u - 1) * n_words + (z >> 6)] |= (1ULL << (z & 63));
-      }
-      for (int j = 0; j < m; ++j) {
-        const uint8_t* col = bits + (size_t)(pep_cols[j] - 1) * n_words * 8;
-        for (int u = 0; u < T; ++u) {
-          double c = 0.0;
-          for (int w = 0; w < n_words; ++w) {
-            c += __builtin_popcountll(load_word(col + (size_t)w * 8) & G[(size_t)u * n_words + w]);
-          }
-          cnt_u[u] = c;
-        }
-        st.time_r(j, cnt_u, r_time);
-      }
-      acc_time.digest(pooled(r_time, Lt, nullptr));
-    }
+    if (st.do_time) acc_time.digest(pooled(r_time, Lt, nullptr));
   }
 
   const bool mid_p = (perm_method == "mid_p");
@@ -1297,5 +1360,76 @@ Rcpp::List cpp_delta2_contrast(const Rcpp::RawVector& bitset_raw,
     _["B"] = B,
     _["terms"] = term_list,
     _["pairs"] = pair_out
+  );
+}
+
+// Per-peptide prevalence of one contrast for the plotters: per group level the
+// mean over subjects of their share of positive samples (and, with
+// adj_weight, its inverse-propensity weighted version, Hajek-normalised
+// within level), and per timepoint the share of positive samples.
+//
+// [[Rcpp::export]]
+Rcpp::List cpp_delta2_prevalence(const Rcpp::RawVector& bitset_raw,
+                                 int n_words,
+                                 const Rcpp::IntegerVector& pep_cols,
+                                 const Rcpp::IntegerVector& sample_rows,
+                                 const Rcpp::IntegerVector& sample_subject,
+                                 const Rcpp::IntegerVector& group_code,
+                                 const Rcpp::IntegerVector& time_code,
+                                 int n_group_levels, int n_time_levels,
+                                 const Rcpp::NumericVector& adj_weight) {
+  const int K = std::max(n_group_levels, 1);
+  for (R_xlen_t i = 0; i < group_code.size(); ++i) {
+    const int g = group_code[i];
+    if (g != NA_INTEGER && (g < 1 || g > K)) stop("group_code out of range.");
+  }
+  const bool has_adj = adj_weight.size() > 0;
+  if (has_adj && adj_weight.size() != group_code.size()) stop("adj_weight must have one value per subject.");
+
+  Contrast cx;
+  cx.init(n_words, sample_rows, sample_subject, time_code, &group_code, n_time_levels);
+  const int T = cx.T;
+  const int N = cx.n_sub;
+  const int m = pep_cols.size();
+
+  std::vector<int> lab(N);
+  Vec a_i(N, 1.0), n_k(K, 0.0), asum_k(K, 0.0), n_t(T, 0.0);
+  for (int i = 0; i < N; ++i) {
+    lab[i] = group_code[cx.sub_orig[i] - 1] - 1;
+    if (has_adj) a_i[i] = adj_weight[cx.sub_orig[i] - 1];
+    n_k[lab[i]] += 1.0;
+    asum_k[lab[i]] += a_i[i];
+    for (int t = 0; t < T; ++t) n_t[t] += cx.n_it[(size_t)i * T + t];
+  }
+
+  NumericMatrix g_prev(m, K), g_prev_adj(m, K), t_prev(m, T);
+  NumericVector tot(m);
+  Vec St(T);
+  for (int j = 0; j < m; ++j) {
+    const uint8_t* col = column_ptr(bitset_raw, n_words, pep_cols[j]);
+    std::fill(St.begin(), St.end(), 0.0);
+    tot[j] = cx.count(col, n_words, St);
+    for (int i : cx.touched) {
+      double c = 0.0;
+      for (int t = 0; t < T; ++t) c += cx.cnt[(size_t)i * T + t];
+      const double ybar = c / cx.n_i[i];
+      g_prev(j, lab[i]) += ybar;
+      g_prev_adj(j, lab[i]) += a_i[i] * ybar;
+    }
+    for (int k = 0; k < K; ++k) {
+      g_prev(j, k) = n_k[k] > 0 ? g_prev(j, k) / n_k[k] : NA_REAL;
+      g_prev_adj(j, k) = asum_k[k] > 0 ? g_prev_adj(j, k) / asum_k[k] : NA_REAL;
+    }
+    for (int t = 0; t < T; ++t) t_prev(j, t) = n_t[t] > 0 ? St[t] / n_t[t] : NA_REAL;
+    cx.reset();
+  }
+
+  return List::create(
+    _["group_prev"] = g_prev,
+    _["group_prev_adj"] = g_prev_adj,
+    _["time_prev"] = t_prev,
+    _["n_group"] = NumericVector(n_k.begin(), n_k.end()),
+    _["n_time"] = NumericVector(n_t.begin(), n_t.end()),
+    _["tot"] = tot
   );
 }

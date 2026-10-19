@@ -61,6 +61,31 @@
 #' of a peptide's positive samples in the contrast; `se_invvar` by
 #' \eqn{1/\sqrt{p_0(1 - p_0)}} of its pooled prevalence.
 #'
+#' **Weights choose the effect scale.** A peptide's z is roughly its
+#' prevalence difference divided by \eqn{\sqrt{p(1 - p)}}, so the weights
+#' decide which common effect the pooled statistic is most powerful for:
+#' `equal` for a common shift on the arcsine-square-root scale, `n_eff_sqrt`
+#' (the default) for a common log odds ratio (\eqn{\sqrt{n p} \approx
+#' \sqrt{n p (1 - p)}} for rare peptides), and `se_invvar` for a common
+#' prevalence difference. Within a `strat_bins` stratum prevalences are
+#' alike, so the weights matter mostly across strata; with the default strata
+#' every non-empty stratum counts equally, and `strat_bins = 0` lets the
+#' weights act across the whole prevalence range. See
+#' `vignette("delta2-analysis")`.
+#'
+#' **Standardisation.** The per-peptide z of the group term has mean 0 and
+#' SD 1 under uniform relabelling, but not exactly under propensity draws,
+#' the swap chain or the within-subject coins, and a peptide whose null is
+#' off-centre moves the pooled statistic in every draw. With
+#' `standardize = "two_pass"` a first pass over the draws records each
+#' peptide's mean and SD of every component (over the observed labels and
+#' the `B_permutations` draws, so the observed labelling stays exchangeable
+#' with the draws), and a second pass replays the same draws and pools the
+#' standardised values (winsorised after standardising). This holds for any
+#' sampler, at twice the cost and \eqn{O(m)} extra memory. Under uniform
+#' relabelling it changes the group term little; the gain is with a
+#' propensity model.
+#'
 #' **Resampling.** The group term, the interaction and the pairwise tests
 #' share one set of `B_permutations` subject relabellings per `group_col`:
 #' a uniform split of the subjects with the observed group sizes, or, with
@@ -138,7 +163,9 @@
 #'   each `strat_bins` prevalence stratum instead of globally.
 #' @param min_samples_per_subject Subjects with fewer samples are dropped.
 #' @param B_permutations Number of permutation draws (at least 100).
-#' @param weight_mode One of `c("n_eff_sqrt", "equal", "se_invvar")`.
+#' @param weight_mode One of `c("n_eff_sqrt", "equal", "se_invvar")`:
+#'   the log-odds, arcsine and prevalence-difference scales (see Details).
+#' @param standardize `"none"` or `"two_pass"` (see Details).
 #' @param aggregate_stat One of `c("stouffer", "maxmean", "af")`.
 #' @param perm_method One of `c("mid_p", "standard")`, as in
 #'   [compute_delta()].
@@ -148,6 +175,8 @@
 #'   tested.
 #' @param rank_feature_keep Optional named list restricting features per rank.
 #' @param peptide_library Optional peptide library with the rank columns.
+#' @param return_peptides Logical; add the per-peptide prevalence table
+#'   (`$peptides`) that [deltaplot()] and [ecdf_plot()] draw from.
 #' @param log Logical; log progress.
 #' @param log_file Log file when `log = TRUE`.
 #'
@@ -163,11 +192,20 @@
 #' - `pairwise`: one row per `(rank, feature, group_col, group1, group2)` with
 #'   `T_obs`, `p_perm`, `p_maxT`, `max_delta`, `max_delta_adj`,
 #'   `frac_delta_pos`, `frac_delta_pos_w` (empty without pairwise tests).
-#' - `meta`: the call, `B_permutations`, and per `group_col` the design, the
+#' - `peptides` (with `return_peptides = TRUE`): one row per
+#'   `(group_col, peptide_id, factor, level)`, with `factor` `"group"` or
+#'   `"time"`, the `prevalence` at that level (group: mean over subjects of
+#'   their share of positive samples; time: share of positive samples),
+#'   `prevalence_adj` (group levels inverse-propensity weighted as for
+#'   `max_delta_adj`; time levels as `prevalence`) and `n` (subjects or
+#'   samples at the level). Peptides are those of the strata tested.
+#' - `meta`: the call, `B_permutations`, `standardize`, and per `group_col`
+#'   the design, the
 #'   propensity and time-propensity diagnostics, the dropout diagnostics, the
 #'   sampler used and `rho_hat` (per stratum with `rho_by_stratum = TRUE`).
 #'
-#' @seealso [compute_delta()]
+#' @seealso [compute_delta()]; [forestplot()], [deltaplot()] and
+#'   [ecdf_plot()] take a `delta2_result` directly.
 #'
 #' @examples
 #' set.seed(1)
@@ -212,6 +250,7 @@ compute_delta2 <- function(
   min_samples_per_subject = 1L,
   B_permutations = 2000L,
   weight_mode = c("n_eff_sqrt", "equal", "se_invvar"),
+  standardize = c("none", "two_pass"),
   aggregate_stat = c("stouffer", "maxmean", "af"),
   perm_method = c("mid_p", "standard"),
   strat_bins = c(0.002, 0.005, 0.01, 0.02, 0.05, 0.10, 0.20, 0.50),
@@ -219,6 +258,7 @@ compute_delta2 <- function(
   min_m_eff = 0,
   rank_feature_keep = NULL,
   peptide_library = NULL,
+  return_peptides = TRUE,
   log = FALSE,
   log_file = "compute_delta2.log"
 ) {
@@ -252,6 +292,8 @@ compute_delta2 <- function(
   chk::chk_number(B_permutations)
   chk::chk_true(B_permutations >= 100)
   weight_mode <- match.arg(weight_mode)
+  standardize <- match.arg(standardize)
+  chk::chk_flag(return_peptides)
   aggregate_stat <- match.arg(aggregate_stat)
   perm_method <- match.arg(perm_method)
   chk::chk_numeric(strat_bins)
@@ -316,6 +358,7 @@ compute_delta2 <- function(
       lapply(split(as.integer(pep_col_map[d$peptide_id]), d$feature), sort)
     }
   )
+  pep_used <- sort(unique(as.integer(pep_col_map[rank_map_long$peptide_id])))
 
   # --- 3) One contrast per group_col: design, propensity, rho, draws ----------
   # propensity covariates must be complete (glm would drop those subjects),
@@ -341,6 +384,7 @@ compute_delta2 <- function(
 
   contrasts <- list()
   meta_gc <- list()
+  pep_tbl <- list()
   for (gc in group_cols) {
     gvals <- prep$subject_group[[gc]]
     if (anyNA(gvals)) {
@@ -485,6 +529,18 @@ compute_delta2 <- function(
       if (ncol(mm)) covariates <- unname(mm)
     }
 
+    if (return_peptides && length(pep_used)) {
+      pv <- cpp_delta2_prevalence(
+        prep$bitset_raw, prep$bitset_words, pep_used, rows_k, sub_k,
+        des$group_code, des$time_code, des$n_group_levels,
+        des$n_time_levels, adj_weight
+      )
+      pep_tbl[[gc]] <- .ph_delta2_peptide_rows(
+        gc, peptides_order[pep_used], des, pv,
+        with_time = !is.null(time_col)
+      )
+    }
+
     contrasts[[gc]] <- list(
       design = des, terms = terms, pairs = pairs,
       sample_rows = rows_k, sample_subject = sub_k,
@@ -518,7 +574,7 @@ compute_delta2 <- function(
   master_plan$work_weight <- master_plan$n_peptides *
     vapply(contrasts[master_plan$group_col], function(ct) {
       length(ct$terms) + nrow(ct$pairs)
-    }, numeric(1))
+    }, numeric(1)) * (if (standardize == "two_pass") 2 else 1)
 
   # --- 5) Logging header ------------------------------------------------------
   log_to_file <- isTRUE(log) && (!is.null(log_file) && nzchar(log_file))
@@ -562,7 +618,8 @@ compute_delta2 <- function(
       adj_weight = ct$adj_weight, weight_mode = weight_mode,
       aggregate_stat = aggregate_stat, perm_method = perm_method,
       strat_bins = strat_bins, winsor_z = winsor_z,
-      min_m_eff = as.numeric(min_m_eff), covariates = ct$covariates
+      min_m_eff = as.numeric(min_m_eff), covariates = ct$covariates,
+      standardize = standardize
     )
     if (isTRUE(res$skipped)) {
       return(NULL)
@@ -626,19 +683,59 @@ compute_delta2 <- function(
   }
   pair_tbl <- dplyr::arrange(pair_tbl, rank, feature, group_col, group1, group2)
 
+  out <- list(terms = terms_tbl, pairwise = pair_tbl)
+  if (return_peptides) {
+    out$peptides <- dplyr::bind_rows(pep_tbl)
+    if (!nrow(out$peptides)) out$peptides <- .ph_delta2_peptide_rows()
+  }
   structure(
-    list(
-      terms = terms_tbl,
-      pairwise = pair_tbl,
+    c(out, list(
       meta = list(
         call = call,
         B_permutations = B,
+        standardize = standardize,
         group_cols = meta_gc,
         rho_hat = vapply(meta_gc, function(m) m$rho_hat, numeric(1))
       )
-    ),
+    )),
     class = c("delta2_result", "list")
   )
+}
+
+# $peptides rows of one contrast from cpp_delta2_prevalence(); no arguments
+# gives the empty table
+.ph_delta2_peptide_rows <- function(gc = character(), peptide_id = character(),
+                                    des = NULL, pv = NULL, with_time = FALSE) {
+  empty <- tibble::tibble(
+    group_col = character(), peptide_id = character(), factor = character(),
+    level = character(), prevalence = numeric(), prevalence_adj = numeric(),
+    n = numeric()
+  )
+  if (is.null(des)) {
+    return(empty)
+  }
+  m <- length(peptide_id)
+  block <- function(factor, levels, prev, prev_adj, n) {
+    L <- length(levels)
+    tibble::tibble(
+      group_col = gc,
+      peptide_id = rep(peptide_id, times = L),
+      factor = factor,
+      level = rep(as.character(levels), each = m),
+      prevalence = as.vector(prev),
+      prevalence_adj = as.vector(prev_adj),
+      n = rep(as.numeric(n), each = m)
+    )
+  }
+  out <- block(
+    "group", des$group_levels, pv$group_prev, pv$group_prev_adj, pv$n_group
+  )
+  if (with_time) {
+    out <- dplyr::bind_rows(out, block(
+      "time", des$time_levels, pv$time_prev, pv$time_prev, pv$n_time
+    ))
+  }
+  out
 }
 
 # Result rows of one stratum: one $terms row (term columns suffixed) and the
@@ -793,6 +890,9 @@ print.delta2_result <- function(x, ...) {
     "  %d stratum row(s) x %d group_col(s); B = %d\n",
     nrow(tt), length(unique(tt$group_col)), x$meta$B_permutations
   ))
+  if (identical(x$meta$standardize, "two_pass")) {
+    cat("  per-peptide values standardised over the draws (two_pass)\n")
+  }
   cat(sprintf(
     "  terms: %s\n",
     if (length(terms)) paste(terms, collapse = ", ") else "none"
