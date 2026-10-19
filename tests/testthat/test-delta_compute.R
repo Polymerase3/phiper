@@ -240,7 +240,7 @@ test_that("compute_delta returns NA T_obs_stand when permutation
   # toy data: one peptide, two groups, identical prevalence pattern
   toy <- tibble::tibble(
     sample_id  = paste0("s", 1:40),
-    subject_id = paste0("id", rep(1:20, times = 2)),
+    subject_id = paste0("id", 1:40),
     peptide_id = rep("pep1", 40),
     group      = rep(c("A", "B"), each = 20),
     exist      = 1L
@@ -770,6 +770,54 @@ test_that("compute_delta uses global RNG reproducibly and advances .Random.seed 
   expect_equal(res1, res2)
 })
 
+test_that("compute_delta results do not depend on input row order", {
+  fx <- readRDS(test_path("fixtures", "delta_regression.rds"))
+  x <- fx$data[fx$data$timepoint == "T1", ]
+
+  run <- function(x, peplib) {
+    set.seed(1)
+    compute_delta(
+      x               = x,
+      rank_cols       = "species",
+      group_cols      = "group",
+      peptide_library = peplib,
+      B_permutations  = 100L,
+      log             = FALSE
+    )
+  }
+
+  set.seed(99)
+  x_shuf <- x[sample(nrow(x)), ]
+  lib_shuf <- fx$peptide_library[sample(nrow(fx$peptide_library)), ]
+
+  expect_identical(run(x, fx$peptide_library), run(x_shuf, lib_shuf))
+})
+
+test_that("strata of an unpaired contrast share the permutation splits", {
+  fx <- readRDS(test_path("fixtures", "delta_regression.rds"))
+  x <- fx$data[fx$data$timepoint == "T1", ]
+  lib <- fx$peptide_library
+  lib$species[lib$peptide_id == "p01"] <- "solo"
+
+  set.seed(1)
+  res <- compute_delta(
+    x               = x,
+    rank_cols       = c("peptide_id", "species"),
+    group_cols      = "group",
+    peptide_library = lib,
+    B_permutations  = 100L,
+    log             = FALSE
+  )
+
+  # the "solo" species and peptide p01 hold the same single peptide, so with
+  # shared splits they get the same null
+  cols <- c("T_obs", "T_null_mean", "T_null_sd", "b", "p_perm")
+  expect_identical(
+    unlist(res[res$rank == "species" & res$feature == "solo", cols]),
+    unlist(res[res$rank == "peptide_id" & res$feature == "p01", cols])
+  )
+})
+
 # --- min_m_eff --------------------------------------------------------------
 
 # Fixture: two mock species sharing the example data's group-overlapping
@@ -1058,4 +1106,50 @@ test_that("compute_delta aborts on bitset/peptide dimension mismatch", {
     ),
     regexp = "Bitset/peptide dimension mismatch"
   )
+})
+
+# --- subject in both groups of an unpaired contrast -------------------------
+
+# Fixture: every subject is sampled at T1 and T2, so timepoint varies within
+# subject and each subject_id sits in both groups of the T1 vs T2 contrast.
+.delta_within_subject_fixture <- function() {
+  peps <- paste0("pep", 1:6)
+  samples <- tibble::tibble(
+    sample_id  = paste0("x", 1:12),
+    subject_id = rep(paste0("s", 1:6), 2),
+    timepoint  = rep(c("T1", "T2"), each = 6)
+  )
+  tidyr::expand_grid(samples, peptide_id = peps) |>
+    dplyr::mutate(
+      exist = as.integer(
+        (timepoint == "T1" & peptide_id %in% peps[1:4]) |
+          (timepoint == "T2" & peptide_id %in% peps[1:2])
+      )
+    )
+}
+
+.delta_within_subject_run <- function(x, paired_by = NULL) {
+  set.seed(11)
+  compute_delta(
+    x              = x,
+    exist_col      = "exist",
+    rank_cols      = "peptide_id",
+    group_cols     = "timepoint",
+    paired_by      = paired_by,
+    B_permutations = 200L,
+    log            = FALSE
+  )
+}
+
+test_that("compute_delta rejects a subject in both groups of an unpaired contrast", {
+  dat <- .delta_within_subject_fixture()
+  expect_error(.delta_within_subject_run(dat), "paired_by")
+})
+
+test_that("compute_delta runs the within-subject contrast with paired_by", {
+  dat <- .delta_within_subject_fixture()
+  res <- .delta_within_subject_run(dat, paired_by = "subject_id")
+  expect_s3_class(res, "tbl_df")
+  expect_identical(unique(res$design), "paired")
+  expect_true(all(res$n_subjects_paired == 6L))
 })

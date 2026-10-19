@@ -1,3 +1,90 @@
+# phiper 0.4.22 (2026-10-19)
+
+## Performance
+
+- The `compute_delta()` permutation kernel parses its mode arguments once
+  instead of comparing strings for every peptide, builds the `strat_bins`
+  breaks once, and reuses its buffers across permutations instead of
+  allocating them for each one. On x86 CPUs that support it, hits are
+  counted with the POPCNT instruction, chosen at run time so generic builds
+  still run on any CPU. Results are unchanged.
+- Unpaired permutations are drawn once per group contrast and shared by all
+  of its rank/feature strata, instead of being drawn again for every
+  stratum. With 200 peptides in 20 species (220 strata) at the default 2000
+  permutations, a cohort of 1,000 subjects now takes 0.29 s instead of
+  3.1 s, and 10,000 subjects 2.2 s instead of 30 s. The vignette data at
+  2000 permutations takes 1.2 s instead of 3.3 s.
+- Each unpaired permutation now counts a peptide's hits in the first group
+  only and takes the second group's count as the peptide's total minus
+  that, which halves the counting work; the stored permutation splits take
+  half the memory. One stratum of 200 peptides at 2000 permutations takes
+  42 ms instead of 64 ms with 10,000 subjects, and 23 ms instead of 25 ms
+  with 1,000, where computing the statistic dominates. Results are
+  unchanged.
+- `compute_delta()` makes fewer passes over the input table before the
+  permutations. The duplicate-positives check compares the number of
+  distinct keys with the number of positive rows instead of counting every
+  key, an unused per-subject summary is gone, and the group levels and the
+  subject rows of each group level come from one distinct subject x group
+  table instead of two pivots over every row. With an in-memory table of
+  10,000 subjects and 200 peptides (2 million rows) at the default 2000
+  permutations, a run takes 0.46 s instead of 2.3 s. Results are unchanged.
+- In unpaired strata with a single peptide (every `peptide_id` stratum),
+  the statistic of a permutation depends only on the first group's hit
+  count, so it is computed once per distinct count and reused. The
+  vignette data at 2000 permutations, where 2,225 of the 2,604 strata hold
+  one peptide, takes 0.85 s instead of 1.2 s. Results are unchanged.
+
+## Changes
+
+- Under the same seed, unpaired `p_perm`, `T_null_mean`, `T_null_sd` and
+  `b` differ from 0.4.20, because all strata of a group contrast now share
+  one seed and the same permutations. Each stratum's p-value is still a
+  valid permutation p-value; `T_obs` and the other observed statistics are
+  unchanged, and so are runs with only paired contrasts. The regression
+  snapshot is updated for the unpaired cases.
+- New test in `test-delta_compute.R`: a species holding a single peptide
+  gets the same null as that peptide's `peptide_id` stratum.
+- The `paired_by` documentation of `compute_delta()` now states that a
+  contrast is paired as soon as one `paired_by` unit is observed in both
+  groups, and that the paired test then uses only the units present in
+  both groups.
+
+## Bug fixes
+
+- `compute_delta()` results are now reproducible with `set.seed()` for
+  `phip_data` input. DuckDB returned subjects and library peptides in a
+  different order on each run, and since the permutations draw subjects by
+  position, the same seed gave a different null distribution (`p_perm`,
+  `T_null_mean`, `T_null_sd`, `b`). Subject rows and peptide columns are
+  now sorted before the permutation test, so results also no longer depend
+  on the row order of `x` or `peptide_library`. Under the same seed,
+  results can differ from 0.4.20 for input that was not already in
+  subject and peptide order.
+- New test in `test-delta_compute.R`: shuffling the rows of `x` and
+  `peptide_library` leaves the output identical.
+- `compute_delta()` now errors when the same `subject_id` is in both
+  groups of an unpaired contrast, e.g. `group_cols = "timepoint"` without
+  `paired_by`. A subject's hits are pooled into one row, so the subject
+  was counted in both groups and a permutation could place it on both
+  sides. The error lists up to 10 such subjects and points to `paired_by`.
+- New tests in `test-delta_compute.R`: a within-subject timepoint contrast
+  errors without `paired_by` and runs as paired with
+  `paired_by = "subject_id"`. The zero-variance toy test, which reused its
+  subjects in both groups, now has one subject per sample.
+
+# phiper 0.4.21 (2026-10-19)
+
+## Performance
+
+- `compute_delta()` spends far less time in R per stratum. It now builds
+  the peptide columns of every rank/feature and the subject rows of every
+  group level once, before the loop, instead of filtering a table for each
+  stratum. Each stratum's result row is a plain list, and all rows are
+  bound into one tibble at the end. On the typical-workflow vignette data
+  (2,604 strata) a run at `B_permutations = 100` drops from 8.5 s to 0.75 s,
+  and at the default 2000 from 10.7 s to 3.3 s. Results are unchanged.
+
 # phiper 0.4.20 (2026-10-19)
 
 ## Bug fixes

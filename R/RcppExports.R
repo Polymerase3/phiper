@@ -5,7 +5,11 @@ build_bitset_unpaired <- function(hits_by_peptide, N) {
     .Call(`_phiper_build_bitset_unpaired`, hits_by_peptide, N)
 }
 
-cpp_shift_contrast <- function(bitset_raw, n_words, pep_cols, g1_rows, g2_rows, hits_g1_paired, hits_g2_paired, P, B, seed, weight_mode, stat_mode, aggregate_stat, perm_method, strat_bins, winsor_z, design, min_m_eff) {
-    .Call(`_phiper_cpp_shift_contrast`, bitset_raw, n_words, pep_cols, g1_rows, g2_rows, hits_g1_paired, hits_g2_paired, P, B, seed, weight_mode, stat_mode, aggregate_stat, perm_method, strat_bins, winsor_z, design, min_m_eff)
+cpp_perm_masks <- function(g1_rows, g2_rows, n_words, B, seed) {
+    .Call(`_phiper_cpp_perm_masks`, g1_rows, g2_rows, n_words, B, seed)
+}
+
+cpp_shift_contrast <- function(bitset_raw, n_words, pep_cols, g1_rows, g2_rows, perm_masks, hits_g1_paired, hits_g2_paired, P, B, seed, weight_mode, stat_mode, aggregate_stat, perm_method, strat_bins, winsor_z, design, min_m_eff) {
+    .Call(`_phiper_cpp_shift_contrast`, bitset_raw, n_words, pep_cols, g1_rows, g2_rows, perm_masks, hits_g1_paired, hits_g2_paired, P, B, seed, weight_mode, stat_mode, aggregate_stat, perm_method, strat_bins, winsor_z, design, min_m_eff)
 }
 

@@ -187,7 +187,9 @@
 #'
 #' Reproducibility of permutations is controlled via the global RNG:
 #' call `set.seed()` before `compute_delta()` to obtain reproducible
-#' results; each contrast draws its own seed from the global RNG state.
+#' results. Each unpaired group contrast draws one seed from the global RNG
+#' state, and all of its rank/feature strata share the same
+#' `B_permutations` group splits; each paired stratum draws its own seed.
 #'
 #' @param x A `phip_data` object (recommended to attach a `peptide_library`
 #'   when `rank_cols` includes non-`"peptide_id"` and not providing
@@ -200,7 +202,14 @@
 #'   `(rank, feature, group_col)` stratum.
 #' @param exist_col Name of the 0/1 presence column. Default `"exist"`.
 #' @param paired_by Optional single column name identifying paired samples
-#'   (e.g. subject ID). When provided, paired tests are used where applicable.
+#'   (e.g. subject ID). When provided, paired tests are used where applicable:
+#'   a contrast is treated as paired as soon as at least one `paired_by` unit
+#'   is observed in both groups. The paired test then uses only the units
+#'   present in both groups; units observed in just one of the two groups are
+#'   dropped from that contrast, and `n_subjects_paired` reports how many
+#'   units were used. Without `paired_by`, every contrast is unpaired, and a
+#'   `subject_id` that appears in both groups of a contrast (e.g. a
+#'   `group_cols` such as timepoint that varies within subject) is an error.
 #' @param interaction Logical; reserved for future use (currently ignored). If
 #'   `TRUE`, an interaction of the first two `group_cols` may be used as an
 #'   additional `group_col` in future versions.
@@ -384,19 +393,32 @@ compute_delta <- function(
 
   # --- STRICT HITS GUARD: at most one positive per (pair_unit, peptide_id,
   # group value) ---
-  dup_pos <- df_long |>
+  # duplicates exist iff there are fewer distinct keys than positive rows;
+  # the per-key count() only runs to build the error message
+  pos_long <- df_long |>
     dplyr::filter(!!rlang::sym(exist_col) > 0L) |>
     tidyr::pivot_longer(dplyr::all_of(group_cols),
       names_to = "group_col", values_to = "group_value"
+    )
+  n_pos_rows <- pos_long |>
+    dplyr::count() |>
+    dplyr::pull(n)
+  n_pos_keys <- pos_long |>
+    dplyr::distinct(
+      !!rlang::sym(pair_unit), peptide_id, group_col, group_value
     ) |>
-    dplyr::count(!!rlang::sym(pair_unit), peptide_id, group_col, group_value,
-      name = "n_pos"
-    ) |>
-    dplyr::filter(n_pos > 1L) |>
-    dplyr::collect() |>
-    dplyr::rename(pair_id = dplyr::all_of(pair_unit))
+    dplyr::count() |>
+    dplyr::pull(n)
 
-  if (nrow(dup_pos) > 0L) {
+  if (n_pos_keys < n_pos_rows) {
+    dup_pos <- pos_long |>
+      dplyr::count(!!rlang::sym(pair_unit), peptide_id, group_col, group_value,
+        name = "n_pos"
+      ) |>
+      dplyr::filter(n_pos > 1L) |>
+      dplyr::collect() |>
+      dplyr::rename(pair_id = dplyr::all_of(pair_unit))
+
     eg <- dup_pos |>
       dplyr::slice_head(n = 10) |>
       dplyr::mutate(example = paste0(
@@ -423,19 +445,6 @@ compute_delta <- function(
     )
   }
 
-
-  # --- SUBJECT METADATA (1 row per subject; lazy-safe) ------------------------
-  subjects_meta <- df_long |>
-    dplyr::group_by(subject_id) |>
-    dplyr::summarise(
-      dplyr::across(
-        dplyr::all_of(group_cols),
-        dplyr::first
-      ),
-      .groups = "drop"
-    ) |>
-    dplyr::arrange(subject_id) |>
-    dplyr::collect()
 
   # --- FREEZE ORDERS (lazy-safe) ----------------------------------------------
   subjects_order <- df_long |>
@@ -483,14 +492,12 @@ compute_delta <- function(
   }
 
   # Ready for downstream steps:
-  # subjects_order, peptides_order, subjects_meta, bitset_raw, bitset_m,
-  # bitset_words
+  # subjects_order, peptides_order, bitset_raw, bitset_m, bitset_words
 
 
   # Objects ready for downstream use:
   # - subjects_order: character/ID vector (row map)
   # - peptides_order: character/ID vector (col map; all-zero peptides removed)
-  # - subjects_meta : per-subject metadata (for contrasts)
   # - bitset_raw, bitset_m, bitset_words : packed 64-bit bitset (col-major)
 
   # --- 2) Peptide library attach (simple, in R) -------------------------------
@@ -600,14 +607,19 @@ compute_delta <- function(
     dplyr::count(rank, feature, name = "n_peptides")
 
   # (c) levels per group_col across all rows (not per-subject)
-  # Using subjects_meta can drop within-subject levels (e.g., timepoints),
-  # which yields zero contrasts and an empty result.
-  lvl <- df_long |>
+  # Taking one value per subject can drop within-subject levels (e.g.,
+  # timepoints), which yields zero contrasts and an empty result. Subject x
+  # group values are reduced to distinct rows before pivoting; the same table
+  # gives the subject rows per group level below.
+  subj_group_values <- df_long |>
+    dplyr::distinct(!!!rlang::syms(c("subject_id", group_cols))) |>
     tidyr::pivot_longer(dplyr::all_of(group_cols),
       names_to = "group_col", values_to = "group_value"
     ) |>
-    dplyr::distinct(group_col, group_value) |>
+    dplyr::distinct(subject_id, group_col, group_value) |>
     dplyr::collect()
+  lvl <- subj_group_values |>
+    dplyr::distinct(group_col, group_value)
 
   # (d) all ordered pairs per group_col (no many-to-many warning)
   all_pairs <- lvl |>
@@ -718,33 +730,87 @@ compute_delta <- function(
     row = seq_along(subjects_order)
   )
 
-  # group membership with subject row indices (lazy-safe collect already done
-  # earlier)
-  subj_groups_idx <- df_long |>
-    tidyr::pivot_longer(
-      cols = dplyr::all_of(group_cols),
-      names_to = "group_col", values_to = "group_value"
-    ) |>
-    dplyr::distinct(subject_id, group_col, group_value) |>
-    dplyr::collect() |>
+  # group membership with subject row indices (collected in (c))
+  subj_groups_idx <- subj_group_values |>
     dplyr::left_join(subj_row_map, by = "subject_id")
 
   # peptide column index map (within bitset columns 1..m)
   pep_col_map <- stats::setNames(seq_along(peptides_order), peptides_order)
 
+  # lookups built once: rank -> feature -> peptide cols,
+  # group_col -> group_value -> subject rows. Sorted, so the permutation
+  # null does not depend on the order rows arrive in (DuckDB, input order).
+  pep_cols_by_rf <- lapply(
+    split(rank_map_long, rank_map_long$rank),
+    function(d) {
+      lapply(split(as.integer(pep_col_map[d$peptide_id]), d$feature), sort)
+    }
+  )
+  group_rows_by_gv <- lapply(
+    split(subj_groups_idx, subj_groups_idx$group_col),
+    function(d) lapply(split(as.integer(d$row), d$group_value), sort)
+  )
+
   get_pep_cols <- function(rk, ft) {
-    pid <- rank_map_long |>
-      dplyr::filter(.data$rank == rk, .data$feature == ft) |>
-      dplyr::pull(peptide_id)
-    as.integer(pep_col_map[pid])
+    pep_cols_by_rf[[rk]][[ft]]
   }
 
   get_group_rows <- function(gc, gval) {
-    subj_groups_idx |>
-      dplyr::filter(.data$group_col == gc, .data$group_value == gval) |>
-      dplyr::pull(row) |>
-      as.integer()
+    group_rows_by_gv[[gc]][[as.character(gval)]]
   }
+
+  # permutation splits: one seed and B group splits per unpaired group
+  # contrast, shared by all of its rank/feature strata
+  contrast_key <- function(gc, g1, g2) paste(gc, g1, g2, sep = "\r")
+  unpaired_contrasts <- unique(
+    master_plan[
+      master_plan$design == "unpaired",
+      c("group_col", "group1", "group2")
+    ]
+  )
+  perm_masks_by_contrast <- stats::setNames(
+    lapply(seq_len(nrow(unpaired_contrasts)), function(j) {
+      uc <- unpaired_contrasts[j, ]
+      g1_rows <- get_group_rows(uc$group_col, uc$group1)
+      g2_rows <- get_group_rows(uc$group_col, uc$group2)
+
+      # a subject in both groups has one pooled bitset row, so an unpaired
+      # test would count it twice and the permutation could put it on both
+      # sides
+      shared <- intersect(g1_rows, g2_rows)
+      if (length(shared)) {
+        shared_ids <- subjects_order[shared]
+        .ph_abort(
+          sprintf(
+            "Unpaired contrast %s: %s vs %s has %d subject(s) in both
+            groups. `%s` varies within subject; supply
+            `paired_by = \"subject_id\"` (or another pairing column) for a
+            paired test.",
+            uc$group_col, uc$group1, uc$group2, length(shared),
+            uc$group_col
+          ),
+          bullets = c(
+            paste0("subject_id=", utils::head(shared_ids, 10)),
+            if (length(shared_ids) > 10) {
+              sprintf("... and %d more.", length(shared_ids) - 10)
+            }
+          )
+        )
+      }
+
+      cpp_perm_masks(
+        g1_rows = g1_rows,
+        g2_rows = g2_rows,
+        n_words = bitset_words,
+        B       = as.integer(B_permutations),
+        seed    = as.integer(sample.int(.Machine$integer.max, 1L))
+      )
+    }),
+    contrast_key(
+      unpaired_contrasts$group_col, unpaired_contrasts$group1,
+      unpaired_contrasts$group2
+    )
+  )
 
   get_paired_hits <- function(gc, g1, g2) {
     pair_sym <- rlang::sym(paired_by)
@@ -829,16 +895,18 @@ compute_delta <- function(
       return(NULL)
     }
 
-    # draw per-contrast seed from global RNG; reproducible via set.seed()
-    # outside
-    seed_i <- as.integer(sample.int(.Machine$integer.max, 1L))
-
     # Defaults for UNPAIRED call
     hits_g1 <- list()
     hits_g2 <- list()
     P <- 0L
+    seed_i <- 0L
+    perm_masks <- raw(0)
 
     if (identical(st$design, "paired")) {
+      # draw per-stratum seed from global RNG; reproducible via set.seed()
+      # outside
+      seed_i <- as.integer(sample.int(.Machine$integer.max, 1L))
+
       paired <- get_paired_hits(st$group_col, st$group1, st$group2)
       if (is.null(paired)) {
         return(NULL)
@@ -856,6 +924,10 @@ compute_delta <- function(
       hits_g1 <- paired$hits_g1[keep_mask]
       hits_g2 <- paired$hits_g2[keep_mask]
       P <- length(paired$pair_ids)
+    } else {
+      perm_masks <- perm_masks_by_contrast[[
+        contrast_key(st$group_col, st$group1, st$group2)
+      ]]
     }
 
     res <- cpp_shift_contrast(
@@ -864,6 +936,7 @@ compute_delta <- function(
       pep_cols         = pep_cols,
       g1_rows          = g1_rows,
       g2_rows          = g2_rows,
+      perm_masks       = perm_masks,
       hits_g1_paired   = hits_g1,
       hits_g2_paired   = hits_g2,
       P                = as.integer(P),
@@ -885,9 +958,12 @@ compute_delta <- function(
       return(NULL)
     }
 
-    row <- dplyr::bind_cols(
-      st[, c("rank", "feature", "group_col", "group1", "group2", "design")],
-      tibble::tibble(
+    # plain list; all rows are bound into one tibble after the loop
+    row <- c(
+      as.list(
+        st[, c("rank", "feature", "group_col", "group1", "group2", "design")]
+      ),
+      list(
         n_subjects_paired = if (identical(st$design, "paired")) {
           as.integer(P)
         } else {

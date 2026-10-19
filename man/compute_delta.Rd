@@ -43,7 +43,14 @@ universes; pairwise group contrasts are constructed within each
 \item{exist_col}{Name of the 0/1 presence column. Default \code{"exist"}.}
 
 \item{paired_by}{Optional single column name identifying paired samples
-(e.g. subject ID). When provided, paired tests are used where applicable.}
+(e.g. subject ID). When provided, paired tests are used where applicable:
+a contrast is treated as paired as soon as at least one \code{paired_by} unit
+is observed in both groups. The paired test then uses only the units
+present in both groups; units observed in just one of the two groups are
+dropped from that contrast, and \code{n_subjects_paired} reports how many
+units were used. Without \code{paired_by}, every contrast is unpaired, and a
+\code{subject_id} that appears in both groups of a contrast (e.g. a
+\code{group_cols} such as timepoint that varies within subject) is an error.}
 
 \item{interaction}{Logical; reserved for future use (currently ignored). If
 \code{TRUE}, an interaction of the first two \code{group_cols} may be used as an
@@ -272,7 +279,9 @@ to avoid oversubscription when using multiple workers.
 
 Reproducibility of permutations is controlled via the global RNG:
 call \code{set.seed()} before \code{compute_delta()} to obtain reproducible
-results; each contrast draws its own seed from the global RNG state.
+results. Each unpaired group contrast draws one seed from the global RNG
+state, and all of its rank/feature strata share the same
+\code{B_permutations} group splits; each paired stratum draws its own seed.
 }
 
 \examples{
