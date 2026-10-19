@@ -5,6 +5,14 @@ build_bitset_unpaired <- function(hits_by_peptide, N) {
     .Call(`_phiper_build_bitset_unpaired`, hits_by_peptide, N)
 }
 
+cpp_delta2_score <- function(bitset_raw, n_words, pep_cols, sample_rows, sample_subject, group_code, time_code, group_scores, time_scores, terms, n_group_levels, n_time_levels, rho) {
+    .Call(`_phiper_cpp_delta2_score`, bitset_raw, n_words, pep_cols, sample_rows, sample_subject, group_code, time_code, group_scores, time_scores, terms, n_group_levels, n_time_levels, rho)
+}
+
+cpp_delta2_rho <- function(bitset_raw, n_words, pep_cols, sample_rows, sample_subject) {
+    .Call(`_phiper_cpp_delta2_rho`, bitset_raw, n_words, pep_cols, sample_rows, sample_subject)
+}
+
 cpp_perm_masks <- function(g1_rows, g2_rows, n_words, B, seed) {
     .Call(`_phiper_cpp_perm_masks`, g1_rows, g2_rows, n_words, B, seed)
 }

@@ -22,6 +22,44 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// cpp_delta2_score
+Rcpp::List cpp_delta2_score(const Rcpp::RawVector& bitset_raw, int n_words, const Rcpp::IntegerVector& pep_cols, const Rcpp::IntegerVector& sample_rows, const Rcpp::IntegerVector& sample_subject, const Rcpp::IntegerVector& group_code, const Rcpp::IntegerVector& time_code, const Rcpp::NumericVector& group_scores, const Rcpp::NumericVector& time_scores, const Rcpp::CharacterVector& terms, int n_group_levels, int n_time_levels, double rho);
+RcppExport SEXP _phiper_cpp_delta2_score(SEXP bitset_rawSEXP, SEXP n_wordsSEXP, SEXP pep_colsSEXP, SEXP sample_rowsSEXP, SEXP sample_subjectSEXP, SEXP group_codeSEXP, SEXP time_codeSEXP, SEXP group_scoresSEXP, SEXP time_scoresSEXP, SEXP termsSEXP, SEXP n_group_levelsSEXP, SEXP n_time_levelsSEXP, SEXP rhoSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::RawVector& >::type bitset_raw(bitset_rawSEXP);
+    Rcpp::traits::input_parameter< int >::type n_words(n_wordsSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type pep_cols(pep_colsSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type sample_rows(sample_rowsSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type sample_subject(sample_subjectSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type group_code(group_codeSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type time_code(time_codeSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type group_scores(group_scoresSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type time_scores(time_scoresSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::CharacterVector& >::type terms(termsSEXP);
+    Rcpp::traits::input_parameter< int >::type n_group_levels(n_group_levelsSEXP);
+    Rcpp::traits::input_parameter< int >::type n_time_levels(n_time_levelsSEXP);
+    Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_delta2_score(bitset_raw, n_words, pep_cols, sample_rows, sample_subject, group_code, time_code, group_scores, time_scores, terms, n_group_levels, n_time_levels, rho));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cpp_delta2_rho
+Rcpp::List cpp_delta2_rho(const Rcpp::RawVector& bitset_raw, int n_words, const Rcpp::IntegerVector& pep_cols, const Rcpp::IntegerVector& sample_rows, const Rcpp::IntegerVector& sample_subject);
+RcppExport SEXP _phiper_cpp_delta2_rho(SEXP bitset_rawSEXP, SEXP n_wordsSEXP, SEXP pep_colsSEXP, SEXP sample_rowsSEXP, SEXP sample_subjectSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::RawVector& >::type bitset_raw(bitset_rawSEXP);
+    Rcpp::traits::input_parameter< int >::type n_words(n_wordsSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type pep_cols(pep_colsSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type sample_rows(sample_rowsSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type sample_subject(sample_subjectSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_delta2_rho(bitset_raw, n_words, pep_cols, sample_rows, sample_subject));
+    return rcpp_result_gen;
+END_RCPP
+}
 // cpp_perm_masks
 Rcpp::RawVector cpp_perm_masks(const Rcpp::IntegerVector& g1_rows, const Rcpp::IntegerVector& g2_rows, const int n_words, const int B, const int seed);
 RcppExport SEXP _phiper_cpp_perm_masks(SEXP g1_rowsSEXP, SEXP g2_rowsSEXP, SEXP n_wordsSEXP, SEXP BSEXP, SEXP seedSEXP) {
@@ -69,6 +107,8 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_phiper_build_bitset_unpaired", (DL_FUNC) &_phiper_build_bitset_unpaired, 2},
+    {"_phiper_cpp_delta2_score", (DL_FUNC) &_phiper_cpp_delta2_score, 13},
+    {"_phiper_cpp_delta2_rho", (DL_FUNC) &_phiper_cpp_delta2_rho, 5},
     {"_phiper_cpp_perm_masks", (DL_FUNC) &_phiper_cpp_perm_masks, 5},
     {"_phiper_cpp_shift_contrast", (DL_FUNC) &_phiper_cpp_shift_contrast, 19},
     {NULL, NULL, 0}
