@@ -34,12 +34,7 @@ n <- if (quick) {
 }
 mixture <- opt("mixture", Sys.getenv("VAL_MIXTURE", ""))
 if (!nzchar(mixture)) {
-  src <- Sys.getenv("PHIPER_SOURCE", "")
-  cand <- if (nzchar(src)) {
-    file.path(src, "inst", "extdata", "phip_mixture.parquet")
-  } else {
-    system.file("extdata", "phip_mixture.parquet", package = "phiper")
-  }
+  cand <- system.file("extdata", "phip_mixture.parquet", package = "phiperio")
   parquet_ok <- requireNamespace("arrow", quietly = TRUE) ||
     requireNamespace("nanoparquet", quietly = TRUE)
   mixture <- if (file.exists(cand) && parquet_ok) cand else ""

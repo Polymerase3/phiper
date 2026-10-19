@@ -16,7 +16,7 @@ Rscript run_validation.R --sections 1,3 --out my_results
 Options: `--sections` (any of `1,2,3,4,5,tests`), `--quick` (few replicates),
 `--out` (results directory, default `results/`), `--mixture` (path to
 `phip_mixture.parquet` or a CSV export of it, for 6.5c; found automatically
-in the package when `arrow` or `nanoparquet` is installed). Environment:
+in phiperio when `arrow` or `nanoparquet` is installed). Environment:
 `PHIPER_SOURCE` loads phiper with `pkgload` from a source checkout (needed
 for the 6.6 / 6.7 tests, which live in `tests/testthat`), `VAL_CORES` sets
 the number of forked workers.
@@ -28,7 +28,7 @@ an hour on 4 cores. The run writes `report.md` (gates, tables, figures),
 ## Data
 
 `data/phip_mixture_prevalence.csv` holds the per-peptide prevalence of the
-phiper example data (`inst/extdata/phip_mixture.parquet`, 1950 peptides). The
+example data (`phip_mixture.parquet` in phiperio, 1950 peptides). The
 simulator draws baseline prevalences from it, or from a sparse log-uniform
 profile on [0.01, 0.3] where a section asks for realistic sparsity.
 
