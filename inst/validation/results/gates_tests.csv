@@ -1,0 +1,4 @@
+"section","gate","value","lo","hi","pass"
+"6.6/6.7","test-delta2_resample.R passes",0,0,0,TRUE
+"6.6/6.7","test-delta2_score.R passes",0,0,0,TRUE
+"6.6/6.7","test-delta2_compute.R passes",0,0,0,TRUE

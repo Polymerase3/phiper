@@ -1,0 +1,13 @@
+"section","gate","value","lo","hi","pass"
+"6.2","10/30, score: permutation test calibrated",0.06,0.0308962830841744,0.0691037169158256,TRUE
+"6.2","10/30, srlr: permutation test calibrated",0.044,0.0308962830841744,0.0691037169158256,TRUE
+"6.2","10/30, srlr_std: permutation test calibrated",0.056,0.0308962830841744,0.0691037169158256,TRUE
+"6.2","10/30, wald_t: permutation test calibrated",0.048,0.0308962830841744,0.0691037169158256,TRUE
+"6.2","20/20, score: permutation test calibrated",0.08,0.0308962830841744,0.0691037169158256,FALSE
+"6.2","20/20, srlr: permutation test calibrated",0.074,0.0308962830841744,0.0691037169158256,FALSE
+"6.2","20/20, srlr_std: permutation test calibrated",0.078,0.0308962830841744,0.0691037169158256,FALSE
+"6.2","20/20, wald_t: permutation test calibrated",0.08,0.0308962830841744,0.0691037169158256,FALSE
+"6.2","30/10, score: permutation test calibrated",0.052,0.0308962830841744,0.0691037169158256,TRUE
+"6.2","30/10, srlr: permutation test calibrated",0.044,0.0308962830841744,0.0691037169158256,TRUE
+"6.2","30/10, srlr_std: permutation test calibrated",0.054,0.0308962830841744,0.0691037169158256,TRUE
+"6.2","30/10, wald_t: permutation test calibrated",0.058,0.0308962830841744,0.0691037169158256,TRUE

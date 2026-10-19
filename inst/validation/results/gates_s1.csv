@@ -1,0 +1,23 @@
+"section","gate","value","lo","hi","pass"
+"6.1","K=2, T=1, with PS: group rejection in band",0,0.0364916322229516,0.0635083677770484,FALSE
+"6.1","K=2, T=2, no PS: interaction rejection in band",0.05,0.0364916322229516,0.0635083677770484,TRUE
+"6.1","K=2, T=2, no PS: time rejection in band",0.055,0.0364916322229516,0.0635083677770484,TRUE
+"6.1","K=2, T=2, with PS: group rejection in band",0,0.0364916322229516,0.0635083677770484,FALSE
+"6.1","K=2, T=2, with PS: interaction rejection in band",0.052,0.0364916322229516,0.0635083677770484,TRUE
+"6.1","K=2, T=2, with PS: time rejection in band",0.05,0.0364916322229516,0.0635083677770484,TRUE
+"6.1","K=2, T=4, no PS: interaction rejection in band",0.046,0.0364916322229516,0.0635083677770484,TRUE
+"6.1","K=2, T=4, no PS: time rejection in band",0.043,0.0364916322229516,0.0635083677770484,TRUE
+"6.1","K=2, T=4, with PS: group rejection in band",0,0.0364916322229516,0.0635083677770484,FALSE
+"6.1","K=2, T=4, with PS: interaction rejection in band",0.045,0.0364916322229516,0.0635083677770484,TRUE
+"6.1","K=2, T=4, with PS: time rejection in band",0.049,0.0364916322229516,0.0635083677770484,TRUE
+"6.1","K=3, T=1, with PS: group rejection in band",0.001,0.0364916322229516,0.0635083677770484,FALSE
+"6.1","K=3, T=2, no PS: interaction rejection in band",0.063,0.0364916322229516,0.0635083677770484,TRUE
+"6.1","K=3, T=2, no PS: time rejection in band",0.058,0.0364916322229516,0.0635083677770484,TRUE
+"6.1","K=3, T=2, with PS: group rejection in band",0,0.0364916322229516,0.0635083677770484,FALSE
+"6.1","K=3, T=2, with PS: interaction rejection in band",0.068,0.0364916322229516,0.0635083677770484,FALSE
+"6.1","K=3, T=2, with PS: time rejection in band",0.049,0.0364916322229516,0.0635083677770484,TRUE
+"6.1","K=3, T=4, no PS: interaction rejection in band",0.052,0.0364916322229516,0.0635083677770484,TRUE
+"6.1","K=3, T=4, no PS: time rejection in band",0.044,0.0364916322229516,0.0635083677770484,TRUE
+"6.1","K=3, T=4, with PS: group rejection in band",0,0.0364916322229516,0.0635083677770484,FALSE
+"6.1","K=3, T=4, with PS: interaction rejection in band",0.055,0.0364916322229516,0.0635083677770484,TRUE
+"6.1","K=3, T=4, with PS: time rejection in band",0.04,0.0364916322229516,0.0635083677770484,TRUE

@@ -1,0 +1,6 @@
+"section","gate","value","lo","hi","pass"
+"6.3","(a) residualised interaction calibrated",0.024,0.0364916322229516,0.0635083677770484,FALSE
+"6.3","(a) without residualisation the interaction over-rejects",1,0.0635083677770484,1,TRUE
+"6.3","(b) no dropout: time term calibrated",0.054,0.0364916322229516,0.0635083677770484,TRUE
+"6.3","(b) informative dropout flagged by the diagnostics in >= 80% of runs",1,0.8,1,TRUE
+"6.3","(b) no dropout: diagnostics silent in >= 95% of runs",1,0.95,1,TRUE

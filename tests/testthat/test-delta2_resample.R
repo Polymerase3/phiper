@@ -352,3 +352,62 @@ test_that("time coins come from the within-subject covariate difference", {
   fair <- .ph_delta2_time_propensity(meta, sample_subject, time_code)
   expect_true(all(is.na(fair$keep_prob)))
 })
+
+test_that("constant propensities give the uniform-shuffle null (K = 2)", {
+  # 8 subjects, 4 per group: 70 labellings, uniform under the null
+  obs <- rep(1:2, each = 4)
+  states <- .labellings(obs)
+  expect_length(states, 70L)
+  uniform <- stats::setNames(rep(1 / 70, 70), vapply(states, .key, ""))
+  for (p in c(0.5, 0.2)) {
+    res <- .ph_resample_group(obs, rep(p, 8), B = 35000, seed = 31)
+    expect_identical(res$method, "rejection")
+    expect_gt(.gof_p(res$labels, uniform), 1e-3)
+  }
+
+  # the pooled statistic's null: exact over all 70 labellings, then from
+  # rejection draws with a constant propensity and from uniform shuffles
+  set.seed(32)
+  samples <- data.frame(
+    sample_id = sprintf("x%d", 1:8), subject_id = sprintf("s%d", 1:8),
+    stringsAsFactors = FALSE
+  )
+  samples$group <- c("a", "b")[obs]
+  df <- merge(samples, data.frame(peptide_id = sprintf("p%d", 1:5)))
+  df$exist <- stats::rbinom(nrow(df), 1, 0.4)
+  prep <- .ph_delta2_prepare(df, "group")
+  ss <- prep$sample_subject
+  code <- obs[match(prep$subjects_order, samples$subject_id)]
+  kernel <- function(draws) {
+    cpp_delta2_contrast(
+      prep$bitset_raw, prep$bitset_words, seq_len(prep$bitset_m),
+      seq_along(ss), ss, code, rep(1L, length(ss)), numeric(0), numeric(0),
+      "group", 2L, 1L, 0, draws, matrix(0L, 0, 0), matrix(0L, 0, 2),
+      numeric(0), "n_eff_sqrt", "stouffer", "mid_p", 0, 4, 0
+    )$terms$group
+  }
+  exact <- kernel(do.call(cbind, states))
+  T_all <- vapply(states, function(L) {
+    cpp_delta2_contrast(
+      prep$bitset_raw, prep$bitset_words, seq_len(prep$bitset_m),
+      seq_along(ss), ss, L, rep(1L, length(ss)), numeric(0), numeric(0),
+      "group", 2L, 1L, 0, matrix(L), matrix(0L, 0, 0), matrix(0L, 0, 2),
+      numeric(0), "n_eff_sqrt", "stouffer", "mid_p", 0, 4, 0
+    )$terms$group$T_obs
+  }, numeric(1))
+  expect_equal(exact$T_null_mean, mean(T_all), tolerance = 1e-12)
+
+  B <- 20000
+  rej <- .ph_resample_group(code, rep(0.3, 8), B = B, seed = 33)$labels
+  uni <- .ph_resample_group(code, NULL, B = B, seed = 34)$labels
+  T_of <- function(draws) T_all[match(apply(draws, 2, .key), names(uniform))]
+  t_rej <- T_of(rej)
+  t_uni <- T_of(uni)
+  sd_T <- sqrt(mean((T_all - mean(T_all))^2))
+  for (t in list(t_rej, t_uni)) {
+    expect_lt(abs(mean(t) - mean(T_all)), 4 * sd_T / sqrt(B))
+  }
+  ks <- suppressWarnings(stats::ks.test(t_rej, t_uni, exact = FALSE))
+  expect_gt(ks$p.value, 1e-3)
+  expect_equal(kernel(rej)$T_null_mean, mean(t_rej), tolerance = 1e-10)
+})
