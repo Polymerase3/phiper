@@ -43,6 +43,105 @@ static inline int count_hits_col(const uint8_t* bitset_raw, int n_words, int col
   return (int)s;
 }
 
+// Group A/B counts of every used peptide column for one unpaired permutation
+static inline void count_hits_ab(const uint8_t* bitset_raw, int n_words,
+                                 const std::vector<int>& cols0,
+                                 const std::vector<uint64_t>& mask_A,
+                                 const std::vector<uint64_t>& mask_B,
+                                 std::vector<double>& xA,
+                                 std::vector<double>& xB) {
+  for (size_t k = 0; k < cols0.size(); ++k) {
+    xA[k] = (double)count_hits_col(bitset_raw, n_words, cols0[k], mask_A);
+    xB[k] = (double)count_hits_col(bitset_raw, n_words, cols0[k], mask_B);
+  }
+}
+
+// Counts of every used peptide after flipping the labels in F (paired):
+// x1' = pop(S1 & ~F) + pop(S2 & F)
+// x2' = pop(S2 & ~F) + pop(S1 & F)
+// plus the discordant counts b/c for the paired-only stats
+static inline void count_hits_flip(const std::vector< std::vector<uint64_t> >& M1,
+                                   const std::vector< std::vector<uint64_t> >& M2,
+                                   const std::vector<int>& keep_idx,
+                                   const std::vector<uint64_t>& Fmask,
+                                   int n_words_p, bool paired_only_stat,
+                                   std::vector<double>& x1b,
+                                   std::vector<double>& x2b,
+                                   std::vector<double>& bb,
+                                   std::vector<double>& cc) {
+  for (size_t k = 0; k < keep_idx.size(); ++k) {
+    const int i = keep_idx[k];
+    uint32_t a = 0, b2 = 0, c = 0, d = 0; // temp counts
+    uint32_t b_disc = 0, c_disc = 0;
+    for (int w = 0; w < n_words_p; ++w) {
+      const uint64_t S1 = M1[i][w], S2 = M2[i][w], F = Fmask[w];
+      a += pc64(S1 & ~F);
+      b2 += pc64(S2 &  F);
+      c += pc64(S2 & ~F);
+      d += pc64(S1 &  F);
+      if (paired_only_stat) {
+        const uint64_t S1p = (S1 & ~F) | (S2 & F);
+        const uint64_t S2p = (S2 & ~F) | (S1 & F);
+        b_disc += pc64(S1p & ~S2p);
+        c_disc += pc64(~S1p & S2p);
+      }
+    }
+    x1b[k] = (double)a + (double)b2;
+    x2b[k] = (double)c + (double)d;
+    if (paired_only_stat) {
+      bb[k] = (double)b_disc;
+      cc[k] = (double)c_disc;
+    }
+  }
+}
+
+// x86 copies of the counting loops compiled with the POPCNT instruction,
+// picked at run time so generic builds still run on any CPU
+#if (defined(__GNUC__) || defined(__clang__)) && (defined(__x86_64__) || defined(__i386__))
+#define PHIPER_POPCNT_VARIANT 1
+
+__attribute__((target("popcnt"), flatten))
+static void count_hits_ab_popcnt(const uint8_t* bitset_raw, int n_words,
+                                 const std::vector<int>& cols0,
+                                 const std::vector<uint64_t>& mask_A,
+                                 const std::vector<uint64_t>& mask_B,
+                                 std::vector<double>& xA,
+                                 std::vector<double>& xB) {
+  count_hits_ab(bitset_raw, n_words, cols0, mask_A, mask_B, xA, xB);
+}
+
+__attribute__((target("popcnt"), flatten))
+static void count_hits_flip_popcnt(const std::vector< std::vector<uint64_t> >& M1,
+                                   const std::vector< std::vector<uint64_t> >& M2,
+                                   const std::vector<int>& keep_idx,
+                                   const std::vector<uint64_t>& Fmask,
+                                   int n_words_p, bool paired_only_stat,
+                                   std::vector<double>& x1b,
+                                   std::vector<double>& x2b,
+                                   std::vector<double>& bb,
+                                   std::vector<double>& cc) {
+  count_hits_flip(M1, M2, keep_idx, Fmask, n_words_p, paired_only_stat,
+                  x1b, x2b, bb, cc);
+}
+#endif
+
+using CountAB = decltype(&count_hits_ab);
+using CountFlip = decltype(&count_hits_flip);
+
+static CountAB pick_count_ab() {
+#ifdef PHIPER_POPCNT_VARIANT
+  if (__builtin_cpu_supports("popcnt")) return count_hits_ab_popcnt;
+#endif
+  return count_hits_ab;
+}
+
+static CountFlip pick_count_flip() {
+#ifdef PHIPER_POPCNT_VARIANT
+  if (__builtin_cpu_supports("popcnt")) return count_hits_flip_popcnt;
+#endif
+  return count_hits_flip;
+}
+
 // Build per-peptide bit masks from 1-based index lists (paired path)
 static inline std::vector< std::vector<uint64_t> >
   lists_to_masks(const List& hits_list, const int n_words_p) {
@@ -588,6 +687,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     std::vector<double> bb, cc;
     if (paired_only_stat) { bb.resize(mu); cc.resize(mu); }
     const std::vector<double> n1b(mu, (double)P), n2b(mu, (double)P);
+    const CountFlip count_flip = pick_count_flip();
 
     for (int b = 0; b < B; ++b) {
       // Build flip mask F over P subjects
@@ -599,36 +699,12 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
         }
       }
 
-      // For each peptide, counts after flip:
-      // x1' = pop(S1 & ~F) + pop(S2 & F)
-      // x2' = pop(S2 & ~F) + pop(S1 & F)
+      // For each peptide, counts after flip
+      count_flip(M1, M2, keep_idx, Fmask, n_words_p, paired_only_stat,
+                 x1b, x2b, bb, cc);
       for (int k = 0; k < mu; ++k) {
-        const int i = keep_idx[k];
-        uint32_t a = 0, b2 = 0, c = 0, d = 0; // temp counts
-        uint32_t b_disc = 0, c_disc = 0;
-        for (int w = 0; w < n_words_p; ++w) {
-          const uint64_t S1 = M1[i][w], S2 = M2[i][w], F = Fmask[w];
-          a += pc64(S1 & ~F);
-          b2 += pc64(S2 &  F);
-          c += pc64(S2 & ~F);
-          d += pc64(S1 &  F);
-          if (paired_only_stat) {
-            const uint64_t S1p = (S1 & ~F) | (S2 & F);
-            const uint64_t S2p = (S2 & ~F) | (S1 & F);
-            b_disc += pc64(S1p & ~S2p);
-            c_disc += pc64(~S1p & S2p);
-          }
-        }
-        const double x1p = (double)a + (double)b2;
-        const double x2p = (double)c + (double)d;
-        const double pA  = x1p / (double)P;
-        const double pB  = x2p / (double)P;
-        x1b[k] = x1p; x2b[k] = x2p;
-        p1b[k] = pA; p2b[k] = pB;
-        if (paired_only_stat) {
-          bb[k] = (double)b_disc;
-          cc[k] = (double)c_disc;
-        }
+        p1b[k] = x1b[k] / (double)P;
+        p2b[k] = x2b[k] / (double)P;
       }
 
       double Tb = 0.0;
@@ -754,6 +830,9 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
     std::vector<char> isA(N);
     std::vector<double> x1b(mu), x2b(mu), p1b(mu), p2b(mu);
     const std::vector<double> n1b(mu, (double)nA), n2b(mu, (double)nB);
+    const CountAB count_ab = pick_count_ab();
+    std::vector<int> cols0(mu); // 0-based bitset columns of the used peptides
+    for (int k = 0; k < mu; ++k) cols0[k] = pep_cols[keep_idx[k]] - 1;
 
     for (int b = 0; b < B; ++b) {
       // random split: sample nA indices for group A
@@ -783,15 +862,10 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
       }
 
       // counts --> p --> T_b
+      count_ab(raw, n_words, cols0, mask_A, mask_B, x1b, x2b);
       for (int k = 0; k < mu; ++k) {
-        const int i_keep = keep_idx[k]; // index in original pep list
-        const int col0 = pep_cols[i_keep] - 1;
-        const double xA = (double)count_hits_col(reinterpret_cast<const uint8_t*>(RAW(bitset_raw)), n_words, col0, mask_A);
-        const double xB = (double)count_hits_col(reinterpret_cast<const uint8_t*>(RAW(bitset_raw)), n_words, col0, mask_B);
-        const double pA = xA / n1b[0];
-        const double pB = xB / n2b[0];
-        x1b[k] = xA; x2b[k] = xB;
-        p1b[k] = pA; p2b[k] = pB;
+        p1b[k] = x1b[k] / n1b[0];
+        p2b[k] = x2b[k] / n2b[0];
       }
 
       double Tb = 0.0;
