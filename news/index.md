@@ -1,5 +1,27 @@
 # Changelog
 
+## phiper 0.4.23 (2026-10-19)
+
+### Bug fixes
+
+- [`compute_delta()`](https://polymerase3.github.io/phiper/reference/compute_delta.md)
+  gave different permutation p-values for the same
+  [`set.seed()`](https://rdrr.io/r/base/Random.html) on macOS than on
+  Linux and Windows. The permutations were drawn with
+  `std::uniform_int_distribution` and `std::bernoulli_distribution`,
+  whose algorithms the C++ standard leaves to each standard library, and
+  macOS’s libc++ differs from libstdc++. They are now drawn directly
+  from the `mt19937_64` engine, whose output is fixed by the standard,
+  so a seed gives the same permutations on every platform. Because the
+  permutation stream changed on all platforms, `T_null_mean`,
+  `T_null_sd`, `T_obs_stand`, `Z_from_p`, `p_perm` and `b` differ from
+  earlier versions for the same seed (by Monte Carlo noise); `T_obs` and
+  all other columns are unchanged.
+- The
+  [`compute_delta()`](https://polymerase3.github.io/phiper/reference/compute_delta.md)
+  regression snapshot is re-recorded with the new permutations. It
+  failed on macOS for this reason.
+
 ## phiper 0.4.22 (2026-10-19)
 
 ### Bug fixes

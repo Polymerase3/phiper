@@ -13,7 +13,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.22</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.23</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,6 +67,15 @@
       <small>Source: <a href="https://github.com/Polymerase3/phiper/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.4.23" id="phiper-0423-2026-10-19">phiper 0.4.23 (2026-10-19)<a class="anchor" aria-label="anchor" href="#phiper-0423-2026-10-19"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-0-4-23">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-4-23"></a></h3>
+<ul><li>
+<code><a href="../reference/compute_delta.html">compute_delta()</a></code> gave different permutation p-values for the same <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> on macOS than on Linux and Windows. The permutations were drawn with <code>std::uniform_int_distribution</code> and <code>std::bernoulli_distribution</code>, whose algorithms the C++ standard leaves to each standard library, and macOS’s libc++ differs from libstdc++. They are now drawn directly from the <code>mt19937_64</code> engine, whose output is fixed by the standard, so a seed gives the same permutations on every platform. Because the permutation stream changed on all platforms, <code>T_null_mean</code>, <code>T_null_sd</code>, <code>T_obs_stand</code>, <code>Z_from_p</code>, <code>p_perm</code> and <code>b</code> differ from earlier versions for the same seed (by Monte Carlo noise); <code>T_obs</code> and all other columns are unchanged.</li>
+<li>The <code><a href="../reference/compute_delta.html">compute_delta()</a></code> regression snapshot is re-recorded with the new permutations. It failed on macOS for this reason.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.4.22" id="phiper-0422-2026-10-19">phiper 0.4.22 (2026-10-19)<a class="anchor" aria-label="anchor" href="#phiper-0422-2026-10-19"></a></h2>
 <div class="section level3">

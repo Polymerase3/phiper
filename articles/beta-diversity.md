@@ -53,43 +53,43 @@ peptides.
 ``` r
 
 pd <- load_example_data()
-#> [09:38:14] INFO  Constructing <phip_data> object
+#> [13:25:09] INFO  Constructing <phip_data> object
 #>                  -> create_data()
-#> [09:38:14] INFO  Fetching peptide metadata library via get_peptide_library()
+#> [13:25:09] INFO  Fetching peptide metadata library via get_peptide_library()
 #>                    - libraries: combined
-#> [09:38:14] INFO  Retrieving peptide metadata into DuckDB cache
+#> [13:25:09] INFO  Retrieving peptide metadata into DuckDB cache
 #>                  -> get_peptide_library(library = combined, force_refresh =
 #>                     FALSE)
-#> [09:38:14] INFO  Opened DuckDB connection
+#> [13:25:10] INFO  Opened DuckDB connection
 #>                    - cache dir:
 #>                      /home/runner/.cache/R/phiperio/peptide_meta/phip_cache.duckdb
 #>                    - tables: peptide_meta_combined
-#> [09:38:15] OK    Using cached peptide_meta_combined (fast path)
-#> [09:38:15] OK    Retrieving peptide metadata into DuckDB cache - done
-#>                  -> elapsed: 0.045s
-#> [09:38:15] OK    Peptide metadata acquired
-#> [09:38:15] INFO  Validating <phip_data>
+#> [13:25:10] OK    Using cached peptide_meta_combined (fast path)
+#> [13:25:10] OK    Retrieving peptide metadata into DuckDB cache - done
+#>                  -> elapsed: 0.046s
+#> [13:25:10] OK    Peptide metadata acquired
+#> [13:25:10] INFO  Validating <phip_data>
 #>                  -> validate_phip_data()
-#> [09:38:15] INFO  Checking structural requirements (shape & mandatory columns)
-#> [09:38:15] INFO  Checking outcome family availability (exist / fold_change /
+#> [13:25:10] INFO  Checking structural requirements (shape & mandatory columns)
+#> [13:25:10] INFO  Checking outcome family availability (exist / fold_change /
 #>                  raw_counts)
-#> [09:38:15] INFO  Checking collisions with reserved names
+#> [13:25:10] INFO  Checking collisions with reserved names
 #>                    - subject_id, sample_id, timepoint, peptide_id, exist,
 #>                      fold_change, counts_input, counts_hit
-#> [09:38:15] INFO  Ensuring all columns are atomic (no list-cols)
-#> [09:38:15] INFO  Checking key uniqueness
-#> [09:38:15] INFO  Validating value ranges & types for outcomes
-#> [09:38:15] INFO  Assessing sparsity (NA/zero prevalence vs threshold)
+#> [13:25:10] INFO  Ensuring all columns are atomic (no list-cols)
+#> [13:25:10] INFO  Checking key uniqueness
+#> [13:25:10] INFO  Validating value ranges & types for outcomes
+#> [13:25:10] INFO  Assessing sparsity (NA/zero prevalence vs threshold)
 #>                    - warn threshold: 50%
-#> [09:38:15] INFO  Checking peptide_id coverage against peptide_library
-#> [09:38:15] INFO  Checking full grid completeness (peptide * sample)
-#> [09:38:15] INFO  Counts table is not a full peptide * sample grid
+#> [13:25:10] INFO  Checking peptide_id coverage against peptide_library
+#> [13:25:10] INFO  Checking full grid completeness (peptide * sample)
+#> [13:25:10] INFO  Counts table is not a full peptide * sample grid
 #>                    - observed rows: 80000
 #>                    - expected rows: 156000
-#> [09:38:15] OK    Validating <phip_data> - done
-#>                  -> elapsed: 0.474s
-#> [09:38:15] OK    Constructing <phip_data> object - done
-#>                  -> elapsed: 0.563s
+#> [13:25:10] OK    Validating <phip_data> - done
+#>                  -> elapsed: 0.433s
+#> [13:25:10] OK    Constructing <phip_data> object - done
+#>                  -> elapsed: 0.527s
 pd
 #> ── <phip_data> ───────────────────────────────────────────────────────────────── 
 #> 
@@ -152,7 +152,7 @@ glimpse(meta)
 #> $ sample_id  <chr> "A_T1_13", "A_T2_15", "A_T1_7", "A_T1_8", "A_T1_9", "B_T1_1…
 #> $ subject_id <chr> "A_13", "A_15", "A_7", "A_8", "A_9", "B_16", "A_1", "A_11",…
 #> $ group      <chr> "A", "A", "A", "A", "A", "B", "A", "A", "A", "A", "A", "A",…
-#> $ timepoint  <chr> "T1", "T2", "T1", "T1", "T1", "T1", "T2", "T2", "T1", "T1",…
+#> $ timepoint  <chr> "T1", "T2", "T1", "T1", "T1", "T1", "T1", "T1", "T1", "T2",…
 ```
 
 ------------------------------------------------------------------------
@@ -189,16 +189,16 @@ d <- compute_distance(
   method_normalization = "hellinger",
   distance             = "bray"
 )
-#> [09:38:15] INFO  building abundance matrix from `ps` using `fold_change`.
-#> [09:38:15] INFO  building pivot spec (sample_id x peptide_id).
-#> [09:38:15] INFO  Collecting long table (sample_id, peptide_id, value).
+#> [13:25:10] INFO  building abundance matrix from `ps` using `fold_change`.
+#> [13:25:10] INFO  building pivot spec (sample_id x peptide_id).
+#> [13:25:10] INFO  Collecting long table (sample_id, peptide_id, value).
 #>                  -> compute_distance
-#> [09:38:15] INFO  Pivoting to wide abundance matrix in R.
+#> [13:25:10] INFO  Pivoting to wide abundance matrix in R.
 #>                  -> compute_distance
-#> [09:38:15] INFO  abundance matrix has 80 samples and 1950 features after
+#> [13:25:10] INFO  abundance matrix has 80 samples and 1950 features after
 #>                  preprocessing.
-#> [09:38:15] INFO  computing distance: bray
-#> [09:38:15] INFO  distance matrix computation complete.
+#> [13:25:10] INFO  computing distance: bray
+#> [13:25:10] INFO  distance matrix computation complete.
 
 class(d)                       # a standard dist object
 #> [1] "dist"
@@ -237,10 +237,10 @@ diagnostics.
 ``` r
 
 pcoa_res <- compute_pcoa(d, neg_correction = "none", n_axes = 5L)
-#> [09:38:16] INFO  performing principal coordinates analysis
-#> [09:38:16] INFO  extracting sample coordinates.
-#> [09:38:16] INFO  summarizing eigenvalues and variance explained.
-#> [09:38:16] INFO  pcoa analysis complete.
+#> [13:25:11] INFO  performing principal coordinates analysis
+#> [13:25:11] INFO  extracting sample coordinates.
+#> [13:25:11] INFO  summarizing eigenvalues and variance explained.
+#> [13:25:11] INFO  pcoa analysis complete.
 
 names(pcoa_res)           # components of the result
 #> [1] "sample_coords"     "eigenvalues"       "var_explained"    
@@ -357,7 +357,7 @@ plot_pcoa(
   pcoa_res,
   group_col = "group"
 )
-#> [09:38:17] INFO  Plotting PCoA: n=80 | group_col=group | time_col=<none> |
+#> [13:25:12] INFO  Plotting PCoA: n=80 | group_col=group | time_col=<none> |
 #>                  centroid_by=group
 #>                  -> plot_pcoa
 ```
@@ -376,7 +376,7 @@ plot_pcoa(
   group_col = "group",
   time_col  = "timepoint"
 )
-#> [09:38:17] INFO  Plotting PCoA: n=80 | group_col=group | time_col=timepoint |
+#> [13:25:12] INFO  Plotting PCoA: n=80 | group_col=group | time_col=timepoint |
 #>                  centroid_by=group_time
 #>                  -> plot_pcoa
 ```
@@ -399,7 +399,7 @@ plot_pcoa(
   centroid_by       = "group_time",
   connect_centroids = "group"
 )
-#> [09:38:18] INFO  Plotting PCoA: n=80 | group_col=group | time_col=timepoint |
+#> [13:25:13] INFO  Plotting PCoA: n=80 | group_col=group | time_col=timepoint |
 #>                  centroid_by=group_time
 #>                  -> plot_pcoa
 ```
@@ -421,7 +421,7 @@ plot_pcoa(
   show_centroids = FALSE,
   ellipse_by     = c("group", "group_time")
 )
-#> [09:38:18] INFO  Plotting PCoA: n=80 | group_col=group | time_col=timepoint |
+#> [13:25:13] INFO  Plotting PCoA: n=80 | group_col=group | time_col=timepoint |
 #>                  centroid_by=group_time
 #>                  -> plot_pcoa
 ```
@@ -437,7 +437,7 @@ plot_pcoa(
   axes      = c(2, 3),
   group_col = "group"
 )
-#> [09:38:19] INFO  Plotting PCoA: n=80 | group_col=group | time_col=<none> |
+#> [13:25:14] INFO  Plotting PCoA: n=80 | group_col=group | time_col=<none> |
 #>                  centroid_by=group
 #>                  -> plot_pcoa
 ```
@@ -464,13 +464,13 @@ cap_res <- compute_capscale(
   formula      = ~ group + timepoint,
   permutations = 99L
 )
-#> [09:38:19] INFO  building metadata from `ps$data_long`.
-#> [09:38:19] INFO  fitting constrained ordination (cap/db-rda)
+#> [13:25:14] INFO  building metadata from `ps$data_long`.
+#> [13:25:14] INFO  fitting constrained ordination (cap/db-rda)
 #>                    - formula: ~group + timepoint
-#> [09:38:20] INFO  extracting constrained sample scores.
-#> [09:38:20] INFO  computing variance partitioning and permutation tests.
-#> [09:38:20] INFO  computing feature associations: weighted_average.
-#> [09:38:20] INFO  cap analysis complete.
+#> [13:25:15] INFO  extracting constrained sample scores.
+#> [13:25:15] INFO  computing variance partitioning and permutation tests.
+#> [13:25:15] INFO  computing feature associations: weighted_average.
+#> [13:25:15] INFO  cap analysis complete.
 
 cap_res$variance_partition
 #> # A tibble: 3 × 3
@@ -523,7 +523,7 @@ plot_cap(
   connect_centroids = "group",
   ellipse_by        = "group"
 )
-#> [09:38:20] INFO  CAP plot: n=80 samples | groups=2 | times=0
+#> [13:25:15] INFO  CAP plot: n=80 samples | groups=2 | times=0
 #>                  -> plot_cap
 ```
 
@@ -555,15 +555,15 @@ perm_res <- compute_permanova(
   permutations = 99L,
   p_adjust     = "BH"
 )
-#> [09:38:20] INFO  preparing distance labels and metadata.
-#> [09:38:20] INFO  building metadata from `ps`.
-#> [09:38:21] INFO  filtering samples with missing grouping variables.
-#> [09:38:21] INFO  subsetting distance matrix to complete cases.
-#> [09:38:21] INFO  preparing global permanova model.
-#> [09:38:21] INFO  running global permanova
+#> [13:25:16] INFO  preparing distance labels and metadata.
+#> [13:25:16] INFO  building metadata from `ps`.
+#> [13:25:16] INFO  filtering samples with missing grouping variables.
+#> [13:25:16] INFO  subsetting distance matrix to complete cases.
+#> [13:25:16] INFO  preparing global permanova model.
+#> [13:25:16] INFO  running global permanova
 #>                    - model: d_resp ~ group + timepoint + group * timepoint
 #>                    - permutations stratified by subject
-#> [09:38:21] INFO  running pairwise permanova contrasts.
+#> [13:25:16] INFO  running pairwise permanova contrasts.
 
 perm_res
 #> # A tibble: 5 × 8
@@ -616,11 +616,11 @@ disp_res <- compute_dispersion(
   permutations = 99L,
   p_adjust     = "BH"
 )
-#> [09:38:21] INFO  preparing distance labels and metadata.
-#> [09:38:21] INFO  building metadata from `ps`.
-#> [09:38:21] INFO  filtering samples with missing grouping variables.
-#> [09:38:21] INFO  computing global dispersion tests.
-#> [09:38:21] INFO  running pairwise dispersion contrasts.
+#> [13:25:16] INFO  preparing distance labels and metadata.
+#> [13:25:16] INFO  building metadata from `ps`.
+#> [13:25:16] INFO  filtering samples with missing grouping variables.
+#> [13:25:16] INFO  computing global dispersion tests.
+#> [13:25:16] INFO  running pairwise dispersion contrasts.
 
 disp_res$tests        # permutation test results per scope
 #> # A tibble: 5 × 6
@@ -666,7 +666,7 @@ plot_dispersion(
   scope    = "group",
   contrast = "<global>"
 )
-#> [09:38:21] INFO  Plotting dispersion for scope = 'group', contrast = '<global>'
+#> [13:25:16] INFO  Plotting dispersion for scope = 'group', contrast = '<global>'
 #>                  (n = 80).
 #>                  -> plot_dispersion
 ```
@@ -682,7 +682,7 @@ plot_dispersion(
   scope    = "time",
   contrast = "<global>"
 )
-#> [09:38:22] INFO  Plotting dispersion for scope = 'time', contrast = '<global>'
+#> [13:25:17] INFO  Plotting dispersion for scope = 'time', contrast = '<global>'
 #>                  (n = 80).
 #>                  -> plot_dispersion
 ```
@@ -701,7 +701,7 @@ plot_dispersion(
   show_box    = TRUE,
   show_points = TRUE
 )
-#> [09:38:22] INFO  Plotting dispersion for scope = 'group', contrast = '<global>'
+#> [13:25:17] INFO  Plotting dispersion for scope = 'group', contrast = '<global>'
 #>                  (n = 80).
 #>                  -> plot_dispersion
 ```
@@ -727,10 +727,10 @@ tsne_res <- compute_tsne(
   meta_cols  = c("group", "timepoint"),
   seed       = 42L
 )
-#> [09:38:23] INFO  Running t-SNE with dims = 3, perplexity = 15 on 80 samples
+#> [13:25:18] INFO  Running t-SNE with dims = 3, perplexity = 15 on 80 samples
 #>                  (distance input).
-#> [09:38:23] INFO  Attaching metadata columns to t-SNE result: group, timepoint
-#> [09:38:23] INFO  t-SNE embedding computation finished.
+#> [13:25:18] INFO  Attaching metadata columns to t-SNE result: group, timepoint
+#> [13:25:18] INFO  t-SNE embedding computation finished.
 
 head(tsne_res)
 #> # A tibble: 6 × 6
@@ -771,7 +771,7 @@ attr(tsne_res, "tsne_params")
 ``` r
 
 plot_tsne(tsne_res, view = "2d", colour = "group")
-#> [09:38:23] INFO  Creating 2D t-SNE plot (ggplot2).
+#> [13:25:18] INFO  Creating 2D t-SNE plot (ggplot2).
 #>                  -> plot_tsne
 ```
 
@@ -780,7 +780,7 @@ plot_tsne(tsne_res, view = "2d", colour = "group")
 ``` r
 
 plot_tsne(tsne_res, view = "2d", colour = "timepoint")
-#> [09:38:23] INFO  Creating 2D t-SNE plot (ggplot2).
+#> [13:25:18] INFO  Creating 2D t-SNE plot (ggplot2).
 #>                  -> plot_tsne
 ```
 
@@ -879,7 +879,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] dplyr_1.2.1   phiper_0.4.22
+#> [1] dplyr_1.2.1   phiper_0.4.23
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] sass_0.4.10        utf8_1.2.6         generics_0.1.4     tidyr_1.3.2       

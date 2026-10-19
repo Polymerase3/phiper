@@ -19,7 +19,7 @@ statistic and assessing significance via label permutation."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.22</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.23</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -373,7 +373,9 @@ to avoid oversubscription when using multiple workers.</p></li>
 call <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> before <code>compute_delta()</code> to obtain reproducible
 results. Each unpaired group contrast draws one seed from the global RNG
 state, and all of its rank/feature strata share the same
-<code>B_permutations</code> group splits; each paired stratum draws its own seed.</p>
+<code>B_permutations</code> group splits; each paired stratum draws its own seed.
+The permutations depend only on these seeds, so a given <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> gives
+the same results on every platform.</p>
     </div>
 
     <div class="section level2">

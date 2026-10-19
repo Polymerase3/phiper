@@ -326,7 +326,9 @@ Reproducibility of permutations is controlled via the global RNG: call
 `compute_delta()` to obtain reproducible results. Each unpaired group
 contrast draws one seed from the global RNG state, and all of its
 rank/feature strata share the same `B_permutations` group splits; each
-paired stratum draws its own seed.
+paired stratum draws its own seed. The permutations depend only on these
+seeds, so a given [`set.seed()`](https://rdrr.io/r/base/Random.html)
+gives the same results on every platform.
 
 ## Examples
 
