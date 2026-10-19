@@ -1358,7 +1358,6 @@ compute_permanova <- function(dist_obj,
   .ph_log_info("preparing distance labels and metadata.")
   d_full <- dist_obj
   labels_full <- attr(d_full, "Labels")
-  n_full <- attr(d_full, "Size")
 
   # ----------------------------------------------------------------------------
   # build metadata from ps and align to dist labels
@@ -1450,7 +1449,6 @@ compute_permanova <- function(dist_obj,
   } else {
     meta_sub <- meta_all
     labels_full <- rownames(meta_sub)
-    n_full <- length(labels_full)
     .ph_warn(
       "no labels found in `dist_obj`; assuming metadata row order matches
       the distance order."
@@ -1519,7 +1517,6 @@ compute_permanova <- function(dist_obj,
   mat_d_sub <- mat_d_full[keep_labels, keep_labels, drop = FALSE]
   d <- stats::as.dist(mat_d_sub)
   labels <- attr(d, "Labels")
-  n <- attr(d, "Size")
 
   # update factor presence after na-drop
   has_group <- has_group && length(unique(meta_df[[group_col]])) > 1L
@@ -2021,7 +2018,6 @@ compute_dispersion <- function(dist_obj,
   d_mat_full <- as.matrix(d_full)
   d_mat_sub <- d_mat_full[keep_labels, keep_labels, drop = FALSE]
   d <- stats::as.dist(d_mat_sub)
-  labels <- attr(d, "Labels")
 
   # re-evaluate factor presence after na drop
   has_group <- has_group && length(unique(meta_df[[group_col]])) > 1L
@@ -2151,7 +2147,7 @@ compute_dispersion <- function(dist_obj,
       return(NULL)
     }
 
-    distances_list <- add_distance_rows(
+    distances_list <<- add_distance_rows(
       sample_ids = names(bd$distances),
       dists = as.numeric(bd$distances),
       level_vals = as.character(bd$group),
@@ -2160,7 +2156,7 @@ compute_dispersion <- function(dist_obj,
     )
     pt <- vegan::permutest(bd, permutations = permutations, parallel = 1)
     pval <- tryCatch(pt$tab[1, "Pr(>F)"], error = function(e) NA_real_)
-    tests_list <- add_test_row(scope_lab, contrast_lab, pval)
+    tests_list <<- add_test_row(scope_lab, contrast_lab, pval)
   }
 
   # ----------------------------------------------------------------------------

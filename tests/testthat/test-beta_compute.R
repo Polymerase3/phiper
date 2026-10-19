@@ -981,6 +981,32 @@ testthat::test_that("compute_dispersion: pairwise comparisons", {
   testthat::expect_true(nrow(res_pair$tests) >= 1L)
 })
 
+testthat::test_that("compute_dispersion: pairwise contrasts are returned", {
+  testthat::skip_if_not_installed("vegan")
+  withr::local_seed(1)
+
+  ps <- data.frame(
+    sample_id = paste0("s", 1:30),
+    grp = rep(c("A", "B", "C"), each = 10)
+  )
+  m <- matrix(stats::runif(30 * 20), nrow = 30,
+              dimnames = list(ps$sample_id, NULL))
+  d <- vegan::vegdist(m)
+
+  res <- suppressWarnings(compute_dispersion(
+    dist_obj = d,
+    ps = ps,
+    group_col = "grp",
+    permutations = 99
+  ))
+
+  pairs <- c("A vs B", "A vs C", "B vs C")
+  testthat::expect_setequal(setdiff(res$tests$contrast, "<global>"), pairs)
+  testthat::expect_setequal(
+    setdiff(unique(res$distances$contrast), "<global>"), pairs
+  )
+})
+
 testthat::test_that("compute_dispersion: input validation errors", {
   ps_small <- load_example_data("small_mixture")
   d <- .get_dist_for_pcoa(ps_small, norm = "hellinger", distance = "bray")

@@ -190,6 +190,8 @@
 #' results. Each unpaired group contrast draws one seed from the global RNG
 #' state, and all of its rank/feature strata share the same
 #' `B_permutations` group splits; each paired stratum draws its own seed.
+#' The permutations depend only on these seeds, so a given `set.seed()` gives
+#' the same results on every platform.
 #'
 #' @param x A `phip_data` object (recommended to attach a `peptide_library`
 #'   when `rank_cols` includes non-`"peptide_id"` and not providing

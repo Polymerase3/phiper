@@ -282,6 +282,8 @@ call \code{set.seed()} before \code{compute_delta()} to obtain reproducible
 results. Each unpaired group contrast draws one seed from the global RNG
 state, and all of its rank/feature strata share the same
 \code{B_permutations} group splits; each paired stratum draws its own seed.
+The permutations depend only on these seeds, so a given \code{set.seed()} gives
+the same results on every platform.
 }
 
 \examples{

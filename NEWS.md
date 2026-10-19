@@ -52,7 +52,70 @@
   `compute_delta2()`. Results are unchanged.
 - `nnet` is suggested, for the propensity model with three or more groups.
 
+# phiper 0.4.23 (2026-10-19)
+
+## Bug fixes
+
+- `compute_delta()` gave different permutation p-values for the same
+  `set.seed()` on macOS than on Linux and Windows. The permutations were drawn
+  with `std::uniform_int_distribution` and `std::bernoulli_distribution`,
+  whose algorithms the C++ standard leaves to each standard library, and
+  macOS's libc++ differs from libstdc++. They are now drawn directly from the
+  `mt19937_64` engine, whose output is fixed by the standard, so a seed gives
+  the same permutations on every platform. Because the permutation stream
+  changed on all platforms, `T_null_mean`, `T_null_sd`, `T_obs_stand`,
+  `Z_from_p`, `p_perm` and `b` differ from earlier versions for the same seed
+  (by Monte Carlo noise); `T_obs` and all other columns are unchanged.
+- The `compute_delta()` regression snapshot is re-recorded with the new
+  permutations. It failed on macOS for this reason.
+
 # phiper 0.4.22 (2026-10-19)
+
+## Bug fixes
+
+- `compute_dispersion()` now returns its pairwise contrasts. The tests for
+  every pair of `group_col` levels (and of `time_col` levels when time is
+  categorical) were run, but their rows never reached `distances` and
+  `tests`, so only the `<global>` rows came back. With `p_adjust` other than
+  `"none"`, the global p-value of a scope is now adjusted together with that
+  scope's pairwise contrasts, so its `p_adjust` can be larger than before.
+  `plot_dispersion(contrast = "A vs B")` now finds rows to plot.
+- New test in `test-beta_compute.R`: three groups give the three pairwise
+  contrasts in both `tests` and `distances`.
+
+## Minor changes
+
+- Removed internal helpers that nothing called: the colour and axis helpers
+  in `plot_utils.R` (`.hex2rgb()`, `.rgb2hex()`, `.mix_cols()`, `.tint()`,
+  `.ph_cols()`, `.blend_hex()`, `.make_shades()`, `.build_shaded_map()`,
+  `.shaded_colors()`, `.make_point_fills()`, `.pick_axes()`,
+  `.axis_labels_with_pct()`, `.first_subview_name()`) and the legacy-import
+  checks in `utils.R` (`.ph_resolve_paths()`, `.ph_check_path()`,
+  `.ph_check_extension()`, `.ph_check_null_default()`, `.ph_check_pd()`,
+  `.ph_word_list()`, `%nin%`), together with their tests and help pages.
+- Removed fallbacks that could never run: `plot_pcoa()`, `plot_cap()` and
+  `plot_scree()` no longer check that the package's own logging helpers and
+  palette exist, and `deltaplot()`, `deltaplot_interactive()`, `ecdf_plot()`
+  and `ecdf_plot_interactive()` no longer check that chk is installed, since
+  it is in Imports. Unused local variables in `compute_permanova()` and
+  `compute_dispersion()` and 11 unused `globalVariables()` entries are gone.
+- Removed the legacy-import example files from `inst/extdata/`
+  (`config.yaml`, `comparisons.csv`, `exist.csv`, `exist.parquet`,
+  `fold_change.csv`, `raw_input.csv`, `raw_hit.csv`, `samples_meta.csv`,
+  `samples2ind_timepoints.csv`, `mock_output_long.parquet`), phiper's copy
+  of `phip_mixture.parquet` with the `data-raw/mockdata.R` script that wrote
+  it, and the unfinished `phip_report_legacy` R Markdown template. phiperio
+  ships these example files (all but `comparisons.csv`) and the current
+  `mockdata.R`; `load_example_data()` already read phiperio's copy. Code
+  that used `system.file("extdata", ..., package = "phiper")` for them
+  should point to `package = "phiperio"`.
+
+## Dependencies
+
+- `ggpubr`, `kableExtra`, `openxlsx`, `readr`, `rprojroot` and `yaml` are no
+  longer in Suggests; nothing uses them.
+
+# phiper 0.4.21 (2026-10-19)
 
 ## Performance
 

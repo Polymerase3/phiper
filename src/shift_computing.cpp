@@ -23,6 +23,27 @@ static inline uint32_t pc64(uint64_t x) {
 #endif
 }
 
+// Random draws are taken straight from mt19937_64, whose output the C++
+// standard fixes. std::uniform_int_distribution and std::bernoulli_distribution
+// are implementation-defined (libc++ on macOS differs from libstdc++), so they
+// gave different permutations for the same seed on different platforms.
+
+// Uniform integer in [lo, hi]; draws past the last full multiple of the range
+// are redrawn so every value is equally likely
+static inline int rng_unif_int(std::mt19937_64& rng, int lo, int hi) {
+  const uint64_t range = (uint64_t)(hi - lo) + 1ULL;
+  const uint64_t max64 = std::numeric_limits<uint64_t>::max();
+  const uint64_t last  = max64 - (max64 % range + 1ULL) % range;
+  uint64_t r;
+  do { r = rng(); } while (r > last);
+  return lo + (int)(r % range);
+}
+
+// Fair coin from the top bit of one draw
+static inline bool rng_coin(std::mt19937_64& rng) {
+  return (rng() >> 63) != 0ULL;
+}
+
 // Build a dense mask (n_words uint64) with bits set for the given 1-based rows
 static inline std::vector<uint64_t> build_mask(const IntegerVector& rows, int n_words) {
   std::vector<uint64_t> mask(n_words, 0ULL);
@@ -562,8 +583,7 @@ Rcpp::RawVector cpp_perm_masks(const Rcpp::IntegerVector& g1_rows,
     // random split: sample nA indices for group A
     for (int i = 0; i < N; ++i) idx_all[i] = i;
     for (int i = 0; i < nA; ++i) {
-      std::uniform_int_distribution<int> U(i, N-1);
-      int j = U(rng);
+      int j = rng_unif_int(rng, i, N-1);
       std::swap(idx_all[i], idx_all[j]);
       choose_idx[i] = idx_all[i];
     }
@@ -729,7 +749,6 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
 
     // Permutations: flip labels per subject with prob 0.5
     std::mt19937_64 rng((uint64_t)seed);
-    std::bernoulli_distribution coin(0.5);
 
     int b_hits = 0;    // |Tb| > |T_obs| (strict, used for mid-p numerator)
     int b_equal = 0;   // |Tb| == |T_obs| (used for mid-p 0.5 weight)
@@ -747,7 +766,7 @@ Rcpp::List cpp_shift_contrast(const Rcpp::RawVector& bitset_raw,
       // Build flip mask F over P subjects
       std::fill(Fmask.begin(), Fmask.end(), 0ULL);
       for (int j = 0; j < P; ++j) {
-        if (coin(rng)) {
+        if (rng_coin(rng)) {
           const int w = (j >> 6), r = (j & 63);
           Fmask[w] |= (1ULL << r);
         }

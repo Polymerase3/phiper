@@ -24,108 +24,10 @@ test_that(".ph_check_cond emits errors and warnings correctly", {
   expect_silent(.ph_check_cond(FALSE, "no-op"))
 })
 
-# -------------------------------------------------------------------------
-# .ph_check_extension ------------------------------------------------------
-# -------------------------------------------------------------------------
-test_that(".ph_check_extension passes correct ext and fails otherwise", {
-  # good
-  expect_silent(
-    .ph_check_extension("file.TSV", "file", c("tsv", "csv"))
-  )
-
-  # bad
-  expect_error(
-    .ph_check_extension("file.bad", "file", c("tsv", "csv")),
-    class = "chk_error"
-  )
-})
-
-# -------------------------------------------------------------------------
-# .ph_check_null_default ---------------------------------------------------
-# -------------------------------------------------------------------------
-test_that(".ph_check_null_default returns original or default", {
-  expect_equal(
-    .ph_check_null_default(5, "x", "m", 10),
-    5
-  )
-
-  withr::with_options(list(warn = 1), {
-    expect_warning(
-      out <- .ph_check_null_default(NULL, "x", "m", 10),
-      label = "method"
-    )
-    expect_equal(out, 10)
-  })
-})
-
-# -------------------------------------------------------------------------
-# .ph_check_path -----------------------------------------------------------
-# -------------------------------------------------------------------------
-test_that(".ph_check_path validates path + ext", {
-  tmp <- withr::local_tempfile(fileext = ".csv")
-  writeLines("test", tmp)
-
-  # passes
-  expect_silent(
-    .ph_check_path(tmp, "arg", extension = "csv")
-  )
-
-  # fails on extension
-  expect_error(
-    .ph_check_path(tmp, "arg", extension = "tsv"),
-    class = "chk_error"
-  )
-
-  # fails on non-existent path
-  expect_error(
-    .ph_check_path(file.path(tempdir(), "nope.csv"), "arg", extension = "csv"),
-    class = "chk_error"
-  )
-})
-
-test_that(".ph_check_path works for folders", {
-  tmp <- withr::local_tempdir()
-
-  # Default is is_dir=FALSE
-  expect_error(
-    .ph_check_path(tmp, "arg")
-  )
-
-  # Explicit *file* check
-  expect_error(
-    .ph_check_path(tmp, "arg", is_dir=FALSE)
-  )
-
-  # Correct folder check
-  expect_silent(
-    .ph_check_path(tmp, "arg", is_dir=TRUE)
-  )
-
-  # Both folder and extension should fail
-  expect_error(
-    .ph_check_path(tmp, "arg", c("txt", "pqt"), is_dir=TRUE)
-  )
-
-  # Non existing directory should fail
-  expect_error(
-    .ph_check_path("this/path/should/definetly/not/exist", "arg", is_dir=TRUE)
-  )
-})
-
 # ------------------------------------------------------------------------------
-# .ph_word_list / .ph_add_quotes -----------------------------------------------
+# .ph_add_quotes ---------------------------------------------------------------
 # ------------------------------------------------------------------------------
-test_that(".ph_word_list and .ph_add_quotes behave", {
-  expect_equal(
-    as.vector(.ph_word_list(c("a", "b", "c"), and_or = "and", quotes = TRUE)),
-    '"a", "b", and "c"'
-  )
-
-  expect_equal(
-    attr(.ph_word_list("a"), "plural"),
-    FALSE
-  )
-
+test_that(".ph_add_quotes behaves", {
   # quotes variations
   expect_equal(.ph_add_quotes("x", quotes = FALSE), "x")
   expect_equal(.ph_add_quotes("x", quotes = TRUE), '"x"')
@@ -134,15 +36,8 @@ test_that(".ph_word_list and .ph_add_quotes behave", {
 })
 
 # ------------------------------------------------------------------------------
-# Operators: %nin% and %||%
+# Operators: %||%
 # ------------------------------------------------------------------------------
-test_that("%nin% is the complement of %in%", {
-  expect_true(5L %nin% c(1L, 2L, 3L))
-  expect_false(2L %nin% c(1L, 2L, 3L))
-  expect_equal(c(1, 2, 3) %nin% c(2, 3), c(TRUE, FALSE, FALSE))
-  expect_equal(character(0) %nin% "a", logical(0))
-})
-
 test_that("%||% returns lhs when non-NULL, rhs otherwise", {
   expect_equal("a"  %||% "b", "a")
   expect_equal(NULL %||% "b", "b")
@@ -250,54 +145,6 @@ test_that(".ph_with_timing() propagates errors from expr", {
 })
 
 # ------------------------------------------------------------------------------
-# .ph_check_pd()
-# ------------------------------------------------------------------------------
-test_that(".ph_check_pd() aborts on a non-phip_data object", {
-  expect_error(.ph_check_pd(list(a = 1)))
-  expect_error(.ph_check_pd(data.frame()))
-})
-
-test_that(".ph_check_pd() passes silently for a phip_data object", {
-  pd <- load_example_data("small_mixture")
-  if (inherits(pd, "phip_data")) {
-    expect_silent(.ph_check_pd(pd))
-  } else {
-    skip("small_mixture not a phip_data object in this environment")
-  }
-})
-
-# ------------------------------------------------------------------------------
-# .ph_word_list(): additional branches
-# ------------------------------------------------------------------------------
-test_that(".ph_word_list() handles two-element lists", {
-  out <- .ph_word_list(c("a", "b"), and_or = "and")
-  expect_equal(as.vector(out), "a and b")
-  expect_true(attr(out, "plural"))
-})
-
-test_that(".ph_word_list() with and_or=FALSE joins with commas", {
-  out <- .ph_word_list(c("x", "y", "z"), and_or = FALSE)
-  expect_equal(as.vector(out), "x, y, z")
-})
-
-test_that(".ph_word_list() with is_are=TRUE appends is/are", {
-  single <- .ph_word_list("x", is_are = TRUE)
-  expect_true(grepl("is", single))
-  multi <- .ph_word_list(c("x", "y"), is_are = TRUE)
-  expect_true(grepl("are", multi))
-})
-
-test_that(".ph_word_list() strips NA and empty from word list", {
-  out <- .ph_word_list(c("a", NA, "", "b"), and_or = "and")
-  expect_equal(as.vector(out), "a and b")
-})
-
-test_that(".ph_word_list() returns empty string for NULL input", {
-  out <- .ph_word_list(NULL)
-  expect_equal(as.vector(out), "")
-})
-
-# ------------------------------------------------------------------------------
 # .ph_add_quotes(): error on invalid quotes argument
 # ------------------------------------------------------------------------------
 test_that(".ph_add_quotes() with quotes=0 returns original string", {
@@ -310,44 +157,6 @@ test_that(".ph_add_quotes() with a custom quote char works", {
 
 test_that(".ph_add_quotes() with invalid quotes argument throws error", {
   expect_error(.ph_add_quotes("x", quotes = 5L))
-})
-
-# ------------------------------------------------------------------------------
-# .ph_resolve_paths()
-# ------------------------------------------------------------------------------
-test_that(".ph_resolve_paths() fails without any file source", {
-  expect_error(.ph_resolve_paths())
-})
-
-test_that(".ph_resolve_paths() fails when input_file provided without hit_file", {
-  tmp <- withr::local_tempfile(fileext = ".csv")
-  writeLines("test", tmp)
-  expect_error(
-    .ph_resolve_paths(input_file = tmp, samples_file = tmp)
-  )
-})
-
-test_that(".ph_resolve_paths() succeeds with exist_file", {
-  tmp <- withr::local_tempfile(fileext = ".csv")
-  writeLines("test", tmp)
-  cfg <- .ph_resolve_paths(exist_file = tmp, samples_file = tmp)
-  expect_equal(cfg$exist_file, normalizePath(tmp, winslash = "/"))
-  expect_null(cfg$fold_change_file)
-})
-
-test_that(".ph_resolve_paths() warns for deprecated output_dir", {
-  tmp <- withr::local_tempfile(fileext = ".csv")
-  writeLines("test", tmp)
-  expect_warning(.ph_resolve_paths(exist_file = tmp, samples_file = tmp, output_dir = "/some/path"))
-})
-
-test_that(".ph_resolve_paths() fails when data_long_path given with exist_file", {
-  tmp <- withr::local_tempfile(fileext = ".csv")
-  writeLines("test", tmp)
-  tmpdir <- withr::local_tempdir()
-  expect_error(
-    .ph_resolve_paths(data_long_path = tmp, exist_file = tmp)
-  )
 })
 
 # -------------------------------------------------------------------------

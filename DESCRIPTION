@@ -48,23 +48,17 @@ Suggests:
     future,
     future.apply,
     ggsignif,
-    ggpubr,
     knitr,
-    kableExtra,
     mgcv,
     mockery,
     nnet,
-    openxlsx,
     parallelDist,
     plotly,
-    readr,
     rmarkdown,
-    rprojroot,
     Rtsne,
     testthat (>= 3.0.0),
     vdiffr,
-    withr,
-    yaml
+    withr
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 Remotes:

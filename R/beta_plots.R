@@ -111,25 +111,9 @@ plot_pcoa <- function(pcoa_res,
                       centroid_size = 3) {
 
   # --- small helpers ---------------------------------------------------------
-  .abort <- function(msg) {
-    if (exists(".ph_abort", mode = "function")) {
-      .ph_abort(msg, step = "plot_pcoa")
-    } else {
-      stop(msg, call. = FALSE)
-    }
-  }
-  .warn <- function(msg) {
-    if (exists(".ph_warn", mode = "function")) {
-      .ph_warn(msg, step = "plot_pcoa")
-    } else {
-      warning(msg, call. = FALSE)
-    }
-  }
-  .info <- function(msg) {
-    if (exists(".ph_log_info", mode = "function")) {
-      .ph_log_info(msg, step = "plot_pcoa")
-    }
-  }
+  .abort <- function(msg) .ph_abort(msg, step = "plot_pcoa")
+  .warn <- function(msg) .ph_warn(msg, step = "plot_pcoa")
+  .info <- function(msg) .ph_log_info(msg, step = "plot_pcoa")
 
   # --- checks on input -------------------------------------------------------
   if (is.null(pcoa_res) || !is.list(pcoa_res)) {
@@ -563,35 +547,12 @@ plot_cap <- function(cap_res,
                      point_alpha = 0.6,
                      centroid_size = 3) {
   # --- small helpers ---------------------------------------------------------
-  .abort <- function(msg) {
-    if (exists(".ph_abort", mode = "function")) {
-      .ph_abort(msg, step = "plot_cap")
-    } else {
-      stop(msg, call. = FALSE)
-    }
-  }
-  .warn <- function(msg) {
-    if (exists(".ph_warn", mode = "function")) {
-      .ph_warn(msg, step = "plot_cap")
-    } else {
-      warning(msg, call. = FALSE)
-    }
-  }
-  .info <- function(msg) {
-    if (exists(".ph_log_info", mode = "function")) {
-      .ph_log_info(msg, step = "plot_cap")
-    }
-  }
+  .abort <- function(msg) .ph_abort(msg, step = "plot_cap")
+  .info <- function(msg) .ph_log_info(msg, step = "plot_cap")
   .phip_pal <- function(n) {
-    if (exists("phip_palette", inherits = TRUE)) {
-      pal <- get("phip_palette", inherits = TRUE)
-      if (length(pal) < n) rep(pal, length.out = n) else pal[seq_len(n)]
-    } else {
-      c("#1f78b4", "#33a02c", "#e31a1c", "#ff7f00",
-        "#6a3d9a", "#b15928") |> rep(length.out = n)
-    }
+    pal <- phip_palette
+    if (length(pal) < n) rep(pal, length.out = n) else pal[seq_len(n)]
   }
-  `%||%` <- function(a, b) if (is.null(a)) b else a
 
   centroid_by       <- match.arg(centroid_by)
   connect_centroids <- match.arg(connect_centroids)
@@ -954,13 +915,7 @@ plot_scree <- function(pcoa_res,
                        n_axes = NULL,
                        type = c("bar", "line")) {
   # --- helpers ---------------------------------------------------------------
-  .abort <- function(msg) {
-    if (exists(".ph_abort", mode = "function")) {
-      .ph_abort(msg, step = "plot_scree")
-    } else {
-      stop(msg, call. = FALSE)
-    }
-  }
+  .abort <- function(msg) .ph_abort(msg, step = "plot_scree")
 
   type <- match.arg(type)
 

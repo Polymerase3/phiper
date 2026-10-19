@@ -98,27 +98,23 @@ deltaplot <- function(
   # ---- Basic checks -----------------------------------------------------------
   d <- prev_tbl
   .ph_log_info("Preparing delta prevalence plot.")
-  if (requireNamespace("chk", quietly = TRUE)) {
-    if (exists("chk_data", asNamespace("chk"), inherits = FALSE)) {
-      chk::chk_data(d)
-    }
-    if (!is.null(group_pair_values)) {
-      chk::chk_character(group_pair_values)
-      chk::chk_length(group_pair_values, 2L)
-    }
-    if (!is.null(group_labels)) {
-      chk::chk_character(group_labels)
-      chk::chk_length(group_labels, 2L)
-    }
-    chk::chk_numeric(point_jitter_width)
-    chk::chk_numeric(point_jitter_height)
-    chk::chk_numeric(point_alpha)
-    chk::chk_numeric(point_size)
-    chk::chk_logical(add_smooth)
-    chk::chk_numeric(smooth_k)
-    chk::chk_numeric(arrow_head_length_mm)
-    chk::chk_numeric(arrow_x_frac)
+  chk::chk_data(d)
+  if (!is.null(group_pair_values)) {
+    chk::chk_character(group_pair_values)
+    chk::chk_length(group_pair_values, 2L)
   }
+  if (!is.null(group_labels)) {
+    chk::chk_character(group_labels)
+    chk::chk_length(group_labels, 2L)
+  }
+  chk::chk_numeric(point_jitter_width)
+  chk::chk_numeric(point_jitter_height)
+  chk::chk_numeric(point_alpha)
+  chk::chk_numeric(point_size)
+  chk::chk_logical(add_smooth)
+  chk::chk_numeric(smooth_k)
+  chk::chk_numeric(arrow_head_length_mm)
+  chk::chk_numeric(arrow_x_frac)
   .ph_check_cond(
     condition = !is.data.frame(d),
     error_message = "prev_tbl must be a data.frame or tibble."
@@ -432,29 +428,25 @@ deltaplot_interactive <- function(
   }
   rlang::check_installed("plotly")
   # ---- Input validation ------------------------------------------------------
-  if (requireNamespace("chk", quietly = TRUE)) {
-    if (exists("chk_data", asNamespace("chk"), inherits = FALSE)) {
-      chk::chk_data(prev_tbl)
-    }
-    if (!is.null(group_pair_values)) {
-      chk::chk_character(group_pair_values)
-      chk::chk_length(group_pair_values, 2L)
-    }
-    if (!is.null(group_labels)) {
-      chk::chk_character(group_labels)
-      chk::chk_length(group_labels, 2L)
-    }
-    chk::chk_numeric(point_alpha)
-    chk::chk_numeric(point_size)
-    chk::chk_logical(add_smooth)
-    chk::chk_numeric(smooth_k)
-    chk::chk_numeric(arrow_x_frac)
-    chk::chk_numeric(arrow_length_frac)
-    chk::chk_numeric(label_x_gap_frac)
-    chk::chk_numeric(label_y_gap_frac)
-    chk::chk_numeric(point_jitter_width)
-    chk::chk_numeric(point_jitter_height)
+  chk::chk_data(prev_tbl)
+  if (!is.null(group_pair_values)) {
+    chk::chk_character(group_pair_values)
+    chk::chk_length(group_pair_values, 2L)
   }
+  if (!is.null(group_labels)) {
+    chk::chk_character(group_labels)
+    chk::chk_length(group_labels, 2L)
+  }
+  chk::chk_numeric(point_alpha)
+  chk::chk_numeric(point_size)
+  chk::chk_logical(add_smooth)
+  chk::chk_numeric(smooth_k)
+  chk::chk_numeric(arrow_x_frac)
+  chk::chk_numeric(arrow_length_frac)
+  chk::chk_numeric(label_x_gap_frac)
+  chk::chk_numeric(label_y_gap_frac)
+  chk::chk_numeric(point_jitter_width)
+  chk::chk_numeric(point_jitter_height)
   .ph_check_cond(
     condition = !is.data.frame(prev_tbl),
     error_message = "prev_tbl must be a data.frame or tibble."
@@ -1727,23 +1719,19 @@ ecdf_plot <- function(
     )
   }
   # ---- input validation ------------------------------------------------------
-  if (requireNamespace("chk", quietly = TRUE)) {
-    if (exists("chk_data", asNamespace("chk"), inherits = FALSE)) {
-      chk::chk_data(prev_tbl)
-    }
-    if (!is.null(group_pair_values)) {
-      chk::chk_character(group_pair_values)
-      chk::chk_length(group_pair_values, 2L)
-    }
-    if (!is.null(group_labels)) {
-      chk::chk_character(group_labels)
-      chk::chk_length(group_labels, 2L)
-    }
-    chk::chk_numeric(line_width_pt)
-    chk::chk_numeric(line_alpha)
-    chk::chk_logical(show_median_lines)
-    chk::chk_logical(show_ks_test)
+  chk::chk_data(prev_tbl)
+  if (!is.null(group_pair_values)) {
+    chk::chk_character(group_pair_values)
+    chk::chk_length(group_pair_values, 2L)
   }
+  if (!is.null(group_labels)) {
+    chk::chk_character(group_labels)
+    chk::chk_length(group_labels, 2L)
+  }
+  chk::chk_numeric(line_width_pt)
+  chk::chk_numeric(line_alpha)
+  chk::chk_logical(show_median_lines)
+  chk::chk_logical(show_ks_test)
   .ph_check_cond(
     condition = !is.data.frame(prev_tbl),
     error_message = "prev_tbl must be a data.frame or tibble."
@@ -1985,23 +1973,19 @@ ecdf_plot_interactive <- function(
   }
   rlang::check_installed("plotly")
   # ---- input validation ------------------------------------------------------
-  if (requireNamespace("chk", quietly = TRUE)) {
-    if (exists("chk_data", asNamespace("chk"), inherits = FALSE)) {
-      chk::chk_data(prev_tbl)
-    }
-    if (!is.null(group_pair_values)) {
-      chk::chk_character(group_pair_values)
-      chk::chk_length(group_pair_values, 2L)
-    }
-    if (!is.null(group_labels)) {
-      chk::chk_character(group_labels)
-      chk::chk_length(group_labels, 2L)
-    }
-    chk::chk_numeric(line_width_px)
-    chk::chk_numeric(line_alpha)
-    chk::chk_logical(show_median_lines)
-    chk::chk_logical(show_ks_test)
+  chk::chk_data(prev_tbl)
+  if (!is.null(group_pair_values)) {
+    chk::chk_character(group_pair_values)
+    chk::chk_length(group_pair_values, 2L)
   }
+  if (!is.null(group_labels)) {
+    chk::chk_character(group_labels)
+    chk::chk_length(group_labels, 2L)
+  }
+  chk::chk_numeric(line_width_px)
+  chk::chk_numeric(line_alpha)
+  chk::chk_logical(show_median_lines)
+  chk::chk_logical(show_ks_test)
   .ph_check_cond(
     condition = !is.data.frame(prev_tbl),
     error_message = "prev_tbl must be a data.frame or tibble."
