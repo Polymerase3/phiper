@@ -60,6 +60,7 @@ reference:
   - title: "Delta analysis"
     contents:
       - compute_delta
+      - compute_delta2
       - deltaplot
       - deltaplot_interactive
       - forestplot

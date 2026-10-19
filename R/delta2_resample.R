@@ -117,8 +117,8 @@
 #' @param trim_propensity Optional `c(lo, hi)`: subjects with a propensity
 #'   outside it are dropped. Off by default; such subjects otherwise stay and
 #'   contribute nothing.
-#' @param min_overlap Warn when fewer than this share of subjects have every
-#'   propensity in (0.05, 0.95).
+#' @param min_overlap With a propensity model, warn when fewer than this
+#'   share of subjects have every propensity in (0.05, 0.95).
 #' @return `list(prob, keep, diagnostics)`: `prob` is `N x K` aligned to
 #'   `subjects_meta` (`NULL` for constant propensities), `keep` the subjects
 #'   left in the contrast, `diagnostics` a one-row tibble with `n`,
@@ -232,7 +232,7 @@
     pseudo_r2 = pseudo_r2, n_params = n_params, n_trimmed = n_trimmed
   )
 
-  if (sum(overlap) < min_overlap * n) {
+  if (!is.null(propensity_formula) && sum(overlap) < min_overlap * n) {
     .ph_warn(sprintf(
       "Poor propensity overlap: %d of %d subjects have a propensity in
       (0.05, 0.95).",

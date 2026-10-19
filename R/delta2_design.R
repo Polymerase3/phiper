@@ -13,10 +13,14 @@
 #' @param samples_meta Data frame with one row per sample: `sample_id`,
 #'   `subject_id` and, if given, `time_col`. Row order fixes `time_code`.
 #' @param group_col Name of the between-subject group column.
-#' @param group_type `"binary"` (exactly two levels) or `"multi"`.
+#' @param group_type `"auto"`, `"binary"` (exactly two levels) or `"multi"`.
+#'   `"auto"`: two levels are binary; more levels of a factor or character
+#'   column are multi; a numeric column is multi with at most
+#'   10 distinct values, and otherwise an error (continuous
+#'   group and time columns are not supported yet).
 #' @param time_col Optional name of the timepoint column.
-#' @param time_type `"none"`, `"binary"` or `"multi"`; inferred from the
-#'   number of timepoints when not given.
+#' @param time_type `"auto"`, `"none"`, `"binary"` or `"multi"`; `"auto"`
+#'   follows the `group_type` rule and is `"none"` without a `time_col`.
 #' @param group_scores,time_scores Optional numeric scores for ordered levels,
 #'   either named by level or in level order. A scored factor is tested as a
 #'   1-df linear trend instead of an omnibus contrast.
@@ -29,9 +33,10 @@
 #'   `group_scores` / `time_scores` (`numeric(0)` for omnibus).
 #' @keywords internal
 .ph_delta2_design <- function(subjects_meta, samples_meta,
-                              group_col, group_type = c("binary", "multi"),
+                              group_col,
+                              group_type = c("auto", "binary", "multi"),
                               time_col = NULL,
-                              time_type = c("none", "binary", "multi"),
+                              time_type = c("auto", "none", "binary", "multi"),
                               group_scores = NULL, time_scores = NULL,
                               min_samples_per_subject = 1L) {
   chk::chk_data(subjects_meta)
@@ -66,8 +71,10 @@
   n_i <- tabulate(subj_idx, nbins = nrow(subjects_meta))
   group_code[n_i < min_samples_per_subject] <- NA_integer_
 
-  group_type <- if (missing(group_type) && K > 2L) "multi" else
-    match.arg(group_type)
+  group_type <- match.arg(group_type)
+  if (group_type == "auto") {
+    group_type <- .ph_delta2_auto_type(gvals, K, group_col)
+  }
   if (group_type == "binary" && K > 2L && is.null(group_scores)) {
     .ph_abort(sprintf(
       "group_type = \"binary\" but %s has %d levels; use \"multi\".",
@@ -77,8 +84,9 @@
   group_scores <- .ph_delta2_scores(group_scores, group_levels, "group_scores")
 
   # --- time -------------------------------------------------------------------
+  time_type <- match.arg(time_type)
   if (is.null(time_col)) {
-    if (!missing(time_type) && match.arg(time_type) != "none") {
+    if (!time_type %in% c("auto", "none")) {
       .ph_abort("time_type needs a time_col.")
     }
     time_type <- "none"
@@ -90,10 +98,8 @@
     time_levels <- .ph_delta2_levels(tvals)
     time_code <- match(tvals, time_levels)
     n_t <- length(time_levels)
-    time_type <- if (missing(time_type)) {
-      if (n_t > 2L) "multi" else "binary"
-    } else {
-      match.arg(time_type)
+    if (time_type == "auto") {
+      time_type <- .ph_delta2_auto_type(tvals, n_t, time_col)
     }
     if (time_type == "none") {
       .ph_abort("time_type = \"none\" but a time_col was given.")
@@ -134,6 +140,23 @@
     group_scores   = group_scores,
     time_scores    = time_scores
   )
+}
+
+# "auto" type: two levels binary, more levels multi; a numeric column with
+# many distinct values reads as continuous, which is not supported yet
+.ph_delta2_auto_type <- function(x, n_levels, col, max_auto_levels = 10L) {
+  if (n_levels <= 2L) {
+    return("binary")
+  }
+  if (is.numeric(x) && n_levels > max_auto_levels) {
+    .ph_abort(sprintf(
+      "%s is numeric with %d distinct values and reads as continuous;
+      continuous group/time columns are not supported yet. Pass it as a
+      factor, or set the type to \"multi\" explicitly.",
+      col, n_levels
+    ))
+  }
+  "multi"
 }
 
 # Continuous covariates are deferred: only whole-numbered or categorical
@@ -189,8 +212,10 @@
 #'   means in the between-subject term.
 #' @param rho `"pooled"` (estimate from all peptides), `"one"` (equal weight
 #'   per subject), `"zero"` (equal weight per sample) or a number in `[0, 1]`.
-#' @return `list(rho, rho_hat, subject_hits)`; `rho_hat` is `NA` unless
-#'   estimated, and is `NA` with `rho = 0` when no subject has repeat samples.
+#' @return `list(rho, rho_hat, ...)`; `rho_hat` is `NA` unless estimated,
+#'   and is `NA` with `rho = 0` when no subject has repeat samples. When
+#'   estimated, also each subject's total positives (`subject_hits`), each
+#'   peptide's (`pep_tot`) and `n_samples`.
 #' @keywords internal
 .ph_delta2_rho <- function(rho = "pooled", bitset_raw, n_words, pep_cols,
                            sample_rows, sample_subject) {
@@ -213,7 +238,9 @@
   list(
     rho = if (is.na(est$rho_hat)) 0 else est$rho_hat,
     rho_hat = est$rho_hat,
-    subject_hits = est$subject_hits
+    subject_hits = est$subject_hits,
+    pep_tot = est$pep_tot,
+    n_samples = est$n_samples
   )
 }
 
