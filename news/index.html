@@ -13,7 +13,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.19</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.20</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,6 +67,19 @@
       <small>Source: <a href="https://github.com/Polymerase3/phiper/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.4.20" id="phiper-0420-2026-10-19">phiper 0.4.20 (2026-10-19)<a class="anchor" aria-label="anchor" href="#phiper-0420-2026-10-19"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-0-4-20">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-4-20"></a></h3>
+<ul><li>
+<code><a href="../reference/compute_delta.html">compute_delta()</a></code> no longer warns about an unexpected many-to-many relationship on paired designs. The join that checks which subjects appear in both groups is many-to-many by design and now says so.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="tests-0-4-20">Tests<a class="anchor" aria-label="anchor" href="#tests-0-4-20"></a></h3>
+<ul><li>New <code>test-delta_regression.R</code> snapshots the full <code><a href="../reference/compute_delta.html">compute_delta()</a></code> output for every combination of <code>stat_mode</code>, <code>weight_mode</code>, <code>aggregate_stat</code>, <code>strat_bins</code> (0 or the default) and <code>perm_method</code>, on a fixed synthetic dataset of 300 subjects and 50 peptides (unpaired and paired). Later changes to <code><a href="../reference/compute_delta.html">compute_delta()</a></code> must leave this snapshot unchanged. The dataset and the script that generates it are in <code>tests/testthat/fixtures/</code>.</li>
+<li>The test of the bitset/peptide dimension check in <code>test-delta_compute.R</code> now restores the mocked <code>build_bitset_unpaired()</code> when it ends. The mock used to stay in place for the rest of the test run.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.4.19" id="phiper-0419-2026-10-18">phiper 0.4.19 (2026-10-18)<a class="anchor" aria-label="anchor" href="#phiper-0419-2026-10-18"></a></h2>
 <div class="section level3">

@@ -124,16 +124,16 @@ d <- compute_distance(
   distance = "bray",
   n_threads = 2L
 )
-#> [12:24:06] INFO  building abundance matrix from `ps` using `fold_change`.
-#> [12:24:06] INFO  building pivot spec (sample_id x peptide_id).
-#> [12:24:06] INFO  Collecting long table (sample_id, peptide_id, value).
+#> [06:16:19] INFO  building abundance matrix from `ps` using `fold_change`.
+#> [06:16:19] INFO  building pivot spec (sample_id x peptide_id).
+#> [06:16:19] INFO  Collecting long table (sample_id, peptide_id, value).
 #>                  -> compute_distance
-#> [12:24:06] INFO  Pivoting to wide abundance matrix in R.
+#> [06:16:19] INFO  Pivoting to wide abundance matrix in R.
 #>                  -> compute_distance
-#> [12:24:06] INFO  abundance matrix has 43 samples and 5 features after
+#> [06:16:19] INFO  abundance matrix has 43 samples and 5 features after
 #>                  preprocessing.
-#> [12:24:06] INFO  computing distance: bray
-#> [12:24:06] INFO  distance matrix computation complete.
+#> [06:16:19] INFO  computing distance: bray
+#> [06:16:19] INFO  distance matrix computation complete.
 
 a <- attr(d, "abundances")
 a[1:min(5, nrow(a)), 1:min(5, ncol(a)), drop = FALSE]
