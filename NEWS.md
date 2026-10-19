@@ -28,6 +28,14 @@
   42 ms instead of 64 ms with 10,000 subjects, and 23 ms instead of 25 ms
   with 1,000, where computing the statistic dominates. Results are
   unchanged.
+- `compute_delta()` makes fewer passes over the input table before the
+  permutations. The duplicate-positives check compares the number of
+  distinct keys with the number of positive rows instead of counting every
+  key, an unused per-subject summary is gone, and the group levels and the
+  subject rows of each group level come from one distinct subject x group
+  table instead of two pivots over every row. With an in-memory table of
+  10,000 subjects and 200 peptides (2 million rows) at the default 2000
+  permutations, a run takes 0.46 s instead of 2.3 s. Results are unchanged.
 
 ## Changes
 

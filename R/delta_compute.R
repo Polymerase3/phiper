@@ -393,19 +393,32 @@ compute_delta <- function(
 
   # --- STRICT HITS GUARD: at most one positive per (pair_unit, peptide_id,
   # group value) ---
-  dup_pos <- df_long |>
+  # duplicates exist iff there are fewer distinct keys than positive rows;
+  # the per-key count() only runs to build the error message
+  pos_long <- df_long |>
     dplyr::filter(!!rlang::sym(exist_col) > 0L) |>
     tidyr::pivot_longer(dplyr::all_of(group_cols),
       names_to = "group_col", values_to = "group_value"
+    )
+  n_pos_rows <- pos_long |>
+    dplyr::count() |>
+    dplyr::pull(n)
+  n_pos_keys <- pos_long |>
+    dplyr::distinct(
+      !!rlang::sym(pair_unit), peptide_id, group_col, group_value
     ) |>
-    dplyr::count(!!rlang::sym(pair_unit), peptide_id, group_col, group_value,
-      name = "n_pos"
-    ) |>
-    dplyr::filter(n_pos > 1L) |>
-    dplyr::collect() |>
-    dplyr::rename(pair_id = dplyr::all_of(pair_unit))
+    dplyr::count() |>
+    dplyr::pull(n)
 
-  if (nrow(dup_pos) > 0L) {
+  if (n_pos_keys < n_pos_rows) {
+    dup_pos <- pos_long |>
+      dplyr::count(!!rlang::sym(pair_unit), peptide_id, group_col, group_value,
+        name = "n_pos"
+      ) |>
+      dplyr::filter(n_pos > 1L) |>
+      dplyr::collect() |>
+      dplyr::rename(pair_id = dplyr::all_of(pair_unit))
+
     eg <- dup_pos |>
       dplyr::slice_head(n = 10) |>
       dplyr::mutate(example = paste0(
@@ -432,19 +445,6 @@ compute_delta <- function(
     )
   }
 
-
-  # --- SUBJECT METADATA (1 row per subject; lazy-safe) ------------------------
-  subjects_meta <- df_long |>
-    dplyr::group_by(subject_id) |>
-    dplyr::summarise(
-      dplyr::across(
-        dplyr::all_of(group_cols),
-        dplyr::first
-      ),
-      .groups = "drop"
-    ) |>
-    dplyr::arrange(subject_id) |>
-    dplyr::collect()
 
   # --- FREEZE ORDERS (lazy-safe) ----------------------------------------------
   subjects_order <- df_long |>
@@ -492,14 +492,12 @@ compute_delta <- function(
   }
 
   # Ready for downstream steps:
-  # subjects_order, peptides_order, subjects_meta, bitset_raw, bitset_m,
-  # bitset_words
+  # subjects_order, peptides_order, bitset_raw, bitset_m, bitset_words
 
 
   # Objects ready for downstream use:
   # - subjects_order: character/ID vector (row map)
   # - peptides_order: character/ID vector (col map; all-zero peptides removed)
-  # - subjects_meta : per-subject metadata (for contrasts)
   # - bitset_raw, bitset_m, bitset_words : packed 64-bit bitset (col-major)
 
   # --- 2) Peptide library attach (simple, in R) -------------------------------
@@ -609,14 +607,19 @@ compute_delta <- function(
     dplyr::count(rank, feature, name = "n_peptides")
 
   # (c) levels per group_col across all rows (not per-subject)
-  # Using subjects_meta can drop within-subject levels (e.g., timepoints),
-  # which yields zero contrasts and an empty result.
-  lvl <- df_long |>
+  # Taking one value per subject can drop within-subject levels (e.g.,
+  # timepoints), which yields zero contrasts and an empty result. Subject x
+  # group values are reduced to distinct rows before pivoting; the same table
+  # gives the subject rows per group level below.
+  subj_group_values <- df_long |>
+    dplyr::distinct(!!!rlang::syms(c("subject_id", group_cols))) |>
     tidyr::pivot_longer(dplyr::all_of(group_cols),
       names_to = "group_col", values_to = "group_value"
     ) |>
-    dplyr::distinct(group_col, group_value) |>
+    dplyr::distinct(subject_id, group_col, group_value) |>
     dplyr::collect()
+  lvl <- subj_group_values |>
+    dplyr::distinct(group_col, group_value)
 
   # (d) all ordered pairs per group_col (no many-to-many warning)
   all_pairs <- lvl |>
@@ -727,15 +730,8 @@ compute_delta <- function(
     row = seq_along(subjects_order)
   )
 
-  # group membership with subject row indices (lazy-safe collect already done
-  # earlier)
-  subj_groups_idx <- df_long |>
-    tidyr::pivot_longer(
-      cols = dplyr::all_of(group_cols),
-      names_to = "group_col", values_to = "group_value"
-    ) |>
-    dplyr::distinct(subject_id, group_col, group_value) |>
-    dplyr::collect() |>
+  # group membership with subject row indices (collected in (c))
+  subj_groups_idx <- subj_group_values |>
     dplyr::left_join(subj_row_map, by = "subject_id")
 
   # peptide column index map (within bitset columns 1..m)
