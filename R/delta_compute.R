@@ -732,18 +732,23 @@ compute_delta <- function(
   # peptide column index map (within bitset columns 1..m)
   pep_col_map <- stats::setNames(seq_along(peptides_order), peptides_order)
 
+  # lookups built once: rank -> feature -> peptide cols,
+  # group_col -> group_value -> subject rows
+  pep_cols_by_rf <- lapply(
+    split(rank_map_long, rank_map_long$rank),
+    function(d) split(as.integer(pep_col_map[d$peptide_id]), d$feature)
+  )
+  group_rows_by_gv <- lapply(
+    split(subj_groups_idx, subj_groups_idx$group_col),
+    function(d) split(as.integer(d$row), d$group_value)
+  )
+
   get_pep_cols <- function(rk, ft) {
-    pid <- rank_map_long |>
-      dplyr::filter(.data$rank == rk, .data$feature == ft) |>
-      dplyr::pull(peptide_id)
-    as.integer(pep_col_map[pid])
+    pep_cols_by_rf[[rk]][[ft]]
   }
 
   get_group_rows <- function(gc, gval) {
-    subj_groups_idx |>
-      dplyr::filter(.data$group_col == gc, .data$group_value == gval) |>
-      dplyr::pull(row) |>
-      as.integer()
+    group_rows_by_gv[[gc]][[as.character(gval)]]
   }
 
   get_paired_hits <- function(gc, g1, g2) {
@@ -885,9 +890,12 @@ compute_delta <- function(
       return(NULL)
     }
 
-    row <- dplyr::bind_cols(
-      st[, c("rank", "feature", "group_col", "group1", "group2", "design")],
-      tibble::tibble(
+    # plain list; all rows are bound into one tibble after the loop
+    row <- c(
+      as.list(
+        st[, c("rank", "feature", "group_col", "group1", "group2", "design")]
+      ),
+      list(
         n_subjects_paired = if (identical(st$design, "paired")) {
           as.integer(P)
         } else {

@@ -1,3 +1,15 @@
+# phiper 0.4.21 (2026-10-19)
+
+## Performance
+
+- `compute_delta()` spends far less time in R per stratum. It now builds
+  the peptide columns of every rank/feature and the subject rows of every
+  group level once, before the loop, instead of filtering a table for each
+  stratum. Each stratum's result row is a plain list, and all rows are
+  bound into one tibble at the end. On the typical-workflow vignette data
+  (2,604 strata) a run at `B_permutations = 100` drops from 9.0 s to 1.6 s,
+  and at the default 2000 from 26.8 s to 19.0 s. Results are unchanged.
+
 # phiper 0.4.20 (2026-10-19)
 
 ## Bug fixes
