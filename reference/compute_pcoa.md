@@ -80,37 +80,37 @@ d <- compute_distance(
   distance = "jaccard",
   n_threads = 2L
 )
-#> [06:16:19] INFO  building abundance matrix from `ps` using `fold_change`.
-#> [06:16:19] INFO  building pivot spec (sample_id x peptide_id).
-#> [06:16:19] INFO  Collecting long table (sample_id, peptide_id, value).
+#> [09:37:39] INFO  building abundance matrix from `ps` using `fold_change`.
+#> [09:37:39] INFO  building pivot spec (sample_id x peptide_id).
+#> [09:37:39] INFO  Collecting long table (sample_id, peptide_id, value).
 #>                  -> compute_distance
-#> [06:16:19] INFO  Pivoting to wide abundance matrix in R.
+#> [09:37:39] INFO  Pivoting to wide abundance matrix in R.
 #>                  -> compute_distance
-#> [06:16:19] INFO  abundance matrix has 43 samples and 5 features after
+#> [09:37:39] INFO  abundance matrix has 43 samples and 5 features after
 #>                  preprocessing.
-#> [06:16:19] INFO  auto normalization selected -> using relative
-#> [06:16:19] INFO  computing distance: jaccard
-#> [06:16:19] INFO  distance matrix computation complete.
+#> [09:37:39] INFO  auto normalization selected -> using relative
+#> [09:37:39] INFO  computing distance: jaccard
+#> [09:37:39] INFO  distance matrix computation complete.
 
 pcoa_res <- compute_pcoa(d, neg_correction = "none", n_axes = 3L)
-#> [06:16:19] INFO  performing principal coordinates analysis
-#> [06:16:19] INFO  extracting sample coordinates.
-#> [06:16:19] INFO  summarizing eigenvalues and variance explained.
-#> [06:16:19] INFO  pcoa analysis complete.
+#> [09:37:39] INFO  performing principal coordinates analysis
+#> [09:37:39] INFO  extracting sample coordinates.
+#> [09:37:39] INFO  summarizing eigenvalues and variance explained.
+#> [09:37:39] INFO  pcoa analysis complete.
 pcoa_res$sample_coords
 #> # A tibble: 43 × 4
-#>    sample_id  PCoA1   PCoA2      PCoA3
-#>    <chr>      <dbl>   <dbl>      <dbl>
-#>  1 A_T1_1     0.457 -0.0104 -0.287    
-#>  2 B_T1_1    -0.389  0.328   0.000742 
-#>  3 A_T1_10    0.497 -0.0145 -0.241    
-#>  4 B_T1_10   -0.444 -0.126   0.000608 
-#>  5 A_T1_11    0.453 -0.0109  0.259    
-#>  6 B_T1_11   -0.380  0.353   0.000700 
-#>  7 A_T1_12    0.519 -0.0166 -0.109    
-#>  8 B_T1_12   -0.404 -0.313   0.0000693
-#>  9 A_T1_13    0.500 -0.0146 -0.148    
-#> 10 B_T1_13   -0.335 -0.391  -0.000513 
+#>    sample_id  PCoA1     PCoA2   PCoA3
+#>    <chr>      <dbl>     <dbl>   <dbl>
+#>  1 A_T1_1    -0.457  0.0104    0.287 
+#>  2 A_T1_10   -0.497  0.0145    0.241 
+#>  3 A_T1_11   -0.453  0.0109   -0.259 
+#>  4 A_T1_12   -0.519  0.0166    0.109 
+#>  5 A_T1_13   -0.500  0.0146    0.148 
+#>  6 A_T1_14   -0.414  0.00651   0.432 
+#>  7 A_T1_15   -0.344 -0.000307  0.491 
+#>  8 A_T1_16   -0.514  0.0164   -0.0622
+#>  9 A_T1_17   -0.389  0.00417  -0.328 
+#> 10 A_T1_18   -0.412  0.00686  -0.112 
 #> # ℹ 33 more rows
 pcoa_res$var_explained
 #> # A tibble: 1 × 4

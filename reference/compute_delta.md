@@ -60,7 +60,15 @@ compute_delta(
 - paired_by:
 
   Optional single column name identifying paired samples (e.g. subject
-  ID). When provided, paired tests are used where applicable.
+  ID). When provided, paired tests are used where applicable: a contrast
+  is treated as paired as soon as at least one `paired_by` unit is
+  observed in both groups. The paired test then uses only the units
+  present in both groups; units observed in just one of the two groups
+  are dropped from that contrast, and `n_subjects_paired` reports how
+  many units were used. Without `paired_by`, every contrast is unpaired,
+  and a `subject_id` that appears in both groups of a contrast (e.g. a
+  `group_cols` such as timepoint that varies within subject) is an
+  error.
 
 - interaction:
 
@@ -315,8 +323,10 @@ parallel using the **current** `future` backend:
 
 Reproducibility of permutations is controlled via the global RNG: call
 [`set.seed()`](https://rdrr.io/r/base/Random.html) before
-`compute_delta()` to obtain reproducible results; each contrast draws
-its own seed from the global RNG state.
+`compute_delta()` to obtain reproducible results. Each unpaired group
+contrast draws one seed from the global RNG state, and all of its
+rank/feature strata share the same `B_permutations` group splits; each
+paired stratum draws its own seed.
 
 ## Examples
 

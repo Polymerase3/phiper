@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.20</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.22</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -148,43 +148,43 @@ timepoint.</p>
 (<code>T1</code>, <code>T2</code>) across 1 000 simulated peptides.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pd</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/load_example_data.html">load_example_data</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [06:16:55] INFO  Constructing &lt;phip_data&gt; object</span></span>
+<span><span class="co">#&gt; [09:38:14] INFO  Constructing &lt;phip_data&gt; object</span></span>
 <span><span class="co">#&gt;                  -&gt; create_data()</span></span>
-<span><span class="co">#&gt; [06:16:55] INFO  Fetching peptide metadata library via get_peptide_library()</span></span>
+<span><span class="co">#&gt; [09:38:14] INFO  Fetching peptide metadata library via get_peptide_library()</span></span>
 <span><span class="co">#&gt;                    - libraries: combined</span></span>
-<span><span class="co">#&gt; [06:16:55] INFO  Retrieving peptide metadata into DuckDB cache</span></span>
+<span><span class="co">#&gt; [09:38:14] INFO  Retrieving peptide metadata into DuckDB cache</span></span>
 <span><span class="co">#&gt;                  -&gt; get_peptide_library(library = combined, force_refresh =</span></span>
 <span><span class="co">#&gt;                     FALSE)</span></span>
-<span><span class="co">#&gt; [06:16:55] INFO  Opened DuckDB connection</span></span>
+<span><span class="co">#&gt; [09:38:14] INFO  Opened DuckDB connection</span></span>
 <span><span class="co">#&gt;                    - cache dir:</span></span>
 <span><span class="co">#&gt;                      /home/runner/.cache/R/phiperio/peptide_meta/phip_cache.duckdb</span></span>
 <span><span class="co">#&gt;                    - tables: peptide_meta_combined</span></span>
-<span><span class="co">#&gt; [06:16:55] OK    Using cached peptide_meta_combined (fast path)</span></span>
-<span><span class="co">#&gt; [06:16:55] OK    Retrieving peptide metadata into DuckDB cache - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.046s</span></span>
-<span><span class="co">#&gt; [06:16:55] OK    Peptide metadata acquired</span></span>
-<span><span class="co">#&gt; [06:16:55] INFO  Validating &lt;phip_data&gt;</span></span>
+<span><span class="co">#&gt; [09:38:15] OK    Using cached peptide_meta_combined (fast path)</span></span>
+<span><span class="co">#&gt; [09:38:15] OK    Retrieving peptide metadata into DuckDB cache - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.045s</span></span>
+<span><span class="co">#&gt; [09:38:15] OK    Peptide metadata acquired</span></span>
+<span><span class="co">#&gt; [09:38:15] INFO  Validating &lt;phip_data&gt;</span></span>
 <span><span class="co">#&gt;                  -&gt; validate_phip_data()</span></span>
-<span><span class="co">#&gt; [06:16:55] INFO  Checking structural requirements (shape &amp; mandatory columns)</span></span>
-<span><span class="co">#&gt; [06:16:55] INFO  Checking outcome family availability (exist / fold_change /</span></span>
+<span><span class="co">#&gt; [09:38:15] INFO  Checking structural requirements (shape &amp; mandatory columns)</span></span>
+<span><span class="co">#&gt; [09:38:15] INFO  Checking outcome family availability (exist / fold_change /</span></span>
 <span><span class="co">#&gt;                  raw_counts)</span></span>
-<span><span class="co">#&gt; [06:16:55] INFO  Checking collisions with reserved names</span></span>
+<span><span class="co">#&gt; [09:38:15] INFO  Checking collisions with reserved names</span></span>
 <span><span class="co">#&gt;                    - subject_id, sample_id, timepoint, peptide_id, exist,</span></span>
 <span><span class="co">#&gt;                      fold_change, counts_input, counts_hit</span></span>
-<span><span class="co">#&gt; [06:16:55] INFO  Ensuring all columns are atomic (no list-cols)</span></span>
-<span><span class="co">#&gt; [06:16:55] INFO  Checking key uniqueness</span></span>
-<span><span class="co">#&gt; [06:16:55] INFO  Validating value ranges &amp; types for outcomes</span></span>
-<span><span class="co">#&gt; [06:16:55] INFO  Assessing sparsity (NA/zero prevalence vs threshold)</span></span>
+<span><span class="co">#&gt; [09:38:15] INFO  Ensuring all columns are atomic (no list-cols)</span></span>
+<span><span class="co">#&gt; [09:38:15] INFO  Checking key uniqueness</span></span>
+<span><span class="co">#&gt; [09:38:15] INFO  Validating value ranges &amp; types for outcomes</span></span>
+<span><span class="co">#&gt; [09:38:15] INFO  Assessing sparsity (NA/zero prevalence vs threshold)</span></span>
 <span><span class="co">#&gt;                    - warn threshold: 50%</span></span>
-<span><span class="co">#&gt; [06:16:55] INFO  Checking peptide_id coverage against peptide_library</span></span>
-<span><span class="co">#&gt; [06:16:56] INFO  Checking full grid completeness (peptide * sample)</span></span>
-<span><span class="co">#&gt; [06:16:56] INFO  Counts table is not a full peptide * sample grid</span></span>
-<span><span class="co">#&gt;                    - observed rows: 78200</span></span>
+<span><span class="co">#&gt; [09:38:15] INFO  Checking peptide_id coverage against peptide_library</span></span>
+<span><span class="co">#&gt; [09:38:15] INFO  Checking full grid completeness (peptide * sample)</span></span>
+<span><span class="co">#&gt; [09:38:15] INFO  Counts table is not a full peptide * sample grid</span></span>
+<span><span class="co">#&gt;                    - observed rows: 80000</span></span>
 <span><span class="co">#&gt;                    - expected rows: 156000</span></span>
-<span><span class="co">#&gt; [06:16:56] OK    Validating &lt;phip_data&gt; - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.475s</span></span>
-<span><span class="co">#&gt; [06:16:56] OK    Constructing &lt;phip_data&gt; object - done</span></span>
-<span><span class="co">#&gt;                  -&gt; elapsed: 0.569s</span></span>
+<span><span class="co">#&gt; [09:38:15] OK    Validating &lt;phip_data&gt; - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.474s</span></span>
+<span><span class="co">#&gt; [09:38:15] OK    Constructing &lt;phip_data&gt; object - done</span></span>
+<span><span class="co">#&gt;                  -&gt; elapsed: 0.563s</span></span>
 <span><span class="va">pd</span></span>
 <span><span class="co">#&gt; ── &lt;phip_data&gt; ───────────────────────────────────────────────────────────────── </span></span>
 <span><span class="co">#&gt; </span></span>
@@ -192,14 +192,14 @@ timepoint.</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 9</span></span></span>
 <span><span class="co">#&gt;   sample_id subject_id group timepoint peptide_id     exist counts_control</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> B_T1_1    1          B     T1        agilent_100642     0             16</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> B_T1_1    1          B     T1        agilent_100997     1             18</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> B_T1_1    1          B     T1        agilent_10133      0             15</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> B_T1_1    1          B     T1        agilent_101516     0             29</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> B_T1_1    1          B     T1        agilent_101615     0             16</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> A_T1_1    A_1        A     T1        agilent_102300     0              7</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> A_T1_1    A_1        A     T1        agilent_102431     0             25</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> A_T1_1    A_1        A     T1        agilent_103785     0              4</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> A_T1_1    A_1        A     T1        agilent_103792     0             35</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> A_T1_1    A_1        A     T1        agilent_10384      0              0</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: counts_hits &lt;int&gt;, fold_change &lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; table size: 78,200 rows x 9 columns</span></span>
+<span><span class="co">#&gt; table size: 80,000 rows x 9 columns</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">peptide library preview (first 5 rows):</span> </span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 8</span></span></span>
@@ -242,10 +242,10 @@ annotate ordination plots later:</p>
 <span><span class="fu"><a href="https://pillar.r-lib.org/reference/glimpse.html" class="external-link">glimpse</a></span><span class="op">(</span><span class="va">meta</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Rows: 80</span></span>
 <span><span class="co">#&gt; Columns: 4</span></span>
-<span><span class="co">#&gt; $ sample_id  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> "A_T2_10"<span style="color: #949494;">, </span>"B_T2_11"<span style="color: #949494;">, </span>"A_T1_12"<span style="color: #949494;">, </span>"A_T2_12"<span style="color: #949494;">, </span>"B_T1_18"<span style="color: #949494;">, </span>"B_T…</span></span>
-<span><span class="co">#&gt; $ subject_id <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> "10"<span style="color: #949494;">, </span>"11"<span style="color: #949494;">, </span>"12"<span style="color: #949494;">, </span>"12"<span style="color: #949494;">, </span>"18"<span style="color: #949494;">, </span>"3"<span style="color: #949494;">, </span>"3"<span style="color: #949494;">, </span>"4"<span style="color: #949494;">, </span>"4"<span style="color: #949494;">, </span>"1"<span style="color: #949494;">, </span>"13"…</span></span>
-<span><span class="co">#&gt; $ group      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> "A"<span style="color: #949494;">, </span>"B"<span style="color: #949494;">, </span>"A"<span style="color: #949494;">, </span>"A"<span style="color: #949494;">, </span>"B"<span style="color: #949494;">, </span>"B"<span style="color: #949494;">, </span>"A"<span style="color: #949494;">, </span>"B"<span style="color: #949494;">, </span>"A"<span style="color: #949494;">, </span>"A"<span style="color: #949494;">, </span>"A"<span style="color: #949494;">, </span>"A"<span style="color: #949494;">,</span>…</span></span>
-<span><span class="co">#&gt; $ timepoint  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> "T2"<span style="color: #949494;">, </span>"T2"<span style="color: #949494;">, </span>"T1"<span style="color: #949494;">, </span>"T2"<span style="color: #949494;">, </span>"T1"<span style="color: #949494;">, </span>"T1"<span style="color: #949494;">, </span>"T2"<span style="color: #949494;">, </span>"T1"<span style="color: #949494;">, </span>"T1"<span style="color: #949494;">, </span>"T1"<span style="color: #949494;">,</span>…</span></span></code></pre></div>
+<span><span class="co">#&gt; $ sample_id  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> "A_T1_13"<span style="color: #949494;">, </span>"A_T2_15"<span style="color: #949494;">, </span>"A_T1_7"<span style="color: #949494;">, </span>"A_T1_8"<span style="color: #949494;">, </span>"A_T1_9"<span style="color: #949494;">, </span>"B_T1_1…</span></span>
+<span><span class="co">#&gt; $ subject_id <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> "A_13"<span style="color: #949494;">, </span>"A_15"<span style="color: #949494;">, </span>"A_7"<span style="color: #949494;">, </span>"A_8"<span style="color: #949494;">, </span>"A_9"<span style="color: #949494;">, </span>"B_16"<span style="color: #949494;">, </span>"A_1"<span style="color: #949494;">, </span>"A_11"<span style="color: #949494;">,</span>…</span></span>
+<span><span class="co">#&gt; $ group      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> "A"<span style="color: #949494;">, </span>"A"<span style="color: #949494;">, </span>"A"<span style="color: #949494;">, </span>"A"<span style="color: #949494;">, </span>"A"<span style="color: #949494;">, </span>"B"<span style="color: #949494;">, </span>"A"<span style="color: #949494;">, </span>"A"<span style="color: #949494;">, </span>"A"<span style="color: #949494;">, </span>"A"<span style="color: #949494;">, </span>"A"<span style="color: #949494;">, </span>"A"<span style="color: #949494;">,</span>…</span></span>
+<span><span class="co">#&gt; $ timepoint  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> "T1"<span style="color: #949494;">, </span>"T2"<span style="color: #949494;">, </span>"T1"<span style="color: #949494;">, </span>"T1"<span style="color: #949494;">, </span>"T1"<span style="color: #949494;">, </span>"T1"<span style="color: #949494;">, </span>"T2"<span style="color: #949494;">, </span>"T2"<span style="color: #949494;">, </span>"T1"<span style="color: #949494;">, </span>"T1"<span style="color: #949494;">,</span>…</span></span></code></pre></div>
 <hr>
 </div>
 <div class="section level2">
@@ -307,16 +307,16 @@ dissimilarity throughout this vignette.</p>
 <span>  method_normalization <span class="op">=</span> <span class="st">"hellinger"</span>,</span>
 <span>  distance             <span class="op">=</span> <span class="st">"bray"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [06:16:56] INFO  building abundance matrix from `ps` using `fold_change`.</span></span>
-<span><span class="co">#&gt; [06:16:56] INFO  building pivot spec (sample_id x peptide_id).</span></span>
-<span><span class="co">#&gt; [06:16:56] INFO  Collecting long table (sample_id, peptide_id, value).</span></span>
+<span><span class="co">#&gt; [09:38:15] INFO  building abundance matrix from `ps` using `fold_change`.</span></span>
+<span><span class="co">#&gt; [09:38:15] INFO  building pivot spec (sample_id x peptide_id).</span></span>
+<span><span class="co">#&gt; [09:38:15] INFO  Collecting long table (sample_id, peptide_id, value).</span></span>
 <span><span class="co">#&gt;                  -&gt; compute_distance</span></span>
-<span><span class="co">#&gt; [06:16:56] INFO  Pivoting to wide abundance matrix in R.</span></span>
+<span><span class="co">#&gt; [09:38:15] INFO  Pivoting to wide abundance matrix in R.</span></span>
 <span><span class="co">#&gt;                  -&gt; compute_distance</span></span>
-<span><span class="co">#&gt; [06:16:56] INFO  abundance matrix has 80 samples and 1950 features after</span></span>
+<span><span class="co">#&gt; [09:38:15] INFO  abundance matrix has 80 samples and 1950 features after</span></span>
 <span><span class="co">#&gt;                  preprocessing.</span></span>
-<span><span class="co">#&gt; [06:16:56] INFO  computing distance: bray</span></span>
-<span><span class="co">#&gt; [06:16:56] INFO  distance matrix computation complete.</span></span>
+<span><span class="co">#&gt; [09:38:15] INFO  computing distance: bray</span></span>
+<span><span class="co">#&gt; [09:38:15] INFO  distance matrix computation complete.</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">class</a></span><span class="op">(</span><span class="va">d</span><span class="op">)</span>                       <span class="co"># a standard dist object</span></span>
 <span><span class="co">#&gt; [1] "dist"</span></span>
@@ -349,10 +349,10 @@ coordinates, eigenvalues, variance explained, and eigenvalue
 diagnostics.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pcoa_res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compute_pcoa.html">compute_pcoa</a></span><span class="op">(</span><span class="va">d</span>, neg_correction <span class="op">=</span> <span class="st">"none"</span>, n_axes <span class="op">=</span> <span class="fl">5L</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [06:16:56] INFO  performing principal coordinates analysis</span></span>
-<span><span class="co">#&gt; [06:16:56] INFO  extracting sample coordinates.</span></span>
-<span><span class="co">#&gt; [06:16:56] INFO  summarizing eigenvalues and variance explained.</span></span>
-<span><span class="co">#&gt; [06:16:56] INFO  pcoa analysis complete.</span></span>
+<span><span class="co">#&gt; [09:38:16] INFO  performing principal coordinates analysis</span></span>
+<span><span class="co">#&gt; [09:38:16] INFO  extracting sample coordinates.</span></span>
+<span><span class="co">#&gt; [09:38:16] INFO  summarizing eigenvalues and variance explained.</span></span>
+<span><span class="co">#&gt; [09:38:16] INFO  pcoa analysis complete.</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">pcoa_res</span><span class="op">)</span>           <span class="co"># components of the result</span></span>
 <span><span class="co">#&gt; [1] "sample_coords"     "eigenvalues"       "var_explained"    </span></span>
@@ -361,12 +361,12 @@ diagnostics.</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 6</span></span></span>
 <span><span class="co">#&gt;   `%PCoA1` `%PCoA2` `%PCoA3` `%PCoA4` `%PCoA5` `%Other`</span></span>
 <span><span class="co">#&gt;      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>     76.4    0.568    0.449    0.431    0.426     21.7</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>     75.4    0.485    0.473    0.467    0.453     22.7</span></span>
 <span><span class="va">pcoa_res</span><span class="op">$</span><span class="va">eigen_diagnostics</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 6</span></span></span>
 <span><span class="co">#&gt;   sum_negative sum_positive ratio_negative_positive min_eigenvalue n_negative</span></span>
 <span><span class="co">#&gt;          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>                   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>            0         22.4                       0       1.56<span style="color: #949494;">e</span><span style="color: #BB0000;">-16</span>          0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>            0         21.3                       0       1.45<span style="color: #949494;">e</span><span style="color: #BB0000;">-16</span>          0</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more variable: frac_negative &lt;dbl&gt;</span></span></span></code></pre></div>
 <p>The <code>eigen_diagnostics</code> tibble reports how many
 eigenvalues are negative and how large they are relative to the positive
@@ -409,20 +409,20 @@ numeric coordinate columns.</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">feat_assoc</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 98 × 6</span></span></span>
-<span><span class="co">#&gt;    feature         PCoA1     PCoA2    PCoA3    PCoA4   PCoA5</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> agilent_104965  0.575 -<span style="color: #BB0000;">0.166</span>     0.056<span style="text-decoration: underline;">3</span>   0.004<span style="text-decoration: underline;">12</span> -<span style="color: #BB0000;">0.364</span> </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> agilent_10520   0.665 -<span style="color: #BB0000;">0.038</span><span style="color: #BB0000; text-decoration: underline;">5</span>    0.084<span style="text-decoration: underline;">4</span>  -<span style="color: #BB0000;">0.090</span><span style="color: #BB0000; text-decoration: underline;">1</span>  -<span style="color: #BB0000;">0.318</span> </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> agilent_106897 -<span style="color: #BB0000;">0.641</span> -<span style="color: #BB0000;">0.042</span><span style="color: #BB0000; text-decoration: underline;">4</span>    0.340    0.064<span style="text-decoration: underline;">6</span>   0.048<span style="text-decoration: underline;">5</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> agilent_108992 -<span style="color: #BB0000;">0.574</span> -<span style="color: #BB0000;">0.040</span><span style="color: #BB0000; text-decoration: underline;">5</span>    0.318    0.075<span style="text-decoration: underline;">1</span>   0.023<span style="text-decoration: underline;">4</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> agilent_112642  0.659 -<span style="color: #BB0000;">0.101</span>     0.026<span style="text-decoration: underline;">1</span>   0.049<span style="text-decoration: underline;">2</span>  -<span style="color: #BB0000;">0.348</span> </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> agilent_112881 -<span style="color: #BB0000;">0.890</span>  0.000<span style="text-decoration: underline;">964</span>  0.030<span style="text-decoration: underline;">3</span>   0.030<span style="text-decoration: underline;">7</span>  -<span style="color: #BB0000;">0.014</span><span style="color: #BB0000; text-decoration: underline;">8</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> agilent_113090  0.665 -<span style="color: #BB0000;">0.072</span><span style="color: #BB0000; text-decoration: underline;">6</span>    0.060<span style="text-decoration: underline;">5</span>  -<span style="color: #BB0000;">0.310</span>   -<span style="color: #BB0000;">0.023</span><span style="color: #BB0000; text-decoration: underline;">5</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> agilent_113632 -<span style="color: #BB0000;">0.580</span> -<span style="color: #BB0000;">0.349</span>     0.069<span style="text-decoration: underline;">7</span>  -<span style="color: #BB0000;">0.084</span><span style="color: #BB0000; text-decoration: underline;">8</span>   0.048<span style="text-decoration: underline;">5</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> agilent_122851 -<span style="color: #BB0000;">0.417</span> -<span style="color: #BB0000;">0.386</span>     0.103    0.114   -<span style="color: #BB0000;">0.102</span> </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> agilent_12596   0.581  0.123    -<span style="color: #BB0000;">0.002</span><span style="color: #BB0000; text-decoration: underline;">73</span> -<span style="color: #BB0000;">0.033</span><span style="color: #BB0000; text-decoration: underline;">4</span>   0.339 </span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 88 more rows</span></span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 97 × 6</span></span></span>
+<span><span class="co">#&gt;    feature          PCoA1    PCoA2    PCoA3    PCoA4     PCoA5</span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> agilent_106897 -<span style="color: #BB0000;">0.640</span>  -<span style="color: #BB0000;">0.280</span>   -<span style="color: #BB0000;">0.226</span>   -<span style="color: #BB0000;">0.093</span><span style="color: #BB0000; text-decoration: underline;">7</span>  -<span style="color: #BB0000;">0.005</span><span style="color: #BB0000; text-decoration: underline;">54</span> </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> agilent_108992 -<span style="color: #BB0000;">0.574</span>  -<span style="color: #BB0000;">0.289</span>   -<span style="color: #BB0000;">0.120</span>    0.025<span style="text-decoration: underline;">6</span>   0.038<span style="text-decoration: underline;">5</span>  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> agilent_112881 -<span style="color: #BB0000;">0.890</span>   0.011<span style="text-decoration: underline;">2</span>  -<span style="color: #BB0000;">0.059</span><span style="color: #BB0000; text-decoration: underline;">5</span>   0.053<span style="text-decoration: underline;">8</span>  -<span style="color: #BB0000;">0.007</span><span style="color: #BB0000; text-decoration: underline;">44</span> </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> agilent_113632 -<span style="color: #BB0000;">0.075</span><span style="color: #BB0000; text-decoration: underline;">4</span> -<span style="color: #BB0000;">0.070</span><span style="color: #BB0000; text-decoration: underline;">3</span>  -<span style="color: #BB0000;">0.082</span><span style="color: #BB0000; text-decoration: underline;">5</span>  -<span style="color: #BB0000;">0.364</span>    0.185   </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> agilent_122851  0.048<span style="text-decoration: underline;">0</span> -<span style="color: #BB0000;">0.141</span>   -<span style="color: #BB0000;">0.024</span><span style="color: #BB0000; text-decoration: underline;">2</span>   0.259    0.097<span style="text-decoration: underline;">3</span>  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> agilent_123279  0.095<span style="text-decoration: underline;">5</span> -<span style="color: #BB0000;">0.047</span><span style="color: #BB0000; text-decoration: underline;">7</span>   0.038<span style="text-decoration: underline;">1</span>  -<span style="color: #BB0000;">0.152</span>   -<span style="color: #BB0000;">0.268</span>   </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> agilent_126134 -<span style="color: #BB0000;">0.025</span><span style="color: #BB0000; text-decoration: underline;">9</span>  0.036<span style="text-decoration: underline;">7</span>  -<span style="color: #BB0000;">0.272</span>   -<span style="color: #BB0000;">0.060</span><span style="color: #BB0000; text-decoration: underline;">2</span>  -<span style="color: #BB0000;">0.209</span>   </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> agilent_134360 -<span style="color: #BB0000;">0.861</span>  -<span style="color: #BB0000;">0.026</span><span style="color: #BB0000; text-decoration: underline;">4</span>   0.002<span style="text-decoration: underline;">24</span>  0.005<span style="text-decoration: underline;">69</span>  0.028<span style="text-decoration: underline;">3</span>  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> agilent_136689 -<span style="color: #BB0000;">0.588</span>  -<span style="color: #BB0000;">0.276</span>   -<span style="color: #BB0000;">0.275</span>   -<span style="color: #BB0000;">0.098</span><span style="color: #BB0000; text-decoration: underline;">0</span>   0.000<span style="text-decoration: underline;">601</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> agilent_142946 -<span style="color: #BB0000;">0.592</span>   0.001<span style="text-decoration: underline;">66</span>  0.156    0.255    0.106   </span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 87 more rows</span></span></span></code></pre></div>
 <p>Three association methods are available:</p>
 <table class="table">
 <colgroup>
@@ -469,7 +469,7 @@ metadata table before plotting:</p>
 <span>  <span class="va">pcoa_res</span>,</span>
 <span>  group_col <span class="op">=</span> <span class="st">"group"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [06:16:57] INFO  Plotting PCoA: n=80 | group_col=group | time_col=&lt;none&gt; |</span></span>
+<span><span class="co">#&gt; [09:38:17] INFO  Plotting PCoA: n=80 | group_col=group | time_col=&lt;none&gt; |</span></span>
 <span><span class="co">#&gt;                  centroid_by=group</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_pcoa</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-pcoa-group-1.png" class="r-plt" alt="" width="672"></p>
@@ -486,7 +486,7 @@ group.</p>
 <span>  group_col <span class="op">=</span> <span class="st">"group"</span>,</span>
 <span>  time_col  <span class="op">=</span> <span class="st">"timepoint"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [06:16:58] INFO  Plotting PCoA: n=80 | group_col=group | time_col=timepoint |</span></span>
+<span><span class="co">#&gt; [09:38:17] INFO  Plotting PCoA: n=80 | group_col=group | time_col=timepoint |</span></span>
 <span><span class="co">#&gt;                  centroid_by=group_time</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_pcoa</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-pcoa-group-time-1.png" class="r-plt" alt="" width="672"></p>
@@ -507,7 +507,7 @@ longitudinal change.</p>
 <span>  centroid_by       <span class="op">=</span> <span class="st">"group_time"</span>,</span>
 <span>  connect_centroids <span class="op">=</span> <span class="st">"group"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [06:16:58] INFO  Plotting PCoA: n=80 | group_col=group | time_col=timepoint |</span></span>
+<span><span class="co">#&gt; [09:38:18] INFO  Plotting PCoA: n=80 | group_col=group | time_col=timepoint |</span></span>
 <span><span class="co">#&gt;                  centroid_by=group_time</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_pcoa</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-pcoa-centroids-1.png" class="r-plt" alt="" width="672"></p>
@@ -527,7 +527,7 @@ ellipse types can be overlaid simultaneously. Possible values are
 <span>  show_centroids <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  ellipse_by     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"group"</span>, <span class="st">"group_time"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [06:16:59] INFO  Plotting PCoA: n=80 | group_col=group | time_col=timepoint |</span></span>
+<span><span class="co">#&gt; [09:38:18] INFO  Plotting PCoA: n=80 | group_col=group | time_col=timepoint |</span></span>
 <span><span class="co">#&gt;                  centroid_by=group_time</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_pcoa</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-pcoa-ellipses-1.png" class="r-plt" alt="" width="672"></p>
@@ -541,7 +541,7 @@ ellipse types can be overlaid simultaneously. Possible values are
 <span>  axes      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span>,</span>
 <span>  group_col <span class="op">=</span> <span class="st">"group"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [06:16:59] INFO  Plotting PCoA: n=80 | group_col=group | time_col=&lt;none&gt; |</span></span>
+<span><span class="co">#&gt; [09:38:19] INFO  Plotting PCoA: n=80 | group_col=group | time_col=&lt;none&gt; |</span></span>
 <span><span class="co">#&gt;                  centroid_by=group</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_pcoa</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-pcoa-axes23-1.png" class="r-plt" alt="" width="672"></p>
@@ -564,35 +564,35 @@ structure is explained by known metadata variables?</strong>
 <span>  formula      <span class="op">=</span> <span class="op">~</span> <span class="va">group</span> <span class="op">+</span> <span class="va">timepoint</span>,</span>
 <span>  permutations <span class="op">=</span> <span class="fl">99L</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [06:17:00] INFO  building metadata from `ps$data_long`.</span></span>
-<span><span class="co">#&gt; [06:17:00] INFO  fitting constrained ordination (cap/db-rda)</span></span>
+<span><span class="co">#&gt; [09:38:19] INFO  building metadata from `ps$data_long`.</span></span>
+<span><span class="co">#&gt; [09:38:19] INFO  fitting constrained ordination (cap/db-rda)</span></span>
 <span><span class="co">#&gt;                    - formula: ~group + timepoint</span></span>
-<span><span class="co">#&gt; [06:17:01] INFO  extracting constrained sample scores.</span></span>
-<span><span class="co">#&gt; [06:17:01] INFO  computing variance partitioning and permutation tests.</span></span>
-<span><span class="co">#&gt; [06:17:01] INFO  computing feature associations: weighted_average.</span></span>
-<span><span class="co">#&gt; [06:17:01] INFO  cap analysis complete.</span></span>
+<span><span class="co">#&gt; [09:38:20] INFO  extracting constrained sample scores.</span></span>
+<span><span class="co">#&gt; [09:38:20] INFO  computing variance partitioning and permutation tests.</span></span>
+<span><span class="co">#&gt; [09:38:20] INFO  computing feature associations: weighted_average.</span></span>
+<span><span class="co">#&gt; [09:38:20] INFO  cap analysis complete.</span></span>
 <span></span>
 <span><span class="va">cap_res</span><span class="op">$</span><span class="va">variance_partition</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 3</span></span></span>
 <span><span class="co">#&gt;   component     inertia proportion</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Total           22.4       1    </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Constrained     17.2       0.767</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Unconstrained    5.23      0.233</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Total           21.3       1    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Constrained     16.2       0.757</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Unconstrained    5.18      0.243</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span></span>
 <span>  <span class="st">"R\u00b2 ="</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">cap_res</span><span class="op">$</span><span class="va">r2</span>, <span class="fl">3</span><span class="op">)</span>,</span>
 <span>  <span class="st">"| adj. R\u00b2 ="</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">cap_res</span><span class="op">$</span><span class="va">r2_adj</span>, <span class="fl">3</span><span class="op">)</span>, <span class="st">"\n"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; R² = 0.767 | adj. R² = 0.761</span></span>
+<span><span class="co">#&gt; R² = 0.757 | adj. R² = 0.751</span></span>
 <span></span>
 <span><span class="va">cap_res</span><span class="op">$</span><span class="va">perm_terms</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 5</span></span></span>
-<span><span class="co">#&gt;   term         Df SumOfSqs       F `Pr(&gt;F)`</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> group         1  17.1    252.        0.01</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> timepoint     1   0.067<span style="text-decoration: underline;">6</span>   0.995     0.47</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Residual     77   5.23    <span style="color: #BB0000;">NA</span>        <span style="color: #BB0000;">NA</span></span></span></code></pre></div>
+<span><span class="co">#&gt;   term         Df SumOfSqs      F `Pr(&gt;F)`</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> group         1  16.1    239.       0.01</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> timepoint     1   0.068<span style="text-decoration: underline;">6</span>   1.02     0.44</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Residual     77   5.18    <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span></span></span></code></pre></div>
 <p>The <code>variance_partition</code> tibble shows how much of the
 total inertia is constrained by the formula terms vs. left
 unconstrained. <code>perm_terms</code> gives the per-variable
@@ -617,7 +617,7 @@ before plotting:</p>
 <span>  connect_centroids <span class="op">=</span> <span class="st">"group"</span>,</span>
 <span>  ellipse_by        <span class="op">=</span> <span class="st">"group"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [06:17:01] INFO  CAP plot: n=80 samples | groups=2 | times=0</span></span>
+<span><span class="co">#&gt; [09:38:20] INFO  CAP plot: n=80 samples | groups=2 | times=0</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_cap</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-cap-1.png" class="r-plt" alt="" width="672"></p>
 <p><code><a href="../reference/plot_cap.html">plot_cap()</a></code> accepts the same <code>axes</code>,
@@ -644,25 +644,25 @@ scope.</p>
 <span>  permutations <span class="op">=</span> <span class="fl">99L</span>,</span>
 <span>  p_adjust     <span class="op">=</span> <span class="st">"BH"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [06:17:01] INFO  preparing distance labels and metadata.</span></span>
-<span><span class="co">#&gt; [06:17:01] INFO  building metadata from `ps`.</span></span>
-<span><span class="co">#&gt; [06:17:01] INFO  filtering samples with missing grouping variables.</span></span>
-<span><span class="co">#&gt; [06:17:01] INFO  subsetting distance matrix to complete cases.</span></span>
-<span><span class="co">#&gt; [06:17:01] INFO  preparing global permanova model.</span></span>
-<span><span class="co">#&gt; [06:17:01] INFO  running global permanova</span></span>
+<span><span class="co">#&gt; [09:38:20] INFO  preparing distance labels and metadata.</span></span>
+<span><span class="co">#&gt; [09:38:20] INFO  building metadata from `ps`.</span></span>
+<span><span class="co">#&gt; [09:38:21] INFO  filtering samples with missing grouping variables.</span></span>
+<span><span class="co">#&gt; [09:38:21] INFO  subsetting distance matrix to complete cases.</span></span>
+<span><span class="co">#&gt; [09:38:21] INFO  preparing global permanova model.</span></span>
+<span><span class="co">#&gt; [09:38:21] INFO  running global permanova</span></span>
 <span><span class="co">#&gt;                    - model: d_resp ~ group + timepoint + group * timepoint</span></span>
 <span><span class="co">#&gt;                    - permutations stratified by subject</span></span>
-<span><span class="co">#&gt; [06:17:01] INFO  running pairwise permanova contrasts.</span></span>
+<span><span class="co">#&gt; [09:38:21] INFO  running pairwise permanova contrasts.</span></span>
 <span></span>
 <span><span class="va">perm_res</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 8</span></span></span>
 <span><span class="co">#&gt;   scope          contrast term            F_stat      R2 p_value p_adjust n_perm</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> global         &lt;global&gt; group          252.    0.764      0.01     0.03     99</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> global         &lt;global&gt; timepoint        0.995 0.003<span style="text-decoration: underline;">02</span>    0.39     0.51     99</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> global         &lt;global&gt; group:timepoi…   0.990 0.003<span style="text-decoration: underline;">00</span>    0.51     0.51     99</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> group_pairwise B vs A   group          252.    0.763      0.01     0.01     99</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> time_pairwise  T1 vs T2 timepoint        0.995 0.003<span style="text-decoration: underline;">02</span>    0.38     0.38     99</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> global         &lt;global&gt; group           239.   0.754      0.32     0.4      99</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> global         &lt;global&gt; timepoint         1.02 0.003<span style="text-decoration: underline;">22</span>    0.4      0.4      99</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> global         &lt;global&gt; group:timepoint   1.02 0.003<span style="text-decoration: underline;">23</span>    0.34     0.4      99</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> group_pairwise A vs B   group           239.   0.754      0.01     0.01     99</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> time_pairwise  T1 vs T2 timepoint         1.02 0.003<span style="text-decoration: underline;">22</span>    0.45     0.45     99</span></span></code></pre></div>
 <p>The <code>scope</code> column distinguishes three levels of
 inference:</p>
 <table class="table">
@@ -715,29 +715,31 @@ location, a significant PERMANOVA result can be misleading.
 <span>  permutations <span class="op">=</span> <span class="fl">99L</span>,</span>
 <span>  p_adjust     <span class="op">=</span> <span class="st">"BH"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [06:17:01] INFO  preparing distance labels and metadata.</span></span>
-<span><span class="co">#&gt; [06:17:01] INFO  building metadata from `ps`.</span></span>
-<span><span class="co">#&gt; [06:17:01] INFO  filtering samples with missing grouping variables.</span></span>
-<span><span class="co">#&gt; [06:17:01] INFO  computing global dispersion tests.</span></span>
-<span><span class="co">#&gt; [06:17:02] INFO  running pairwise dispersion contrasts.</span></span>
+<span><span class="co">#&gt; [09:38:21] INFO  preparing distance labels and metadata.</span></span>
+<span><span class="co">#&gt; [09:38:21] INFO  building metadata from `ps`.</span></span>
+<span><span class="co">#&gt; [09:38:21] INFO  filtering samples with missing grouping variables.</span></span>
+<span><span class="co">#&gt; [09:38:21] INFO  computing global dispersion tests.</span></span>
+<span><span class="co">#&gt; [09:38:21] INFO  running pairwise dispersion contrasts.</span></span>
 <span></span>
 <span><span class="va">disp_res</span><span class="op">$</span><span class="va">tests</span>        <span class="co"># permutation test results per scope</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 6</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 6</span></span></span>
 <span><span class="co">#&gt;   scope      contrast term       p_value p_adjust n_perm</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> group      &lt;global&gt; dispersion    0.56     0.56     99</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> time       &lt;global&gt; dispersion    0.9      0.9      99</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> group:time &lt;global&gt; dispersion    0.74     0.74     99</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> group      &lt;global&gt; dispersion    0.64     0.71     99</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> time       &lt;global&gt; dispersion    0.91     0.92     99</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> group:time &lt;global&gt; dispersion    0.98     0.98     99</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> group      A vs B   dispersion    0.71     0.71     99</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> time       T1 vs T2 dispersion    0.92     0.92     99</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">disp_res</span><span class="op">$</span><span class="va">distances</span><span class="op">)</span>  <span class="co"># per-sample distances to centroid</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 5</span></span></span>
 <span><span class="co">#&gt;   sample_id distance level scope contrast</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> B_T1_1       0.248 B     group &lt;global&gt;</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> A_T1_1       0.266 A     group &lt;global&gt;</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> B_T2_1       0.249 B     group &lt;global&gt;</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> A_T2_1       0.253 A     group &lt;global&gt;</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> B_T1_10      0.254 B     group &lt;global&gt;</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> A_T1_10      0.274 A     group &lt;global&gt;</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> A_T1_1       0.266 A     group &lt;global&gt;</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> A_T2_1       0.253 A     group &lt;global&gt;</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> A_T1_10      0.274 A     group &lt;global&gt;</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> A_T2_10      0.254 A     group &lt;global&gt;</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> A_T1_11      0.242 A     group &lt;global&gt;</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> A_T2_11      0.272 A     group &lt;global&gt;</span></span></code></pre></div>
 <p>The returned object is of class <code>"beta_dispersion"</code> and
 contains two tibbles:</p>
 <table class="table">
@@ -771,7 +773,7 @@ that appear in <code>disp_res$distances</code>.</p>
 <span>  scope    <span class="op">=</span> <span class="st">"group"</span>,</span>
 <span>  contrast <span class="op">=</span> <span class="st">"&lt;global&gt;"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [06:17:02] INFO  Plotting dispersion for scope = 'group', contrast = '&lt;global&gt;'</span></span>
+<span><span class="co">#&gt; [09:38:21] INFO  Plotting dispersion for scope = 'group', contrast = '&lt;global&gt;'</span></span>
 <span><span class="co">#&gt;                  (n = 80).</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_dispersion</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-dispersion-group-1.png" class="r-plt" alt="" width="672"></p>
@@ -785,7 +787,7 @@ that appear in <code>disp_res$distances</code>.</p>
 <span>  scope    <span class="op">=</span> <span class="st">"time"</span>,</span>
 <span>  contrast <span class="op">=</span> <span class="st">"&lt;global&gt;"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [06:17:02] INFO  Plotting dispersion for scope = 'time', contrast = '&lt;global&gt;'</span></span>
+<span><span class="co">#&gt; [09:38:22] INFO  Plotting dispersion for scope = 'time', contrast = '&lt;global&gt;'</span></span>
 <span><span class="co">#&gt;                  (n = 80).</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_dispersion</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-dispersion-time-1.png" class="r-plt" alt="" width="672"></p>
@@ -799,7 +801,7 @@ that appear in <code>disp_res$distances</code>.</p>
 <span>  show_box    <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  show_points <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [06:17:03] INFO  Plotting dispersion for scope = 'group', contrast = '&lt;global&gt;'</span></span>
+<span><span class="co">#&gt; [09:38:22] INFO  Plotting dispersion for scope = 'group', contrast = '&lt;global&gt;'</span></span>
 <span><span class="co">#&gt;                  (n = 80).</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_dispersion</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-dispersion-style-1.png" class="r-plt" alt="" width="672"></p>
@@ -824,21 +826,21 @@ always set a <code>seed</code>.</p>
 <span>  meta_cols  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"group"</span>, <span class="st">"timepoint"</span><span class="op">)</span>,</span>
 <span>  seed       <span class="op">=</span> <span class="fl">42L</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [06:17:03] INFO  Running t-SNE with dims = 3, perplexity = 15 on 80 samples</span></span>
+<span><span class="co">#&gt; [09:38:23] INFO  Running t-SNE with dims = 3, perplexity = 15 on 80 samples</span></span>
 <span><span class="co">#&gt;                  (distance input).</span></span>
-<span><span class="co">#&gt; [06:17:03] INFO  Attaching metadata columns to t-SNE result: group, timepoint</span></span>
-<span><span class="co">#&gt; [06:17:03] INFO  t-SNE embedding computation finished.</span></span>
+<span><span class="co">#&gt; [09:38:23] INFO  Attaching metadata columns to t-SNE result: group, timepoint</span></span>
+<span><span class="co">#&gt; [09:38:23] INFO  t-SNE embedding computation finished.</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">tsne_res</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 6</span></span></span>
-<span><span class="co">#&gt;   sample_id  tSNE1 tSNE2  tSNE3 group timepoint</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> B_T1_1    -<span style="color: #BB0000;">11.6</span>  -<span style="color: #BB0000;">27.2</span> -<span style="color: #BB0000;">10.9</span>  B     T1       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> A_T1_1     14.5   29.4  15.8  A     T1       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> B_T2_1    -<span style="color: #BB0000;">11.8</span>  -<span style="color: #BB0000;">30.6</span> -<span style="color: #BB0000;">12.8</span>  B     T2       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> A_T2_1      9.13  30.7   9.58 A     T2       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> B_T1_10   -<span style="color: #BB0000;">11.3</span>  -<span style="color: #BB0000;">33.4</span> -<span style="color: #BB0000;">11.4</span>  B     T1       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> A_T1_10    12.1   26.7  15.1  A     T1</span></span>
+<span><span class="co">#&gt;   sample_id tSNE1  tSNE2  tSNE3 group timepoint</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> A_T1_1    -<span style="color: #BB0000;">35.6</span> -<span style="color: #BB0000;">12.2</span>  -<span style="color: #BB0000;">3.45</span>  A     T1       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> A_T2_1    -<span style="color: #BB0000;">31.1</span>  -<span style="color: #BB0000;">7.43</span>  3.06  A     T2       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> A_T1_10   -<span style="color: #BB0000;">38.6</span>  -<span style="color: #BB0000;">6.52</span>  1.15  A     T1       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> A_T2_10   -<span style="color: #BB0000;">35.9</span>  -<span style="color: #BB0000;">7.45</span> -<span style="color: #BB0000;">0.386</span> A     T2       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> A_T1_11   -<span style="color: #BB0000;">32.8</span> -<span style="color: #BB0000;">10.4</span>   0.134 A     T1       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> A_T2_11   -<span style="color: #BB0000;">35.6</span>  -<span style="color: #BB0000;">5.99</span>  5.28  A     T2</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">tsne_res</span>, <span class="st">"tsne_params"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; $dims</span></span>
 <span><span class="co">#&gt; [1] 3</span></span>
@@ -866,12 +868,12 @@ always set a <code>seed</code>.</p>
 </h3>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_tsne.html">plot_tsne</a></span><span class="op">(</span><span class="va">tsne_res</span>, view <span class="op">=</span> <span class="st">"2d"</span>, colour <span class="op">=</span> <span class="st">"group"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [06:17:03] INFO  Creating 2D t-SNE plot (ggplot2).</span></span>
+<span><span class="co">#&gt; [09:38:23] INFO  Creating 2D t-SNE plot (ggplot2).</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_tsne</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-tsne-2d-group-1.png" class="r-plt" alt="" width="672"></p>
 <div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_tsne.html">plot_tsne</a></span><span class="op">(</span><span class="va">tsne_res</span>, view <span class="op">=</span> <span class="st">"2d"</span>, colour <span class="op">=</span> <span class="st">"timepoint"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [06:17:04] INFO  Creating 2D t-SNE plot (ggplot2).</span></span>
+<span><span class="co">#&gt; [09:38:23] INFO  Creating 2D t-SNE plot (ggplot2).</span></span>
 <span><span class="co">#&gt;                  -&gt; plot_tsne</span></span></code></pre></div>
 <p><img src="beta-diversity_files/figure-html/plot-tsne-2d-time-1.png" class="r-plt" alt="" width="672"></p>
 <p>Axis labels (<code>t-SNE 1</code>, <code>t-SNE 2</code>) carry no
@@ -962,7 +964,7 @@ best explored interactively in an HTML report or the RStudio viewer.</p>
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt; [1] dplyr_1.2.1   phiper_0.4.20</span></span>
+<span><span class="co">#&gt; [1] dplyr_1.2.1   phiper_0.4.22</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
 <span><span class="co">#&gt;  [1] sass_0.4.10        utf8_1.2.6         generics_0.1.4     tidyr_1.3.2       </span></span>
@@ -971,7 +973,7 @@ best explored interactively in an HTML report or the RStudio viewer.</p>
 <span><span class="co">#&gt; [13] Matrix_1.7-5       jsonlite_2.0.0     DBI_1.3.0          mgcv_1.9-4        </span></span>
 <span><span class="co">#&gt; [17] purrr_1.2.2        scales_1.4.0       permute_0.9-10     textshaping_1.0.5 </span></span>
 <span><span class="co">#&gt; [21] jquerylib_0.1.4    duckdb_1.5.6       cli_3.6.6          rlang_1.3.0       </span></span>
-<span><span class="co">#&gt; [25] chk_0.11.0         dbplyr_2.6.0       phiperio_0.6.2     splines_4.6.1     </span></span>
+<span><span class="co">#&gt; [25] chk_0.11.0         dbplyr_2.6.0       phiperio_0.6.3     splines_4.6.1     </span></span>
 <span><span class="co">#&gt; [29] withr_3.0.3        cachem_1.1.0       yaml_2.3.12        vegan_2.7-6       </span></span>
 <span><span class="co">#&gt; [33] otel_0.2.0         Rtsne_0.17         parallel_4.6.1     tools_4.6.1       </span></span>
 <span><span class="co">#&gt; [37] ggplot2_4.0.3      vctrs_0.7.3        R6_2.6.1           lifecycle_1.0.5   </span></span>

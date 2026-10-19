@@ -93,17 +93,17 @@ dist_bc <- compute_distance(
   distance = "jaccard",
   n_threads = 2L
 )
-#> [06:16:19] INFO  building abundance matrix from `ps` using `fold_change`.
-#> [06:16:19] INFO  building pivot spec (sample_id x peptide_id).
-#> [06:16:19] INFO  Collecting long table (sample_id, peptide_id, value).
+#> [09:37:38] INFO  building abundance matrix from `ps` using `fold_change`.
+#> [09:37:38] INFO  building pivot spec (sample_id x peptide_id).
+#> [09:37:38] INFO  Collecting long table (sample_id, peptide_id, value).
 #>                  -> compute_distance
-#> [06:16:19] INFO  Pivoting to wide abundance matrix in R.
+#> [09:37:38] INFO  Pivoting to wide abundance matrix in R.
 #>                  -> compute_distance
-#> [06:16:19] INFO  abundance matrix has 43 samples and 5 features after
+#> [09:37:38] INFO  abundance matrix has 43 samples and 5 features after
 #>                  preprocessing.
-#> [06:16:19] INFO  auto normalization selected -> using relative
-#> [06:16:19] INFO  computing distance: jaccard
-#> [06:16:19] INFO  distance matrix computation complete.
+#> [09:37:38] INFO  auto normalization selected -> using relative
+#> [09:37:38] INFO  computing distance: jaccard
+#> [09:37:38] INFO  distance matrix computation complete.
 
 dispersion_res <- compute_dispersion(
   dist_bc,
@@ -112,25 +112,26 @@ dispersion_res <- compute_dispersion(
   time_col  = "timepoint",
   p_adjust  = "BH"
 )
-#> [06:16:19] INFO  preparing distance labels and metadata.
-#> [06:16:19] INFO  building metadata from `ps`.
-#> [06:16:19] INFO  filtering samples with missing grouping variables.
-#> [06:16:19] INFO  computing global dispersion tests.
-#> [06:16:19] INFO  running pairwise dispersion contrasts.
+#> [09:37:38] INFO  preparing distance labels and metadata.
+#> [09:37:38] INFO  building metadata from `ps`.
+#> [09:37:38] INFO  filtering samples with missing grouping variables.
+#> [09:37:38] INFO  computing global dispersion tests.
+#> [09:37:39] INFO  running pairwise dispersion contrasts.
 dispersion_res$tests
-#> # A tibble: 1 × 6
+#> # A tibble: 2 × 6
 #>   scope contrast term       p_value p_adjust n_perm
 #>   <chr> <chr>    <chr>        <dbl>    <dbl>  <dbl>
-#> 1 group <global> dispersion   0.098    0.098    999
+#> 1 group <global> dispersion   0.092      0.1    999
+#> 2 group A vs B   dispersion   0.1        0.1    999
 head(dispersion_res$distances)
 #> # A tibble: 6 × 5
 #>   sample_id distance level scope contrast
 #>   <chr>        <dbl> <chr> <chr> <chr>   
 #> 1 A_T1_1       0.397 A     group <global>
-#> 2 B_T1_1       0.438 B     group <global>
-#> 3 A_T1_10      0.284 A     group <global>
-#> 4 B_T1_10      0.115 B     group <global>
-#> 5 A_T1_11      0.408 A     group <global>
-#> 6 B_T1_11      0.461 B     group <global>
+#> 2 A_T1_10      0.284 A     group <global>
+#> 3 A_T1_11      0.408 A     group <global>
+#> 4 A_T1_12      0.207 A     group <global>
+#> 5 A_T1_13      0.283 A     group <global>
+#> 6 A_T1_14      0.479 A     group <global>
 # }
 ```

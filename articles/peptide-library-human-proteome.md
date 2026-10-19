@@ -15,23 +15,23 @@ library(dplyr)
 
 peplib <- get_peptide_library("human_proteome") %>%
   collect()
-#> [06:23:52] INFO  Retrieving peptide metadata into DuckDB cache
+#> [09:44:27] INFO  Retrieving peptide metadata into DuckDB cache
 #>                  -> get_peptide_library(library = human_proteome, force_refresh
 #>                     = FALSE)
-#> [06:23:52] INFO  Opened DuckDB connection
+#> [09:44:27] INFO  Opened DuckDB connection
 #>                    - cache dir:
 #>                      /home/runner/.cache/R/phiperio/peptide_meta/phip_cache.duckdb
 #>                    - tables: peptide_meta_human_proteome
-#> [06:23:52] INFO  Starting download
+#> [09:44:27] INFO  Starting download
 #>                    - dest:
 #>                      /home/runner/.cache/R/phiperio/peptide_meta/human_proteome_library_09.10.26.rds
-#> [06:23:53] OK    Download succeeded (method = <getOption()>)
-#> [06:23:53] OK    Checksum verified (SHA-256 match)
-#> [06:23:58] OK    Download complete and loaded into R
-#> [06:24:04] INFO  Importing sanitized metadata into DuckDB cache...
-#> [06:24:06] OK    peptide_meta_human_proteome table created in DuckDB cache
-#> [06:24:06] OK    Retrieving peptide metadata into DuckDB cache - done
-#>                  -> elapsed: 14.262s
+#> [09:44:28] OK    Download succeeded (method = <getOption()>)
+#> [09:44:28] OK    Checksum verified (SHA-256 match)
+#> [09:44:33] OK    Download complete and loaded into R
+#> [09:44:39] INFO  Importing sanitized metadata into DuckDB cache...
+#> [09:44:41] OK    peptide_meta_human_proteome table created in DuckDB cache
+#> [09:44:41] OK    Retrieving peptide metadata into DuckDB cache - done
+#>                  -> elapsed: 14.229s
 ```
 
 All columns beginning with `is_` are logical flags: `TRUE` indicates

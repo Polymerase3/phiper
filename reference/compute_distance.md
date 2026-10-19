@@ -124,23 +124,23 @@ d <- compute_distance(
   distance = "bray",
   n_threads = 2L
 )
-#> [06:16:19] INFO  building abundance matrix from `ps` using `fold_change`.
-#> [06:16:19] INFO  building pivot spec (sample_id x peptide_id).
-#> [06:16:19] INFO  Collecting long table (sample_id, peptide_id, value).
+#> [09:37:39] INFO  building abundance matrix from `ps` using `fold_change`.
+#> [09:37:39] INFO  building pivot spec (sample_id x peptide_id).
+#> [09:37:39] INFO  Collecting long table (sample_id, peptide_id, value).
 #>                  -> compute_distance
-#> [06:16:19] INFO  Pivoting to wide abundance matrix in R.
+#> [09:37:39] INFO  Pivoting to wide abundance matrix in R.
 #>                  -> compute_distance
-#> [06:16:19] INFO  abundance matrix has 43 samples and 5 features after
+#> [09:37:39] INFO  abundance matrix has 43 samples and 5 features after
 #>                  preprocessing.
-#> [06:16:19] INFO  computing distance: bray
-#> [06:16:19] INFO  distance matrix computation complete.
+#> [09:37:39] INFO  computing distance: bray
+#> [09:37:39] INFO  distance matrix computation complete.
 
 a <- attr(d, "abundances")
 a[1:min(5, nrow(a)), 1:min(5, ncol(a)), drop = FALSE]
 #>         agilent_175212 agilent_196916 agilent_21155 agilent_238554 corona2_2925
-#> A_T1_1       0.3191635      0.7566979     0.5705637      0.0000000    0.0000000
-#> B_T1_1       0.0000000      0.0000000     0.0000000      0.8627119    0.5056957
-#> A_T1_10      0.5965746      0.6709044     0.4404385      0.0000000    0.0000000
-#> B_T1_10      0.0000000      0.0000000     0.0000000      0.6485117    0.7612047
-#> A_T1_11      0.7955740      0.1061303     0.5964884      0.0000000    0.0000000
+#> A_T1_1       0.3191635      0.7566979     0.5705637              0            0
+#> A_T1_10      0.5965746      0.6709044     0.4404385              0            0
+#> A_T1_11      0.7955740      0.1061303     0.5964884              0            0
+#> A_T1_12      0.5449223      0.6039373     0.5816523              0            0
+#> A_T1_13      0.4344900      0.6535741     0.6197252              0            0
 ```

@@ -19,7 +19,7 @@ statistic and assessing significance via label permutation."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">phiper</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.20</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.22</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -135,7 +135,14 @@ universes; pairwise group contrasts are constructed within each
 
 <dt id="arg-paired-by">paired_by<a class="anchor" aria-label="anchor" href="#arg-paired-by"></a></dt>
 <dd><p>Optional single column name identifying paired samples
-(e.g. subject ID). When provided, paired tests are used where applicable.</p></dd>
+(e.g. subject ID). When provided, paired tests are used where applicable:
+a contrast is treated as paired as soon as at least one <code>paired_by</code> unit
+is observed in both groups. The paired test then uses only the units
+present in both groups; units observed in just one of the two groups are
+dropped from that contrast, and <code>n_subjects_paired</code> reports how many
+units were used. Without <code>paired_by</code>, every contrast is unpaired, and a
+<code>subject_id</code> that appears in both groups of a contrast (e.g. a
+<code>group_cols</code> such as timepoint that varies within subject) is an error.</p></dd>
 
 
 <dt id="arg-interaction">interaction<a class="anchor" aria-label="anchor" href="#arg-interaction"></a></dt>
@@ -364,7 +371,9 @@ using the <strong>current</strong> <code>future</code> backend:</p><ul><li><p>Th
 to avoid oversubscription when using multiple workers.</p></li>
 </ul><p>Reproducibility of permutations is controlled via the global RNG:
 call <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> before <code>compute_delta()</code> to obtain reproducible
-results; each contrast draws its own seed from the global RNG state.</p>
+results. Each unpaired group contrast draws one seed from the global RNG
+state, and all of its rank/feature strata share the same
+<code>B_permutations</code> group splits; each paired stratum draws its own seed.</p>
     </div>
 
     <div class="section level2">
