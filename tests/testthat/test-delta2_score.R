@@ -339,7 +339,8 @@ test_that("between-subject z matches all label permutations for any rho", {
       labs <- unique(.perms(code))
 
       for (j in seq_len(ncol(Yb))) {
-        v <- w * as.numeric(tapply(Yb[, j], subj, mean))
+        ybar <- as.numeric(tapply(Yb[, j], subj, mean))
+        v <- w * (ybar - sum(w * ybar) / sum(w))
         Us <- t(sapply(labs, function(cd) {
           Gp <- if (K == 2L) matrix(cd - 1) else diag(K)[cd, ]
           colSums(Gp * v)
@@ -355,6 +356,23 @@ test_that("between-subject z matches all label permutations for any rho", {
         }
       }
     }
+  }
+})
+
+test_that("unequal sample counts alone carry no group signal", {
+  # every subject positive in half its samples, 2 to 6 samples each: subject
+  # means are all 0.5, so the group term must be 0 whatever the weights
+  n_i <- c(6, 6, 4, 2, 2, 4)
+  samples <- data.frame(
+    sample_id = sprintf("s%d_%d", rep(1:6, n_i), sequence(n_i)),
+    subject_id = sprintf("s%d", rep(1:6, n_i)),
+    group = rep(c("A", "A", "A", "B", "B", "B"), n_i),
+    stringsAsFactors = FALSE
+  )
+  y <- unlist(lapply(n_i, function(n) rep(0:1, n / 2)))
+  df <- .d2_long(samples, cbind(y, 1 - y))
+  for (rho in c(0, 0.3, 1)) {
+    expect_equal(.d2_run(df, rho = rho)$res$group[, 1], c(0, 0))
   }
 })
 

@@ -25,9 +25,12 @@
 #' @details
 #' **Per-peptide statistic.** Each term is a score statistic standardised by
 #' its exact permutation moments:
-#' - *group*: each subject contributes its mean positivity, weighted by
+#' - *group*: each subject contributes its mean positivity minus the
+#'   weighted mean over subjects, times its weight
 #'   \eqn{w_i = n_i / (1 + (n_i - 1)\rho)} (`rho` below); group labels are
-#'   resampled across subjects with the group sizes fixed. With one sample
+#'   resampled across subjects with the group sizes fixed. Centring at the
+#'   weighted mean keeps unequal sample counts from shifting every peptide
+#'   together. With one sample
 #'   per subject and two groups this is `compute_delta(stat_mode = "score")`
 #'   up to the constant factor \eqn{\sqrt{(N-1)/N}}.
 #' - *time*: each subject's deviations from its own mean (the fixed-effects

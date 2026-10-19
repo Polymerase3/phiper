@@ -12,7 +12,8 @@ using namespace Rcpp;
 //
 // Every term is a linear statistic of the sample bits standardised by its
 // exact permutation moments:
-//   group        between-subject: subject values v_i = w_i * ybar_i, group
+//   group        between-subject: subject values u_i = w_i (ybar_i - mu_w),
+//                mu_w the w-weighted mean of the subject means, group
 //                labels resampled across subjects with sizes fixed.
 //   time         within-subject: the subject's deviations from its own mean,
 //                timepoints reshuffled inside each subject.
@@ -114,6 +115,16 @@ Rcpp::List cpp_delta2_score(const Rcpp::RawVector& bitset_raw,
             (g[(size_t)i * Lg + b] - gbar_b[b]) / (N - 1.0);
     Wg_b = psd_pinv_pow(Gb, Lg, -0.5);
   }
+  // centring at the weighted mean mu_w = sum w ybar / sum w: these sums over
+  // all subjects turn the sparse sums over positive subjects into
+  // sum_i (g_i - gbar) u_i and sum_i u_i^2
+  double Wsum = 0.0, W2sum = 0.0;
+  Vec GW(Lg, 0.0);
+  for (int i = 0; i < N; ++i) {
+    Wsum += w[i];
+    W2sum += w[i] * w[i];
+    for (int l = 0; l < Lg; ++l) GW[l] += (g[(size_t)i * Lg + l] - gbar_b[l]) * w[i];
+  }
 
   // interaction: subjects with within-subject spread, residualised against
   // the pooled time main effect beta = (sum A_i)^+ sum D_i
@@ -164,7 +175,7 @@ Rcpp::List cpp_delta2_score(const Rcpp::RawVector& bitset_raw,
     tot[j] = cx.count(col, n_words, St);
     for (int t = 0; t < T; ++t) St_out(j, t) = St[t];
 
-    double sumv = 0.0, sumv2 = 0.0;
+    double sumv = 0.0, sumv2 = 0.0, sumwv = 0.0;
     std::fill(Ub.begin(), Ub.end(), 0.0);
     std::fill(Ut.begin(), Ut.end(), 0.0);
     std::fill(Vt.begin(), Vt.end(), 0.0);
@@ -184,6 +195,7 @@ Rcpp::List cpp_delta2_score(const Rcpp::RawVector& bitset_raw,
         const double v = w[i] * ybar;
         sumv += v;
         sumv2 += v * v;
+        sumwv += w[i] * v;
         for (int l = 0; l < Lg; ++l) Ub[l] += (g[(size_t)i * Lg + l] - gbar_b[l]) * v;
       }
       if (!(do_time || do_inter) || !spread[i]) continue;
@@ -212,13 +224,18 @@ Rcpp::List cpp_delta2_score(const Rcpp::RawVector& bitset_raw,
       }
     }
 
-    // group: Cov(U) = SS_v * Gb, so r = Gb^{-1/2} U / sqrt(SS_v)
+    // group: U = sum_i (g_i - gbar) u_i with u_i = w_i (ybar_i - mu_w);
+    // Cov(U) = SS_u * Gb, so r = Gb^{-1/2} U / sqrt(SS_u). Centring at mu_w
+    // keeps U free of sum_{i in group} w_i, which moves with the labels and
+    // would otherwise shift every peptide together when the w_i differ.
     // Gb carries the exact permutation 1/(N-1); compute_delta()'s "score"
     // uses the binomial 1/N, so with one sample per subject this z is v1's
     // times sqrt((N-1)/N), the same factor for every peptide in a contrast.
     if (do_group) {
-      const double SS = (N >= 2) ? sumv2 - sumv * sumv / N : 0.0;
-      const bool ok = SS > 1e-12 * sumv2;
+      const double mu = (Wsum > 0.0) ? sumv / Wsum : 0.0;
+      const double SS = (N >= 2) ? sumv2 - 2.0 * mu * sumwv + mu * mu * W2sum : 0.0;
+      const bool ok = SS > 1e-12 * (sumv2 + mu * mu * W2sum);
+      for (int b = 0; b < Lg; ++b) Ub[b] -= mu * GW[b];
       for (int a = 0; a < Lg; ++a) {
         double r = 0.0;
         if (ok) {

@@ -232,7 +232,9 @@ double level_contrast(const Vec& M, int K, int L, const Vec& design,
 // sample_rows). Draws must keep the observed label multiset. pairs lists the
 // level pairs (1-based, group1 < group2) for the pairwise tests; adj_weight
 // is each subject's inverse-propensity weight for the adjusted effect sizes
-// (empty = unweighted). rho is one value or one per peptide.
+// (empty = unweighted). rho is one value or one per peptide. residualize =
+// false drops the interaction's time main-effect correction (validation
+// only: it shows what the correction is for).
 //
 // [[Rcpp::export]]
 Rcpp::List cpp_delta2_contrast(const Rcpp::RawVector& bitset_raw,
@@ -256,7 +258,8 @@ Rcpp::List cpp_delta2_contrast(const Rcpp::RawVector& bitset_raw,
                                const std::string& perm_method,
                                const Rcpp::NumericVector& strat_bins,
                                double winsor_z,
-                               double min_m_eff) {
+                               double min_m_eff,
+                               bool residualize = true) {
   bool do_group = false, do_time = false, do_inter = false;
   for (R_xlen_t k = 0; k < terms.size(); ++k) {
     const std::string tm = Rcpp::as<std::string>(terms[k]);
@@ -395,13 +398,47 @@ Rcpp::List cpp_delta2_contrast(const Rcpp::RawVector& bitset_raw,
     sh.Wg = psd_pinv_pow(GI, Lg, -0.5);
   };
 
+  // between-subject weights w_i = n_i / (1 + (n_i - 1) rho), one set per
+  // distinct rho (rho_by_stratum gives one per prevalence stratum)
+  std::vector<double> rho_vals;
+  std::vector<int> rho_of(m);
+  for (int j = 0; j < m; ++j) {
+    const double rj = (rho.size() == 1) ? rho[0] : rho[j];
+    int r = 0;
+    while (r < (int)rho_vals.size() && rho_vals[r] != rj) ++r;
+    if (r == (int)rho_vals.size()) rho_vals.push_back(rj);
+    rho_of[j] = r;
+  }
+  const int R = rho_vals.size();
+  Vec wr((size_t)R * N), Wsum(R, 0.0), W2sum(R, 0.0);
+  for (int r = 0; r < R; ++r)
+    for (int i = 0; i < N; ++i) {
+      const double w = cx.n_i[i] / (1.0 + (cx.n_i[i] - 1.0) * rho_vals[r]);
+      wr[(size_t)r * N + i] = w;
+      Wsum[r] += w;
+      W2sum[r] += w * w;
+    }
+  // shared object of a labelling for the group term and pairs: sum of w and
+  // w^2 per level, per rho
+  Vec Wk((size_t)R * K), W2k((size_t)R * K);
+  auto level_weights = [&](const int* lab) {
+    std::fill(Wk.begin(), Wk.end(), 0.0);
+    std::fill(W2k.begin(), W2k.end(), 0.0);
+    for (int r = 0; r < R; ++r)
+      for (int i = 0; i < N; ++i) {
+        const double w = wr[(size_t)r * N + i];
+        Wk[(size_t)r * K + lab[i]] += w;
+        W2k[(size_t)r * K + lab[i]] += w * w;
+      }
+  };
+
   // --- observed pass: per-peptide fixed quantities -----------------------------
   // CSR over each peptide's positive subjects
   std::vector<int> off(m + 1, 0), csr_sub;
-  Vec csr_v, csr_D;
+  Vec csr_v, csr_w, csr_D;
   std::vector<char> csr_spread;
-  Vec tot(m), p0(m), sumv(m), SS(m), Wt((size_t)m * LL, 0.0), cst((size_t)m * Lt, 0.0),
-      beta((size_t)m * Lt, 0.0), WH((size_t)m * LL, 0.0);
+  Vec tot(m), p0(m), mu_w(m), SS(m), Wt((size_t)m * LL, 0.0), cst((size_t)m * Lt, 0.0),
+      beta((size_t)m * Lt, 0.0), beta_int((size_t)m * Lt, 0.0), WH((size_t)m * LL, 0.0);
   std::vector<char> g_ok(m, 0);
   std::vector<Vec> St_obs(m, Vec(T, 0.0));
 
@@ -437,11 +474,11 @@ Rcpp::List cpp_delta2_contrast(const Rcpp::RawVector& bitset_raw,
       Dk((size_t)K * Lt), Dk_adj((size_t)K * Lt), bk((size_t)K * Lt), bk_adj((size_t)K * Lt);
   for (int j = 0; j < m; ++j) {
     const uint8_t* col = column_ptr(bitset_raw, n_words, pep_cols[j]);
-    const double rj = (rho.size() == 1) ? rho[0] : rho[j];
+    const double* wj = &wr[(size_t)rho_of[j] * N];
     tot[j] = cx.count(col, n_words, St_obs[j]);
     p0[j] = cx.n_samples > 0 ? tot[j] / cx.n_samples : 0.0;
 
-    double sv = 0.0, sv2 = 0.0;
+    double sv = 0.0, sv2 = 0.0, swv = 0.0;
     std::fill(sumD.begin(), sumD.end(), 0.0);
     std::fill(HDD.begin(), HDD.end(), 0.0);
     std::fill(Vt.begin(), Vt.end(), 0.0);
@@ -455,13 +492,15 @@ Rcpp::List cpp_delta2_contrast(const Rcpp::RawVector& bitset_raw,
       for (int t = 0; t < T; ++t) c += ci[t];
       const double ni = cx.n_i[i];
       const double ybar = c / ni;
-      const double v = ni / (1.0 + (ni - 1.0) * rj) * ybar;
+      const double v = wj[i] * ybar;
       sv += v;
       sv2 += v * v;
+      swv += wj[i] * v;
       mk[obs_lab[i]] += ybar;
       mk_adj[obs_lab[i]] += a_i[i] * ybar;
       csr_sub.push_back(i);
       csr_v.push_back(v);
+      csr_w.push_back(wj[i]);
       csr_spread.push_back(spread[i]);
       for (int l = 0; l < Lt; ++l) {
         double s = 0.0;
@@ -487,9 +526,11 @@ Rcpp::List cpp_delta2_contrast(const Rcpp::RawVector& bitset_raw,
         for (int b = 0; b < Lt; ++b) HDD[a * Lt + b] += D[a] * D[b];
     }
     off[j + 1] = csr_sub.size();
-    sumv[j] = sv;
-    SS[j] = (N >= 2) ? sv2 - sv * sv / N : 0.0;
-    g_ok[j] = SS[j] > 1e-12 * sv2;
+    // group term on u_i = w_i (ybar_i - mu_w): see cpp_delta2_score()
+    const int rr = rho_of[j];
+    mu_w[j] = (Wsum[rr] > 0.0) ? sv / Wsum[rr] : 0.0;
+    SS[j] = (N >= 2) ? sv2 - 2.0 * mu_w[j] * swv + mu_w[j] * mu_w[j] * W2sum[rr] : 0.0;
+    g_ok[j] = SS[j] > 1e-12 * (sv2 + mu_w[j] * mu_w[j] * W2sum[rr]);
 
     // time whitening
     if (do_time) {
@@ -501,6 +542,7 @@ Rcpp::List cpp_delta2_contrast(const Rcpp::RawVector& bitset_raw,
       double s = 0.0;
       for (int b = 0; b < Lt; ++b) s += SumA_pinv[a * Lt + b] * sumD[b];
       beta[(size_t)j * Lt + a] = s;
+      if (residualize) beta_int[(size_t)j * Lt + a] = s;
     }
     if (do_time) {
       const double* bj = &beta[(size_t)j * Lt];
@@ -513,7 +555,7 @@ Rcpp::List cpp_delta2_contrast(const Rcpp::RawVector& bitset_raw,
       }
     }
     if (do_inter && N_I >= 2) {
-      const double* bj = &beta[(size_t)j * Lt];
+      const double* bj = &beta_int[(size_t)j * Lt];
       for (int e = 0; e < LL; ++e) H[e] = HDD[e];
       double h_scale = 0.0;
       for (int l = 0; l < Lt; ++l) h_scale += HDD[l * Lt + l];
@@ -607,24 +649,32 @@ Rcpp::List cpp_delta2_contrast(const Rcpp::RawVector& bitset_raw,
   // --- statistic of one draw --------------------------------------------------
   // r buffers: component-major, m entries per component
   Vec r_group((size_t)Lg * m), r_time((size_t)Lt * m), r_inter((size_t)Lg * Lt * m),
-      z_pair((size_t)n_pairs * m), S1(K), S2(K), U(std::max(Lg, Lt)), SD((size_t)Lg * Lt),
+      z_pair((size_t)n_pairs * m), A1(K), A2(K), A3(K), U(std::max(Lg, Lt)), SD((size_t)Lg * Lt),
       Sint((size_t)Lg * Lt), cnt_u(T);
   auto clamp = [&](double z) { return std::max(-winsor_z, std::min(winsor_z, z)); };
 
   // between-subject terms and pairs under a labelling
   auto between_r = [&](const int* lab, const InterShared* sh) {
     for (int j = 0; j < m; ++j) {
-      std::fill(S1.begin(), S1.end(), 0.0);
-      std::fill(S2.begin(), S2.end(), 0.0);
+      // per level: sum of v = w ybar, of v^2 and of w v over positive subjects
+      std::fill(A1.begin(), A1.end(), 0.0);
+      std::fill(A2.begin(), A2.end(), 0.0);
+      std::fill(A3.begin(), A3.end(), 0.0);
       for (int e = off[j]; e < off[j + 1]; ++e) {
         const int k = lab[csr_sub[e]];
-        S1[k] += csr_v[e];
-        S2[k] += csr_v[e] * csr_v[e];
+        A1[k] += csr_v[e];
+        A2[k] += csr_v[e] * csr_v[e];
+        A3[k] += csr_w[e] * csr_v[e];
       }
+      const double* Wl = &Wk[(size_t)rho_of[j] * K];
+      const double* W2l = &W2k[(size_t)rho_of[j] * K];
       if (do_group) {
+        // U_l = sum_k (G[k,l] - gbar_l) sum_{i in k} u_i
         for (int l = 0; l < Lg; ++l) {
-          double s = -gbar_b[l] * sumv[j];
-          for (int k = 0; k < K; ++k) s += Gd[(size_t)k * Lg + l] * S1[k];
+          double s = 0.0;
+          for (int k = 0; k < K; ++k) {
+            s += (Gd[(size_t)k * Lg + l] - gbar_b[l]) * (A1[k] - mu_w[j] * Wl[k]);
+          }
           U[l] = s;
         }
         for (int a = 0; a < Lg; ++a) {
@@ -640,11 +690,14 @@ Rcpp::List cpp_delta2_contrast(const Rcpp::RawVector& bitset_raw,
         const int a = pairs(p, 0) - 1, b = pairs(p, 1) - 1;
         const double na = n_k[a], nb = n_k[b], Nab = na + nb;
         double z = 0.0;
+        // the group statistic on the pair's subjects, centred at their own mu_w
         if (na > 0 && nb > 0 && Nab >= 2) {
-          const double s1 = S1[a] + S1[b], s2 = S2[a] + S2[b];
-          const double ss = s2 - s1 * s1 / Nab;
-          if (ss > 1e-12 * s2) {
-            z = (S1[b] - nb * s1 / Nab) / std::sqrt(na * nb / (Nab * (Nab - 1.0)) * ss);
+          const double Wab = Wl[a] + Wl[b], W2ab = W2l[a] + W2l[b];
+          const double mu = (Wab > 0.0) ? (A1[a] + A1[b]) / Wab : 0.0;
+          const double s2 = A2[a] + A2[b];
+          const double ss = s2 - 2.0 * mu * (A3[a] + A3[b]) + mu * mu * W2ab;
+          if (ss > 1e-12 * (s2 + mu * mu * W2ab)) {
+            z = (A1[b] - mu * Wl[b]) / std::sqrt(na * nb / (Nab * (Nab - 1.0)) * ss);
           }
         }
         z_pair[(size_t)p * m + j] = clamp(z);
@@ -664,7 +717,7 @@ Rcpp::List cpp_delta2_contrast(const Rcpp::RawVector& bitset_raw,
             for (int a = 0; a < Lt; ++a) SD[(size_t)l * Lt + a] += gl * De[a];
           }
         }
-        const double* bj = &beta[(size_t)j * Lt];
+        const double* bj = &beta_int[(size_t)j * Lt];
         for (int l = 0; l < Lg; ++l)
           for (int a = 0; a < Lt; ++a) {
             double s = 0.0;
@@ -720,7 +773,10 @@ Rcpp::List cpp_delta2_contrast(const Rcpp::RawVector& bitset_raw,
   {
     InterShared sh;
     if (do_inter) inter_shared(obs_lab.data(), sh);
-    if (need_group_draws) between_r(obs_lab.data(), &sh);
+    if (need_group_draws) {
+      level_weights(obs_lab.data());
+      between_r(obs_lab.data(), &sh);
+    }
     if (do_group) acc_group.T_obs = pooled(r_group, Lg, &E_group);
     if (do_inter) acc_inter.T_obs = pooled(r_inter, Lg * Lt, &E_inter);
     for (int p = 0; p < n_pairs; ++p) {
@@ -746,6 +802,7 @@ Rcpp::List cpp_delta2_contrast(const Rcpp::RawVector& bitset_raw,
       }
       InterShared sh;
       if (do_inter) inter_shared(lab.data(), sh);
+      level_weights(lab.data());
       between_r(lab.data(), &sh);
       if (do_group) acc_group.digest(pooled(r_group, Lg, nullptr));
       if (do_inter) acc_inter.digest(pooled(r_inter, Lg * Lt, nullptr));
