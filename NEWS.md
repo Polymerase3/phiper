@@ -1,3 +1,23 @@
+# phiper 0.4.20 (2026-10-19)
+
+## Bug fixes
+
+- `compute_delta()` no longer warns about an unexpected many-to-many
+  relationship on paired designs. The join that checks which subjects appear
+  in both groups is many-to-many by design and now says so.
+
+## Tests
+
+- New `test-delta_regression.R` snapshots the full `compute_delta()` output
+  for every combination of `stat_mode`, `weight_mode`, `aggregate_stat`,
+  `strat_bins` (0 or the default) and `perm_method`, on a fixed synthetic
+  dataset of 300 subjects and 50 peptides (unpaired and paired). Later
+  changes to `compute_delta()` must leave this snapshot unchanged. The
+  dataset and the script that generates it are in `tests/testthat/fixtures/`.
+- The test of the bitset/peptide dimension check in `test-delta_compute.R`
+  now restores the mocked `build_bitset_unpaired()` when it ends. The mock
+  used to stay in place for the rest of the test run.
+
 # phiper 0.4.19 (2026-10-18)
 
 ## Bug fixes

@@ -1038,8 +1038,7 @@ test_that("compute_delta aborts on bitset/peptide dimension mismatch", {
         m       = length(hits_by_peptide) + 1L,
         n_words = 1L
       )
-    },
-    .env = asNamespace("phiper")
+    }
   )
 
   expect_error(

@@ -640,7 +640,8 @@ compute_delta <- function(
       dplyr::rename(group1 = group_value) |>
       dplyr::inner_join(
         subj_groups |> dplyr::rename(group2 = group_value),
-        by = c("pair_id", "group_col")
+        by = c("pair_id", "group_col"),
+        relationship = "many-to-many"
       ) |>
       dplyr::filter(.data$group1 < .data$group2) |>
       dplyr::count(group_col, group1, group2, name = "n_shared")
