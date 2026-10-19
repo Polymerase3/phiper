@@ -73,8 +73,11 @@ test_that("kernel null equals the engine on relabelled data, pooled", {
   B <- 12L
   sb <- c(0.1, 0.3)
 
+  set.seed(9)
+  age <- cbind(age = stats::rnorm(length(prep$subjects_order)))
   for (cfg in list(
     list(gs = NULL, ts = NULL, stat = "stouffer", wm = "n_eff_sqrt"),
+    list(gs = NULL, ts = NULL, stat = "stouffer", wm = "equal", cov = age),
     list(
       gs = c(a = 0, b = 1, c = 3), ts = NULL, stat = "maxmean", wm = "equal"
     ),
@@ -95,13 +98,13 @@ test_that("kernel null equals the engine on relabelled data, pooled", {
       prep$bitset_raw, prep$bitset_words, cols, seq_along(ss), ss,
       des$group_code, des$time_code, des$group_scores, des$time_scores,
       des$terms, 3L, 3L, rho, gd, td, pairs, numeric(0),
-      cfg$wm, cfg$stat, "mid_p", sb, 3, 0
+      cfg$wm, cfg$stat, "mid_p", sb, 3, 0, cfg$cov
     )
 
     engine <- function(gc, tc, terms) {
       cpp_delta2_score(
         prep$bitset_raw, prep$bitset_words, cols, seq_along(ss), ss,
-        gc, tc, des$group_scores, des$time_scores, terms, 3L, 3L, rho
+        gc, tc, des$group_scores, des$time_scores, terms, 3L, 3L, rho, cfg$cov
       )
     }
     obs <- engine(des$group_code, des$time_code, des$terms)
@@ -117,7 +120,8 @@ test_that("kernel null equals the engine on relabelled data, pooled", {
         code <- match(gc, pairs[p, ])
         z <- cpp_delta2_score(
           prep$bitset_raw, prep$bitset_words, cols, seq_along(ss), ss,
-          code, des$time_code, numeric(0), numeric(0), "group", 2L, 3L, rho
+          code, des$time_code, numeric(0), numeric(0), "group", 2L, 3L, rho,
+          cfg$cov
         )$group
         .ref_T(z, w, bins, cfg$stat, 3)$T
       })
@@ -327,6 +331,21 @@ test_that("inverse-propensity effect sizes and propensity diagnostics", {
   # adjustment pulls the confounded differences towards 0
   tt <- adj$terms
   expect_lt(mean(tt$max_delta_adj_group), mean(tt$max_delta_group))
+
+  # the group statistic is adjusted for the propensity covariates: one
+  # peptide per stratum, so T_group is the engine's z with age as covariate
+  prep <- .ph_delta2_prepare(df, "group")
+  sub <- match(prep$subjects_order, samples$subject_id)
+  z <- cpp_delta2_score(
+    prep$bitset_raw, prep$bitset_words, seq_len(prep$bitset_m),
+    seq_along(prep$sample_subject), prep$sample_subject,
+    match(grp[sub], c("A", "B")), rep(1L, length(prep$sample_subject)),
+    numeric(0), numeric(0), "group", 2L, 1L,
+    adj$meta$group_cols$group$rho, cbind(age = age[sub])
+  )$group[, 1]
+  z <- pmax(-4, pmin(4, z))[match(tt$feature, prep$peptides_order)]
+  expect_equal(tt$T_group, z, tolerance = 1e-10)
+  expect_false(isTRUE(all.equal(tt$T_group, raw$terms$T_group)))
 })
 
 test_that("rho options, custom ID columns, and input checks", {

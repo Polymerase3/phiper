@@ -216,7 +216,8 @@ val_run_interaction <- function(df, B = 500L) {
       "interaction", des$n_group_levels, des$n_time_levels, rho, draws,
       matrix(0L, 0, 0), matrix(0L, 0, 2), numeric(0), "n_eff_sqrt",
       "stouffer", "mid_p", c(0.002, 0.005, 0.01, 0.02, 0.05, 0.10, 0.20, 0.50),
-      4, 0, resid
+      4, 0,
+      residualize = resid
     )$terms$interaction$p_perm
   }, numeric(1))
   tibble::tibble(p_residualised = p[1], p_raw = p[2])

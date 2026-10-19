@@ -22,9 +22,33 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// cpp_delta2_score
+Rcpp::List cpp_delta2_score(const Rcpp::RawVector& bitset_raw, int n_words, const Rcpp::IntegerVector& pep_cols, const Rcpp::IntegerVector& sample_rows, const Rcpp::IntegerVector& sample_subject, const Rcpp::IntegerVector& group_code, const Rcpp::IntegerVector& time_code, const Rcpp::NumericVector& group_scores, const Rcpp::NumericVector& time_scores, const Rcpp::CharacterVector& terms, int n_group_levels, int n_time_levels, double rho, Rcpp::Nullable<Rcpp::NumericMatrix> covariates);
+RcppExport SEXP _phiper_cpp_delta2_score(SEXP bitset_rawSEXP, SEXP n_wordsSEXP, SEXP pep_colsSEXP, SEXP sample_rowsSEXP, SEXP sample_subjectSEXP, SEXP group_codeSEXP, SEXP time_codeSEXP, SEXP group_scoresSEXP, SEXP time_scoresSEXP, SEXP termsSEXP, SEXP n_group_levelsSEXP, SEXP n_time_levelsSEXP, SEXP rhoSEXP, SEXP covariatesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::RawVector& >::type bitset_raw(bitset_rawSEXP);
+    Rcpp::traits::input_parameter< int >::type n_words(n_wordsSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type pep_cols(pep_colsSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type sample_rows(sample_rowsSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type sample_subject(sample_subjectSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type group_code(group_codeSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type time_code(time_codeSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type group_scores(group_scoresSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type time_scores(time_scoresSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::CharacterVector& >::type terms(termsSEXP);
+    Rcpp::traits::input_parameter< int >::type n_group_levels(n_group_levelsSEXP);
+    Rcpp::traits::input_parameter< int >::type n_time_levels(n_time_levelsSEXP);
+    Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type covariates(covariatesSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_delta2_score(bitset_raw, n_words, pep_cols, sample_rows, sample_subject, group_code, time_code, group_scores, time_scores, terms, n_group_levels, n_time_levels, rho, covariates));
+    return rcpp_result_gen;
+END_RCPP
+}
 // cpp_delta2_contrast
-Rcpp::List cpp_delta2_contrast(const Rcpp::RawVector& bitset_raw, int n_words, const Rcpp::IntegerVector& pep_cols, const Rcpp::IntegerVector& sample_rows, const Rcpp::IntegerVector& sample_subject, const Rcpp::IntegerVector& group_code, const Rcpp::IntegerVector& time_code, const Rcpp::NumericVector& group_scores, const Rcpp::NumericVector& time_scores, const Rcpp::CharacterVector& terms, int n_group_levels, int n_time_levels, const Rcpp::NumericVector& rho, const Rcpp::IntegerMatrix& group_draws, const Rcpp::IntegerMatrix& time_draws, const Rcpp::IntegerMatrix& pairs, const Rcpp::NumericVector& adj_weight, const std::string& weight_mode, const std::string& aggregate_stat, const std::string& perm_method, const Rcpp::NumericVector& strat_bins, double winsor_z, double min_m_eff, bool residualize);
-RcppExport SEXP _phiper_cpp_delta2_contrast(SEXP bitset_rawSEXP, SEXP n_wordsSEXP, SEXP pep_colsSEXP, SEXP sample_rowsSEXP, SEXP sample_subjectSEXP, SEXP group_codeSEXP, SEXP time_codeSEXP, SEXP group_scoresSEXP, SEXP time_scoresSEXP, SEXP termsSEXP, SEXP n_group_levelsSEXP, SEXP n_time_levelsSEXP, SEXP rhoSEXP, SEXP group_drawsSEXP, SEXP time_drawsSEXP, SEXP pairsSEXP, SEXP adj_weightSEXP, SEXP weight_modeSEXP, SEXP aggregate_statSEXP, SEXP perm_methodSEXP, SEXP strat_binsSEXP, SEXP winsor_zSEXP, SEXP min_m_effSEXP, SEXP residualizeSEXP) {
+Rcpp::List cpp_delta2_contrast(const Rcpp::RawVector& bitset_raw, int n_words, const Rcpp::IntegerVector& pep_cols, const Rcpp::IntegerVector& sample_rows, const Rcpp::IntegerVector& sample_subject, const Rcpp::IntegerVector& group_code, const Rcpp::IntegerVector& time_code, const Rcpp::NumericVector& group_scores, const Rcpp::NumericVector& time_scores, const Rcpp::CharacterVector& terms, int n_group_levels, int n_time_levels, const Rcpp::NumericVector& rho, const Rcpp::IntegerMatrix& group_draws, const Rcpp::IntegerMatrix& time_draws, const Rcpp::IntegerMatrix& pairs, const Rcpp::NumericVector& adj_weight, const std::string& weight_mode, const std::string& aggregate_stat, const std::string& perm_method, const Rcpp::NumericVector& strat_bins, double winsor_z, double min_m_eff, Rcpp::Nullable<Rcpp::NumericMatrix> covariates, bool residualize);
+RcppExport SEXP _phiper_cpp_delta2_contrast(SEXP bitset_rawSEXP, SEXP n_wordsSEXP, SEXP pep_colsSEXP, SEXP sample_rowsSEXP, SEXP sample_subjectSEXP, SEXP group_codeSEXP, SEXP time_codeSEXP, SEXP group_scoresSEXP, SEXP time_scoresSEXP, SEXP termsSEXP, SEXP n_group_levelsSEXP, SEXP n_time_levelsSEXP, SEXP rhoSEXP, SEXP group_drawsSEXP, SEXP time_drawsSEXP, SEXP pairsSEXP, SEXP adj_weightSEXP, SEXP weight_modeSEXP, SEXP aggregate_statSEXP, SEXP perm_methodSEXP, SEXP strat_binsSEXP, SEXP winsor_zSEXP, SEXP min_m_effSEXP, SEXP covariatesSEXP, SEXP residualizeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -51,8 +75,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type strat_bins(strat_binsSEXP);
     Rcpp::traits::input_parameter< double >::type winsor_z(winsor_zSEXP);
     Rcpp::traits::input_parameter< double >::type min_m_eff(min_m_effSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type covariates(covariatesSEXP);
     Rcpp::traits::input_parameter< bool >::type residualize(residualizeSEXP);
-    rcpp_result_gen = Rcpp::wrap(cpp_delta2_contrast(bitset_raw, n_words, pep_cols, sample_rows, sample_subject, group_code, time_code, group_scores, time_scores, terms, n_group_levels, n_time_levels, rho, group_draws, time_draws, pairs, adj_weight, weight_mode, aggregate_stat, perm_method, strat_bins, winsor_z, min_m_eff, residualize));
+    rcpp_result_gen = Rcpp::wrap(cpp_delta2_contrast(bitset_raw, n_words, pep_cols, sample_rows, sample_subject, group_code, time_code, group_scores, time_scores, terms, n_group_levels, n_time_levels, rho, group_draws, time_draws, pairs, adj_weight, weight_mode, aggregate_stat, perm_method, strat_bins, winsor_z, min_m_eff, covariates, residualize));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -105,29 +130,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type n_time_levels(n_time_levelsSEXP);
     Rcpp::traits::input_parameter< int >::type b(bSEXP);
     rcpp_result_gen = Rcpp::wrap(cpp_delta2_time_counts(bitset_raw, n_words, pep_cols, masks, n_time_levels, b));
-    return rcpp_result_gen;
-END_RCPP
-}
-// cpp_delta2_score
-Rcpp::List cpp_delta2_score(const Rcpp::RawVector& bitset_raw, int n_words, const Rcpp::IntegerVector& pep_cols, const Rcpp::IntegerVector& sample_rows, const Rcpp::IntegerVector& sample_subject, const Rcpp::IntegerVector& group_code, const Rcpp::IntegerVector& time_code, const Rcpp::NumericVector& group_scores, const Rcpp::NumericVector& time_scores, const Rcpp::CharacterVector& terms, int n_group_levels, int n_time_levels, double rho);
-RcppExport SEXP _phiper_cpp_delta2_score(SEXP bitset_rawSEXP, SEXP n_wordsSEXP, SEXP pep_colsSEXP, SEXP sample_rowsSEXP, SEXP sample_subjectSEXP, SEXP group_codeSEXP, SEXP time_codeSEXP, SEXP group_scoresSEXP, SEXP time_scoresSEXP, SEXP termsSEXP, SEXP n_group_levelsSEXP, SEXP n_time_levelsSEXP, SEXP rhoSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::RawVector& >::type bitset_raw(bitset_rawSEXP);
-    Rcpp::traits::input_parameter< int >::type n_words(n_wordsSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type pep_cols(pep_colsSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type sample_rows(sample_rowsSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type sample_subject(sample_subjectSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type group_code(group_codeSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type time_code(time_codeSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type group_scores(group_scoresSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type time_scores(time_scoresSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::CharacterVector& >::type terms(termsSEXP);
-    Rcpp::traits::input_parameter< int >::type n_group_levels(n_group_levelsSEXP);
-    Rcpp::traits::input_parameter< int >::type n_time_levels(n_time_levelsSEXP);
-    Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
-    rcpp_result_gen = Rcpp::wrap(cpp_delta2_score(bitset_raw, n_words, pep_cols, sample_rows, sample_subject, group_code, time_code, group_scores, time_scores, terms, n_group_levels, n_time_levels, rho));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -193,11 +195,11 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_phiper_build_bitset_unpaired", (DL_FUNC) &_phiper_build_bitset_unpaired, 2},
-    {"_phiper_cpp_delta2_contrast", (DL_FUNC) &_phiper_cpp_delta2_contrast, 24},
+    {"_phiper_cpp_delta2_score", (DL_FUNC) &_phiper_cpp_delta2_score, 14},
+    {"_phiper_cpp_delta2_contrast", (DL_FUNC) &_phiper_cpp_delta2_contrast, 25},
     {"_phiper_cpp_delta2_resample_group", (DL_FUNC) &_phiper_cpp_delta2_resample_group, 7},
     {"_phiper_cpp_delta2_resample_time", (DL_FUNC) &_phiper_cpp_delta2_resample_time, 9},
     {"_phiper_cpp_delta2_time_counts", (DL_FUNC) &_phiper_cpp_delta2_time_counts, 6},
-    {"_phiper_cpp_delta2_score", (DL_FUNC) &_phiper_cpp_delta2_score, 13},
     {"_phiper_cpp_delta2_rho", (DL_FUNC) &_phiper_cpp_delta2_rho, 5},
     {"_phiper_cpp_perm_masks", (DL_FUNC) &_phiper_cpp_perm_masks, 5},
     {"_phiper_cpp_shift_contrast", (DL_FUNC) &_phiper_cpp_shift_contrast, 19},

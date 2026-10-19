@@ -161,7 +161,11 @@ up to the constant factor \eqn{\sqrt{(N-1)/N}}.
 two complete timepoints this is the McNemar z; with \code{T} it is Cochran's Q.
 Subjects with one sample contribute nothing.
 \item \emph{interaction}: the within-subject deviations, residualised against the
-pooled time main effect, compared across group labels.
+pooled time main effect, compared across group labels and standardised
+by a Welch-type variance built from each group's own covariance of the
+deviations, recomputed for every draw. The interaction's null is about
+mean changes, so this keeps it calibrated when groups differ in
+turnover or visit patterns.
 }
 
 A term with one degree of freedom (two levels, or \code{group_scores} /
@@ -183,7 +187,13 @@ share one set of \code{B_permutations} subject relabellings per \code{group_col}
 a uniform split of the subjects with the observed group sizes, or, with
 \code{propensity_formula}, draws from the conditional law of the labels given
 the covariates (rejection sampling for two groups, the pairwise-swap
-chain of Berrett et al. 2020 for more). The time term uses within-subject
+chain of Berrett et al. 2020 for more). With \code{propensity_formula} the
+group term and the pairwise tests are also adjusted for its covariates:
+the subject means are residualised on them by weighted least squares
+before the groups are compared (the score test for group in a model with
+the covariates). The draws make the p-value valid; the adjustment keeps
+the statistic from being dominated by the covariates, without which the
+test is conservative and loses its power. The time term uses within-subject
 relabellings: a coin per two-sample subject (biased by
 \code{time_propensity_formula}) or a uniform permutation of the subject's
 timepoints.

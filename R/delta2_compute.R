@@ -38,7 +38,11 @@
 #'   two complete timepoints this is the McNemar z; with `T` it is Cochran's Q.
 #'   Subjects with one sample contribute nothing.
 #' - *interaction*: the within-subject deviations, residualised against the
-#'   pooled time main effect, compared across group labels.
+#'   pooled time main effect, compared across group labels and standardised
+#'   by a Welch-type variance built from each group's own covariance of the
+#'   deviations, recomputed for every draw. The interaction's null is about
+#'   mean changes, so this keeps it calibrated when groups differ in
+#'   turnover or visit patterns.
 #'
 #' A term with one degree of freedom (two levels, or `group_scores` /
 #' `time_scores` for a linear trend) gives a signed z per peptide; an omnibus
@@ -59,7 +63,13 @@
 #' a uniform split of the subjects with the observed group sizes, or, with
 #' `propensity_formula`, draws from the conditional law of the labels given
 #' the covariates (rejection sampling for two groups, the pairwise-swap
-#' chain of Berrett et al. 2020 for more). The time term uses within-subject
+#' chain of Berrett et al. 2020 for more). With `propensity_formula` the
+#' group term and the pairwise tests are also adjusted for its covariates:
+#' the subject means are residualised on them by weighted least squares
+#' before the groups are compared (the score test for group in a model with
+#' the covariates). The draws make the p-value valid; the adjustment keeps
+#' the statistic from being dominated by the covariates, without which the
+#' test is conservative and loses its power. The time term uses within-subject
 #' relabellings: a coin per two-sample subject (biased by
 #' `time_propensity_formula`) or a uniform permutation of the subject's
 #' timepoints.
@@ -305,7 +315,13 @@ compute_delta2 <- function(
   )
 
   # --- 3) One contrast per group_col: design, propensity, rho, draws ----------
-  # subject-level covariates must not vary within subject
+  # propensity covariates must be complete (glm would drop those subjects),
+  # and subject-level ones must not vary within subject
+  for (v in unique(c(subj_covs, samp_covs))) {
+    if (anyNA(samples_meta[[v]])) {
+      .ph_abort(sprintf("Propensity covariate %s has missing values.", v))
+    }
+  }
   first_row <- !duplicated(sample_subject)
   for (v in subj_covs) {
     n_val <- tapply(samples_meta[[v]], sample_subject, function(z) {
@@ -452,12 +468,22 @@ compute_delta2 <- function(
     } else {
       numeric(0)
     }
+    # the group term and pairs are adjusted for the propensity covariates
+    covariates <- NULL
+    if (!is.null(propensity_formula) && need_group) {
+      mm <- stats::model.matrix(
+        propensity_formula, as.data.frame(subjects_meta[subj_k, ])
+      )
+      mm <- mm[, colnames(mm) != "(Intercept)", drop = FALSE]
+      if (ncol(mm)) covariates <- unname(mm)
+    }
 
     contrasts[[gc]] <- list(
       design = des, terms = terms, pairs = pairs,
       sample_rows = rows_k, sample_subject = sub_k,
       group_draws = group_draws, time_draws = time_draws,
-      adj_weight = adj_weight, rho = rho_vec, rho_hat = rho_res$rho_hat,
+      adj_weight = adj_weight, covariates = covariates,
+      rho = rho_vec, rho_hat = rho_res$rho_hat,
       n_overlap = if (!is.null(ps)) ps$diagnostics$n_overlap else NA_integer_
     )
     meta_gc[[gc]] <- list(
@@ -529,7 +555,7 @@ compute_delta2 <- function(
       adj_weight = ct$adj_weight, weight_mode = weight_mode,
       aggregate_stat = aggregate_stat, perm_method = perm_method,
       strat_bins = strat_bins, winsor_z = winsor_z,
-      min_m_eff = as.numeric(min_m_eff)
+      min_m_eff = as.numeric(min_m_eff), covariates = ct$covariates
     )
     if (isTRUE(res$skipped)) {
       return(NULL)

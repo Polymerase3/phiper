@@ -12,7 +12,8 @@
 
 # prepare + design + score for one contrast
 .d2_run <- function(df, group_col = "group", time_col = NULL, rho = 0,
-                    group_scores = NULL, time_scores = NULL, ...) {
+                    group_scores = NULL, time_scores = NULL,
+                    covariates = NULL, ...) {
   prep <- .ph_delta2_prepare(df, group_cols = group_col, time_col = time_col)
   gl <- prep$group_levels[[group_col]]
   subjects_meta <- data.frame(
@@ -36,7 +37,7 @@
     prep$bitset_raw, prep$bitset_words, seq_len(prep$bitset_m),
     seq_along(prep$samples_order), prep$sample_subject,
     des$group_code, des$time_code, des$group_scores, des$time_scores,
-    des$terms, des$n_group_levels, des$n_time_levels, rho
+    des$terms, des$n_group_levels, des$n_time_levels, rho, covariates
   )
   list(prep = prep, des = des, res = res)
 }
@@ -66,6 +67,32 @@
 }
 
 # U' V^+ U for a covariance V
+# Welch-type interaction, by hand: subject residuals R (rows) and group
+# codes; S = sum_k c_k (x) RS_k and V = sum_k n_k c_k c_k' (x) Sigma_k, with
+# c_k the centred group design row (G: levels x columns)
+.welch_SV <- function(R, code, G) {
+  R <- as.matrix(R)
+  gbar <- colMeans(G[code, , drop = FALSE])
+  S <- 0
+  V <- 0
+  for (k in sort(unique(code))) {
+    Rk <- R[code == k, , drop = FALSE]
+    ck <- G[k, ] - gbar
+    S <- S + kronecker(ck, colSums(Rk))
+    if (nrow(Rk) >= 2) {
+      V <- V + nrow(Rk) * kronecker(tcrossprod(ck), stats::cov(Rk))
+    }
+  }
+  list(S = S, V = V)
+}
+
+MASS_ginv <- function(M) {
+  e <- eigen(M, symmetric = TRUE)
+  keep <- e$values > 1e-10 * max(e$values)
+  v <- e$vectors[, keep, drop = FALSE]
+  v %*% (t(v) / e$values[keep])
+}
+
 .quad <- function(U, V) {
   e <- eigen(V, symmetric = TRUE)
   keep <- e$values > 1e-10 * max(e$values)
@@ -178,7 +205,7 @@ test_that("T complete timepoints give Cochran's Q as a signed vector", {
   expect_true(all(sign(r[nz]) == sign(excess[nz])))
 })
 
-test_that("2x2 interaction is gained - lost in group B vs its exact null", {
+test_that("2x2 interaction is the Welch t of gained - lost between groups", {
   set.seed(15)
   N <- 40
   grp <- rep(c("A", "B"), c(18, 22))
@@ -198,12 +225,13 @@ test_that("2x2 interaction is gained - lost in group B vs its exact null", {
   nA <- sum(!inB)
   nB <- sum(inB)
 
+  # each group's own variance of the change (Welch), not the pooled one
   z_ref <- apply(d, 2, function(di) {
-    ss <- sum((di - mean(di))^2)
-    if (ss == 0) {
+    se2 <- stats::var(di[!inB]) / nA + stats::var(di[inB]) / nB
+    if (se2 == 0) {
       return(0)
     }
-    (sum(di[inB]) - nB * mean(di)) / sqrt(nA * nB / (N * (N - 1)) * ss)
+    (mean(di[inB]) - mean(di[!inB])) / sqrt(se2)
   })
 
   expect_identical(run$des$terms, c("group", "time", "interaction"))
@@ -376,6 +404,59 @@ test_that("unequal sample counts alone carry no group signal", {
   }
 })
 
+test_that("covariates adjust the group term: weighted least-squares score", {
+  set.seed(20)
+  n_sub <- 36
+  n_i <- sample(1:4, n_sub, TRUE)
+  age <- stats::rnorm(n_sub)
+  for (K in c(2, 3)) {
+    grp <- letters[1:K][(seq_len(n_sub) - 1) %% K + 1]
+    samples <- data.frame(
+      sample_id = sprintf("s%02d_%d", rep(1:n_sub, n_i), sequence(n_i)),
+      subject_id = sprintf("s%02d", rep(1:n_sub, n_i)),
+      group = rep(grp, n_i), stringsAsFactors = FALSE
+    )
+    prob <- stats::plogis(-1 + rep(age, n_i))
+    Y <- matrix(rbinom(nrow(samples) * 8, 1, prob), nrow(samples))
+    df <- .d2_long(samples, Y)
+    type <- if (K == 2) "binary" else "multi"
+    for (rho in c(0, 0.5)) {
+      run0 <- .d2_run(df, rho = rho, group_type = type)
+      sub <- match(run0$prep$subjects_order, sprintf("s%02d", 1:n_sub))
+      Zc <- cbind(age = age[sub])
+      run <- .d2_run(df, rho = rho, covariates = Zc, group_type = type)
+      Yb <- .d2_bits(run, df)
+      subj <- run$prep$sample_subject
+      ni <- tabulate(subj)
+      w <- ni / (1 + (ni - 1) * rho)
+      Z <- cbind(1, Zc)
+      code <- run$des$group_code
+      G <- if (K == 2) matrix(c(0, 1)) else diag(K)
+      Gc <- sweep(G[code, , drop = FALSE], 2, colMeans(G[code, , drop = FALSE]))
+      N <- length(code)
+      for (j in seq_len(ncol(Yb))) {
+        ybar <- as.numeric(tapply(Yb[, j], subj, mean))
+        a <- solve(crossprod(Z, w * Z), crossprod(Z, w * ybar))
+        u <- w * (ybar - Z %*% a)[, 1]
+        U <- colSums(Gc * u)
+        V <- sum(u^2) * crossprod(Gc) / (N - 1)
+        if (K == 2) {
+          z <- U / sqrt(V[1, 1])
+          expect_equal(run$res$group[j, 1], z, tolerance = 1e-10)
+        } else {
+          q <- .quad(U, V)
+          expect_equal(sum(run$res$group[j, ]^2), q, tolerance = 1e-10)
+        }
+      }
+      # an intercept-only covariate matrix changes nothing
+      ones <- .d2_run(df,
+        rho = rho, covariates = matrix(1, N, 1), group_type = type
+      )
+      expect_equal(ones$res$group, run0$res$group, tolerance = 1e-10)
+    }
+  }
+})
+
 test_that("interaction is residualised against the time main effect", {
   # cases have 4 visits, controls 2; positivity depends on time only
   vis <- list(c1 = 1:4, c2 = 1:4, c3 = 1:4, k1 = 1:2, k2 = 1:2, k3 = 1:2)
@@ -400,7 +481,7 @@ test_that("interaction is residualised against the time main effect", {
   sc <- c(T1 = 1, T2 = 2, T3 = 3, T4 = 4)
   run <- .d2_run(df, time_col = "timepoint", time_scores = sc)
 
-  # brute force for the second peptide: residualised D_i, all label perms
+  # second peptide by hand: residualised D_i, Welch standardisation
   Yb <- .d2_bits(run, df)
   subj <- run$prep$sample_subject
   x <- sc[run$prep$sample_time]
@@ -409,11 +490,49 @@ test_that("interaction is residualised against the time main effect", {
   D <- sapply(rows, function(r) sum((x[r] - mean(x[r])) * (y[r] - mean(y[r]))))
   Sx <- sapply(rows, function(r) sum((x[r] - mean(x[r]))^2))
   R <- D - Sx * sum(D) / sum(Sx)
-  g <- run$des$group_code - 1
-  labs <- unique(.perms(g))
-  Us <- sapply(labs, function(gp) sum(gp * R))
-  z_ref <- (sum(g * R) - mean(Us)) / sqrt(mean((Us - mean(Us))^2))
-  expect_equal(run$res$interaction[2, 1], z_ref, tolerance = 1e-10)
+  sv <- .welch_SV(R, run$des$group_code, matrix(c(0, 1)))
+  expect_equal(run$res$interaction[2, 1], as.numeric(sv$S) / sqrt(sv$V[1, 1]),
+    tolerance = 1e-10
+  )
+})
+
+test_that("omnibus interaction is the Welch quadratic form", {
+  # 3 groups x 3 timepoints, unbalanced visits and unequal turnover
+  set.seed(19)
+  vis <- lapply(1:24, function(i) sort(sample(1:3, sample(2:3, 1))))
+  samples <- do.call(rbind, lapply(seq_along(vis), function(i) {
+    data.frame(
+      sample_id = sprintf("s%02d_T%d", i, vis[[i]]),
+      subject_id = sprintf("s%02d", i), timepoint = sprintf("T%d", vis[[i]]),
+      group = c("a", "b", "c")[(i - 1) %% 3 + 1], stringsAsFactors = FALSE
+    )
+  }))
+  prev <- ifelse(samples$group == "c", 0.5, 0.2)
+  Y <- matrix(rbinom(nrow(samples) * 6, 1, prev), nrow(samples))
+  df <- .d2_long(samples, Y)
+  run <- .d2_run(df, time_col = "timepoint")
+  Yb <- .d2_bits(run, df)
+  subj <- run$prep$sample_subject
+  X <- diag(3)[run$prep$sample_time, ]
+  rows <- split(seq_along(subj), subj)
+  A <- lapply(rows, function(r) {
+    crossprod(scale(X[r, , drop = FALSE], scale = FALSE))
+  })
+  for (j in seq_len(ncol(Yb))) {
+    y <- Yb[, j]
+    D <- t(sapply(rows, function(r) {
+      crossprod(X[r, , drop = FALSE], y[r] - mean(y[r]))[, 1]
+    }))
+    spread <- vapply(A, function(a) sum(diag(a)) > 1e-12, TRUE)
+    sumA <- Reduce(`+`, A[spread])
+    beta <- MASS_ginv(sumA) %*% colSums(D[spread, , drop = FALSE])
+    R <- t(sapply(seq_along(rows), function(i) D[i, ] - A[[i]] %*% beta))
+    R <- R[spread, ]
+    sv <- .welch_SV(R, run$des$group_code[spread], diag(3))
+    expect_equal(sum(run$res$interaction[j, ]^2), .quad(sv$S, sv$V),
+      tolerance = 1e-8
+    )
+  }
 })
 
 test_that("pooled rho is the one-way ANOVA moment estimator", {
