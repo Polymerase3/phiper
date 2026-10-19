@@ -415,6 +415,9 @@ Rcpp::List cpp_delta2_score(const Rcpp::RawVector& bitset_raw,
     }
 
     // group: Cov(U) = SS_v * Gb, so r = Gb^{-1/2} U / sqrt(SS_v)
+    // Gb carries the exact permutation 1/(N-1); compute_delta()'s "score"
+    // uses the binomial 1/N, so with one sample per subject this z is v1's
+    // times sqrt((N-1)/N), the same factor for every peptide in a contrast.
     if (do_group) {
       const double SS = (N >= 2) ? sumv2 - sumv * sumv / N : 0.0;
       const bool ok = SS > 1e-12 * sumv2;
