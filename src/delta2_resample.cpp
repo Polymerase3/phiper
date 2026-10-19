@@ -6,6 +6,7 @@
 #include <cstring>
 #include <cstdint>
 #include <algorithm>
+#include <limits>
 using namespace Rcpp;
 
 // compute_delta2() resampling: one shared object per resample (a subject
@@ -26,12 +27,25 @@ namespace {
 
 typedef std::mt19937_64 Rng;
 
+// Draws come straight from mt19937_64, whose output the C++ standard fixes;
+// the std:: distributions are implementation-defined (libc++ on macOS differs
+// from libstdc++), so a seed would give different draws on different
+// platforms. As in compute_delta() (src/shift_computing.cpp).
+
+// Uniform on [0, 1) from the top 53 bits of one draw
 inline double u01(Rng& rng) {
-  return std::uniform_real_distribution<double>(0.0, 1.0)(rng);
+  return (double)(rng() >> 11) * (1.0 / 9007199254740992.0);
 }
 
+// Uniform integer in [0, n); draws past the last full multiple of n are
+// redrawn so every value is equally likely
 inline int uint_below(Rng& rng, int n) {
-  return std::uniform_int_distribution<int>(0, n - 1)(rng);
+  const uint64_t range = (uint64_t)n;
+  const uint64_t max64 = std::numeric_limits<uint64_t>::max();
+  const uint64_t last  = max64 - (max64 % range + 1ULL) % range;
+  uint64_t r;
+  do { r = rng(); } while (r > last);
+  return (int)(r % range);
 }
 
 // One Metropolis-Hastings swap step on labels (0-based) with propensity

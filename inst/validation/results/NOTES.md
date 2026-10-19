@@ -4,7 +4,9 @@
 1000 datasets per calibration cell, 4 cores, about 62 minutes. **45 of 50
 gates pass, 1 is accepted as a documented limitation, 4 fail by chance (see
 below).** This is the third full run; the fixes it confirms are listed at
-the end.
+the end. It predates the switch of the resampler to platform-independent
+draws (after merging the same fix for `compute_delta()`), so a re-run with
+the same seeds gives different replicates, equal in distribution.
 
 Decisions (2026-10-19): the 6.3a miss is accepted and documented in
 `?compute_delta2`; `rho_by_stratum` stays `FALSE` by default.

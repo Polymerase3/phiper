@@ -103,7 +103,8 @@
 #' test is conservative and loses its power. The time term uses within-subject
 #' relabellings: a coin per two-sample subject (biased by
 #' `time_propensity_formula`) or a uniform permutation of the subject's
-#' timepoints.
+#' timepoints. The draws depend only on seeds taken from R's RNG, so a given
+#' `set.seed()` gives the same results on every platform.
 #'
 #' **Type inference** (`"auto"`): two levels are binary; more levels of a
 #' factor or character column are multi; a numeric column is multi with at

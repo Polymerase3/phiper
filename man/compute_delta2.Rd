@@ -246,7 +246,8 @@ the statistic from being dominated by the covariates, without which the
 test is conservative and loses its power. The time term uses within-subject
 relabellings: a coin per two-sample subject (biased by
 \code{time_propensity_formula}) or a uniform permutation of the subject's
-timepoints.
+timepoints. The draws depend only on seeds taken from R's RNG, so a given
+\code{set.seed()} gives the same results on every platform.
 
 \strong{Type inference} (\code{"auto"}): two levels are binary; more levels of a
 factor or character column are multi; a numeric column is multi with at
